@@ -92,19 +92,35 @@ void qSlicerSubjectHierarchyDICOMPluginPrivate::init()
 {
   Q_Q(qSlicerSubjectHierarchyDICOMPlugin);
 
+  // Place DICOM folder actions after core folder actions
+  const int folderActionsBaseWeight = 20;
+
   this->CreatePatientAction = new QAction("Create new subject",q);
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->CreatePatientAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionFolder, folderActionsBaseWeight);
   QObject::connect(this->CreatePatientAction, SIGNAL(triggered()), q, SLOT(createSubjectItem()));
 
   this->CreateStudyAction = new QAction("Create child study",q);
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->CreateStudyAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionFolder, folderActionsBaseWeight+1);
   QObject::connect(this->CreateStudyAction, SIGNAL(triggered()), q, SLOT(createChildStudyUnderCurrentItem()));
 
   this->ConvertFolderToPatientAction = new QAction("Convert folder to subject",q);
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->ConvertFolderToPatientAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionFolder, folderActionsBaseWeight+2);
   QObject::connect(this->ConvertFolderToPatientAction, SIGNAL(triggered()), q, SLOT(convertCurrentItemToPatient()));
 
   this->ConvertFolderToStudyAction = new QAction("Convert folder to study",q);
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->ConvertFolderToStudyAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionFolder, folderActionsBaseWeight+3);
   QObject::connect(this->ConvertFolderToStudyAction, SIGNAL(triggered()), q, SLOT(convertCurrentItemToStudy()));
 
   this->OpenDICOMExportDialogAction = new QAction("Export to DICOM...",q);
+  // Place DICOM export action lower in the default actions section because it is
+  // better to have export features towards the end (after editing and importing actions).
+  const int dicomExportActionWeight = 30;
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->OpenDICOMExportDialogAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionDefault, dicomExportActionWeight);
   QObject::connect(this->OpenDICOMExportDialogAction, SIGNAL(triggered()), q, SLOT(openDICOMExportDialog()));
 }
 
@@ -211,7 +227,7 @@ const QString qSlicerSubjectHierarchyDICOMPlugin::helpText()const
     "</p>"
     "<p style=\" margin-top:0px; margin-bottom:11px; margin-left:26px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">"
     "<span style=\" font-family:'sans-serif'; font-size:9pt; color:#000000;\">"
-    "Right-click the empty area (or the top-level item 'Scene' if visible) and select 'Create new subject'."
+    "Right-click the top-level item 'Scene' (or the empty area if scene item is not visible) and select 'Create new subject'."
     "</span>"
     "</p>\n"
     "<p style=\" margin-top:4px; margin-bottom:1px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">"

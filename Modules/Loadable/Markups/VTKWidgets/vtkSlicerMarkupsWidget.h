@@ -78,6 +78,7 @@ public:
     WidgetEventControlPointDelete,
     WidgetEventControlPointInsert,
     WidgetEventControlPointSnapToSlice,
+    WidgetEventReserved,  // this events is only to prevent other widgets from processing an event
     WidgetEventMarkups_Last
   };
 
@@ -180,10 +181,6 @@ protected:
   // Variables for translate/rotate/scale
   double LastEventPosition[2];
   double StartEventOffsetPosition[2];
-
-  // True if mouse button pressed since a point was placed.
-  // This is used to filter out "click" events that started before the point was placed.
-  bool MousePressedSinceMarkupPlace;
 
 private:
   vtkSlicerMarkupsWidget(const vtkSlicerMarkupsWidget&) = delete;

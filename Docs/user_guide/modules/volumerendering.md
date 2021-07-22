@@ -61,7 +61,7 @@ Option B:
   - Shift: Move all the inner points (first and last excluded) of the current transfer functions to the right/left (lower/higher). It can be useful when a preset defines a ramp from 0 to 200 but your data requires a ramp from 1000 to 1200.
   - Crop: Simple controls for the cropping box (ROI). More controls are available in the "Advanced..." section. Enable/Disable cropping of the volume. Show/Hide the cropping box. Reset the box ROI to the volume's bounds.
   - Rendering: Select a volume rendering method. A default method can be set in the application settings Volume Rendering panel.
-    - VTK CPU Ray Casting: Available on all computers, regardless of capabilities of graphics hardware. The volume rendering is enterily realized on the CPU, therefore it is slower than other options.
+    - VTK CPU Ray Casting: Available on all computers, regardless of capabilities of graphics hardware. The volume rendering is entirely realized on the CPU, therefore it is slower than other options.
     - VTK GPU Ray Casting (default): Uses graphics hardware for rendering, typically much faster than CPU volume rendering. This is the recommended method for computers that have sufficiant graphics capabilities. It supports surface smoothing to remove staircase artifacts.
     - VTK Multi-Volume: Uses graphics hardware for rendering. Can render multiple overlapping volumes. Currently does not support cropping.
 - Advanced: More controls to control the volume rendering. Contains 3 tabs: "Techniques", "Volume Properties" and "ROI"
@@ -80,7 +80,7 @@ Option B:
   - Volume Properties: Advanced views of the transfer functions.
     - Synchronize with Volumes module: show volume rendering with the same color mapping that is used in slice views
       - Click: Apply once the properties (window/level, threshold, lut) of the Volumes module to the Volume Rendering module.
-      - Checkbox: By clicking on the checkbox, you can toggle the button. When toggled, any modification occuring in the Volumes module is continuously applied to the volume rendering
+      - Checkbox: By clicking on the checkbox, you can toggle the button. When toggled, any modification occurring in the Volumes module is continuously applied to the volume rendering
     - Control point properties: X = scalar value, O = opacity, M = mid-point, S = sharpness
     - Keyboard/mouse shortcuts:
       - Left button click: Set current point or create a new point if no point is under the mouse.
@@ -96,12 +96,12 @@ Option B:
     - Scalar Color Mapping: Color transfer function.
     - Gradient Opacity: Gradient opacity transfer function. This controls the opacity according to how large a density gradient next to the voxel is.
     - Advanced:
-      - Interpolation: Linear (default for scalar volumes) or nearest neighboor (default for labelmaps) interpolation.
+      - Interpolation: Linear (default for scalar volumes) or nearest neighbor (default for labelmaps) interpolation.
       - Shade: Enable/Disable shading. Shading uses light and material properties. Disable it to display X-ray-like projection.
       - Material: Material properties of the volume to compute shading effect.
   - ROI: More controls for the cropping box.
     - Display Clipping box: Show hide the bounds of the ROI box.
-    - Interactive mode: Control wether the cropping box is instantaneously updated when dragging the sliders or only when the mouse button is released.
+    - Interactive mode: Control whether the cropping box is instantaneously updated when dragging the sliders or only when the mouse button is released.
 
 ## Contributors
 

@@ -147,7 +147,7 @@ private:
   QList<QPushButton*> ceateMarkupsPushButtons;
   unsigned int createMarkupsButtonsColumns;
 
-  // Export/import setion
+  // Export/import section
   QButtonGroup* ImportExportOperationButtonGroup;
   QButtonGroup* ImportExportCoordinateSystemButtonGroup;
 };
@@ -689,7 +689,7 @@ void qSlicerMarkupsModuleWidgetPrivate::createMarkupsPushButtons()
       {
       QSignalMapper* mapper = new QSignalMapper(q);
       QPushButton *markupCreatePushButton = new QPushButton();
-      //NOTE: We assign object name so we can test the dynamic creation of buttons in hte tests.
+      //NOTE: We assign object name so we can test the dynamic creation of buttons in the tests.
       markupCreatePushButton->setObjectName(QString("Create") +
                                             QString(markupsNode->GetMarkupType()) +
                                             QString("PushButton"));
@@ -2186,8 +2186,8 @@ if (clipboardText.contains("\t"))
   }
 
 // SetPointFromString calls various events reporting the id of the point modified.
-// However, already for > 200 points, it gets bad perfomance. Therefore, we call a simply modified call at the end.
-d->MarkupsNode->DisableModifiedEventOn();
+// However, already for > 200 points, it gets bad performance. Therefore, we call a simply modified call at the end.
+MRMLNodeModifyBlocker blocker(d->MarkupsNode);
 foreach(QString line, lines)
   {
   line = line.trimmed();
@@ -2196,13 +2196,8 @@ foreach(QString line, lines)
     // empty line or comment line
     continue;
     }
-
   storageNode->SetPointFromString(d->MarkupsNode, d->MarkupsNode->GetNumberOfControlPoints(), line.toUtf8());
   }
-d->MarkupsNode->DisableModifiedEventOff();
-d->MarkupsNode->Modified();
-int n = d->MarkupsNode->GetNumberOfControlPoints() - 1;
-d->MarkupsNode->InvokeCustomModifiedEvent(vtkMRMLMarkupsNode::PointModifiedEvent, static_cast<void*>(&n));
 }
 
 //-----------------------------------------------------------------------------
@@ -2508,20 +2503,25 @@ return false;
 //-----------------------------------------------------------
 double qSlicerMarkupsModuleWidget::nodeEditable(vtkMRMLNode* node)
 {
-if (vtkMRMLMarkupsNode::SafeDownCast(node)
-  || vtkMRMLMarkupsDisplayNode::SafeDownCast(node))
-  {
-  return 0.5;
-  }
-else if (node->IsA("vtkMRMLAnnotationFiducialNode"))
-  {
-  // The module cannot directly edit this type of node but can convert it
-  return 0.1;
-  }
-else
-  {
-  return 0.0;
-  }
+  if (node != nullptr && node->GetHideFromEditors())
+    {
+    // we only allow editing of visible nodes in this module
+    return 0.0;
+    }
+  if (vtkMRMLMarkupsNode::SafeDownCast(node)
+    || vtkMRMLMarkupsDisplayNode::SafeDownCast(node))
+    {
+    return 0.5;
+    }
+  else if (node->IsA("vtkMRMLAnnotationFiducialNode"))
+    {
+    // The module cannot directly edit this type of node but can convert it
+    return 0.1;
+    }
+  else
+    {
+    return 0.0;
+    }
 }
 
 //-----------------------------------------------------------------------------

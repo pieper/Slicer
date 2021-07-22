@@ -24,6 +24,7 @@
 
 // QtGUI includes
 #include "qSlicerApplication.h"
+#include "qSlicerExtensionsManagerModel.h"
 #include "qSlicerModuleSelectorToolBar.h"
 #include "qSlicerRelativePathMapper.h"
 #include "qSlicerSettingsExtensionsPanel.h"
@@ -64,7 +65,15 @@ void qSlicerSettingsExtensionsPanelPrivate::init()
 
   // Default values
   this->ExtensionsManagerEnabledCheckBox->setChecked(true);
-  this->ExtensionsServerUrlLineEdit->setText("http://slicer.kitware.com/midas3");
+  if (app->extensionsManagerModel()->serverAPI() == qSlicerExtensionsManagerModel::Midas_v1)
+    {
+    this->ExtensionsServerUrlLineEdit->setText("http://slicer.kitware.com/midas3");
+    this->ExtensionsFrontendServerUrlLineEdit->setText("http://slicer.kitware.com/midas3/slicerappstore");
+    }
+  else
+    {
+    qWarning() << Q_FUNC_INFO << " failed: missing implementation for serverAPI" << app->extensionsManagerModel()->serverAPI();
+    }
   this->ExtensionsInstallPathButton->setDirectory(app->defaultExtensionsInstallPath());
 #ifdef Q_OS_MAC
   this->ExtensionsInstallPathButton->setDisabled(true);
@@ -76,6 +85,10 @@ void qSlicerSettingsExtensionsPanelPrivate::init()
                       "Enable/Disable extensions manager", ctkSettingsPanel::OptionRequireRestart,
                       app->revisionUserSettings());
   q->registerProperty("Extensions/ServerUrl", this->ExtensionsServerUrlLineEdit,
+                      "text", SIGNAL(textChanged(QString)),
+                      QString(), ctkSettingsPanel::OptionNone,
+                      app->revisionUserSettings());
+  q->registerProperty("Extensions/FrontendServerUrl", this->ExtensionsFrontendServerUrlLineEdit,
                       "text", SIGNAL(textChanged(QString)),
                       QString(), ctkSettingsPanel::OptionNone,
                       app->revisionUserSettings());
@@ -92,6 +105,8 @@ void qSlicerSettingsExtensionsPanelPrivate::init()
                    q, SLOT(onExtensionsManagerEnabled(bool)));
   QObject::connect(this->ExtensionsServerUrlLineEdit, SIGNAL(textChanged(QString)),
                    q, SIGNAL(extensionsServerUrlChanged(QString)));
+  QObject::connect(this->ExtensionsFrontendServerUrlLineEdit, SIGNAL(textChanged(QString)),
+                   q, SIGNAL(extensionsFrontendServerUrlChanged(QString)));
   QObject::connect(this->ExtensionsInstallPathButton, SIGNAL(directoryChanged(QString)),
                    q, SLOT(onExtensionsPathChanged(QString)));
   QObject::connect(this->OpenExtensionsManagerPushButton, SIGNAL(clicked()),

@@ -119,6 +119,26 @@ QIcon qSlicerSubjectHierarchyAbstractPlugin::visibilityIcon(int visible)
 }
 
 //---------------------------------------------------------------------------
+bool qSlicerSubjectHierarchyAbstractPlugin::canEditProperties(vtkIdType itemID)
+{
+  vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
+  if (!shNode)
+    {
+    qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
+    return false;
+    }
+  vtkMRMLNode* node = shNode->GetItemDataNode(itemID);
+  if (!node)
+    {
+    // default implementation can only edit associated nodes
+    return false;
+    }
+  double confidence = 0.0;
+  QString moduleForEditProperties = qSlicerApplication::application()->nodeModule(node, &confidence);
+  return !moduleForEditProperties.isEmpty() && confidence > 0.0;
+}
+
+//---------------------------------------------------------------------------
 void qSlicerSubjectHierarchyAbstractPlugin::editProperties(vtkIdType itemID)
 {
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
@@ -406,4 +426,15 @@ bool qSlicerSubjectHierarchyAbstractPlugin::showItemInView(vtkIdType itemID, vtk
     displayNode->SetVisibility3D(true);
     }
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(QAction* action, int section, int weight/*=0*/, double weightAdjustment/*=0.0*/)
+{
+  if (!action)
+    {
+    qWarning() << Q_FUNC_INFO << " failed: invalid action";
+    return;
+    }
+  action->setProperty("section", section + weight * 0.01 + weightAdjustment * 0.0001);
 }

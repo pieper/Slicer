@@ -31,6 +31,7 @@
 #include "vtkMRMLCrosshairDisplayableManager.h"
 #include "vtkMRMLCrosshairNode.h"
 #include "vtkMRMLInteractionEventData.h"
+#include "vtkMRMLInteractionNode.h"
 #include "vtkMRMLScene.h"
 #include "vtkMRMLViewNode.h"
 
@@ -41,6 +42,7 @@ vtkMRMLCameraWidget::vtkMRMLCameraWidget()
 {
   this->MotionFactor = 10.0;
   this->MouseWheelMotionFactor = 1.0;
+  this->CameraTiltLocked = false;
 
   this->StartEventPosition[0] = 0.0;
   this->StartEventPosition[1] = 0.0;
@@ -94,6 +96,9 @@ vtkMRMLCameraWidget::vtkMRMLCameraWidget()
   this->SetKeyboardEventTranslation(WidgetStateIdle, vtkEvent::NoModifier, 0, 0, "plus", WidgetEventCameraZoomIn);
   this->SetKeyboardEventTranslation(WidgetStateIdle, vtkEvent::NoModifier, 0, 0, "minus", WidgetEventCameraZoomOut);
 
+  // Toggle tiltLock
+  this->SetKeyboardEventTranslation(WidgetStateIdle, vtkEvent::ControlModifier, 0, 0, "b", WidgetEventToggleCameraTiltLock);
+
   // Reset camera
 
   this->SetKeyboardEventTranslation(WidgetStateIdle, vtkEvent::NoModifier, 0, 0, "KP_0", WidgetEventCameraReset);
@@ -139,6 +144,9 @@ vtkMRMLCameraWidget::vtkMRMLCameraWidget()
 
   // Set cursor position
   this->SetEventTranslation(WidgetStateIdle, vtkCommand::MouseMoveEvent, vtkEvent::ShiftModifier, WidgetEventSetCrosshairPosition);
+
+  // Context menu
+  this->SetEventTranslation(WidgetStateIdle, vtkMRMLInteractionEventData::RightButtonClickEvent, vtkEvent::NoModifier, WidgetEventMenu);
 }
 
 //----------------------------------------------------------------------------------
@@ -297,6 +305,10 @@ bool vtkMRMLCameraWidget::ProcessInteractionEvent(vtkMRMLInteractionEventData* e
       this->CameraNode->RotateAround(vtkMRMLCameraNode::S, true);
       break;
 
+    case WidgetEventToggleCameraTiltLock:
+        this->CameraTiltLocked = !this->CameraTiltLocked;
+        break;
+
     case WidgetEventCameraReset:
       this->SaveStateForUndo();
       this->CameraNode->Reset(true, true, true, this->Renderer);
@@ -378,12 +390,20 @@ bool vtkMRMLCameraWidget::ProcessInteractionEvent(vtkMRMLInteractionEventData* e
     case WidgetEventTouchPanTranslate:
       this->ProcessTouchCameraTranslate(eventData);
       break;
+    case WidgetEventMenu:
+      processedEvent = this->ProcessWidgetMenu(eventData);
+      break;
 
     case WidgetEventSetCrosshairPosition:
       // Event is handled in CanProcessInteractionEvent
       break;
     default:
       processedEvent = false;
+    }
+
+  if (!processedEvent)
+    {
+    processedEvent = this->ProcessButtonClickEvent(eventData);
     }
 
   if (processedEvent)
@@ -457,7 +477,7 @@ bool vtkMRMLCameraWidget::ProcessStartMouseDrag(vtkMRMLInteractionEventData* eve
 }
 
 //-------------------------------------------------------------------------
-bool vtkMRMLCameraWidget::ProcessEndMouseDrag(vtkMRMLInteractionEventData* vtkNotUsed(eventData))
+bool vtkMRMLCameraWidget::ProcessEndMouseDrag(vtkMRMLInteractionEventData* eventData)
 {
   if (this->Renderer && this->Renderer->GetRenderWindow() && this->Renderer->GetRenderWindow()->GetInteractor())
     {
@@ -476,7 +496,10 @@ bool vtkMRMLCameraWidget::ProcessEndMouseDrag(vtkMRMLInteractionEventData* vtkNo
     return false;
     }
   this->SetWidgetState(WidgetStateIdle);
-  return true;
+
+  // only claim this as processed if the mouse was moved (this lets the event interpreted as button click)
+  bool processedEvent = eventData->GetMouseMovedSinceButtonDown();
+  return processedEvent;
 }
 
 //----------------------------------------------------------------------------------
@@ -595,8 +618,15 @@ bool vtkMRMLCameraWidget::ProcessRotate(vtkMRMLInteractionEventData* eventData)
 
   bool wasCameraNodeModified = this->CameraModifyStart();
 
-  camera->Azimuth(rxf);
-  camera->Elevation(ryf);
+  if (this->CameraTiltLocked == true)
+    {
+    camera->Azimuth(rxf);
+    }
+  else
+    {
+    camera->Azimuth(rxf);
+    camera->Elevation(ryf);
+    }
   camera->OrthogonalizeViewUp();
 
   this->CameraModifyEnd(wasCameraNodeModified, true, true);
@@ -998,4 +1028,38 @@ void vtkMRMLCameraWidget::SaveStateForUndo()
     return;
     }
   this->GetCameraNode()->GetScene()->SaveStateForUndo();
+}
+
+//-------------------------------------------------------------------------
+bool vtkMRMLCameraWidget::ProcessWidgetMenu(vtkMRMLInteractionEventData* eventData)
+{
+  if (this->WidgetState != WidgetStateIdle)
+    {
+    return false;
+    }
+  if (!this->GetCameraNode() || !this->GetCameraNode()->GetScene())
+    {
+    return false;
+    }
+  // This widget has no representation, so we cannot use this->GetInteractionNode().
+  vtkMRMLAbstractViewNode* viewNode = eventData->GetViewNode();
+  if (!viewNode)
+    {
+    return false;
+    }
+  vtkMRMLInteractionNode* interactionNode = viewNode->GetInteractionNode();
+  if (!interactionNode)
+    {
+    return false;
+    }
+
+  vtkNew<vtkMRMLInteractionEventData> pickEventData;
+  pickEventData->SetType(vtkMRMLInteractionNode::ShowViewContextMenuEvent);
+  pickEventData->SetViewNode(viewNode);
+  if (pickEventData->IsDisplayPositionValid())
+    {
+    pickEventData->SetDisplayPosition(eventData->GetDisplayPosition());
+    }
+  interactionNode->ShowViewContextMenu(pickEventData);
+  return true;
 }

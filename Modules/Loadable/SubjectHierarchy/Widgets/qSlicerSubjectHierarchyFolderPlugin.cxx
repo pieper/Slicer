@@ -92,13 +92,19 @@ void qSlicerSubjectHierarchyFolderPluginPrivate::init()
   Q_Q(qSlicerSubjectHierarchyFolderPlugin);
 
   this->CreateFolderUnderSceneAction = new QAction("Create new folder",q);
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->CreateFolderUnderSceneAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionFolder, 5);
   QObject::connect(this->CreateFolderUnderSceneAction, SIGNAL(triggered()), q, SLOT(createFolderUnderScene()));
 
   this->CreateFolderUnderNodeAction = new QAction("Create child folder",q);
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->CreateFolderUnderNodeAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionFolder, 6);
   QObject::connect(this->CreateFolderUnderNodeAction, SIGNAL(triggered()), q, SLOT(createFolderUnderCurrentNode()));
 
   this->ApplyColorToBranchAction = new QAction("Apply color to all children",q);
   this->ApplyColorToBranchAction->setToolTip("If on, then children items will inherit the display properties (e.g. color or opacity) set to the folder");
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->ApplyColorToBranchAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionFolder, 7);
   QObject::connect(this->ApplyColorToBranchAction, SIGNAL(toggled(bool)), q, SLOT(onApplyColorToBranchToggled(bool)));
   this->ApplyColorToBranchAction->setCheckable(true);
 }
@@ -166,6 +172,14 @@ double qSlicerSubjectHierarchyFolderPlugin::canOwnSubjectHierarchyItem(vtkIdType
   if (!shNode)
     {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
+    return 0.0;
+    }
+
+  if (itemID == shNode->GetSceneItemID())
+    {
+    // Do not allow to assign display properties to the scene item,
+    // because the scene item is not always visible and overall it is not prepared
+    // to be used as a regular folder.
     return 0.0;
     }
 
@@ -256,7 +270,7 @@ void qSlicerSubjectHierarchyFolderPlugin::setDisplayVisibility(vtkIdType itemID,
   if (!displayNode)
     {
     // No display node can be associated with this item
-    // (for exmple, it is a scripted module node)
+    // (for example, it is a scripted module node)
     return;
     }
   displayNode->SetVisibility(visible);

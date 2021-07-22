@@ -51,7 +51,7 @@ for groupIndex in range(n.GetNumberOfParameterGroups()):
       n.GetParameterTag(groupIndex, parameterIndex),n.GetParameterLabel(groupIndex, parameterIndex)))
 ```
 
-### Passing markups iducials to CLIs
+### Passing markups fiducials to CLIs
 
 ```python
 import SampleData
@@ -66,7 +66,7 @@ fiducialNode.SetName('Seed Point')
 fiducialNode.Initialize(slicer.mrmlScene)
 fiducialsList = getNode('Fiducials List')
 
-params = {'inputVolume': head.GetID(), 'outputVolume': headLabel.GetID(), 'seed' : fiducialsList.GetID(), 'iterations' : 2} 
+params = {'inputVolume': head.GetID(), 'outputVolume': headLabel.GetID(), 'seed' : fiducialsList.GetID(), 'iterations' : 2}
 
 cliNode = slicer.cli.runSync(slicer.modules.simpleregiongrowingsegmentation, None, params)
 ```
@@ -113,7 +113,7 @@ cliNode.AddObserver('ModifiedEvent', onProcessingStatusUpdate)
 
 ## How to find a Python function for any Slicer features
 
-All features of Slicer are available via Python scripts. [Slicer script repository](https://www.slicer.org/wiki/Documentation/Nightly/ScriptRepository) contains examples for the most commonly used features.
+All features of Slicer are available via Python scripts. [Slicer script repository](../script_repository.md) contains examples for the most commonly used features.
 
 To find out what Python commands correspond to a feature that is visible on the graphical user interface, search in Slicer's source code where that text occurs, find the corresponding widget or action name, then search for that widget or action name in the source code to find out what commands it triggers.
 
@@ -134,7 +134,7 @@ sliceNode.SetSliceResolutionMode(slicer.vtkMRMLSliceNode.SliceResolutionMatchVol
 
 ## How to type file paths in Python
 
-New Python users on Windows often suprised when they enter a path that contain backslash character (`\`) and it just does not work. Since backslash (`\`) is an escape character in Python, it requires special attention when used in string literals. For example, this is incorrect:
+New Python users on Windows often surprised when they enter a path that contain backslash character (`\`) and it just does not work. Since backslash (`\`) is an escape character in Python, it requires special attention when used in string literals. For example, this is incorrect:
 
     somePath = "F:\someFolder\myfile.nrrd"  # incorrect (\s and \m are interpreted as special characters)
 

@@ -154,6 +154,26 @@ Segmentation can only be shown in 3D if closed surface representation (or other 
 segmentation.CreateClosedSurfaceRepresentation()
 ```
 
+### Modify segmentation display options
+
+```python
+segmentation = getNode('Segmentation')
+segmentID = 'Segment_1'
+
+displayNode = segmentation.GetDisplayNode()
+displayNode.SetOpacity3D(0.4)  # Set overall opacity of the segmentation
+displayNode.SetSegmentOpacity3D(segmentID, 0.2)  # Set opacity of a single segment
+
+# Segment color is not just a display property, but it is stored in the segment itself (and stored in the segmentation file)
+segment = segmentation.GetSegmentation().GetSegment(segmentID)
+segment.SetColor(1, 0, 0)  # red
+
+# In very special cases (for example, when a segment's color only need to be changed in a specific view)
+# the segment color can be overridden in the display node.
+# This is not recommended for general use.
+displayNode.SetSegmentOverrideColor(segmentID, 0, 0, 1)  # blue
+```
+
 ### Get a representation of a segment
 
 Access binary labelmap stored in a segmentation node (without exporting it to a volume node) - if it does not exist, it will return None:
@@ -246,6 +266,41 @@ Show list of all available effect names:
 ```python
 segmentEditorWidget = slicer.modules.segmenteditor.widgetRepresentation().self().editor
 print(segmentEditorWidget.availableEffectNames())
+```
+
+### Read and write a segment as a numpy array
+
+This example shows how to read and write voxels of binary labelmap representation of a segment as a numpy array.
+
+```python
+volumeNode = getNode('MRHead')
+segmentationNode = getNode('Segmentation')
+segmentId = segmentationNode.GetSegmentation().GetSegmentIdBySegmentName('Segment_1')
+
+# Get segment as numpy array
+segmentArray = slicer.util.arrayFromSegmentBinaryLabelmap(segmentationNode, segmentId, volumeNode)
+
+# Modify the segmentation
+segmentArray[:] = 0  # clear the segmentation
+segmentArray[ slicer.util.arrayFromVolume(volumeNode) > 80 ] = 1  # create segment by simple thresholding of an image
+segmentArray[20:80, 40:90, 30:70] = 1  # fill a rectangular region using numpy indexing
+slicer.util.updateSegmentBinaryLabelmapFromArray(segmentArray, segmentationNode, segmentId, volumeNode)
+```
+
+Segment arrays can also be used in numpy operations to read/write the corresponding region of a volume:
+
+```python
+# Get voxels of a volume within the segmentation and compute some statistics
+volumeArray = slicer.util.arrayFromVolume(volumeNode)
+volumeVoxelsInSegmentArray = volumeArray[ segmentArray > 0 ]
+print(f"Lowest voxel value in segment: {volumeVoxelsInSegmentArray.min()}")
+print(f"Highest voxel value in segment: {volumeVoxelsInSegmentArray.max()}")
+
+# Modify the volume
+# For example, increase the contrast inside the selected segment by a factor of 4x:
+volumeArray[ segmentArray > 0 ] = volumeArray[ segmentArray > 0 ] * 4
+# Indicate that we have completed modifications on the volume array
+slicer.util.arrayFromVolumeModified(volumeNode)
 ```
 
 ### Get centroid of a segment in world (RAS) coordinates
@@ -387,6 +442,7 @@ Examples:
 - [create fat/muscle/bone segment by thresholding and report volume of each segment](https://gist.github.com/lassoan/5ad51c89521d3cd9c5faf65767506b37)
 - [segment cranial cavity automatically in dry bone skull CT](https://gist.github.com/lassoan/4d0b94bda52d5b099432e424e03aa2b1)
 - [remove patient table from CT image](https://gist.github.com/lassoan/84d1f9a093dbb6a46c0fcc89279d8088)
+- [fill holes inside bones](https://gist.github.com/lassoan/0f45db8bae792ea19ccad36ceefbf52d)
 
 Description of effect parameters are available [here](modules/segmenteditor.md#effect-parameters).
 

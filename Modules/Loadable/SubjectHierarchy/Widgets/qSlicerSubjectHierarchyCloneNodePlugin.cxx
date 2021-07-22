@@ -71,6 +71,8 @@ void qSlicerSubjectHierarchyCloneNodePluginPrivate::init()
 
   this->CloneItemAction = new QAction("Clone",q);
   this->CloneItemAction->setToolTip("Clone this item and its data node if any along with display and storage options");
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->CloneItemAction,
+    qSlicerSubjectHierarchyAbstractPlugin::SectionNode, 0.5); // put it right after "Rename" action
   QObject::connect(this->CloneItemAction, SIGNAL(triggered()), q, SLOT(cloneCurrentItem()));
 }
 
@@ -119,6 +121,13 @@ void qSlicerSubjectHierarchyCloneNodePlugin::showContextMenuActionsForItem(vtkId
   if (!itemID || itemID == shNode->GetSceneItemID())
     {
     // There are no scene actions in this plugin
+    return;
+    }
+
+  vtkIdType parentItemID = shNode->GetItemParent(itemID);
+  if (parentItemID && shNode->IsItemVirtualBranchParent(parentItemID))
+    {
+    // This generic plugin does not know how to clone virtual branch items
     return;
     }
 

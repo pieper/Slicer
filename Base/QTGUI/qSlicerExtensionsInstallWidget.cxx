@@ -60,11 +60,11 @@ qSlicerExtensionsInstallWidgetPrivate::~qSlicerExtensionsInstallWidgetPrivate()
 // --------------------------------------------------------------------------
 QUrl qSlicerExtensionsInstallWidgetPrivate::extensionsListUrl()
 {
-     QUrl url = this->ExtensionsManagerModel->serverUrl();
-     url.setPath(url.path() + "/slicerappstore");
+   QUrl url = this->ExtensionsManagerModel->frontendServerUrl();
+   int serverAPI = this->ExtensionsManagerModel->serverAPI();
 
-     //HS Uncomment the following line for debugging and comment above
-     //QUrl url("http://10.171.2.133:8080/slicerappstore");
+   if (serverAPI == qSlicerExtensionsManagerModel::Midas_v1)
+     {
      QUrlQuery urlQuery;
      urlQuery.setQueryItems(
         QList<QPair<QString, QString> >()
@@ -72,10 +72,14 @@ QUrl qSlicerExtensionsInstallWidgetPrivate::extensionsListUrl()
         << QPair<QString, QString>("os", this->SlicerOs)
         << QPair<QString, QString>("arch", this->SlicerArch)
         << QPair<QString, QString>("revision", this->SlicerRevision));
-        //HS Uncomment the following line for debugging and comment above
-        //<< QPair<QString, QString>("revision", "19291"));
      url.setQuery(urlQuery);
-     return url;
+     }
+   else
+     {
+     qWarning() << Q_FUNC_INFO << " failed: missing implementation for serverAPI" << serverAPI;
+     }
+
+   return url;
 }
 
 // --------------------------------------------------------------------------
@@ -288,7 +292,15 @@ void qSlicerExtensionsInstallWidget::onExtensionInstalled(const QString& extensi
   Q_D(qSlicerExtensionsInstallWidget);
   if(d->BrowsingEnabled)
     {
-    this->evalJS(QString("midas.slicerappstore.setExtensionButtonState('%1', 'ScheduleUninstall')").arg(extensionName));
+    int serverAPI = d->ExtensionsManagerModel->serverAPI();
+    if (serverAPI == qSlicerExtensionsManagerModel::Midas_v1)
+      {
+      this->evalJS(QString("midas.slicerappstore.setExtensionButtonState('%1', 'ScheduleUninstall')").arg(extensionName));
+      }
+    else
+      {
+      qWarning() << Q_FUNC_INFO << " failed: missing implementation for serverAPI" << serverAPI;
+      }
     }
 }
 
@@ -298,7 +310,15 @@ void qSlicerExtensionsInstallWidget::onExtensionScheduledForUninstall(const QStr
   Q_D(qSlicerExtensionsInstallWidget);
   if(d->BrowsingEnabled)
     {
-    this->evalJS(QString("midas.slicerappstore.setExtensionButtonState('%1', 'CancelScheduledForUninstall')").arg(extensionName));
+    int serverAPI = d->ExtensionsManagerModel->serverAPI();
+    if (serverAPI == qSlicerExtensionsManagerModel::Midas_v1)
+      {
+      this->evalJS(QString("midas.slicerappstore.setExtensionButtonState('%1', 'CancelScheduledForUninstall')").arg(extensionName));
+      }
+    else
+      {
+      qWarning() << Q_FUNC_INFO << " failed: missing implementation for serverAPI" << serverAPI;
+      }
     }
 }
 
@@ -341,7 +361,15 @@ void qSlicerExtensionsInstallWidget::onMessageLogged(const QString& text, ctkErr
     delay = "10000";
     state = "error";
     }
-  this->evalJS(QString("midas.createNotice('%1', %2, '%3')").arg(text).arg(delay).arg(state));
+  int serverAPI = d->ExtensionsManagerModel->serverAPI();
+  if (serverAPI == qSlicerExtensionsManagerModel::Midas_v1)
+    {
+    this->evalJS(QString("midas.createNotice('%1', %2, '%3')").arg(text).arg(delay).arg(state));
+    }
+  else
+    {
+    qWarning() << Q_FUNC_INFO << " failed: missing implementation for serverAPI" << serverAPI;
+    }
 }
 
 // --------------------------------------------------------------------------
@@ -376,6 +404,6 @@ void qSlicerExtensionsInstallWidget::onLoadFinished(bool ok)
 bool qSlicerExtensionsInstallWidget::acceptNavigationRequest(const QUrl & url, QWebEnginePage::NavigationType type, bool isMainFrame)
 {
   Q_D(qSlicerExtensionsInstallWidget);
-  d->InternalHosts = QStringList() << this->extensionsManagerModel()->serverUrl().host();
+  d->InternalHosts = QStringList() << this->extensionsManagerModel()->frontendServerUrl().host();
   return Superclass::acceptNavigationRequest(url, type, isMainFrame);
 }

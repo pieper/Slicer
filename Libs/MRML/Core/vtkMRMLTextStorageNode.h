@@ -40,11 +40,11 @@ public:
   /// Return true if the node can be read in.
   bool CanReadInReferenceNode(vtkMRMLNode* refNode) override;
 
-  /// Return true if the node can be written by using thie writer.
+  /// Return true if the node can be written by using the writer.
   bool CanWriteFromReferenceNode(vtkMRMLNode* refNode) override;
   int WriteDataInternal(vtkMRMLNode* refNode) override;
 
-  /// Return a default file extension for writting
+  /// Return a default file extension for writing
   const char* GetDefaultWriteFileExtension() override;
 
 protected:

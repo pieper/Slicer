@@ -8,7 +8,7 @@ Markups fiducials can be loaded from file:
 slicer.util.loadMarkupsFiducialList("/path/to/list/F.fcsv")
 ```
 
-### Adding Fiducials Programatically
+### Adding Fiducials Programmatically
 
 Markups fiducials can be added to the currently active list from the python console by using the following module logic command:
 
@@ -249,7 +249,7 @@ ShowAngle()
 
 ### Measure angle between two markup lines
 
-Measure angle between two markup line nodes. Whenever either line is moved, the updated angle is printed on the console.
+Measure angle between two markup line nodes that are already added to the scene and have the names `L` and `L_1`. Whenever either line is moved, the updated angle is printed on the console. This is for illustration only, for standard angle measurements angle markups can be used.
 
 ```python
 lineNodeNames = ["L", "L_1"]

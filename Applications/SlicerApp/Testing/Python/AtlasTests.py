@@ -183,7 +183,7 @@ class AtlasTestsTest(ScriptedLoadableModuleTest):
     """ Perform the actual atlas test.
     This includes: download and load the given data, touch all
     model hierarchies, and restore all scene views.
-    downloads : dictionnary of URIs and fileNames
+    downloads : dictionary of URIs and fileNames
     testVolumePattern : volume name/id that is tested for valid load
     """
 
@@ -226,10 +226,10 @@ class AtlasTestsTest(ScriptedLoadableModuleTest):
         else:
           hierarchyManipulating += 1
           self.delayDisplay("Manipulating model hierarchy " + mh.GetName() + " (" + str(hierarchyManipulating) + "/" + str(numModelHierarchiesToManipulate) + ")")
-          hierarchyOriginalColour = mhd.GetColor()
+          hierarchyOriginalColor = mhd.GetColor()
           hierarchyOriginalVisibility = mhd.GetVisibility()
           hierarchyOriginalExpanded = mh.GetExpanded()
-          # collapse and change the colour on the hierarchy to full red
+          # collapse and change the color on the hierarchy to full red
           mh.SetExpanded(0)
           self.delayDisplay("Model hierarchy " + mh.GetName() + ": expanded = false")
           mhd.SetColor(1,0,0)
@@ -237,12 +237,12 @@ class AtlasTestsTest(ScriptedLoadableModuleTest):
           # set the collapsed visibility to 0
           mhd.SetVisibility(0)
           self.delayDisplay("Model hierarchy " + mh.GetName() + ": visibility = off")
-          # expand, should see all models in correct colour
+          # expand, should see all models in correct color
           mh.SetExpanded(1)
           self.delayDisplay("Model hierarchy " + mh.GetName() + ": expanded = true")
           # reset the hierarchy
           mhd.SetVisibility(hierarchyOriginalVisibility)
-          mhd.SetColor(hierarchyOriginalColour)
+          mhd.SetColor(hierarchyOriginalColor)
           mh.SetExpanded(hierarchyOriginalExpanded)
 
     # go to the scene views module

@@ -18,7 +18,7 @@ Medical Reality Modeling Language (MRML) is a data model developed to represent 
 
 ### Basic MRML node types
 
-- **Data nodes** store basic properties of a data set. Since the same data set can be displayed in different ways (even within the same application, you may want to show the same data set differently in each view), display properties are not stored in the data node. Similarly, the same data set can be stored in various file formats, therefore file storage properties are not stored in a data node. Data nodes are typically thin wrappers over VTK objects, such as vtkPolyData, vtkImageData, vtkTable. Most important Slicer core data nodes are the followings:
+- **Data nodes** store basic properties of a data set. Since the same data set can be displayed in different ways (even within the same application, you may want to show the same data set differently in each view), display properties are not stored in the data node. Similarly, the same data set can be stored in various file formats, therefore file storage properties are not stored in a data node. Data nodes are typically thin wrappers over VTK objects, such as vtkPolyData, vtkImageData, vtkTable. Most important Slicer core data nodes are the following:
   - **Volume** ([vtkMRMLVolume](http://apidocs.slicer.org/master/classvtkMRMLVolumeNode.html) and its subclasses): stores a 3D image. Each voxel of a volume may be a scalar (to store images with continuous grayscale values, such as a CT image), label (to store discrete labels, such as a segmentation result), vector (for storing displacement fields or RGB color images), or tensor (MRI diffusion images). 2D image volumes are represented as single-slice 3D volumes. 4D volumes are stored in sequence nodes (vtkMRMLSequenceNode).
   - **Model** ([vtkMRMLModelNode](http://apidocs.slicer.org/master/classvtkMRMLModelNode.html)): stores a surface mesh (polygonal elements, points, lines, etc.) or volumetric mesh (tetrahedral, wedge elements, unstructured grid, etc.)
   - **Segmentation** ([vtkMRMLSegmentationNode](http://apidocs.slicer.org/master/classvtkMRMLSegmentationNode.html)): complex data node that can store image segmentation (also known as contouring, labeling). It can store multiple representations internally, for example it can store both binary labelmap image and closed surface mesh.
@@ -69,8 +69,8 @@ For more details, see [this page](https://www.slicer.org/wiki/Documentation/Nigh
 - Using `AddObserver()`/`RemoveObserver()` methods is tedious and error-prone, therefore it is recommended to use [EventBroker](https://www.slicer.org/wiki/Slicer3:EventBroker) and vtkObserverManager helper class, macros, and callback methods instead.
   - MRML observer macros are defined in Libs/MRML/vtkMRMLNode.h
   - vtkSetMRMLObjectMacro - registers MRML node with another vtk object (another MRML node, Logic or GUI). No observers added.
-  - vtkSetAndObserveMRMLObjectMacro - registers MRML node and adds an observer for vtkCommand::ModifyEvent. 
-  - vtkSetAndObserveMRMLObjectEventsMacro - registers MRML node and adds an observer for a specified set of events. 
+  - vtkSetAndObserveMRMLObjectMacro - registers MRML node and adds an observer for vtkCommand::ModifyEvent.
+  - vtkSetAndObserveMRMLObjectEventsMacro - registers MRML node and adds an observer for a specified set of events.
   - `SetAndObserveMRMLScene()` and `SetAndObserveMRMLSceneEvents()` methods are used in GUI and Logic to observe Modify, NewScene, NodeAdded, etc. events.
   - `ProcessMRMLEvents()` method should be implemented in MRML nodes, Logic, and GUI classes in order to process events from the observed nodes.
 
@@ -81,31 +81,31 @@ For more details, see [this page](https://www.slicer.org/wiki/Documentation/Nigh
 MRML Scene provides Undo/Redo mechanism that restores a previous state of the scene and individual nodes. By default, undo/redo is disabled and not displayed on the user interface, as it increased memory usage and was not tested thoroughly.
 
 Basic mechanism:
-- Undo/redo is based on saving and restoring the state of MRML nodes in the Scene. 
-- MRML scene can save snapshot of all nodes into a special Undo and Redo stacks. 
-- The Undo and Redo stacks store copies of nodes that have changed from the previous snapshot. The node that have not changed are stored by a reference (pointer). 
-- When an Undo is called on the scene, the current state of Undo stack is copied into the current scene and also into Redo stack. 
+- Undo/redo is based on saving and restoring the state of MRML nodes in the Scene.
+- MRML scene can save snapshot of all nodes into a special Undo and Redo stacks.
+- The Undo and Redo stacks store copies of nodes that have changed from the previous snapshot. The node that have not changed are stored by a reference (pointer).
+- When an Undo is called on the scene, the current state of Undo stack is copied into the current scene and also into Redo stack.
 - All Undoable operations must store their data as MRML nodes
 
-Developer controls at what point the snapshot is saved by calling `SaveStateForUndo()` method on the MRML scene. `SaveStateForUndo()` saves the state of all nodes in the scene. Iy should be called in GUI/Logic classes before changing the state of MRML nodes. This is usually done in the ProcessGUIEvents method that processes events from the user interactions with GUI widgets. `SaveStateForUndo()` should not be called while processing transient events such as continuous events sent by KW UI while dragging a slider (for example vtkKWScale::ScaleValueStartChangingEvent). 
+Developer controls at what point the snapshot is saved by calling `SaveStateForUndo()` method on the MRML scene. `SaveStateForUndo()` saves the state of all nodes in the scene. Iy should be called in GUI/Logic classes before changing the state of MRML nodes. This is usually done in the ProcessGUIEvents method that processes events from the user interactions with GUI widgets. `SaveStateForUndo()` should not be called while processing transient events such as continuous events sent by KW UI while dragging a slider (for example vtkKWScale::ScaleValueStartChangingEvent).
 
 The following methods on the MRML scene are used to manage Undo/Redo stacks:
 
 - `vtkMRMLScene::Undo()` restores the previously saved state of the MRML scene.
 - `vtkMRMLScene::Redo()` restores the previously undone state of the MRML scene.
-- `vtkMRMLScene::SetUndoOff()` ignores following SaveStateForUndo calls (usefull when making multiple changes to the scene/nodes that does not need to be undone). 
+- `vtkMRMLScene::SetUndoOff()` ignores following SaveStateForUndo calls (useful when making multiple changes to the scene/nodes that does not need to be undone).
 - `vtkMRMLScene::SetUndoOn()` enables following SaveStateForUndo calls.
 - `vtkMRMLScene::ClearUndoStack()` clears the undo history.
 - `vtkMRMLScene::ClearRedoStack()` clears the redo history.
 
 ### Creating Custom MRML Node Classes
 
-- Custom MRML nodes provide persistent storage for the module parameters. 
-- Custom MRML nodes should be registered with the MRML scene using `RegisterNodeClass()` so they can be saved and restored from a scene file. 
-- Classes should implement the following methods: 
-  - `CreateNodeInstance()` similar to VTK New() method only not static. 
-  - `GetNodeTagName()` returns a unique XML tag for this node. 
-  - `ReadXMLAttributes()` reads node attributes from XML file as name-value pairs. 
+- Custom MRML nodes provide persistent storage for the module parameters.
+- Custom MRML nodes should be registered with the MRML scene using `RegisterNodeClass()` so they can be saved and restored from a scene file.
+- Classes should implement the following methods:
+  - `CreateNodeInstance()` similar to VTK New() method only not static.
+  - `GetNodeTagName()` returns a unique XML tag for this node.
+  - `ReadXMLAttributes()` reads node attributes from XML file as name-value pairs.
   - `WriteXML()` writes node attributes to output stream.
   - `Copy()` – copies node attributes.
 
@@ -117,3 +117,75 @@ Another view of [VTK/MRML pipeline for the 2D slice views](https://www.slicer.or
 
 Notes: the MapToWindowLevelColors has no lookup table set, so it maps the scalar volume data to 0,255 with no "color" operation.  This is controlled by the Window/Level settings of the volume display node.  The MapToColors applies the current lookup table to go from 0-255 to full RGBA.
 
+### Layout
+
+A layout manager ([qSlicerLayoutManager][qSlicerLayoutManager-apidoc]) shows or hides layouts:
+
+- It instantiates, shows or hides relevant view widgets.
+- It is associated with a [vtkMRMLLayoutNode][vtkMRMLLayoutNode-apidoc] describing the current layout configuration and ensuring it can be saved and restored.
+- It owns an instance of [vtkMRMLLayoutLogic][vtkMRMLLayoutLogic-apidoc] that controls the layout node and the view nodes in a MRML scene.
+- Pre-defined layouts are described using XML and are registered in `vtkMRMLLayoutLogic::AddDefaultLayouts()`.
+- Developer may register additional layout.
+
+[qSlicerLayoutManager-apidoc]: http://apidocs.slicer.org/master/classqSlicerLayoutManager.html
+[vtkMRMLLayoutNode-apidoc]: http://apidocs.slicer.org/master/classvtkMRMLLayoutNode.html
+[vtkMRMLLayoutLogic-apidoc]: http://apidocs.slicer.org/master/classvtkMRMLLayoutLogic.html
+
+#### Registering a custom layout
+
+See [example in the script repository](script_repository.md#customize-view-layout).
+
+#### Layout XML Format
+
+Layout description may be validated using the following DTD:
+
+```
+<!DOCTYPE layout SYSTEM "https://slicer.org/layout.dtd"
+[
+<!ELEMENT layout (item+)>
+<!ELEMENT item (layout*, view)>
+<!ELEMENT view (property*)>
+<!ELEMENT property (#PCDATA)>
+
+<!ATTLIST layout
+type (horizontal|grid|tab|vertical) #IMPLIED "horizontal"
+split (true|false) #IMPLIED "true" >
+
+<!ATTLIST item
+multiple (true|false) #IMPLIED "false"
+splitSize CDATA #IMPLIED "0"
+row CDATA #IMPLIED "0"
+column CDATA #IMPLIED "0"
+rowspan CDATA #IMPLIED "1"
+colspan CDATA #IMPLIED "1"
+>
+
+<!ATTLIST view
+class CDATA #REQUIRED
+singletontag CDATA #IMPLIED
+horizontalStretch CDATA #IMPLIED "-1"
+verticalStretch CDATA #IMPLIED "-1" >
+
+<!ATTLIST property
+name CDATA #REQUIRED
+action (default|relayout) #REQUIRED >
+
+]>
+```
+
+Notes:
+
+- `layout` element:
+  - `split` attribute applies only to layout of type `horizontal` and `vertical`
+- `item` element:
+  - `row`, `column`, `rowspan` and `colspan` attributes applies only to layout of type `grid`
+  - `splitSize` must be specified only for `layout` element with `split` attribute set to `true`
+- `view` element:
+  - `class` must correspond to a MRML view node class name (e.g `vtkMRMLViewNode`, `vtkMRMLSliceNode` or `vtkMRMLPlotViewNode`)
+  - `singletontag` must always be specified when `multiple` attribute of `item` element is specified.
+- `property` element:
+  - `name` attribute may be set to the following values:
+    - `viewlabel`
+    - `viewcolor`
+    - `viewgroup`
+    - `orientation` applies only if parent `view` element is associated with `class` (or subclass) of type `vtkMRMLSliceNode`

@@ -576,6 +576,13 @@ endif()
     Xml XmlPatterns
     Svg Sql
     )
+
+  # Add the Qt5X11Extras component for Linux systems
+  # This component is needed for building VTK
+  if(UNIX AND NOT APPLE)
+    list(APPEND Slicer_REQUIRED_QT_MODULES X11Extras)
+  endif()
+
   find_package(Qt5 COMPONENTS Core QUIET)
   if(Slicer_BUILD_WEBENGINE_SUPPORT)
     list(APPEND Slicer_REQUIRED_QT_MODULES
@@ -1034,7 +1041,7 @@ configure_file(
 # (2) Automatically by specifying the label 'REMOTE_EXTENSION' when
 #     calling 'Slicer_Remote_Add' from SuperBuild.cmake.
 #
-# (3) Expicitly by configuring the project using the following syntax:
+# (3) Explicitly by configuring the project using the following syntax:
 #  cmake -DSlicer_EXTENSION_SOURCE_DIRS:STRING=/path/to/ExtensionA;/path/to/ExtensionB /path/to/source/Slicer
 #
 

@@ -107,6 +107,7 @@
 #include <vtkSystemInformation.h>
 
 // MRML includes
+#include <vtkMRMLMessageCollection.h>
 #include <vtkMRMLNode.h>
 #include <vtkMRMLScene.h>
 
@@ -636,7 +637,7 @@ void qSlicerApplication::confirmRestart(QString reason)
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerApplication::nodeModule(vtkMRMLNode* node)const
+QString qSlicerApplication::nodeModule(vtkMRMLNode* node, double* confidence/*=nullptr*/)const
 {
   QString mostSuitableModuleName = "Data";
   double mostSuitableModuleConfidence = 0.0;
@@ -677,9 +678,9 @@ QString qSlicerApplication::nodeModule(vtkMRMLNode* node)const
       mostSuitableModuleConfidence = nodeEditableConfidence;
       }
     }
-  if (mostSuitableModuleConfidence == 0.0)
+  if (confidence)
     {
-    qWarning() << "Couldn't find a module for node class" << nodeClassName;
+    *confidence = mostSuitableModuleConfidence;
     }
   return mostSuitableModuleName;
 }
@@ -1257,4 +1258,20 @@ void qSlicerApplication::editNode(vtkObject*, void* callData, unsigned long)
     {
     this->openNodeModule(node);
     }
+}
+
+//------------------------------------------------------------------------------
+bool qSlicerApplication::loadFiles(const QStringList& filePaths, vtkMRMLMessageCollection* userMessagesInput/*=nullptr*/)
+{
+  // Even if the caller does not need messages, we need the message list so that we can display
+  // messages to the user.
+  vtkSmartPointer<vtkMRMLMessageCollection> userMessages = userMessagesInput;
+  if (!userMessages)
+    {
+    userMessages = vtkSmartPointer<vtkMRMLMessageCollection>::New();
+    }
+
+  bool success = Superclass::loadFiles(filePaths, userMessages);
+  qSlicerIOManager::showLoadNodesResultDialog(success, userMessages);
+  return success;
 }

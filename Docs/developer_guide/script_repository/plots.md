@@ -55,6 +55,13 @@ plotChartNode.SetYAxisRange(0, 500000)
 slicer.modules.plots.logic().ShowChartInLayout(plotChartNode)
 ```
 
+### Save a plot as vector graphics (.svg)
+
+```python
+plotView = slicer.app.layoutManager().plotWidget(0).plotView()
+plotView.saveAsSVG("c:/tmp/test.svg")
+```
+
 ### Using matplotlib
 
 Matplotlib may be used from within Slicer, but the default Tk backend locks up and crashes Slicer. However, Matplotlib may still be used through other backends. More details can be found on the [MatPlotLib](http://matplotlib.sourceforge.net/) pages.

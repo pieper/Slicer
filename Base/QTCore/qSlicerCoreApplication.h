@@ -55,6 +55,7 @@ class vtkDataIOManagerLogic;
 class vtkSlicerApplicationLogic;
 class vtkMRMLAbstractLogic;
 class vtkMRMLApplicationLogic;
+class vtkMRMLMessageCollection;
 class vtkMRMLRemoteIOLogic;
 class vtkMRMLScene;
 
@@ -553,9 +554,14 @@ public slots:
   /// \sa setRenderPaused
   virtual void resumeRender() {};
 
+  /// Load files into the application.
+  /// \param userMessages if specified then loading errors are returned via this object.
+  /// \return Returns true on success.
+  virtual bool loadFiles(const QStringList& filePaths, vtkMRMLMessageCollection* userMessages=nullptr);
+
 protected:
 
-  /// Process command line arguments **before** the applicaton event loop is started.
+  /// Process command line arguments **before** the application event loop is started.
   /// \sa handleCommandLineArguments()
   /// \sa qSlicerApplication::startupCompleted()
   virtual void handlePreApplicationCommandLineArguments();
@@ -566,7 +572,7 @@ protected:
 
 protected slots:
 
-  /// Process command line arguments **atfer** the applicaton event loop is started.
+  /// Process command line arguments **atfer** the application event loop is started.
   /// \sa handlePreApplicationCommandLineArguments()
   /// \sa qSlicerApplication::startupCompleted()
   virtual void handleCommandLineArguments();
@@ -608,7 +614,7 @@ protected slots:
 signals:
   void mrmlSceneChanged(vtkMRMLScene* mrmlScene);
 
-  /// Signal is emmited when a url argument is processed with the slicer:// protocol
+  /// Signal is emitted when a url argument is processed with the slicer:// protocol
   /// The url string is emitted with the signal.
   /// Modules can connect to this signal to handle url arguments.
   void urlReceived(QString url);

@@ -239,6 +239,26 @@ qMRMLModelDisplayNodeWidget::qMRMLModelDisplayNodeWidget(QWidget* _parent)
 //------------------------------------------------------------------------------
 qMRMLModelDisplayNodeWidget::~qMRMLModelDisplayNodeWidget() = default;
 
+//---------------------------------------------------------------------------
+void qMRMLModelDisplayNodeWidget::setMRMLScene(vtkMRMLScene* newScene)
+{
+  Q_D(qMRMLModelDisplayNodeWidget);
+
+  if (this->mrmlScene() == newScene)
+    {
+    return;
+    }
+
+  this->Superclass::setMRMLScene(newScene);
+  this->qvtkReconnect(this->mrmlScene(), newScene, vtkMRMLScene::EndBatchProcessEvent,
+    this, SLOT(updateWidgetFromMRML()));
+
+  if (this->mrmlScene())
+    {
+    this->updateWidgetFromMRML();
+    }
+}
+
 //------------------------------------------------------------------------------
 vtkMRMLModelDisplayNode* qMRMLModelDisplayNodeWidget::mrmlModelDisplayNode()const
 {
@@ -781,7 +801,15 @@ void qMRMLModelDisplayNodeWidget::setColor(const QColor& newColor)
   QList<vtkMRMLDisplayNode*> displayNodesInSelection = d->displayNodesFromSelection();
   foreach (vtkMRMLDisplayNode* displayNode, displayNodesInSelection)
     {
-    displayNode->SetColor(newColor.redF(), newColor.greenF(), newColor.blueF());
+    double* oldColorArray = displayNode->GetColor();
+    QColor oldColor = QColor::fromRgbF(oldColorArray[0], oldColorArray[1], oldColorArray[2]);
+    if (oldColor != newColor)
+      {
+      displayNode->SetColor(newColor.redF(), newColor.greenF(), newColor.blueF());
+      // Solid color is set, therefore disable scalar visibility
+      // (otherwise color would come from the scalar value and colormap).
+      displayNode->SetScalarVisibility(false);
+      }
     }
 }
 

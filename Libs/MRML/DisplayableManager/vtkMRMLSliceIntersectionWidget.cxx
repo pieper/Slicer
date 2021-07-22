@@ -19,6 +19,7 @@
 #include "vtkMRMLCrosshairDisplayableManager.h"
 #include "vtkMRMLCrosshairNode.h"
 #include "vtkMRMLInteractionEventData.h"
+#include "vtkMRMLInteractionNode.h"
 #include "vtkMRMLScalarVolumeDisplayNode.h"
 #include "vtkMRMLScene.h"
 #include "vtkMRMLSegmentationDisplayNode.h"
@@ -60,7 +61,7 @@ vtkMRMLSliceIntersectionWidget::vtkMRMLSliceIntersectionWidget()
   this->StartRotationCenter_RAS[0] = 0.0;
   this->StartRotationCenter_RAS[1] = 0.0;
   this->StartRotationCenter_RAS[2] = 0.0;
-  this->StartRotationCenter_RAS[3] = 1.0; // to allow easy homogeneous tranformations
+  this->StartRotationCenter_RAS[3] = 1.0; // to allow easy homogeneous transformations
 
   this->StartActionFOV[0] = 0.;
   this->StartActionFOV[1] = 0.;
@@ -179,6 +180,9 @@ void vtkMRMLSliceIntersectionWidget::UpdateInteractionEventMapping()
     this->SetEventTranslation(WidgetStateTouchGesture, vtkCommand::PanEvent, vtkEvent::AnyModifier, WidgetEventTouchTranslateSlice);
     this->SetEventTranslation(WidgetStateTouchGesture, vtkCommand::EndPanEvent, vtkEvent::AnyModifier, WidgetEventTouchGestureEnd);
     }
+
+  // Context menu
+  this->SetEventTranslation(WidgetStateIdle, vtkMRMLInteractionEventData::RightButtonClickEvent, vtkEvent::NoModifier, WidgetEventMenu);
 }
 
 //----------------------------------------------------------------------
@@ -432,10 +436,17 @@ bool vtkMRMLSliceIntersectionWidget::ProcessInteractionEvent(vtkMRMLInteractionE
       this->SliceLogic->GetMRMLScene()->SaveStateForUndo();
       this->CycleVolumeLayer(LayerForeground, 1);
       break;
-
+    case WidgetEventMenu:
+      processedEvent = this->ProcessWidgetMenu(eventData);
+      break;
 
     default:
       processedEvent = false;
+    }
+
+  if (!processedEvent)
+    {
+    processedEvent = this->ProcessButtonClickEvent(eventData);
     }
 
   return processedEvent;
@@ -510,14 +521,17 @@ double vtkMRMLSliceIntersectionWidget::GetSliceRotationAngleRad(double eventPos[
 
 
 //-------------------------------------------------------------------------
-bool vtkMRMLSliceIntersectionWidget::ProcessEndMouseDrag(vtkMRMLInteractionEventData* vtkNotUsed(eventData))
+bool vtkMRMLSliceIntersectionWidget::ProcessEndMouseDrag(vtkMRMLInteractionEventData* eventData)
 {
   if (this->WidgetState == WidgetStateIdle)
     {
     return false;
     }
   this->SetWidgetState(WidgetStateIdle);
-  return true;
+
+  // only claim this as processed if the mouse was moved (this lets the event interpreted as button click)
+  bool processedEvent = eventData->GetMouseMovedSinceButtonDown();
+  return processedEvent;
 }
 
 //-------------------------------------------------------------------------
@@ -1147,4 +1161,31 @@ void vtkMRMLSliceIntersectionWidget::SetActionsEnabled(int actions)
 {
   this->ActionsEnabled = actions;
   this->UpdateInteractionEventMapping();
+}
+
+//-------------------------------------------------------------------------
+bool vtkMRMLSliceIntersectionWidget::ProcessWidgetMenu(vtkMRMLInteractionEventData* eventData)
+{
+  if (this->WidgetState != WidgetStateIdle)
+    {
+    return false;
+    }
+  if (!this->SliceNode)
+    {
+    return false;
+    }
+  vtkMRMLInteractionNode* interactionNode = this->SliceNode->GetInteractionNode();
+  if (!interactionNode)
+    {
+    return false;
+    }
+  vtkNew<vtkMRMLInteractionEventData> pickEventData;
+  pickEventData->SetType(vtkMRMLInteractionNode::ShowViewContextMenuEvent);
+  pickEventData->SetViewNode(this->SliceNode);
+  if (pickEventData->IsDisplayPositionValid())
+    {
+    pickEventData->SetDisplayPosition(eventData->GetDisplayPosition());
+    }
+  interactionNode->ShowViewContextMenu(pickEventData);
+  return true;
 }

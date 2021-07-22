@@ -9,7 +9,7 @@ DICOM is a widely used and sophisticated set of standards for digital radiology.
 Data can be loaded from DICOM files into the scene in two steps:
 
 1. Import: add files into the application's DICOM database, by switching to DICOM module and drag-and-dropping files to the application window
-2. Load: get data objects into the scene, by double-clicking on items in the DICOM browser. The DICOM browser is accessible from the toolbar using the DICOM button ![](../../Base/QTGUI/Resources/Icons/Medium/SlicerLoadDICOM.png). More information about DICOM can be found on the [Slicer wiki](https://www.slicer.org/wiki/Documentation/Nightly/Modules/DICOM).
+2. Load: get data objects into the scene, by double-clicking on items in the DICOM browser. The DICOM browser is accessible from the toolbar using the DICOM button ![](../../Base/QTGUI/Resources/Icons/Medium/SlicerLoadDICOM.png).
 
 Data in the scene can be saved to DICOM files in two steps:
 
@@ -80,6 +80,8 @@ Readers may support 2D, 3D, and 4D images of various types, such as scalar, vect
   - **IGSIO sequence metafile** (.igs.mha, .igs.mhd, .igs.nrrd, .seq.mha, .seq.mhd, .mha, .mhd, .mkv, .webm): image sequence with metadata, for example for storing surgical navigation and position-tracked ultrasound data
 - OpenIGTLink extension:
   - **PLUS toolkit configuration file** (.plus.xml): configuration file for real-time data acquisition from imaging and tracking devices and various sensors
+- Sandbox extension:
+  - **Topcon OCT image file** (.fda, reading only)
 
 ### Models
 
@@ -106,6 +108,9 @@ Surface or volumetric meshes.
 - **Closed surface** (.stl, .obj): Single segment can be read from each file. Segmentation module's `Export to files` feature can be used to export directly to these formats.
 - SlicerOpenAnatomy extension:
   - **GL Transmission Format** (.glTF, writing only)
+- Sandbox extension:
+  - **Osirix ROI file** (.json, reading only)
+  - **sliceOmatic tag file** (.tag, reading only)
 
 ### Transforms
 

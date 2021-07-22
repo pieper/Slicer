@@ -179,6 +179,8 @@ protected:
   bool ProcessTouchZoom(vtkMRMLInteractionEventData* eventData);
   bool ProcessTouchTranslate(vtkMRMLInteractionEventData* eventData);
 
+  bool ProcessWidgetMenu(vtkMRMLInteractionEventData* eventData);
+
   /// Rotate the message by the specified amount. Used for touchpad events.
   bool Rotate(double sliceRotationAngleRad);
 
@@ -237,7 +239,7 @@ protected:
 
   ///
   /// Change the displayed volume in the selected layer by moving
-  /// in a loop trough the volumes available in the scene.
+  /// in a loop through the volumes available in the scene.
   ///  - layer: are 0,1,2 for bg, fg, lb
   ///  - direction: positive or negative (wraps through volumes in scene)
   void CycleVolumeLayer(int layer, int direction);

@@ -20,7 +20,7 @@ code of slicer, generating the project files and build the project.
   - (Optional) CMake Qt gui to configure the project through a GUI.
 - GNU Make
 - GNU Patch
-  
+
 In addition, Slicer requires a set of support libraries that are not includes as
 part of the *superbuild*:
 
@@ -34,7 +34,7 @@ part of the *superbuild*:
   - X11Extras
   - Private
 - libXt
-  
+
 ### Debian 10 Stable (Buster)
 
 Install the development tools and the support libraries:
@@ -64,7 +64,7 @@ Install the development tools and the support libraries:
 ```console
 sudo apt update && sudo apt install git subversion build-essential cmake cmake-curses-gui cmake-qt-gui \
   qt5-default qtmultimedia5-dev qttools5-dev libqt5xmlpatterns5-dev libqt5svg5-dev qtwebengine5-dev qtscript5-dev \
-  qtbase5-private-dev libqt5x11extras5-dev libxt-dev 
+  qtbase5-private-dev libqt5x11extras5-dev libxt-dev
 ```
 
 ### ArchLinux
@@ -84,7 +84,7 @@ The recommended way to obtain the source code of SLicer is cloning the repositor
 git clone git://github.com/Slicer/Slicer.git
 ```
 
-This will create a `Slicer` directory contaning the source code of Slicer.
+This will create a `Slicer` directory containing the source code of Slicer.
 Hereafter we will call this directory the `source directory`.
 
 :::{note} Warning
@@ -105,11 +105,11 @@ cd ..
 % TODO: Link to the readthedocs equivalent of https://www.slicer.org/wiki/Documentation/Nightly/Developers/DevelopmentWithGit
 
 ## Configure and generate the Slicer build project files
- 
+
 Slicer is highly configurable and multi-platform. To support this,
 Slicer needs a configuration of the build parameters before the build process
 takes place. In this configuration stage, it is possible to adjust variables
-that change the nature and behaviour of its components. For instance, the type
+that change the nature and behavior of its components. For instance, the type
 of build (Debug or Release mode), whether to use system-installed libraries,
 let the build process fetch and compile own libraries, or enable/disable some of
 the software components and functionalities of Slicer.
@@ -166,7 +166,7 @@ Increasing the number of parallel builds generally increases the memory required
 
 :::{admonition} Tip
 
-Using parallel builds makes finding compilation errors difficult due to the fact that all parallel build processes use the same screen otput, as opposed to sequential builds, where the compilation process will stop at the error. A common technique to have parallel builds and easily find errors is launch a parallel build followed by a sequential build. For the parallel build, it is adviced to run `make -j<N> -k` to have the parallel build keep going as far as possible before doing the sequential build with `make`.
+Using parallel builds makes finding compilation errors difficult due to the fact that all parallel build processes use the same screen output, as opposed to sequential builds, where the compilation process will stop at the error. A common technique to have parallel builds and easily find errors is launch a parallel build followed by a sequential build. For the parallel build, it is advised to run `make -j<N> -k` to have the parallel build keep going as far as possible before doing the sequential build with `make`.
 
 :::
 

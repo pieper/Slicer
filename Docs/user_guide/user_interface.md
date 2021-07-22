@@ -22,7 +22,7 @@ The Layout Toolbar provides a drop-down menu of layouts useful for many types of
 
 ### Application Menu
 
-- **File**: Functions for loading a previouly saved scene or individual datasets of various types, and for downloading sample datasets from the internet. An option for saving scenes and data is also provided here. **Add Data** allows loading data from files. **DICOM** module is recommended to import data from DICOM files and loading of imported DICOM data. **Save** opens the "Save Data" window, which offers a variety of options for saving all data or selected datasets.
+- **File**: Functions for loading a previously saved scene or individual datasets of various types, and for downloading sample datasets from the internet. An option for saving scenes and data is also provided here. **Add Data** allows loading data from files. **DICOM** module is recommended to import data from DICOM files and loading of imported DICOM data. **Save** opens the "Save Data" window, which offers a variety of options for saving all data or selected datasets.
 - **Edit**: Contains an option for showing Application Settings, which allows users to customize appearance and behavior of Slicer, such as modules displayed in the toolbar, application font size, temporary directory location, location of additional Slicer modules to include.
 - **View**: Functions for showing/hiding additional windows and widgets, such as **Extensions Manager** for installing extensions from Slicer app store, **Error Log** for checking if the application encountered any potential errors, **Python Interactor** for getting a Python console to interact with the loaded data or modules, **show/hide toolbars**, or **switch view layout**.
 
@@ -117,6 +117,22 @@ Default orientation axes: A = anterior, P = posterior, R = right, L = left, S = 
 
 3D View Controls: The blue bar across any 3D View shows a pushpin icon on its left. When the mouse rolls over this icon, a panel for configuring the 3D View is displayed. The panel is hidden when the mouse moves away. For persistent display of this panel, just click the pushpin icon.
 
+- **Center 3D view** (small square) centers the slice on the currently visible 3D view content and all loaded volumes (even if volumes that are not visible). The field of view (zoom factor) is not adjusted, therefore it may be necessary to zoom in/out to see all objects. To reset the center and field of view at the same time, click in the 3D view and hit <kbd>r</kbd> key.
+- **Viewpoint direction** switches orientation of the view between standard directions. Clicking on **L**eft, **R**ight, **A**nterior, **P**osterior, **S**uperior, **I**nferior button will make the 3D content viewed from that direction.
+- **View link** button synchronizes properties across 3D views (viewpoint position, direction, ruler, orientation marker, etc. settings).
+- **Orthographic/perspective rendering** mode toggle. Orthographic mode (parallel projection) is useful for assessing size, because displayed object size does not depend on distance from the viewpoint. Perspective mode provides better depth perception, because objects that are closer appear larger.
+- **Ruler** controls display of ruler. Only available in orthographic rendering mode.
+- **Stereo viewing** enables stereoscopic display. Red/blue and anaglyph modes just require inexpensive red/blue colored glasses. Other modes require special 3D display hardware. Note that [SlicerVirtualReality extension](https://www.slicervr.org/) offers superior stereo viewing and interaction experience, with fully immersive 3D visualization by a single click of a button, and rich interaction with objects in the scene using 3D controllers.
+- More options (...)
+  - **Use depth peeling** must be enabled for correct rendering of semi-transparent surfaces (in models, markups, etc). It may make rendering updates slightly slower and artifacts when volume rendering is used in the view.
+  - **Show/Hide frames per second (FPS)** displays rendering speed in the corner of the view.
+- **Orientation Marker** controls display of human, cube, etc in lower right corner.
+- **Visibility options** controls visibility of view background color and displayed components.
+- **Spin** continuously spins the view around.
+- **Rock** continuously rocks the view left-to-right.
+- **Zoom in/out** slightly zooms in/out the view. Convenient buttons for touchscreens.
+- **Tilt Lock** can be toggled using `Ctrl` + `b` keyboard shortcut. In tilt lock mode 3D view rotation is restricted to the azimuth axis (left-right direction) by disabling rotation around elevation axis (up-down direction).
+
 ### Slice View
 
 Three default slice views are provided (with Red, Yellow and Green colored bars) in which Axial, Saggital, Coronal or Oblique 2D slices of volume images can be displayed. Additional generic slice views have a grey colored bar and an identifying number in their upper left corner.
@@ -137,7 +153,7 @@ View Controllers module provides an alternate way of displaying these controller
 - **Spacing and field of view** Spacing defines the increment for the slice offset slider. Field of view sets the zoom level for the slice.
 - **Rotate to volume plane** changes the orientation of the slice to match the closest acquisition orientation of the displayed volume.
 - **Orientation Marker** controls display of human, cube, etc in lower right corner.
-- **Ruler** controls display of ruler in slice view. 
+- **Ruler** controls display of ruler in slice view.
 - **View link** button synchronizes properties (which volumes are displayed, zoom factor, position of parallel views, opacities, etc.) between all slice views in the same view group. Long-click on the button exposes **hot-linked** option, which controls when properties are synchronized (immediately or when the mouse button is released).
 - **Layer visibility** "eye" buttons and **Layer opacity** spinboxes control visibility of segmentations and volumes in the slice view.
 - **Foreground volume opacity** slider allows fading between foreground and background volumes.
@@ -209,6 +225,7 @@ view will not activate the view.
 | `Shift` + `Home` or `Shift` + `Keypad 7`| rotate to view from inferior |
 | `right-click` + `drag up/down` | zoom view in/out |
 | `Ctrl` + `mouse wheel` | zoom view in/out |
+| `Ctrl` + `b` | toggle tilt lock |
 | `+` / `-` | zoom view in/out |
 | `middle-click` + `drag` | pan (translate) view |
 | `Shift` + `left-click` + `drag` | pan (translate) view |

@@ -114,7 +114,7 @@ To re-convert an existing representation (to use different conversion path or pa
 
 ### Managing segmentations using Python scripts
 
-See Script repository's [Segmentations section](https://www.slicer.org/wiki/Documentation/Nightly/ScriptRepository#Segmentations) for examples.
+See Script repository's [Segmentations section](../../developer_guide/script_repository.md#segmentations) for examples.
 
 ### DICOM export
 - The master representation is used when exporting into DICOM, therefore you need to select a master volume, create binary labelmap representation and set it as master
@@ -134,7 +134,7 @@ See Script repository's [Segmentations section](https://www.slicer.org/wiki/Docu
     - Slice intersection thickness
     - Representation in 3D/2D views: The representation to be shown in the 3D and 2D views. Useful if there are multiple representations available, for example if we want to show the closed surface in the 3D view but the labelmap in the slice views
 - Representations
-    - List of supported representations and related operations 
+    - List of supported representations and related operations
     - The already existing representations have a green tick, the master representation (that is the source of all conversions and the representation that can be edited) a gold star
     - The buttons in each row can be used to create, remove, update a representation
         - Advanced conversion is possible (to use the non-default path or conversion parameters) by long-pressing the Create or Update button
@@ -152,7 +152,7 @@ See Script repository's [Segmentations section](https://www.slicer.org/wiki/Docu
 - Special subject hierarchy features for segmentations
     - Create representation: Create the chosen representation using the default path
 - Special subject hierarchy features for segments
-    - Show only this segment: Useful if only one segment needs to be shown and there are many, so clicking the eye buttons woud take a long time
+    - Show only this segment: Useful if only one segment needs to be shown and there are many, so clicking the eye buttons would take a long time
     - Show all segments
 
 ## Tutorials
@@ -165,7 +165,7 @@ See Script repository's [Segmentations section](https://www.slicer.org/wiki/Docu
 - [vtkSegmentationCore on GitHub](https://github.com/Slicer/Slicer/tree/master/Libs/vtkSegmentationCore) (within Slicer)
 - [Segmentations Slicer module on GitHub](https://github.com/Slicer/Slicer/tree/master/Modules/Loadable/Segmentations)
 - [Segmentations Labs page](https://www.slicer.org/wiki/Documentation/Labs/Segmentations)
-- [Manipulation of segmentations from Python scripts - examples in script repository](https://www.slicer.org/wiki/Documentation/Nightly/ScriptRepository)
+- [Manipulation of segmentations from Python scripts - examples in script repository](../../developer_guide/script_repository.md#segmentations)
 
 ## Related modules
 

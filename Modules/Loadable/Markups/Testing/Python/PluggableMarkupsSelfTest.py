@@ -78,11 +78,11 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
     markupsWidget = slicer.modules.markups.widgetRepresentation()
     if markupsWidget is None:
-      raise Exception("Could't get the Markups module widget")
+      raise Exception("Couldn't get the Markups module widget")
 
     markupsLogic = slicer.modules.markups.logic()
     if markupsLogic is None:
-      raise Exception("Could't get the Markups module logic")
+      raise Exception("Couldn't get the Markups module logic")
 
     markupsNodes = self.markupsNodes()
 
@@ -99,19 +99,19 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
   def __checkPushButtonExists(self, widget, name):
     pushButtonObjectName = "Create%sPushButton" % name
-    #slicer.util.delayDisplay("Checking wether '%s' exists" % pushButtonObjectName)
+    #slicer.util.delayDisplay("Checking whether '%s' exists" % pushButtonObjectName)
     if widget.findChild(qt.QPushButton, pushButtonObjectName):
       return True
     return False
 
   def __checkWidgetExists(self, widget, name):
-    #slicer.util.delayDisplay("Checking wether '%s' exists" % name)
+    #slicer.util.delayDisplay("Checking whether '%s' exists" % name)
     if widget.findChild(qt.QWidget, name):
       return True
     return False
 
   def __checkWidgetVisibility(self, widget, name):
-    #slicer.util.delayDisplay("Checking wether '%s' is visible" % pushButtonObjectName)
+    #slicer.util.delayDisplay("Checking whether '%s' is visible" % pushButtonObjectName)
     w = widget.findChild(qt.QWidget, name)
     return w.isVisible()
 
@@ -137,12 +137,12 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
   def test_unregister_existing_markups(self):
     """
-    This unregisteres existing registered markups
+    This unregisters existing registered markups
     """
 
     markupsWidget = slicer.modules.markups.widgetRepresentation()
     if markupsWidget is None:
-      raise Exception("Could't get the Markups module widget")
+      raise Exception("Couldn't get the Markups module widget")
 
     #Check Markups module standard nodes are registered
     for markupNode in self.markupsNodes():
@@ -151,7 +151,7 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
     markupsLogic = slicer.modules.markups.logic()
     if markupsLogic is None:
-      raise Exception("Could't get the Markups module logic")
+      raise Exception("Couldn't get the Markups module logic")
 
     # Unregister Markups and check the buttons are gone
     for markupNode in self.markupsNodes():
@@ -166,11 +166,11 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
     """
     markupsWidget = slicer.modules.markups.widgetRepresentation()
     if markupsWidget is None:
-      raise Exception("Could't get the Markups module widget")
+      raise Exception("Couldn't get the Markups module widget")
 
     markupsLogic = slicer.modules.markups.logic()
     if markupsLogic is None:
-      raise Exception("Could't get the Markups module logic")
+      raise Exception("Couldn't get the Markups module logic")
 
     markupsNodes = self.markupsNodes()
 
@@ -187,7 +187,7 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
     """
     markupsWidget = slicer.modules.markups.widgetRepresentation()
     if markupsWidget is None:
-      raise Exception("Could't get the Markups module widget")
+      raise Exception("Couldn't get the Markups module widget")
 
     additionalOptionsWidgetsFactory = slicer.qSlicerMarkupsAdditionalOptionsWidgetsFactory().instance()
     for additionalOptionsWidget in self.additionalOptionsWidgets():
@@ -215,7 +215,7 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
     markupsWidget = slicer.modules.markups.widgetRepresentation()
     if markupsWidget is None:
-      raise Exception("Could't get the Markups module widget")
+      raise Exception("Couldn't get the Markups module widget")
 
     for additionalOptionsWidget in self.additionalOptionsWidgets():
       slicer.util.delayDisplay("Registering %s" % additionalOptionsWidget.objectName)

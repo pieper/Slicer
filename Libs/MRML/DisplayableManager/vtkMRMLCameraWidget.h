@@ -108,6 +108,8 @@ public:
     WidgetEventCameraWheelZoomIn, // same as WidgetEventCameraZoomIn but with using wheel scaling factor
     WidgetEventCameraWheelZoomOut,
 
+    WidgetEventToggleCameraTiltLock,
+
     WidgetEventCameraReset,
     WidgetEventCameraResetTranslation,
     WidgetEventCameraResetRotation,
@@ -152,6 +154,8 @@ protected:
   bool ProcessTouchCameraZoom(vtkMRMLInteractionEventData* eventData);
   bool ProcessTouchCameraTranslate(vtkMRMLInteractionEventData* eventData);
 
+  bool ProcessWidgetMenu(vtkMRMLInteractionEventData* eventData);
+
   bool Dolly(double factor);
   vtkCamera* GetCamera();
 
@@ -162,6 +166,7 @@ protected:
 
   double MotionFactor;
   double MouseWheelMotionFactor;
+  bool CameraTiltLocked;
 
   vtkWeakPointer<vtkMRMLCameraNode> CameraNode;
 

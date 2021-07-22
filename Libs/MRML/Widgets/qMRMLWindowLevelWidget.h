@@ -34,6 +34,8 @@ class QMRML_WIDGETS_EXPORT qMRMLWindowLevelWidget
   Q_PROPERTY(double level READ level WRITE setLevel)
   Q_PROPERTY(double minimumValue READ minimumValue WRITE setMinimumValue)
   Q_PROPERTY(double maximumValue READ maximumValue WRITE setMaximumValue)
+  Q_PROPERTY(double minimumBound READ minimumBound WRITE setMinimumBound)
+  Q_PROPERTY(double maximumBound READ maximumBound WRITE setMaximumBound)
   Q_ENUMS(ControlMode)
 
 public:
@@ -69,6 +71,14 @@ public:
   /// Get maximum of the range
   double maximumValue()const;
 
+  ///
+  /// Get minimum of the range
+  double minimumBound()const;
+
+  ///
+  /// Get maximum of the range
+  double maximumBound()const;
+
 signals:
   ///
   /// Signal sent if the window/level value is updated
@@ -99,9 +109,16 @@ public slots:
   void setMinimumValue(double min);
   void setMaximumValue(double max);
 
+  void setMinimumBound(double min);
+  void setMaximumBound(double max);
+  void setMinMaxBounds(double min, double max);
+
 protected:
   /// Update the widget from volume display node properties.
   void updateWidgetFromMRMLDisplayNode() override;
+
+  /// Special initial updates that are done only when switching between volumes.
+  void updateWidgetFromMRMLVolumeNode() override;
 
 private:
   Q_DECLARE_PRIVATE(qMRMLWindowLevelWidget);

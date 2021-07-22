@@ -11,7 +11,7 @@ if ! command -v codespell &> /dev/null; then
   exit 1
 fi
 
-codespell -q6 --skip="\
+codespell -w -q6 --skip="\
 .git,\
 *.crt,\
 *.svg,\
@@ -21,6 +21,7 @@ codespell -q6 --skip="\
 ./CMakeLists.txt.user,\
 ./CMake/CTestCustom.cmake.in,\
 ./License.txt,\
+./COPYRIGHT.txt,\
 ./Resources/*.h,\
 ./Base/Logic/vtkSlicerApplicationLogicRequests.h,\
 ./Base/QTCLI/vtkSlicerCLIModuleLogic.cxx,\
@@ -31,7 +32,8 @@ codespell -q6 --skip="\
 ./Libs/vtkITK/itkLevelTracingImageFilter.h,\
 ./Modules/CLI/ExtractSkeleton/tilg_iso_3D.cxx,\
 ./Modules/CLI/ResampleDTIVolume/itkDiffusionTensor3D*,\
-./Modules/Loadable/Reformat/Resources/UI/qSlicerReformatModuleWidget.ui\
+./Modules/Loadable/Reformat/Resources/UI/qSlicerReformatModuleWidget.ui,\
+./Utilities/Scripts/runCodespell.sh\
 " \
 -L "\
 supercede,\
@@ -45,5 +47,7 @@ als,\
 sinc,\
 therefor,\
 extracter,\
-inactivate\
+inactivate,\
+dependees,\
+pullrequest,\
 "

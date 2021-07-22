@@ -338,11 +338,14 @@ LevelTracingImageFilter<TInputImage,TOutputImage>
     offsetY = neighbors[zeroIndex][1];
     pixTemp[0] = pix[0] + offsetX;
     pixTemp[1] = pix[1] + offsetY;
-    val = inputImage->GetPixel(pixTemp);
-    if(val < threshold)
+    if(region.IsInside(pixTemp))
       {
-      found = true;
-      break;
+      val = inputImage->GetPixel(pixTemp);
+      if(val < threshold)
+        {
+        found = true;
+        break;
+        }
       }
     }
 
@@ -360,11 +363,14 @@ LevelTracingImageFilter<TInputImage,TOutputImage>
       offsetY = neighbors[zeroIndex][1];
       pixTemp[0] = pix[0] + offsetX;
       pixTemp[1] = pix[1] + offsetY;
-      val = inputImage->GetPixel(pixTemp);
-      if(val < threshold)
+      if(region.IsInside(pixTemp))
         {
-        found = true;
-        break;
+        val = inputImage->GetPixel(pixTemp);
+        if(val < threshold)
+          {
+          found = true;
+          break;
+          }
         }
       }
 
@@ -372,7 +378,7 @@ LevelTracingImageFilter<TInputImage,TOutputImage>
       {
       // found an 8 connected neighbor that is background. Move seed
       // a 4 connected neighbor of the original seed (at this point,
-      // said neighbor is implictly foreground) which is also a 4
+      // said neighbor is implicitly foreground) which is also a 4
       // connected neighbor of the background point found.
       int newSeedIndex = (zeroIndex+1)%8;
       seed[0] = pix[0] + neighbors[newSeedIndex][0];

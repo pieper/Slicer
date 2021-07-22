@@ -30,6 +30,7 @@
 #include "vtkSlicerSubjectHierarchyModuleLogic.h"
 
 // Qt includes
+#include <QAction>
 #include <QDebug>
 #include <QStringList>
 #include <QInputDialog>
@@ -146,7 +147,12 @@ bool qSlicerSubjectHierarchyPluginHandler::registerPlugin(qSlicerSubjectHierarch
     {
     foreach(QAction* action, pluginToRegister->viewContextMenuActions())
       {
-      this->m_PluginLogic->registerViewMenuAction(action);
+      if (action != nullptr && action->objectName().isEmpty())
+        {
+        qWarning() << Q_FUNC_INFO << ": view context menu action name is not set for "
+          << action->text() << ", provided subject hierarchy by plugin " << pluginToRegister->name();
+        }
+      this->m_PluginLogic->registerViewContextMenuAction(action);
       }
     }
 
@@ -461,7 +467,12 @@ void qSlicerSubjectHierarchyPluginHandler::setPluginLogic(qSlicerSubjectHierarch
       {
       foreach(QAction * action, pluginToRegister->viewContextMenuActions())
         {
-        this->m_PluginLogic->registerViewMenuAction(action);
+        if (action != nullptr && action->objectName().isEmpty())
+          {
+          qWarning() << Q_FUNC_INFO << ": action name is not set for menu item "
+            << action->text() << " provided subject hierarchy by plugin " << pluginToRegister->name();
+          }
+        this->m_PluginLogic->registerViewContextMenuAction(action);
         }
       }
     }
@@ -713,4 +724,45 @@ void qSlicerSubjectHierarchyPluginHandler::showItemsInView(vtkIdList* itemIDsToS
       ownerPlugin->showItemInView(itemID, viewNode, allItemIDsToShow);
       }
     }
+}
+
+//-----------------------------------------------------------------------------
+QString qSlicerSubjectHierarchyPluginHandler::dumpContextMenuActions()
+{
+  QString info;
+  QList< QAction* > actions;
+
+  info.append("=== Item context menu ===\n");
+  actions.clear();
+  foreach(qSlicerSubjectHierarchyAbstractPlugin* plugin, this->m_RegisteredPlugins)
+    {
+    actions << plugin->itemContextMenuActions();
+    }
+  info.append(qSlicerSubjectHierarchyPluginLogic::buildMenuFromActions(nullptr, actions));
+
+  info.append("\n=== Scene context menu ===\n");
+  actions.clear();
+  foreach(qSlicerSubjectHierarchyAbstractPlugin* plugin, this->m_RegisteredPlugins)
+    {
+    actions << plugin->sceneContextMenuActions();
+    }
+  info.append(qSlicerSubjectHierarchyPluginLogic::buildMenuFromActions(nullptr, actions));
+
+  info.append("\n=== Visibility context menu ===\n");
+  actions.clear();
+  foreach(qSlicerSubjectHierarchyAbstractPlugin* plugin, this->m_RegisteredPlugins)
+    {
+    actions << plugin->visibilityContextMenuActions();
+    }
+  info.append(qSlicerSubjectHierarchyPluginLogic::buildMenuFromActions(nullptr, actions));
+
+  info.append("\n=== View context menu ===\n");
+  actions.clear();
+  foreach(qSlicerSubjectHierarchyAbstractPlugin* plugin, this->m_RegisteredPlugins)
+    {
+    actions << plugin->viewContextMenuActions();
+    }
+  info.append(qSlicerSubjectHierarchyPluginLogic::buildMenuFromActions(nullptr, actions));
+
+  return info;
 }

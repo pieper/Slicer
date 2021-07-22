@@ -45,7 +45,7 @@ The following keyboard shortcuts are active when you are in the Editor module.  
 - Undo/Redo: The module saves state of segmentation before each effect is applied. This is useful for experimentation and error correction. By default the last 10 states are remembered.
 - Masking: These options allow you to define the editable areas and whether or not certain segments can be overwritten.
   - Editable area: Changes will be limited to the selected area. This can be used for drawing inside a specific region or split a segment into multiple segments.
-  - Editable intensity range: Changes wil be limited to areas where the master volume's voxels are in the selected intensity range. It is useful when locally an intensity threshold separates well between different regions. Intensity range can be previewed by using Threshold effect.
+  - Editable intensity range: Changes will be limited to areas where the master volume's voxels are in the selected intensity range. It is useful when locally an intensity threshold separates well between different regions. Intensity range can be previewed by using Threshold effect.
   - Modify other segments: Select which segments will be overwritten rather than overlapped.
     - Overwrite all: Segment will not overlap (default).
     - Overwrite visible: Visible segments will not overlap with each other. Hidden segments will not be overwritten by changes done to visible segments.
@@ -54,6 +54,10 @@ The following keyboard shortcuts are active when you are in the Editor module.  
 ## Effects
 
 Effects operate either by clicking the Apply button in the effect options section or by clicking and/or dragging in slice or 3D views.
+
+### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_threshold.png) Threshold
+
+Use Threshold to determine a threshold range and save results to selected segment or use it as Editable intensity range.
 
 ### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_paint.png) Paint
 
@@ -67,7 +71,7 @@ Effects operate either by clicking the Apply button in the effect options sectio
 | ----------------------- | ---------------------------- |
 | `Shift` + `mouse wheel` | increase/decrease brush size |
 | `-`                     | shrink brush radius by 20%   |
-| `+`                     | grow brush 
+| `+`                     | grow brush
 
 ### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_draw.png) Draw
 
@@ -138,21 +142,25 @@ Notes:
 - The method does not use the master volume, only the shape of the specified segments.
 - The method uses ND morphological contour interpolation algorithm. See details here: http://insight-journal.org/browse/publication/977
 
-### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_threshold.png) Threshold
-
-Use Threshold to determine a threshold range and save results to selected segment or use it as Editable intensity range.
-
 ### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_margin.png) Margin
 
 Grows or shrinks the selected segment by the specified margin.
 
+By enabling `Apply to all segments`, all visible segments of the segmentation will be processed (in the order of the segment list).
+
+### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_hollow.png) Hollow
+
+Makes the selected visible segment hollow by replacing the segment with a uniform-thickness shell defined by the segment boundary.
+
+By enabling `Apply to all segments`, all visible segments of the segmentation will be processed (in the order of the segment list).
+
 ### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_smoothing.png) Smoothing
 
-Smoothes selected labelmap or all labelmaps (only for Joint smoothing method).
+Smoothes segments by filling in holes and/or removing extrusions.
 
-By clicking `Apply` button, the entire segmentation is smoothed.
+By default, the current segment will be smoothed. By enabling `Apply to all segments`, all visible segments of the segmentation will be smoothed (in the order of the segment list). This operation may be time-consuming for complex segmentations. The `Joint smoothing` method always smoothes all visible segments.
 
-To smooth a specific region, left click and drag in any slice or 3D view. Same smoothing method and strength is used as for the whole-segmentation mode (size of the brush does not affect smoothing strength, just makes it easier to designate a larger region).
+By clicking `Apply` button, the entire segmentation is smoothed. To smooth a specific region, left click and drag in any slice or 3D view. Same smoothing method and strength is used as for the whole-segmentation mode (size of the brush does not affect smoothing strength, just makes it easier to designate a larger region).
 
 Available methods:
 - Median: removes small extrusions and fills small gaps while keeps smooth contours mostly unchanged. Applied to selected segment only.</li>
@@ -167,6 +175,8 @@ Clip segments to the specified region or fill regions of a segment (typically us
 
 - Left click to start drawing (free-form or rubber band circle or rectangle)
 - Release button to apply
+
+By enabling `Apply to all segments`, all visible segments of the segmentation will be processed (in the order of the segment list).
 
 ### ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_segmenteditor_islands.png) Islands
 
@@ -186,7 +196,7 @@ This is useful for removing irrelevant details from an image (for example remove
 
 - Fill inside: set all voxels of the selected volume to the specified value inside the selected segment
 - Fill outside: set all voxels of the selected volume to the specified value outside the selected segment
-- Fill inside and outside: create a binary labelmap volume as output. Most image procesing operations require background (outside, ignored) region to be filled with 0 value.
+- Fill inside and outside: create a binary labelmap volume as output. Most image processing operations require background (outside, ignored) region to be filled with 0 value.
 
 ## Tips
 
@@ -203,11 +213,11 @@ If you want to extend the segmentation to a larger region then you need to modif
 
 ### Segmentation is not accurate enough
 
-If details cannot be accurately depicted during segmentation or the exported surface has non-negligible errors (there are gaps or overlap between segments), then it is necessary to reduce the segmentation's spacing (more accurately: spacing of the internal binary labelmap representation in the segmentation node). *Spacing* is also known as *voxel size* or may be referred to as *resoution* (which is inverse of spacing - higher resolution means smaller spacing).
+If details cannot be accurately depicted during segmentation or the exported surface has non-negligible errors (there are gaps or overlap between segments), then it is necessary to reduce the segmentation's spacing (more accurately: spacing of the internal binary labelmap representation in the segmentation node). *Spacing* is also known as *voxel size* or may be referred to as *resolution* (which is inverse of spacing - higher resolution means smaller spacing).
 
-As a general rule, segmentation's spacing needs to be 2-5x smaller than the size of the smallest relevant detail or the maximum acceptable surface error in the generated surface. 
+As a general rule, segmentation's spacing needs to be 2-5x smaller than the size of the smallest relevant detail or the maximum acceptable surface error in the generated surface.
 
-By default, segmentation's spacing is set from the *master volume that is selected first after the segmentation is created*. If the first selected master volume's resolution is not sufficient or highly anisotropic (spacing value is not the same along the 3 axes) then one of the followings is recommended:
+By default, segmentation's spacing is set from the *master volume that is selected first after the segmentation is created*. If the first selected master volume's resolution is not sufficient or highly anisotropic (spacing value is not the same along the 3 axes) then one of the following is recommended:
   - Option A. Crop and resample the input volume using *Crop volume* module before starting segmentation. Make spacing smaller (small enough to represent all details but not too small to slow things down and consume too much memory) and isotropic by reducing *Spacing scale* and enabling *Isotropic spacing*. Also adjust the region of interest to crop the volume to minimum necessary size to minimize memory usage and make editing faster.
   - Option B. Click *Specify geometry* button in Segment Editor any time to specify smaller spacing. After this smooth segments using *Smoothing* effect. *Joint smoothing* method is recommended as it can smooth all the segments at once and it preserves boundaries between segments. *Joint smoothing* flattens all the processed segments into one layer, so if the segentation contains overlapping segments then segment in several steps, in each step only show a set of non-overlapping segments (or use any of the other smoothing methods, which only operate on the selected segment).
 
@@ -239,7 +249,7 @@ Segment Editor allows editing of segmentation on slices of arbitrary orientation
 
 ## Information for Developers
 
-See examples for creating and modifying segmentation nodes and using segment editor effects from your own modules in [Slicer script repository](https://www.slicer.org/wiki/Documentation/Nightly/ScriptRepository#Segmentations)
+See examples for creating and modifying segmentation nodes and using segment editor effects from your own modules in [Slicer script repository](../../developer_guide/script_repository.md#segmentations)
 
 ## Contributors
 
