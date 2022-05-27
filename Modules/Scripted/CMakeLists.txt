@@ -1,9 +1,6 @@
 set(modules
   CropVolumeSequence
   DataProbe
-  Editor
-  EditorLib
-  LabelStatistics
   PerformanceTests
   SampleData
   ScreenCapture
@@ -11,6 +8,7 @@ set(modules
   SegmentStatistics
   SelfTests
   VectorToScalarVolume
+  WebServer
   )
 if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
   list(APPEND modules

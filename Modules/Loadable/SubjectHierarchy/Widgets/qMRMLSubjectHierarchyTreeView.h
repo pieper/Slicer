@@ -286,6 +286,13 @@ public slots:
   /// Resets column sizes and size policies to default.
   void resetColumnSizesToDefault();
 
+  void setIncludeItemAttributeNamesFilter(QStringList filter);
+  void setIncludeNodeAttributeNamesFilter(QStringList filter);
+  void setExcludeItemAttributeNamesFilter(QStringList filter);
+  void setExcludeNodeAttributeNamesFilter(QStringList filter);
+  void setAttributeNameFilter(QString& filter);
+  void setAttributeValueFilter(QString& filter);
+
 signals:
   void currentItemChanged(vtkIdType);
   void currentItemsChanged(QList<vtkIdType>);
@@ -293,6 +300,7 @@ signals:
 
 protected slots:
   virtual void onSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+  virtual void onCurrentSelection(const QModelIndex &currentItemIndex);
 
   /// Updates subject hierarchy item expanded property when item is expanded
   virtual void onItemExpanded(const QModelIndex &expandedItemIndex);
@@ -311,8 +319,10 @@ protected slots:
   /// Propagate item transform modified event
   virtual void onSubjectHierarchyItemTransformModified(vtkObject *caller, void *callData);
 
-  /// Called when scene end is finished. Hierarchy is cleared in that case.
-  virtual void onMRMLSceneCloseEnded(vtkObject* sceneObject);
+  /// Called when scene close is started.
+  virtual void onMRMLSceneStartClose(vtkObject* sceneObject);
+  /// Called when scene close is finished. Hierarchy is cleared in that case.
+  virtual void onMRMLSceneEndClose(vtkObject* sceneObject);
   /// Called when batch processing starts. Makes sure stored selection does not get emptied before restoring
   virtual void onMRMLSceneStartBatchProcess(vtkObject* sceneObject);
   /// Called when batch processing ends. Restores selection, which is lost when the hierarchy is rebuilt
@@ -324,13 +334,6 @@ protected slots:
   virtual void onTransformInteractionInViewToggled(bool show);
   virtual void onTransformEditProperties();
   virtual void onCreateNewTransform();
-
-  void setIncludeItemAttributeNamesFilter(QStringList filter);
-  void setIncludeNodeAttributeNamesFilter(QStringList filter);
-  void setExcludeItemAttributeNamesFilter(QStringList filter);
-  void setExcludeNodeAttributeNamesFilter(QStringList filter);
-  void setAttributeNameFilter(QString& filter);
-  void setAttributeValueFilter(QString& filter);
 
 protected:
   /// Set the subject hierarchy node found in the given scene. Called only internally.

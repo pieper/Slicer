@@ -73,6 +73,7 @@ vtkMRMLMarkupsDisplayableManager::vtkMRMLMarkupsDisplayableManager()
   this->LastClickWorldCoordinates[1]=0.0;
   this->LastClickWorldCoordinates[2]=0.0;
   this->LastClickWorldCoordinates[3]=1.0;
+
 }
 
 //---------------------------------------------------------------------------
@@ -556,31 +557,7 @@ bool vtkMRMLMarkupsDisplayableManager::IsManageable(const char* nodeClassName)
     return false;
     }
 
-  vtkSmartPointer<vtkMRMLNode> node =
-    vtkSmartPointer<vtkMRMLNode>::Take(this->GetMRMLScene()->CreateNodeByClass(nodeClassName));
-  vtkMRMLMarkupsNode* markupsNode = vtkMRMLMarkupsNode::SafeDownCast(node);
-  if (!markupsNode)
-    {
-    return false;
-    }
-
-  return markupsLogic->GetWidgetByMarkupsType(markupsNode->GetMarkupType()) ? true : false;
-}
-
-//---------------------------------------------------------------------------
-vtkMRMLMarkupsNode* vtkMRMLMarkupsDisplayableManager::CreateNewMarkupsNode(
-  const std::string &markupsNodeClassName)
-{
-  vtkMRMLMarkupsNode* markupsNode = vtkMRMLMarkupsNode::SafeDownCast(
-    this->GetMRMLScene()->AddNewNodeByClass(markupsNodeClassName));
-
-  std::string nodeName =
-    this->GetMRMLScene()->GenerateUniqueName(markupsNode->GetDefaultNodeNamePrefix());
-  markupsNode->SetName(nodeName.c_str());
-  markupsNode->AddDefaultStorageNode();
-  markupsNode->CreateDefaultDisplayNodes();
-
-  return markupsNode;
+  return markupsLogic->IsMarkupsNodeRegistered(nodeClassName);
 }
 
 //---------------------------------------------------------------------------
@@ -617,7 +594,7 @@ bool vtkMRMLMarkupsDisplayableManager::CanProcessInteractionEvent(vtkMRMLInterac
   // New point can be placed anywhere
   int eventid = eventData->GetType();
   // We allow mouse move with the shift modifier to be processed while in place mode so that we can continue to update the
-  // preview positionm, even when using shift + mouse-move to adjust the crosshair position.
+  // preview position, even when using shift + mouse-move to adjust the crosshair position.
   if ((eventid == vtkCommand::MouseMoveEvent
        && (eventData->GetModifiers() == vtkEvent::NoModifier ||
           (eventData->GetModifiers() & vtkEvent::ShiftModifier &&
@@ -718,8 +695,10 @@ bool vtkMRMLMarkupsDisplayableManager::ProcessInteractionEvent(vtkMRMLInteractio
       }
     }
 
-  // Find/create active widget
-  vtkSlicerMarkupsWidget* activeWidget = nullptr;
+  // Find/create active widget. Using smart pointer instead of raw pointer to ensure activeWidget
+  // object does not get fully deleted until we are done using it if the user deletes it as part
+  // of an EndPlacementEvent
+  vtkSmartPointer<vtkSlicerMarkupsWidget> activeWidget;
   if (this->GetInteractionNode()->GetCurrentInteractionMode() == vtkMRMLInteractionNode::Place)
     {
     activeWidget = this->GetWidgetForPlacement();
@@ -735,7 +714,7 @@ bool vtkMRMLMarkupsDisplayableManager::ProcessInteractionEvent(vtkMRMLInteractio
     }
 
   // Deactivate previous widget
-  if (this->LastActiveWidget != nullptr && this->LastActiveWidget != activeWidget)
+  if (this->LastActiveWidget != nullptr && this->LastActiveWidget != activeWidget.GetPointer())
     {
     this->LastActiveWidget->Leave(eventData);
     }
@@ -839,11 +818,11 @@ vtkSlicerMarkupsWidget* vtkMRMLMarkupsDisplayableManager::GetWidgetForPlacement(
       }
     }
 
-  if (activeMarkupsNode && activeMarkupsNode->GetMaximumNumberOfControlPoints() > 0
-    && activeMarkupsNode->GetNumberOfControlPoints() >= activeMarkupsNode->GetMaximumNumberOfControlPoints())
+  if (activeMarkupsNode && activeMarkupsNode->GetMaximumNumberOfControlPoints() >= 0
+    && activeMarkupsNode->GetNumberOfDefinedControlPoints() >= activeMarkupsNode->GetMaximumNumberOfControlPoints())
     {
     // maybe reached maximum number of points - if yes, then create a new widget
-    if (activeMarkupsNode->GetNumberOfControlPoints() == activeMarkupsNode->GetMaximumNumberOfControlPoints())
+    if (activeMarkupsNode->GetNumberOfDefinedControlPoints() == activeMarkupsNode->GetMaximumNumberOfControlPoints())
       {
       // one more point than the maximum
       vtkSlicerMarkupsWidget *slicerWidget = this->Helper->GetWidget(activeMarkupsNode);
@@ -863,8 +842,20 @@ vtkSlicerMarkupsWidget* vtkMRMLMarkupsDisplayableManager::GetWidgetForPlacement(
   // If there is no active markups node then create a new one
   if (!activeMarkupsNode)
     {
-    activeMarkupsNode = this->CreateNewMarkupsNode(placeNodeClassName);
-    selectionNode->SetReferenceActivePlaceNodeID(activeMarkupsNode->GetID());
+    vtkSlicerMarkupsLogic* markupsLogic =
+      vtkSlicerMarkupsLogic::SafeDownCast(this->GetMRMLApplicationLogic()->GetModuleLogic("Markups"));
+    if (markupsLogic)
+      {
+      activeMarkupsNode = markupsLogic->AddNewMarkupsNode(placeNodeClassName);
+      }
+    if (activeMarkupsNode)
+      {
+      selectionNode->SetReferenceActivePlaceNodeID(activeMarkupsNode->GetID());
+      }
+    else
+      {
+      vtkErrorMacro("GetWidgetForPlacement failed to create new markups node by class " << placeNodeClassName);
+      }
     }
 
   if (!activeMarkupsNode)
@@ -925,21 +916,19 @@ vtkSlicerMarkupsWidget * vtkMRMLMarkupsDisplayableManager::CreateWidget(vtkMRMLM
     }
 
   // Create a widget of the associated type if the node matches the registered nodes
-  vtkSlicerMarkupsWidget* widget =
-    vtkSlicerMarkupsWidget::SafeDownCast(
-      markupsLogic->GetWidgetByMarkupsType(markupsNode->GetMarkupType())
-    )->CreateInstance();
-
-
-  // If the widget was successfully created
-  if (widget)
+  vtkSlicerMarkupsWidget* widgetForMarkup = vtkSlicerMarkupsWidget::SafeDownCast(
+    markupsLogic->GetWidgetByMarkupsType(markupsNode->GetMarkupType()));
+  vtkSlicerMarkupsWidget* widget = widgetForMarkup ? widgetForMarkup->CreateInstance() : nullptr;
+  if (!widget)
     {
-    vtkMRMLAbstractViewNode* viewNode = vtkMRMLAbstractViewNode::SafeDownCast(this->GetMRMLDisplayableNode());
-    vtkRenderer* renderer = this->GetRenderer();
-    widget->SetMRMLApplicationLogic(this->GetMRMLApplicationLogic());
-    widget->CreateDefaultRepresentation(markupsDisplayNode, viewNode, renderer);
+    vtkErrorMacro("vtkMRMLMarkupsDisplayableManager::CreateWidget failed: cannot instantiate widget for markup " << markupsNode->GetMarkupType());
+    return nullptr;
     }
 
+  vtkMRMLAbstractViewNode* viewNode = vtkMRMLAbstractViewNode::SafeDownCast(this->GetMRMLDisplayableNode());
+  vtkRenderer* renderer = this->GetRenderer();
+  widget->SetMRMLApplicationLogic(this->GetMRMLApplicationLogic());
+  widget->CreateDefaultRepresentation(markupsDisplayNode, viewNode, renderer);
   return widget;
 }
 

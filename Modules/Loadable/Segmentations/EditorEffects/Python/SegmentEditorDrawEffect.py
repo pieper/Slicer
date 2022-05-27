@@ -1,7 +1,13 @@
-import os
-import vtk, qt, ctk, slicer
 import logging
+import os
+
+import qt
+import vtk
+
+import slicer
+
 from SegmentEditorEffects import *
+
 
 class SegmentEditorDrawEffect(AbstractScriptedSegmentEditorLabelEffect):
   """ DrawEffect is a LabelEffect implementing the interactive draw
@@ -54,7 +60,9 @@ class SegmentEditorDrawEffect(AbstractScriptedSegmentEditorLabelEffect):
     if pipeline is None:
       return abortEvent
 
-    if eventId == vtk.vtkCommand.LeftButtonPressEvent:
+    anyModifierKeyPressed = callerInteractor.GetShiftKey() or callerInteractor.GetControlKey() or callerInteractor.GetAltKey()
+
+    if eventId == vtk.vtkCommand.LeftButtonPressEvent and not anyModifierKeyPressed:
       # Make sure the user wants to do the operation, even if the segment is not visible
       confirmedEditingAllowed = self.scriptedEffect.confirmCurrentSegmentVisible()
       if confirmedEditingAllowed == self.scriptedEffect.NotConfirmed or confirmedEditingAllowed == self.scriptedEffect.ConfirmedWithDialog:
@@ -69,18 +77,21 @@ class SegmentEditorDrawEffect(AbstractScriptedSegmentEditorLabelEffect):
       pipeline.addPoint(ras)
       abortEvent = True
     elif eventId == vtk.vtkCommand.LeftButtonReleaseEvent:
-      pipeline.actionState = ""
-      self.scriptedEffect.cursorOn(viewWidget)
-    elif eventId == vtk.vtkCommand.RightButtonPressEvent:
+      if pipeline.actionState == "drawing":
+        pipeline.actionState = "moving"
+        self.scriptedEffect.cursorOn(viewWidget)
+        abortEvent = True
+    elif eventId == vtk.vtkCommand.RightButtonPressEvent and not anyModifierKeyPressed:
+      pipeline.actionState = "finishing"
       sliceNode = viewWidget.sliceLogic().GetSliceNode()
       pipeline.lastInsertSliceNodeMTime = sliceNode.GetMTime()
       abortEvent = True
-    elif eventId == vtk.vtkCommand.RightButtonReleaseEvent or eventId==vtk.vtkCommand.LeftButtonDoubleClickEvent:
+    elif (eventId == vtk.vtkCommand.RightButtonReleaseEvent and pipeline.actionState == "finishing") or (eventId==vtk.vtkCommand.LeftButtonDoubleClickEvent and not anyModifierKeyPressed):
+      abortEvent = (pipeline.rasPoints.GetNumberOfPoints() > 1)
       sliceNode = viewWidget.sliceLogic().GetSliceNode()
       if abs(pipeline.lastInsertSliceNodeMTime - sliceNode.GetMTime()) < 2:
         pipeline.apply()
-        pipeline.actionState = None
-      abortEvent = True
+        pipeline.actionState = ""
     elif eventId == vtk.vtkCommand.MouseMoveEvent:
       if pipeline.actionState == "drawing":
         xy = callerInteractor.GetEventPosition()
@@ -113,9 +124,9 @@ class SegmentEditorDrawEffect(AbstractScriptedSegmentEditorLabelEffect):
       # If the SliceToRAS has been modified, then we're on a different plane
       sliceLogic = viewWidget.sliceLogic()
       lineMode = "solid"
-      currentSlice = sliceLogic.GetSliceOffset()
-      if pipeline.activeSlice:
-        offset = abs(currentSlice - pipeline.activeSlice)
+      currentSliceOffset = sliceLogic.GetSliceOffset()
+      if pipeline.activeSliceOffset:
+        offset = abs(currentSliceOffset - pipeline.activeSliceOffset)
         if offset > 0.01:
           lineMode = "dashed"
       pipeline.setLineMode(lineMode)
@@ -138,16 +149,18 @@ class SegmentEditorDrawEffect(AbstractScriptedSegmentEditorLabelEffect):
     self.drawPipelines[sliceWidget] = pipeline
     return pipeline
 
+
 #
 # DrawPipeline
 #
 class DrawPipeline:
   """ Visualization objects and pipeline for each slice view for drawing
   """
+
   def __init__(self, scriptedEffect, sliceWidget):
     self.scriptedEffect = scriptedEffect
     self.sliceWidget = sliceWidget
-    self.activeSlice = None
+    self.activeSliceOffset = None
     self.lastInsertSliceNodeMTime = None
     self.actionState = None
 
@@ -156,12 +169,51 @@ class DrawPipeline:
     self.polyData = self.createPolyData()
 
     self.mapper = vtk.vtkPolyDataMapper2D()
-    self.actor = vtk.vtkActor2D()
+    self.actor = vtk.vtkTexturedActor2D()
     self.mapper.SetInputData(self.polyData)
     self.actor.SetMapper(self.mapper)
     actorProperty = self.actor.GetProperty()
     actorProperty.SetColor(1,1,0)
     actorProperty.SetLineWidth(1)
+
+    self.createStippleTexture(0xAAAA, 8)
+
+  def createStippleTexture(self, lineStipplePattern, lineStippleRepeat):
+    self.tcoords = vtk.vtkDoubleArray()
+    self.texture = vtk.vtkTexture()
+
+    # Create texture
+    dimension = 16 * lineStippleRepeat
+
+    image = vtk.vtkImageData()
+    image.SetDimensions(dimension, 1, 1)
+    image.AllocateScalars(vtk.VTK_UNSIGNED_CHAR, 4)
+    image.SetExtent(0, dimension - 1, 0, 0, 0, 0)
+    on = 255
+    off = 0
+    i_dim = 0
+    while i_dim < dimension:
+        for i in range(0, 16):
+            mask = (1 << i)
+            bit = (lineStipplePattern & mask) >> i
+            value = bit
+            if value == 0:
+                for j in range(0, lineStippleRepeat):
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 0, on)
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 1, on)
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 2, on)
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 3, off)
+                    i_dim += 1
+            else:
+                for j in range(0, lineStippleRepeat):
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 0, on)
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 1, on)
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 2, on)
+                    image.SetScalarComponentFromFloat(i_dim, 0, 0, 3, on)
+                    i_dim += 1
+    self.texture.SetInputData(image)
+    self.texture.InterpolateOff()
+    self.texture.RepeatOn()
 
   def createPolyData(self):
     # Make an empty single-polyline polydata
@@ -176,14 +228,14 @@ class DrawPipeline:
 
     # Store active slice when first point is added
     sliceLogic = self.sliceWidget.sliceLogic()
-    currentSlice = sliceLogic.GetSliceOffset()
-    if not self.activeSlice:
-      self.activeSlice = currentSlice
+    currentSliceOffset = sliceLogic.GetSliceOffset()
+    if not self.activeSliceOffset:
+      self.activeSliceOffset = currentSliceOffset
       self.setLineMode("solid")
 
     # Don't allow adding points on except on the active slice
     # (where first point was laid down)
-    if self.activeSlice != currentSlice: return
+    if self.activeSliceOffset != currentSliceOffset: return
 
     # Keep track of node state (in case of pan/zoom)
     sliceNode = sliceLogic.GetSliceNode()
@@ -199,9 +251,17 @@ class DrawPipeline:
   def setLineMode(self,mode="solid"):
     actorProperty = self.actor.GetProperty()
     if mode == "solid":
-      actorProperty.SetLineStipplePattern(0xffff)
+      self.polyData.GetPointData().SetTCoords(None)
+      self.actor.SetTexture(None)
     elif mode == "dashed":
-      actorProperty.SetLineStipplePattern(0xff00)
+      # Create texture coordinates
+      self.tcoords.SetNumberOfComponents(1)
+      self.tcoords.SetNumberOfTuples(self.polyData.GetNumberOfPoints())
+      for i in range(0, self.polyData.GetNumberOfPoints()):
+          value = i * 0.5
+          self.tcoords.SetTypedTuple(i, [value])
+      self.polyData.GetPointData().SetTCoords(self.tcoords)
+      self.actor.SetTexture(self.texture)
 
   def positionActors(self):
     # Update draw feedback to follow slice node
@@ -226,7 +286,6 @@ class DrawPipeline:
       self.polyData.InsertNextCell(vtk.VTK_LINE, idList)
 
       # Get modifier labelmap
-      import vtkSegmentationCorePython as vtkSegmentationCore
       modifierLabelmap = self.scriptedEffect.defaultModifierLabelmap()
 
       # Apply poly data on modifier labelmap
@@ -244,7 +303,7 @@ class DrawPipeline:
     lines.Initialize()
     self.xyPoints.Reset()
     self.rasPoints.Reset()
-    self.activeSlice = None
+    self.activeSliceOffset = None
 
   def deleteLastPoint(self):
     # Unwind through addPoint list back to empty polydata

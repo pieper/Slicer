@@ -5,6 +5,7 @@ import re
 
 from .ExtensionProject import ExtensionProject
 
+
 #=============================================================================
 class ExtensionDescription:
   """Representation of an extension description.
@@ -164,7 +165,7 @@ class ExtensionDescription:
   def _remotePublicUrl(remote):
     url = remote.url
     if url.startswith("git@"):
-      return url.replace(":", "/").replace("git@", "git://")
+      return url.replace(":", "/").replace("git@", "https://")
 
     return url
 

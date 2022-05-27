@@ -27,7 +27,6 @@ static const char* UNIT_NODE_REFERENCE_ROLE = "unit/";
 static const char* ACTIVE_VOLUME_REFERENCE_ROLE = "ActiveVolume";
 static const char* SECONDARY_VOLUME_REFERENCE_ROLE = "SecondaryVolume";
 static const char* ACTIVE_LABEL_VOLUME_REFERENCE_ROLE = "ActiveLabelVolume";
-static const char* ACTIVE_FIDUCIAL_LIST_REFERENCE_ROLE = "ActiveFiducialList";
 static const char* ACTIVE_PLACE_NODE_REFERENCE_ROLE = "ActivePlaceNode";
 static const char* ACTIVE_ROI_LIST_REFERENCE_ROLE = "ActiveROIList";
 static const char* ACTIVE_CAMERA_REFERENCE_ROLE = "ActiveCamera";
@@ -46,6 +45,7 @@ vtkMRMLSelectionNode::vtkMRMLSelectionNode()
 
   this->SetSingletonTag("Singleton");
   this->ActivePlaceNodeClassName = nullptr;
+  this->ActivePlaceNodePlacementValid = false;
 
   vtkNew<vtkIntArray> unitNodeModifiedEvents;
   unitNodeModifiedEvents->InsertNextValue(vtkCommand::ModifiedEvent);
@@ -53,7 +53,6 @@ vtkMRMLSelectionNode::vtkMRMLSelectionNode()
   this->AddNodeReferenceRole(ACTIVE_VOLUME_REFERENCE_ROLE, "activeVolumeID");
   this->AddNodeReferenceRole(SECONDARY_VOLUME_REFERENCE_ROLE, "secondaryVolumeID");
   this->AddNodeReferenceRole(ACTIVE_LABEL_VOLUME_REFERENCE_ROLE, "ActiveLabelVolumeID");
-  this->AddNodeReferenceRole(ACTIVE_FIDUCIAL_LIST_REFERENCE_ROLE, "ActiveFiducialListID");
   this->AddNodeReferenceRole(ACTIVE_PLACE_NODE_REFERENCE_ROLE, "ActivePlaceNodeID");
   this->AddNodeReferenceRole(ACTIVE_ROI_LIST_REFERENCE_ROLE, "ActiveROIListID");
   this->AddNodeReferenceRole(ACTIVE_CAMERA_REFERENCE_ROLE, "ActiveCameraID");
@@ -102,10 +101,6 @@ void vtkMRMLSelectionNode::ReadXMLAttributes(const char** atts)
   if (this->GetActiveLabelVolumeID() && strcmp(this->GetActiveLabelVolumeID(), "NULL") == 0)
     {
     this->SetActiveLabelVolumeID(nullptr);
-    }
-  if (this->GetActiveFiducialListID() && strcmp(this->GetActiveFiducialListID(), "NULL") == 0)
-    {
-    this->SetActiveFiducialListID(nullptr);
     }
   if (this->GetActivePlaceNodeID() && strcmp(this->GetActivePlaceNodeID(), "NULL") == 0)
     {
@@ -437,6 +432,20 @@ std::string vtkMRMLSelectionNode::GetPlaceNodeResourceByClassName(std::string cl
 //----------------------------------------------------------------------------
 void vtkMRMLSelectionNode::SetReferenceActivePlaceNodeClassName (const char *className)
 {
+  if (className == this->ActivePlaceNodeClassName)
+    {
+    // no change (probably both nullptr)
+    return;
+    }
+  if (className != nullptr && this->ActivePlaceNodeClassName != nullptr)
+    {
+    if (strcmp(className, this->ActivePlaceNodeClassName) == 0)
+      {
+      // no change
+      return;
+      }
+    }
+
   this->SetActivePlaceNodeClassName(className);
   this->InvokeEvent(vtkMRMLSelectionNode::ActivePlaceNodeClassNameChangedEvent);
 }
@@ -475,17 +484,6 @@ void vtkMRMLSelectionNode::SetActiveLabelVolumeID(const char* id)
 }
 
 //----------------------------------------------------------------------------
-const char* vtkMRMLSelectionNode::GetActiveFiducialListID()
-{
-  return this->GetNodeReferenceID(ACTIVE_FIDUCIAL_LIST_REFERENCE_ROLE);
-}
-//----------------------------------------------------------------------------
-void vtkMRMLSelectionNode::SetActiveFiducialListID(const char* id)
-{
-  this->SetNodeReferenceID(ACTIVE_FIDUCIAL_LIST_REFERENCE_ROLE, id);
-}
-
-//----------------------------------------------------------------------------
 const char* vtkMRMLSelectionNode::GetActivePlaceNodeID()
 {
   return this->GetNodeReferenceID(ACTIVE_PLACE_NODE_REFERENCE_ROLE);
@@ -493,7 +491,22 @@ const char* vtkMRMLSelectionNode::GetActivePlaceNodeID()
 //----------------------------------------------------------------------------
 void vtkMRMLSelectionNode::SetActivePlaceNodeID(const char* id)
 {
+  const char* oldId = this->GetNodeReferenceID(ACTIVE_PLACE_NODE_REFERENCE_ROLE);
+  if (id == oldId)
+    {
+    // no change (probably both nullptr)
+    return;
+    }
+  if (id != nullptr && oldId != nullptr)
+    {
+    if (strcmp(id, oldId) == 0)
+      {
+      // no change
+      return;
+      }
+    }
   this->SetNodeReferenceID(ACTIVE_PLACE_NODE_REFERENCE_ROLE, id);
+  this->InvokeEvent(vtkMRMLSelectionNode::ActivePlaceNodeIDChangedEvent);
 }
 
 //----------------------------------------------------------------------------
@@ -560,4 +573,22 @@ const char* vtkMRMLSelectionNode::GetActivePlotChartID()
 void vtkMRMLSelectionNode::SetActivePlotChartID(const char* id)
 {
   this->SetNodeReferenceID(ACTIVE_PLOT_CHART_REFERENCE_ROLE, id);
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLSelectionNode::SetActivePlaceNodePlacementValid(bool valid)
+{
+  if (this->ActivePlaceNodePlacementValid == valid)
+    {
+    // no change
+    return;
+    }
+  this->ActivePlaceNodePlacementValid = valid;
+  this->InvokeEvent(vtkMRMLSelectionNode::ActivePlaceNodePlacementValidEvent);
+}
+
+//----------------------------------------------------------------------------
+bool vtkMRMLSelectionNode::GetActivePlaceNodePlacementValid()
+{
+  return this->ActivePlaceNodePlacementValid;
 }

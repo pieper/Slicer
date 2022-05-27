@@ -23,11 +23,12 @@ set(${KIT}_SRCS
   vtkMRML${MODULE_NAME}JsonStorageNode.cxx
   vtkMRML${MODULE_NAME}LineNode.cxx
   vtkMRML${MODULE_NAME}Node.cxx
-  vtkMRML${MODULE_NAME}PlaneNode.cxx
+  vtkMRML${MODULE_NAME}PlaneDisplayNode.cxx
   vtkMRML${MODULE_NAME}PlaneJsonStorageNode.cxx
-  vtkMRML${MODULE_NAME}ROINode.cxx
+  vtkMRML${MODULE_NAME}PlaneNode.cxx
   vtkMRML${MODULE_NAME}ROIDisplayNode.cxx
   vtkMRML${MODULE_NAME}ROIJsonStorageNode.cxx
+  vtkMRML${MODULE_NAME}ROINode.cxx
   vtkCurveGenerator.cxx
   vtkCurveGenerator.h
   vtkCurveMeasurementsCalculator.cxx
@@ -44,6 +45,8 @@ set(${KIT}_SRCS
   vtkMRMLMeasurementVolume.h
   vtkParametricPolynomialApproximation.cxx
   vtkParametricPolynomialApproximation.h
+  vtkProjectMarkupsCurvePointsFilter.cxx
+  vtkProjectMarkupsCurvePointsFilter.h
   vtkSlicerDijkstraGraphGeodesicPath.cxx
   vtkSlicerDijkstraGraphGeodesicPath.h
   )

@@ -13,9 +13,11 @@ set(MODULE_PYTHON_RESOURCES
   Resources/Icons/CTCardioSeq.png
   Resources/Icons/CTPCardioSeq.png
   Resources/Icons/CTChest.png
+  Resources/Icons/CTLiver.png
   Resources/Icons/DTIBrain.png
   Resources/Icons/DTIVolume.png
   Resources/Icons/dwi.png
+  Resources/Icons/DZ-CBCT.png
   Resources/Icons/MRBrainTumor1.png
   Resources/Icons/MRBrainTumor2.png
   Resources/Icons/MRHead.png

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>338</width>
-    <height>637</height>
+    <width>276</width>
+    <height>294</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -31,8 +31,8 @@
      </item>
      <item>
       <widget class="ctkExpandableWidget" name="ResizableFrame">
-       <property name="sizeGripInside">
-        <bool>false</bool>
+       <property name="orientations">
+        <set>Qt::Vertical</set>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
         <property name="leftMargin">
@@ -45,7 +45,7 @@
          <number>0</number>
         </property>
         <property name="bottomMargin">
-         <number>0</number>
+         <number>3</number>
         </property>
         <item>
          <widget class="qMRMLSubjectHierarchyTreeView" name="activeMarkupTreeView">
@@ -69,44 +69,65 @@
           </property>
          </widget>
         </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="qMRMLCollapsibleButton" name="displayCollapsibleButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Display</string>
+       </property>
+       <property name="collapsed">
+        <bool>true</bool>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="qMRMLCollapsibleButton" name="displayCollapsibleButton">
-          <property name="text">
-           <string>Display</string>
+         <widget class="qMRMLMarkupsDisplayNodeWidget" name="markupsDisplayWidget"/>
+        </item>
+        <item>
+         <widget class="ctkCollapsibleGroupBox" name="ColorLegendCollapsibleGroupBox">
+          <property name="toolTip">
+           <string>Color legend for the Color Table selected in Scalars section.</string>
+          </property>
+          <property name="title">
+           <string>Color Legend</string>
           </property>
           <property name="collapsed">
            <bool>true</bool>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_4">
-           <item>
-            <widget class="qMRMLMarkupsDisplayNodeWidget" name="markupsDisplayWidget"/>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <item>
-              <widget class="QPushButton" name="saveToDefaultDisplayPropertiesPushButton">
-               <property name="toolTip">
-                <string>Save current display property settings to defaults, will be saved for when Slicer restarts (see Application Settings)</string>
-               </property>
-               <property name="text">
-                <string>Save to Defaults</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="resetToDefaultDisplayPropertiesPushButton">
-               <property name="toolTip">
-                <string>Use default display properties.</string>
-               </property>
-               <property name="text">
-                <string>Reset to Defaults</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
+          <layout class="QGridLayout" name="gridLayout_2">
+           <item row="0" column="0">
+            <widget class="qMRMLColorLegendDisplayNodeWidget" name="ColorLegendDisplayNodeWidget"/>
            </item>
           </layout>
          </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QPushButton" name="saveToDefaultDisplayPropertiesPushButton">
+            <property name="toolTip">
+             <string>Save current display property settings to defaults, will be saved for when Slicer restarts (see Application Settings)</string>
+            </property>
+            <property name="text">
+             <string>Save to Defaults</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="resetToDefaultDisplayPropertiesPushButton">
+            <property name="toolTip">
+             <string>Use default display properties.</string>
+            </property>
+            <property name="text">
+             <string>Reset to Defaults</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -123,98 +144,112 @@
         <item row="0" column="0">
          <widget class="QLabel" name="label_3">
           <property name="text">
-           <string>Interaction in Views:</string>
+           <string>Interaction: </string>
           </property>
          </widget>
         </item>
         <item row="0" column="1">
-         <widget class="QPushButton" name="listLockedUnlockedPushButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>30</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>32</width>
-            <height>32</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Enable/disable all interactions in slice and 3D views.</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>:Icons/Medium/SlicerUnlock.png</normaloff>:Icons/Medium/SlicerUnlock.png</iconset>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Click to Jump Slices:</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
-           <widget class="QCheckBox" name="jumpSlicesCheckBox">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>10</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QComboBox" name="jumpModeComboBox">
+           <widget class="QPushButton" name="listLockedUnlockedPushButton">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="toolTip">
-             <string>Offset: set slice plane position. Centered: set slice plane position and center the slice view on the control point.</string>
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
             </property>
-            <item>
-             <property name="text">
-              <string>offset</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>centered</string>
-             </property>
-            </item>
+            <property name="maximumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Enable/disable all interactions in slice and 3D views.</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>:Icons/Medium/SlicerUnlock.png</normaloff>:Icons/Medium/SlicerUnlock.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="fixedNumberOfControlPointsPushButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Lock the number of points allowed in the active markup.</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>:Icons/Medium/SlicerPointNumberUnlock.png</normaloff>:Icons/Medium/SlicerPointNumberUnlock.png</iconset>
+            </property>
            </widget>
           </item>
          </layout>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Jump Slices:</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="jumpModeComboBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Offset: set slice plane position. Centered: set slice plane position and center the slice view on the control point.</string>
+          </property>
+          <item>
+           <property name="text">
+            <string>none</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>offset</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>centered</string>
+           </property>
+          </item>
+         </widget>
         </item>
         <item row="2" column="0">
          <widget class="QLabel" name="label_2">
@@ -236,7 +271,7 @@
         <item row="3" column="0" colspan="2">
          <layout class="QHBoxLayout" name="horizontalLayout_6">
           <item>
-           <widget class="ctkMenuButton" name="visibilityAllMarkupsInListMenuButton">
+           <widget class="ctkMenuButton" name="visibilityAllControlPointsInListMenuButton">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -256,12 +291,12 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Toggle visibility flag on all markups in list, use drop down menu to set all to visible or invisible.</string>
+             <string>Toggle visibility flag on all control points in the list. Use the drop down menu to set all to visible or invisible.</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="ctkMenuButton" name="selectedAllMarkupsInListMenuButton">
+           <widget class="ctkMenuButton" name="selectedAllControlPointsInListMenuButton">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -281,12 +316,12 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Toggle selected flag on all markups in list, use drop down menu to set all to selected or deselected.</string>
+             <string>Toggle selected flag on all control points in the list. Use the drop down menu to set all to selected or deselected.</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="ctkMenuButton" name="lockAllMarkupsInListMenuButton">
+           <widget class="ctkMenuButton" name="lockAllControlPointsInListMenuButton">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
               <horstretch>0</horstretch>
@@ -306,12 +341,12 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Toggle lock flag on all markups in list, use drop down menu to set all to locked or unlocked.</string>
+             <string>Toggle lock flag on all control points in the list. Use the drop down menu to set all to locked or unlocked.</string>
             </property>
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="deleteMarkupPushButton">
+           <widget class="QPushButton" name="missingControlPointPushButton">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -334,7 +369,77 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Delete the highlighted markup(s) from the active list</string>
+             <string>Skip placement of highlighted control point(s) from the active list (will clear current position).</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../qSlicerMarkupsModule.qrc">
+              <normaloff>:/Icons/MarkupsMissing.png</normaloff>:/Icons/MarkupsMissing.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="unsetControlPointPushButton">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Clear the position of highlighted control point(s) from the active list (the control points will not be deleted).</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../qSlicerMarkupsModule.qrc">
+              <normaloff>:/Icons/MarkupsUnset.png</normaloff>:/Icons/MarkupsUnset.png</iconset>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="deleteControlPointPushButton">
+            <property name="enabled">
+             <bool>true</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>Delete the highlighted control point(s) from the active list</string>
             </property>
             <property name="text">
              <string/>
@@ -346,7 +451,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="deleteAllMarkupsInListPushButton">
+           <widget class="QPushButton" name="deleteAllControlPointsInListPushButton">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -369,7 +474,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Remove all markups from the active list</string>
+             <string>Remove all control points from the active list</string>
             </property>
             <property name="icon">
              <iconset resource="../qSlicerMarkupsModule.qrc">
@@ -378,7 +483,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="CutMarkupsToolButton">
+           <widget class="QToolButton" name="CutControlPointsToolButton">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -388,7 +493,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="CopyMarkupsToolButton">
+           <widget class="QToolButton" name="CopyControlPointsToolButton">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -398,7 +503,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QToolButton" name="PasteMarkupsToolButton">
+           <widget class="QToolButton" name="PasteControlPointsToolButton">
             <property name="enabled">
              <bool>true</bool>
             </property>
@@ -409,48 +514,40 @@
           </item>
          </layout>
         </item>
-        <item row="4" column="0" colspan="2">
-         <layout class="QHBoxLayout" name="checkBoxesHorizontalLayout">
+        <item row="4" column="0">
+         <widget class="QLabel" name="label_coords">
+          <property name="text">
+           <string>Coordinates:  </string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1">
+         <widget class="QComboBox" name="coordinatesComboBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>Set visibility and coordinate system of control point positions.</string>
+          </property>
           <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
+           <property name="text">
+            <string>World</string>
+           </property>
           </item>
           <item>
-           <widget class="QCheckBox" name="transformedCoordinatesCheckBox">
-            <property name="toolTip">
-             <string>Check to show the transformed coordinates in the table.</string>
-            </property>
-            <property name="text">
-             <string>Transformed</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
+           <property name="text">
+            <string>Local</string>
+           </property>
           </item>
           <item>
-           <widget class="QCheckBox" name="hideCoordinateColumnsCheckBox">
-            <property name="toolTip">
-             <string>Check to hide the coordinate columns in the table, uncheck to show them. Right click in rows to see coordinates.</string>
-            </property>
-            <property name="text">
-             <string>Hide RAS</string>
-            </property>
-            <property name="checked">
-             <bool>false</bool>
-            </property>
-           </widget>
+           <property name="text">
+            <string>Hide</string>
+           </property>
           </item>
-         </layout>
+         </widget>
         </item>
         <item row="5" column="0" colspan="2">
          <widget class="QTableWidget" name="activeMarkupTableWidget">
@@ -467,14 +564,17 @@
            </size>
           </property>
           <property name="toolTip">
-           <string>The markups in the currently active markups node. Right click in a row for delete, jump, copy, move.</string>
+           <string>The control points in the currently active markups node. Right click in a row for delete, jump, copy, move.</string>
           </property>
           <property name="accessibleName">
-           <string>active markup table</string>
+           <string>active markup control point table</string>
           </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
+          <attribute name="horizontalHeaderStretchLastSection">
+           <bool>true</bool>
+          </attribute>
          </widget>
         </item>
         <item row="6" column="0" colspan="2">
@@ -492,7 +592,7 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_7">
              <item>
-              <widget class="QPushButton" name="moveMarkupUpPushButton">
+              <widget class="QPushButton" name="moveControlPointUpPushButton">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -512,7 +612,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Move a highlighted markup up one spot in the list</string>
+                <string>Move a highlighted control point up one spot in the list</string>
                </property>
                <property name="text">
                 <string/>
@@ -524,7 +624,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="moveMarkupDownPushButton">
+              <widget class="QPushButton" name="moveControlPointDownPushButton">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -544,7 +644,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Move a highlighted markup down one spot in the list</string>
+                <string>Move a highlighted control point down one spot in the list</string>
                </property>
                <property name="text">
                 <string/>
@@ -556,7 +656,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="addMarkupPushButton">
+              <widget class="QPushButton" name="addControlPointPushButton">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -576,7 +676,7 @@
                 </size>
                </property>
                <property name="toolTip">
-                <string>Add a new markup to the active list, at origin</string>
+                <string>Add a new control point to the active list, at origin</string>
                </property>
                <property name="icon">
                 <iconset resource="../qSlicerMarkupsModule.qrc">
@@ -605,7 +705,7 @@
               <item row="2" column="1">
                <widget class="QLineEdit" name="nameFormatLineEdit">
                 <property name="toolTip">
-                 <string>Format for creating names of new markups, using sprintf format style. %N is replaced by the list name, %S is replaced by the markup's short name and %d by an integer.</string>
+                 <string>Format for creating names of new control points, using sprintf format style. %N is replaced by the list name, %S is replaced by the markup's short name and %d by an integer.</string>
                 </property>
                </widget>
               </item>
@@ -622,7 +722,7 @@
               <item row="2" column="2">
                <widget class="QPushButton" name="renameAllWithCurrentNameFormatPushButton">
                 <property name="toolTip">
-                 <string>Rename all markups in this list according to the current name format, trying to preserve numbers.</string>
+                 <string>Rename all control points in this list according to the current name format, trying to preserve numbers.</string>
                 </property>
                 <property name="text">
                  <string>Apply</string>
@@ -650,6 +750,9 @@
      </item>
      <item>
       <widget class="ctkCollapsibleButton" name="measurementsCollapsibleButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Measurements</string>
        </property>
@@ -885,6 +988,12 @@
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>qMRMLColorLegendDisplayNodeWidget</class>
+   <extends>qMRMLWidget</extends>
+   <header>qMRMLColorLegendDisplayNodeWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>qMRMLMarkupsDisplayNodeWidget</class>
    <extends>qMRMLWidget</extends>
    <header>qMRMLMarkupsDisplayNodeWidget.h</header>
@@ -952,22 +1061,6 @@
   <connection>
    <sender>qSlicerMarkupsModule</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>markupsDisplayWidget</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>76</x>
-     <y>2</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>128</x>
-     <y>259</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>qSlicerMarkupsModule</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
    <receiver>exportedImportedNodeComboBox</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
    <hints>
@@ -978,6 +1071,22 @@
     <hint type="destinationlabel">
      <x>197</x>
      <y>387</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>qSlicerMarkupsModule</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>markupsDisplayWidget</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>76</x>
+     <y>2</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>128</x>
+     <y>259</y>
     </hint>
    </hints>
   </connection>

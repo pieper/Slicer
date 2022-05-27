@@ -85,6 +85,9 @@ public:
   // Returns true if one of the markup points are just being previewed and not placed yet.
   bool IsPointPreviewed();
 
+  /// Update a the current index of the point preview being previewed.
+  void UpdatePreviewPointIndex(vtkMRMLInteractionEventData* eventData);
+
   /// Add/update a point preview to the current active Markup at the specified position.
   void UpdatePreviewPoint(vtkMRMLInteractionEventData* eventData, const char* associatedNodeID, int positionStatus);
 
@@ -95,7 +98,7 @@ public:
   // Places a new markup point.
   // Reuses current preview point, if possible.
   // Returns true if the event is processed.
-  bool PlacePoint(vtkMRMLInteractionEventData* eventData);
+  virtual bool PlacePoint(vtkMRMLInteractionEventData* eventData);
 
   /// Add a point to the current active Markup at input World coordinates.
   virtual int AddPointFromWorldCoordinate(const double worldCoordinates[3]);
@@ -126,6 +129,8 @@ public:
 
   int GetActiveComponentType();
   int GetActiveComponentIndex();
+
+  vtkMRMLSelectionNode* selectionNode();
 
 protected:
   vtkSlicerMarkupsWidget();
@@ -159,6 +164,7 @@ protected:
   virtual bool ProcessMouseMove(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessWidgetMenu(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessWidgetAction(vtkMRMLInteractionEventData* eventData);
+  virtual bool ProcessWidgetStopPlace(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessControlPointSnapToSlice(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessControlPointDelete(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessControlPointInsert(vtkMRMLInteractionEventData* eventData);
@@ -192,7 +198,7 @@ private:
 
 #ifdef VTK_HAS_INITIALIZE_OBJECT_BASE
 #define vtkSlicerMarkupsWidgetCreateInstanceMacro(type) \
-vtkSlicerMarkupsWidget* CreateInstance() const \
+vtkSlicerMarkupsWidget* CreateInstance() const override\
 { \
   vtkObject* ret = vtkObjectFactory::CreateInstance(#type); \
   if(ret) \
@@ -205,7 +211,7 @@ vtkSlicerMarkupsWidget* CreateInstance() const \
 }
 #else
 #define vtkSlicerMarkupsWidgetCreateInstanceMacro(type) \
-vtkSlicerMarkupsWidget* CreateInstance() const \
+vtkSlicerMarkupsWidget* CreateInstance() const override\
 { \
   vtkObject* ret = vtkObjectFactory::CreateInstance(#type); \
   if(ret) \

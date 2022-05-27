@@ -115,6 +115,13 @@ public:
     WidgetEventAdjustWindowLevelAlternativeStart,
     WidgetEventAdjustWindowLevelAlternativeEnd,
     WidgetEventAdjustWindowLevelAlternativeCancel,
+    WidgetEventAlwaysOnResetWindowLevel,
+    WidgetEventAlwaysOnAdjustWindowLevelStart,
+    WidgetEventAlwaysOnAdjustWindowLevelEnd,
+    WidgetEventAlwaysOnAdjustWindowLevelCancel,
+    WidgetEventAlwaysOnAdjustWindowLevelAlternativeStart,
+    WidgetEventAlwaysOnAdjustWindowLevelAlternativeEnd,
+    WidgetEventAlwaysOnAdjustWindowLevelAlternativeCancel,
     };
 
   bool UpdateWindowLevelFromRectangle(int layer, int cornerPoint1[2], int cornerPoint2[2]);
@@ -143,14 +150,6 @@ protected:
   bool ProcessResetWindowLevel(vtkMRMLInteractionEventData* eventData);
 
   int GetEditableLayerAtEventPosition(vtkMRMLInteractionEventData* eventData);
-
-  /// Returns true if mouse is inside the selected layer volume.
-  /// Use background flag to choose between foreground/background layer.
-  bool IsEventInsideVolume(bool background, vtkMRMLInteractionEventData* eventData);
-
-  /// Returns true if the volume's window/level values are editable
-  /// on the GUI
-  bool VolumeWindowLevelEditable(const char* volumeNodeID);
 
   vtkMRMLVolumeNode* GetVolumeNodeFromSliceLayer(int editedLayer);
 

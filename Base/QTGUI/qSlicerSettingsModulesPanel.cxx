@@ -120,7 +120,6 @@ void qSlicerSettingsModulesPanelPrivate::init()
   this->FavoritesMoreButton->setChecked(false);
 
   // Default values
-  this->PreferExecutableCLICheckBox->setChecked(Slicer_CLI_PREFER_EXECUTABLE_DEFAULT);
   this->TemporaryDirectoryButton->setDirectory(coreApp->defaultTemporaryPath());
   this->DisableModulesListView->setFactoryManager( factoryManager );
   this->FavoritesModulesListView->setFactoryManager( factoryManager );
@@ -129,7 +128,11 @@ void qSlicerSettingsModulesPanelPrivate::init()
 
   // Slicer_DEFAULT_FAVORITE_MODULES contains module names in a comma-separated list
   // (chosen this format because the same format is used for storing the favorites list in the .ini file).
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QStringList favoritesRaw = QString(Slicer_DEFAULT_FAVORITE_MODULES).split(",", Qt::SkipEmptyParts);
+#else
   QStringList favoritesRaw = QString(Slicer_DEFAULT_FAVORITE_MODULES).split(",", QString::SkipEmptyParts);
+#endif
   // The separator commas have been removed, but we also need need to remove leading and trailing spaces from the retrieved names.
   QStringList favorites;
   foreach(QString s, favoritesRaw)
@@ -153,8 +156,6 @@ void qSlicerSettingsModulesPanelPrivate::init()
   q->registerProperty("disable-builtin-cli-modules", this->LoadBuiltInCommandLineModulesCheckBox,
                       "checked", SIGNAL(toggled(bool)));
 
-  q->registerProperty("Modules/PreferExecutableCLI", this->PreferExecutableCLICheckBox,
-                      "checked", SIGNAL(toggled(bool)));
   q->registerProperty("Modules/HomeModule", this->ModulesMenu,
                       "currentModule", SIGNAL(currentModuleChanged(QString)));
   q->registerProperty("Modules/FavoriteModules", this->FavoritesModulesListView->filterModel(),

@@ -1,14 +1,16 @@
 import glob
 import logging
 import os
-import qt
-import vtk
-import ctk
-import slicer
 
+import ctk
+import qt
+
+import slicer
 from slicer.util import settingsValue, toBool
 from slicer.ScriptedLoadableModule import *
+
 import DICOMLib
+
 
 #
 # DICOM
@@ -20,11 +22,9 @@ import DICOMLib
 
 class DICOM(ScriptedLoadableModule):
 
-
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
 
-    import string
     self.parent.title = "DICOM"
     self.parent.categories = ["", "Informatics"] # top level module
     self.parent.contributors = ["Steve Pieper (Isomics)", "Andras Lasso (PerkLab)"]
@@ -46,6 +46,8 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
     # hide the data probe (and so we need to restore its visibility).
     self.dataProbeHasBeenTemporarilyHidden = False
 
+    self.postModuleDiscoveryTasksPerformed = False
+
   def setup(self):
     # Tasks to execute after the application has started up
     slicer.app.connect("startupCompleted()", self.performPostModuleDiscoveryTasks)
@@ -59,13 +61,16 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
     if slicer.app.layoutManager() is not None:
       slicer.app.layoutManager().registerViewFactory(self.viewFactory)
 
-
   def performPostModuleDiscoveryTasks(self):
     """Since dicom plugins are discovered while the application
     is initialized, they may be found after the DICOM module
     itself if initialized.  This method is tied to a singleShot
-    that will be called once the event loop is read to start.
+    that will be called once the event loop is ready to start.
     """
+
+    if self.postModuleDiscoveryTasksPerformed:
+      return
+    self.postModuleDiscoveryTasksPerformed = True
 
     if slicer.mrmlScene.GetTagByClassName( "vtkMRMLScriptedModuleNode" ) != 'ScriptedModule':
       slicer.mrmlScene.RegisterNodeClass(vtkMRMLScriptedModuleNode())
@@ -135,10 +140,13 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
     slicer.util.selectModule("DICOM")
     slicer.app.processEvents()
     from DICOMLib import DICOMUtils
-    DICOMUtils.importFromDICOMWeb(
+    importedSeriesInstanceUIDs = DICOMUtils.importFromDICOMWeb(
       dicomWebEndpoint=queryMap["dicomweb_endpoint"],
       studyInstanceUID=queryMap["studyUID"],
       accessToken=accessToken)
+
+    # Select newly loaded items to make it easier to load them
+    self.browserWidget.dicomBrowser.setSelectedItems(ctk.ctkDICOMModel.SeriesType, importedSeriesInstanceUIDs)
 
   def initializeDICOMDatabase(self):
     #  Create alias for convenience
@@ -181,7 +189,6 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
         # Schema does not match, do not use it
         slicer.dicomDatabase.closeDatabase()
 
-
   def startListener(self):
 
     if not slicer.dicomDatabase.isOpen:
@@ -215,12 +222,12 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
     connection is made that will also cause the instance-created
     DICOM browser to be raised by this menu action"""
     a = self.parent.action()
+    a.setText(a.tr("Add DICOM Data"))
     fileMenu = slicer.util.lookupTopLevelWidget('FileMenu')
     if fileMenu:
-      for action in fileMenu.actions():
-        if action.text == 'Save':
-          fileMenu.insertAction(action,a)
-
+      for child in fileMenu.children():
+        if child.objectName == "RecentlyLoadedMenu":
+          fileMenu.insertAction(child.menuAction(), a)  # insert action before RecentlyLoadedMenu
 
   def setBrowserWidgetInDICOMLayout(self, browserWidget):
     """Set DICOM browser widget in the custom view layout"""
@@ -260,7 +267,6 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
     if self.browserWidget:
       self.viewWidget.layout().addWidget(self.browserWidget)
 
-
   def onLayoutChanged(self, viewArrangement):
     if viewArrangement == self.currentViewArrangement:
       return
@@ -293,7 +299,6 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
         dataProbe.setVisible(True)
         self.dataProbeHasBeenTemporarilyHidden = False
 
-
   def onBrowserWidgetClosed(self):
     if (self.currentViewArrangement != slicer.vtkMRMLLayoutNode.SlicerLayoutDicomBrowserView and
       self.currentViewArrangement != slicer.vtkMRMLLayoutNode.SlicerLayoutNone):
@@ -308,7 +313,6 @@ This work is supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
       layoutId = qt.QSettings().value("MainWindow/layout", slicer.vtkMRMLLayoutNode.SlicerLayoutInitialView)
 
     slicer.app.layoutManager().setLayout(layoutId)
-
 
   def _onModuleAboutToBeUnloaded(self, moduleName):
     # Application is shutting down. Stop the listener.
@@ -563,6 +567,11 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
   def setup(self):
     ScriptedLoadableModuleWidget.setup(self)
 
+    # If DICOM module is the startup module then this widget will be shown
+    # before startup completes, therefore we need to ensure here that
+    # module discovery happens before proceeding.
+    slicer.modules.DICOMInstance.performPostModuleDiscoveryTasks()
+
     # This module is often used in developer mode, therefore
     # collapse reload & test section by default.
     if hasattr(self, "reloadCollapsibleButton"):
@@ -574,7 +583,6 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
 
     self.testingServer = None
     self.browserWidget = None
-    self.directoryButton = None
 
     # Load widget from .ui file (created by Qt Designer)
     uiWidget = slicer.util.loadUI(self.resourcePath('UI/DICOM.ui'))
@@ -639,6 +647,7 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
     self.updateDatabaseDirectoryFromBrowser(self.browserWidget.dicomBrowser.databaseDirectory)
     # Synchronize database selection between browser and this widget
     self.ui.directoryButton.directoryChanged.connect(self.updateDatabaseDirectoryFromWidget)
+    self.ui.directoryButton.sizePolicy = qt.QSizePolicy(qt.QSizePolicy.Ignored, qt.QSizePolicy.Fixed)
     self.browserWidget.dicomBrowser.databaseDirectoryChanged.connect(self.updateDatabaseDirectoryFromBrowser)
 
     self.ui.browserAutoHideCheckBox.checked = not settingsValue('DICOM/BrowserPersistent', False, converter=toBool)
@@ -701,14 +710,12 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
     if mw:
       mw.installEventFilter(self.dragAndDropEventFilter)
 
-
   def exit(self):
     mw = slicer.util.mainWindow()
     if mw:
       mw.removeEventFilter(self.dragAndDropEventFilter)
     self.removeListenerObservers()
     self.browserWidget.close()
-
 
   def addListenerObservers(self):
     if not hasattr(slicer, 'dicomListener'):
@@ -718,7 +725,6 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
     slicer.dicomListener.fileToBeAddedCallback = self.onListenerToAddFile
     slicer.dicomListener.fileAddedCallback = self.onListenerAddedFile
 
-
   def removeListenerObservers(self):
     if not hasattr(slicer, 'dicomListener'):
       return
@@ -727,14 +733,11 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
     slicer.dicomListener.fileToBeAddedCallback = None
     slicer.dicomListener.fileAddedCallback = None
 
-
   def updateGUIFromMRML(self, caller, event):
     pass
 
-
   def onLayoutChanged(self, viewArrangement):
     self.ui.showBrowserButton.checked = (viewArrangement == slicer.vtkMRMLLayoutNode.SlicerLayoutDicomBrowserView)
-
 
   def onCurrentItemChanged(self, id):
     plugin = slicer.qSlicerSubjectHierarchyPluginHandler.instance().getOwnerPluginForSubjectHierarchyItem(id)
@@ -742,7 +745,6 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
       self.subjectHierarchyCurrentVisibility = False
       return
     self.subjectHierarchyCurrentVisibility = plugin.getDisplayVisibility(id)
-
 
   def onCurrentItemModified(self, id):
     oldSubjectHierarchyCurrentVisibility = self.subjectHierarchyCurrentVisibility
@@ -760,7 +762,6 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
         self.subjectHierarchyCurrentVisibility):
       self.browserWidget.close()
 
-
   def toggleBrowserWidget(self):
     if self.ui.showBrowserButton.checked:
       self.onOpenBrowserWidget()
@@ -768,16 +769,13 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
       if self.browserWidget:
         self.browserWidget.close()
 
-
   def importFolder(self):
     if not DICOMFileDialog.createDefaultDatabase():
       return
     self.browserWidget.dicomBrowser.openImportDialog()
 
-
   def onOpenBrowserWidget(self):
     slicer.app.layoutManager().setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutDicomBrowserView)
-
 
   def onToggleListener(self, toggled):
     if hasattr(slicer, 'dicomListener'):
@@ -787,7 +785,6 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
       slicer.modules.DICOMInstance.startListener()
       self.addListenerObservers()
     self.onListenerStateChanged()
-
 
   def onListenerStateChanged(self, newState=None):
     """ Called when the indexer process state changes
@@ -803,14 +800,14 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
       wasBlocked = self.ui.toggleListener.blockSignals(True)
       self.ui.toggleListener.checked = False
       self.ui.toggleListener.blockSignals(wasBlocked)
-      slicer.modules.DICOMInstance.stopListener()
+      if hasattr(slicer.modules, 'DICOMInstance'):  # custom applications may not have the standard DICOM module
+        slicer.modules.DICOMInstance.stopListener()
     if newState == 1:
       self.ui.listenerStateLabel.text = "starting"
     if newState == 2:
       port = str(slicer.dicomListener.port) if hasattr(slicer, 'dicomListener') else "unknown"
       self.ui.listenerStateLabel.text = "running at port "+port
       self.ui.toggleListener.checked = True
-
 
   def onListenerToAddFile(self):
     """ Called when the indexer is about to add a file to the database.
@@ -869,21 +866,17 @@ class DICOMWidget(ScriptedLoadableModuleWidget):
       self.testingServer.start(verbose=self.verboseServer.checked,initialFiles=files)
       #self.toggleServer.text = "Stop Testing Server"
 
-
   def onRunListenerAtStart(self, toggled):
     settings = qt.QSettings()
     settings.setValue('DICOM/RunListenerAtStart', toggled)
 
-
   def updateDatabaseDirectoryFromWidget(self, databaseDirectory):
     self.browserWidget.dicomBrowser.databaseDirectory = databaseDirectory
-
 
   def updateDatabaseDirectoryFromBrowser(self,databaseDirectory):
     wasBlocked = self.ui.directoryButton.blockSignals(True)
     self.ui.directoryButton.directory = databaseDirectory
     self.ui.directoryButton.blockSignals(wasBlocked)
-
 
   def onBrowserAutoHideStateChanged(self, autoHideState):
     if self.browserWidget:

@@ -37,16 +37,12 @@ set(expected_defined_vars
   Slicer_CMAKE_DIR Slicer_DIR
   Slicer_EXTENSIONS_TRACK_QUALIFIER
   Slicer_REVISION
-  Subversion_SVN_EXECUTABLE
   )
 if(RUN_CTEST_UPLOAD)
   list(APPEND expected_defined_vars
     EXTENSION_ARCHITECTURE
     EXTENSION_BITNESS
     EXTENSION_OPERATING_SYSTEM
-    MIDAS_PACKAGE_API_KEY
-    MIDAS_PACKAGE_EMAIL
-    MIDAS_PACKAGE_URL
     )
 endif()
 foreach(var ${expected_defined_vars})
@@ -63,7 +59,7 @@ set(CMAKE_MODULE_PATH
   )
 
 include(CMakeParseArguments)
-include(MIDASCTestUploadURL)
+include(SlicerCTestUploadURL)
 include(UseSlicerMacros) # for slicer_setting_variable_message
 
 #-----------------------------------------------------------------------------
@@ -82,7 +78,12 @@ endforeach()
 
 #-----------------------------------------------------------------------------
 # Set site name and force to lower case
-site_name(CTEST_SITE)
+if("${CTEST_SITE}" STREQUAL "")
+  site_name(default_ctest_site)
+  string(TOLOWER "${default_ctest_site}" default_ctest_site)
+  message(STATUS "CTEST_SITE is an empty string. Defaulting to '${default_ctest_site}'")
+  set(CTEST_SITE "${default_ctest_site}")
+endif()
 string(TOLOWER "${CTEST_SITE}" ctest_site_lowercase)
 set(CTEST_SITE ${ctest_site_lowercase} CACHE STRING "Name of the computer/site where compile is being run" FORCE)
 
@@ -149,12 +150,8 @@ CMAKE_CXX_STANDARD_REQUIRED:BOOL=${CMAKE_CXX_STANDARD_REQUIRED}
 CMAKE_CXX_EXTENSIONS:BOOL=${CMAKE_CXX_EXTENSIONS}
 CTEST_MODEL:STRING=${CTEST_MODEL}
 GIT_EXECUTABLE:FILEPATH=${GIT_EXECUTABLE}
-Subversion_SVN_EXECUTABLE:FILEPATH=${Subversion_SVN_EXECUTABLE}
 Slicer_DIR:PATH=${Slicer_DIR}
 Slicer_EXTENSIONS_TRACK_QUALIFIER:STRING=${Slicer_EXTENSIONS_TRACK_QUALIFIER}
-MIDAS_PACKAGE_URL:STRING=${MIDAS_PACKAGE_URL}
-MIDAS_PACKAGE_EMAIL:STRING=${MIDAS_PACKAGE_EMAIL}
-MIDAS_PACKAGE_API_KEY:STRING=${MIDAS_PACKAGE_API_KEY}
 EXTENSION_DEPENDS:STRING=${EXTENSION_DEPENDS}
 ")
 
@@ -233,7 +230,7 @@ endif()
 if(build_errors GREATER "0")
   message(WARNING "Skip extension packaging: ${build_errors} build error(s) occurred !")
 else()
-  message("Packaging and uploading extension ${EXTENSION_NAME} to midas ...")
+  message("Packaging and uploading extension ${EXTENSION_NAME} ...")
   set(package_list)
   set(package_target "package")
   if(RUN_CTEST_UPLOAD)
@@ -258,8 +255,9 @@ else()
     foreach(p ${package_list})
       get_filename_component(package_name "${p}" NAME)
       message("Uploading URL to [${package_name}] on CDash")
-      midas_ctest_upload_url(
-        API_URL ${MIDAS_PACKAGE_URL}
+      slicer_ctest_upload_url(
+        ALGO "SHA512"
+        DOWNLOAD_URL_TEMPLATE "${SLICER_PACKAGE_MANAGER_URL}/api/v1/file/hashsum/%(algo)/%(hash)/download"
         FILEPATH ${p}
         )
       if(RUN_CTEST_SUBMIT)

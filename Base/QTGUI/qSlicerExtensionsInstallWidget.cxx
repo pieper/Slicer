@@ -21,6 +21,7 @@
 // Qt includes
 #include <QDebug>
 #include <QDesktopServices>
+#include <QStyle>
 #include <QUrlQuery>
 #include <QWebEngineView>
 
@@ -124,7 +125,7 @@ void qSlicerExtensionsInstallWidgetPrivate::setFailurePage(const QStringList& er
       "  </div>"
       "  <div class='extensionsBody'>"
       "    <!-- Following layout and associated CSS style are inspired from Mozilla error message. -->"
-      "    <!-- It is originally covered by http://mozilla.org/MPL/2.0/ license -->"
+      "    <!-- It is originally covered by https://mozilla.org/MPL/2.0/ license -->"
       "    <!-- MPL 2.0 license is compatible with Slicer (BSD-like) license -->"
       "    <div class='error'>"
       "      <div id='errorTitle'><h1>Extensions can not be installed.</h1></div>"
@@ -152,6 +153,36 @@ void qSlicerExtensionsInstallWidgetPrivate::setFailurePage(const QStringList& er
     htmlErrors << QString("<li>%1</li>").arg(error);
     }
   q->webView()->setHtml(html.arg(htmlErrors.join("/n")));
+}
+
+// --------------------------------------------------------------------------
+void qSlicerExtensionsInstallWidgetPrivate::updateTheme()
+{
+  Q_Q(qSlicerExtensionsInstallWidget);
+  this->setDarkThemeEnabled(q->style()->objectName().compare("Dark Slicer", Qt::CaseInsensitive) == 0);
+}
+
+// --------------------------------------------------------------------------
+void qSlicerExtensionsInstallWidgetPrivate::setDarkThemeEnabled(bool enabled)
+{
+  Q_Q(qSlicerExtensionsInstallWidget);
+  if(!this->BrowsingEnabled)
+    {
+    return;
+    }
+  int serverAPI = this->ExtensionsManagerModel->serverAPI();
+  if (serverAPI == qSlicerExtensionsManagerModel::Midas_v1)
+    {
+    // Not supported
+    }
+  else if (serverAPI == qSlicerExtensionsManagerModel::Girder_v1)
+    {
+    q->evalJS(QString("app.$vuetify.theme.dark = %1;").arg(enabled ? "true" : "false"));
+    }
+  else
+    {
+    qWarning() << Q_FUNC_INFO << " failed: missing implementation for serverAPI" << serverAPI;
+    }
 }
 
 // --------------------------------------------------------------------------
@@ -361,6 +392,7 @@ void qSlicerExtensionsInstallWidget::onMessageLogged(const QString& text, ctkErr
     {
     return;
     }
+  QString escapedText = QString(text).replace("'", "\\'");
   QString delay = "2500";
   QString state;
   if (level == ctkErrorLogLevel::Warning)
@@ -376,11 +408,11 @@ void qSlicerExtensionsInstallWidget::onMessageLogged(const QString& text, ctkErr
   int serverAPI = d->ExtensionsManagerModel->serverAPI();
   if (serverAPI == qSlicerExtensionsManagerModel::Midas_v1)
     {
-    this->evalJS(QString("midas.createNotice('%1', %2, '%3')").arg(text).arg(delay).arg(state));
+    this->evalJS(QString("midas.createNotice('%1', %2, '%3')").arg(escapedText).arg(delay).arg(state));
     }
   else if (serverAPI == qSlicerExtensionsManagerModel::Girder_v1)
     {
-    this->evalJS(QString("app.createNotice('%1', %2, '%3')").arg(text).arg(delay).arg(state));
+    this->evalJS(QString("app.createNotice('%1', %2, '%3')").arg(escapedText).arg(delay).arg(state));
     }
   else
     {
@@ -414,6 +446,10 @@ void qSlicerExtensionsInstallWidget::onLoadFinished(bool ok)
     d->setFailurePage(QStringList() << QString("Failed to load extension page using this URL: <strong>%1</strong>")
                       .arg(d->extensionsListUrl().toString()));
     }
+  if (ok)
+    {
+    d->updateTheme();
+    }
 }
 
 // --------------------------------------------------------------------------
@@ -422,4 +458,19 @@ bool qSlicerExtensionsInstallWidget::acceptNavigationRequest(const QUrl & url, Q
   Q_D(qSlicerExtensionsInstallWidget);
   d->InternalHosts = QStringList() << this->extensionsManagerModel()->frontendServerUrl().host();
   return Superclass::acceptNavigationRequest(url, type, isMainFrame);
+}
+
+// --------------------------------------------------------------------------
+void qSlicerExtensionsInstallWidget::changeEvent(QEvent *e)
+{
+  Q_D(qSlicerExtensionsInstallWidget);
+  switch (e->type())
+    {
+    case QEvent::StyleChange:
+      d->updateTheme();
+    break;
+    default:
+    break;
+    }
+  this->Superclass::changeEvent(e);
 }

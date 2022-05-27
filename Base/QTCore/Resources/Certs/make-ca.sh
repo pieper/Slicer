@@ -10,7 +10,7 @@
 # Original script available at [1] and adapted by Jean-Christophe Fillion-Robin
 # to only generate a .crt bundle needed for OpenSSL.
 #
-# [1] http://anduin.linuxfromscratch.org/BLFS/other/make-ca.sh-20170514
+# [1] https://anduin.linuxfromscratch.org/BLFS/other/make-ca.sh-20170514
 #
 # Changes:
 #
@@ -287,6 +287,13 @@ for tempfile in ${TEMPDIR}/certs/*.tmp; do
   # Print information about cert
   echo "Certificate:  ${certname}"
   echo "Keyhash:      ${keyhash}"
+
+  if [[ "${certname}" == "DST Root CA X3" ]]; then
+    echo "*************************************"
+    echo "* Skipping ${certname}"
+    echo "*************************************"
+    continue
+  fi
 
   # Import certificates trusted for SSL/TLS into
   # GnuTLS certificate bundle

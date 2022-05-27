@@ -26,7 +26,7 @@
    <item>
     <widget class="ctkColorPickerButton" name="ColorButton">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -50,8 +50,11 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
-     <property name="toolTip">
-      <string>Place a markup point</string>
+      <property name="popupMode">
+        <enum>QToolButton::MenuButtonPopup</enum>
+      </property>
+      <property name="toolTip">
+      <string>Place a control point</string>
      </property>
      <property name="text">
       <string>...</string>
@@ -73,8 +76,11 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="popupMode">
+      <enum>QToolButton::MenuButtonPopup</enum>
+     </property>
      <property name="toolTip">
-      <string>Delete last added markup point</string>
+      <string>Delete last added control point</string>
      </property>
      <property name="text">
       <string>...</string>
@@ -93,6 +99,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="toolTip">
+      <string>Click for more options</string>
+     </property>
      <property name="text">
       <string>...</string>
      </property>
@@ -106,15 +115,15 @@
     </widget>
    </item>
   </layout>
-  <action name="ActionPersistent">
+  <action name="ActionPlacePersistentPoint">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Place multiple markups</string>
+    <string>Place multiple control points</string>
    </property>
    <property name="toolTip">
-    <string>Place multiple markups</string>
+    <string>Place multiple control points</string>
    </property>
   </action>
   <action name="ActionDeleteAll">
@@ -123,10 +132,35 @@
      <normaloff>:/Icons/MarkupsDeleteAllRows.png</normaloff>:/Icons/MarkupsDeleteAllRows.png</iconset>
    </property>
    <property name="text">
-    <string>Delete all markups</string>
+    <string>Delete all control points</string>
    </property>
    <property name="toolTip">
-    <string>Delete all markups in the list</string>
+    <string>Delete all control points in the list</string>
+   </property>
+  </action>
+  <action name="ActionUnsetLast">
+   <property name="icon">
+    <iconset resource="../../../Resources/qSlicerMarkupsModule.qrc">
+     <normaloff>:/Icons/MarkupsUnset.png</normaloff>:/Icons/MarkupsUnset.png</iconset>
+   </property>
+    <property name="text">
+    <string>Clear last control point position</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear the position of the last control point placed (the control point will not be deleted).</string>
+   </property>
+  </action>
+  <action name="ActionUnsetAll">
+   <property name="icon">
+    <iconset resource="../../../Resources/qSlicerMarkupsModule.qrc">
+     <normaloff>:/Icons/MarkupsUnsetAll.png</normaloff>:/Icons/MarkupsUnsetAll.png
+    </iconset>
+   </property>
+   <property name="text">
+    <string>Clear all control point positions</string>
+   </property>
+   <property name="toolTip">
+    <string>Clear the position of all control points in the list (the control points will not be deleted).</string>
    </property>
   </action>
   <action name="ActionVisibility">
@@ -139,7 +173,7 @@
     <string>Visibility</string>
    </property>
    <property name="toolTip">
-    <string>Toggle markups visibility</string>
+    <string>Toggle markup visibility</string>
    </property>
   </action>
   <action name="ActionLocked">
@@ -152,7 +186,20 @@
     <string>Locked</string>
    </property>
    <property name="toolTip">
-    <string>Toggle markup point positions lock</string>
+    <string>Toggle control point positions lock</string>
+   </property>
+  </action>
+  <action name="ActionFixedNumberOfControlPoints">
+   <property name="icon">
+    <iconset resource="../../../../../../Base/QTGUI/Resources/qSlicerBaseQTGUI.qrc">
+     <normaloff>:/Icons/Small/SlicerPointNumberUnlock.png</normaloff>
+     <normalon>:/Icons/Small/SlicerPointNumberLock.png</normalon>:/Icons/Small/SlicerPointNumberUnlock.png</iconset>
+   </property>
+   <property name="text">
+    <string>Control point number locked</string>
+   </property>
+   <property name="toolTip">
+    <string>Toggle control point number lock. If locked then it is not possible to add or delete control points. Instead of deleting, position control points can be unset.</string>
    </property>
   </action>
  </widget>

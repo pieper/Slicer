@@ -15,6 +15,9 @@
 
 ==============================================================================*/
 
+// STD includes
+#include <memory>
+
 // MRML includes
 #include "vtkMRMLMarkupsJsonStorageNode.h"
 
@@ -42,7 +45,7 @@ public:
   ~vtkInternal();
 
   // Reader
-  rapidjson::Document* CreateJsonDocumentFromFile(const char* filePath);
+  std::unique_ptr<rapidjson::Document> CreateJsonDocumentFromFile(const char* filePath);
   std::string GetMarkupsClassNameFromMarkupsType(std::string markupsType);
   std::string GetMarkupsClassNameFromJsonValue(rapidjson::Value& markupObject);
   virtual bool UpdateMarkupsNodeFromJsonValue (vtkMRMLMarkupsNode* markupsNode, rapidjson::Value& markupObject);

@@ -274,6 +274,7 @@ void qMRMLThreeDViewControllerWidgetPrivate::init()
   this->CenterToolButton->setAutoRaise(true);
   this->CenterToolButton->setDefaultAction(this->actionCenter);
   this->CenterToolButton->setFixedSize(15, 15);
+  this->CenterToolButton->setObjectName("CenterButton_Header");
   this->BarLayout->insertWidget(2, this->CenterToolButton);
 
   this->ViewLabel->setText(qMRMLThreeDViewControllerWidget::tr("1"));
@@ -320,7 +321,7 @@ void qMRMLThreeDViewControllerWidget::setThreeDView(qMRMLThreeDView* view)
 
 // --------------------------------------------------------------------------
 void qMRMLThreeDViewControllerWidget::setMRMLViewNode(
-    vtkMRMLViewNode * viewNode)
+    vtkMRMLAbstractViewNode * viewNode)
 {
   Q_D(qMRMLThreeDViewControllerWidget);
   Superclass::setMRMLViewNode(viewNode);

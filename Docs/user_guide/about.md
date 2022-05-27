@@ -9,7 +9,7 @@
 **Note:** There is no restriction on use, but Slicer is **NOT** approved for clinical use and the distributed application is intended for research use. Permissions and compliance with applicable rules are the responsibility of the user. For details on the license see [here](https://www.slicer.org/wiki/License).
 
 Highlights:
-- Free, [open-source](http://en.wikipedia.org/wiki/Open_source>) software available on multiple operating systems: Linux, macOS and Windows.
+- Free, [open-source](https://en.wikipedia.org/wiki/Open_source>) software available on multiple operating systems: Linux, macOS and Windows.
 - Multi organ: from head to toe.
 - Support for multi-modality imaging including, MRI, CT, US, nuclear medicine, and microscopy.
 - Real-time interface for medical devices, such as surgical navigation systems, imaging systems, robotic devices, and sensors.
@@ -18,17 +18,46 @@ Highlights:
 
 ## License
 
-The 3D Slicer software is distributed under a BSD-style open source license that is compatible with the Open Source Definition by [The Open Source Initiative](http://opensource.org/) and contains no restrictions on use of the software.
+The 3D Slicer software is distributed under a BSD-style open source license that is broadly compatible with the Open Source Definition by [The Open Source Initiative](https://opensource.org/) and contains no restrictions on legal uses of the software.
 
 To use Slicer, please read the [3D Slicer Software License Agreement](https://github.com/Slicer/Slicer/blob/master/License.txt) before downloading any binary releases of the Slicer.
+
+### Historical notes about the license
+
+The Slicer License was drafted in 2005 by lawyers working for Brigham and Women's Hospital (BWH), a teaching affiliate of Harvard Medical School, to be BSD-like but with a few extra provisions related to medical software.  It is specific to BWH so it's not directly reusable, but it could serve as a template for projects with similar goals.
+
+It was written in part because BWH was the prime contractor on an NIH-funded development consortium ([NA-MIC](https://www.na-mic.org/)) and wanted all code contributions to be compatible with ultimate use in real-world medical products (that is, commercial FDA-approved medical devices, which are almost universally closed source even if they build on open software).  Compliance with the Slicer License was required for subcontractors, a group that included GE Research, Kitware and several universities (MIT, UNC...) who all reviewed and accepted this license.
+
+The license has been in continuous use since 2005 for the 3D Slicer software package (slicer.org) that as of 2021 has been downloaded more than a million times and has been referenced in about 12,000 academic publications (https://www.slicer.org/wiki/Main_Page/SlicerCommunity). Some of the code is also now being used in several medical products for which this license has been reviewed and accepted by the companies involved.
+
+### License terms and reasons
+
+Here are some of the key points that BWH included in addition to BSD terms to make the license suit the case of a large hospital distributing open source medical software.
+
+For using and redistributing 3D Slicer:
+- The license states that the code is "designed for research" and "CLINICAL APPLICATIONS ARE NEITHER RECOMMENDED NOR ADVISED" to make it extra clear that any commercial clinical uses of the code are solely the responsibility of the user and not BWH or the other developers.  This is a disclaimer rather than a legal restriction.
+
+For making changes or adding any source code or data to 3D Slicer:
+- Contributors explicitly grant royalty free rights if they contribute code covered by a patent they control (i.e. to avoid submarine patents).
+- No GPL or other copyleft code is allowed because that could make it complicated and risky to mix Slicer code with private intellectual property, which is often present in regulated medical products.
+- Contributors affirm that they have de-identified any patient data they contribute to avoid issues with HIPAA or related regulations.
+
+### Status compared to other open source licenses
+
+As of June 2021, the Slicer License has been used for over 15 years without incident. In May of 2021, a discourse user [suggested](https://discourse.slicer.org/t/apply-for-osi-open-source-license-status/17791) submitting the license to [the OSI license review process](https://opensource.org/approval). After some discussion and hearing no objections, the community leadership decided to [submit the license for review](https://lists.opensource.org/pipermail/license-review_lists.opensource.org/2021-May/thread.html). Although the OSI process is not legally binding, the discussion could give potential Slicer users perspective on how provisions of the license compare with other commonly used licenses.
+The discussion concluded that bundling the contribution agreement in the license makes it non-approvable by OSI and the requirement to use the software for legal purposes may not be consistent with the [Open Source Definition](https://opensource.org/osd). Otherwise the license terms appear not to be controversial. Interested parties should review the [full discussion](https://lists.opensource.org/pipermail/license-review_lists.opensource.org/2021-June/thread.html#5166) for details.
 
 ## How to cite
 
 ### 3D Slicer as a platform
 
-To acknowledge 3D Slicer as a platform, please cite the [Slicer web site](http://www.slicer.org/) and the following publications when publishing work that uses or incorporates 3D Slicer:
+To acknowledge 3D Slicer as a platform, please cite the [Slicer web site](https://www.slicer.org/) and the following publications when publishing work that uses or incorporates 3D Slicer:
 
 **Fedorov A., Beichel R., Kalpathy-Cramer J., Finet J., Fillion-Robin J-C., Pujol S., Bauer C., Jennings D., Fennessy F.M., Sonka M., Buatti J., Aylward S.R., Miller J.V., Pieper S., Kikinis R. [3D Slicer as an Image Computing Platform for the Quantitative Imaging Network](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3466397/pdf/nihms383480.pdf). Magnetic Resonance Imaging. 2012 Nov;30(9):1323-41. PMID: 22770690. PMCID: PMC3466397.**
+
+## The 3D Slicer name and logo
+
+3D Slicer and the logo are trademarks of Brigham and Women's Hospital (BWH) and may not be used without permission.  Such permission is broadly granted for academic or commercial uses, such as documenting the use of Slicer in your project or promoting the use of Slicer by others.  Please use the original Slicer logo colors and do not alter the shape or text.  Using Slicer to imply that BWH or the Slicer community endorses your product or project is not permitted without permission.  For other uses please contact Ron Kikinis (kikinis@bwh.harvard.edu) and Steve Pieper (pieper@bwh.harvard.edu).
 
 ### Individual modules
 
@@ -87,18 +116,20 @@ If you find Slicer is helpful like the community please get involved. You don't 
 
 Many of the activities around the Slicer effort are made possible through funding from public and private sources. The National Institutes of Health of the USA is a major contributor through a variety of competitive grants and contracts. Funding sources that contribute to development of Slicer core or extensions include:
 
-|Grant Number|Project Name|Grant PIs|Start Date|End Date|Title|
-|------------|------------|---------|----------|--------|-----|
+|Grant Number|Description|Grant PIs|Start Date|End Date|Title|
+|------------|-----------|---------|----------|--------|-----|
 |[NIH 1R01HL153166-01](https://projectreporter.nih.gov/project_info_description.cfm?aid=10029738&icde=51006191)|Computer Modeling of the Tricuspid Valve in HLHS|Matthew Jolley|2021-06-30|2025-06-30|Computer Modeling of the Tricuspid Valve in Hypoplastic Left Heart Syndrome|
 |[CZI EOSS 4](https://chanzuckerberg.com/eoss/proposals/3d-slicer-in-my-language-internationalization-and-usability-improvements/)   |Slicer internationalization and usability|Pujol, Sonia|2021-09-01|2023-09-01   |3D Slicer in My Language: Internationalization and Usability Improvements|
 |[NIH 4P41EB015902](https://projectreporter.nih.gov/project_info_description.cfm?aid=9115586&icde=31485398&ddparam=&ddvalue=&ddsub=&cr=3&csb=default&cs=ASC)|Neuroimage Analysis Center|Ron Kikinis|2013-08-01|2023-08-31|Application of Slicer to image-guided neurosurgery and other applications through steered computatiton and image navigation databases|
 |CANARIE RS3-036|SlicerAIGT|Fichtinger, Gabor|2020-10-01|2023-03-31|Develop free open source research software for AI-powered image guided therapy on Slicer platform|
 |[NIH R01MH112748](https://reporter.nih.gov/search/-oPV-FDakki3bPslkjMUwg/project-details/10053340)|High-accuracy brain segmentation tools|Bouix, Sylvain|2017-12-01|2022-10-31|High Resolution, Comprehensive Atlases of the Human Brain Morphology|
 |[NIH R44DK115332](https://www.sbir.gov/sbirsearch/detail/1683213)|Renal Biopsy            |Enquobahrie, Andinet A.|2019-08-13|2021-07-31|Advanced virtual simulator for real-time ultrasound-guided renal biopsy training|
+|ICEX 0202101723|SlicerVR Collaboration|Juan Ruiz Alzola|2021-01-16|2021-12-31|Sistema Virtual Colaborativa Aplicación Médicas|
 |[NIH R01EB025212](https://govtribe.com/award/federal-grant-award/project-grant-r01eb025212)|Software annotation     |Enquobahrie, Andinet A.|2019-07-02|2021-03-31|Software for Practical Annotation and Exchange of Virtual Anatomy|
 |CANARIE RS319|SlicerIGT|Fichtinger, Gabor|2019-10-01|2020-09-30|Canadian Research Software Infrastructure|
 |CANARIE RS214|SlicerRT|Fichtinger, Gabor|2017-07-01|2020-09-30|Canadian Research Software Infrastructure|
 |CHOP                      |SlicerHeart|Matthew Jolley|2015-08-15|2020-08-15|Pediatric cardiac valve modeling, Children Hospital of Philadelphia|
+|[MAC/1.1b/098](https://mt4sd.ulpgc.es/en/macbioidi-project/)|MACBIOLDI|Juan Ruiz Alzola|2017-01-01|2020-09-30|Medical Technology for Sustainable Development (MedTec4SusDev)|
 |[NIH 2P41EB015898](https://projectreporter.nih.gov/project_info_details.cfm?aid=8855115&icde=27026518)|DiffusionMRI            |Tempany, Clare M|2004-04-01|2020-06-30|Image Guided Therapy Center|
 |[NIH 5P41EB015898](https://projectreporter.nih.gov/project_info_description.cfm?aid=9125821&icde=31485478&ddparam=&ddvalue=&ddsub=&cr=2&csb=default&cs=ASC)|National Center for Image Guided Therapy|Clare Tempany|2004-04-01|2020-06-30|Use of Slicer in a wide array of image-guided therapy research for prostate cancer, neurosurgery, and image naviation|
 |[NIH 1R01EB021391](https://projectreporter.nih.gov/project_info_description.cfm?aid=9123966&icde=31459429&ddparam=&ddvalue=&ddsub=&cr=2&csb=default&cs=ASC)|Shape                   |Paniagua, Beatriz|2016-09-19|2020-06-30|SHAPE ANALYSIS TOOLBOX FOR MEDICAL IMAGE COMPUTING PROJECTS|
@@ -109,7 +140,7 @@ Many of the activities around the Slicer effort are made possible through fundin
 |[NIH R43DE027595](https://projectreporter.nih.gov/project_info_description.cfm?aid=9465772&icde=36620728&ddparam=&ddvalue=&ddsub=&cr=2&csb=default&cs=ASC&pball=)|VROrthognathic          |Paniagua, Beatriz|2017-09-07|2018-09-06|High-Fidelity Virtual Reality Trainer for Orthognathic Surgery|
 |[NIH 1R21DE025306](https://projectreporter.nih.gov/project_info_description.cfm?aid=9111256&icde=31459429&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|CMF                     |Paniagua, Beatriz|2016-09-01|2018-08-31|TEXTURAL BIOMARKERS OF ARTHRITIS FOR THE SUBCHONDRAL BONE IN THE TEMPOROMANDIBULAR JOINT|
 |[NIH 1U01NS082086](https://projectreporter.nih.gov/project_info_description.cfm?aid=8462842&icde=27164806&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_SHAPEANALSS          |Gerig, Guido|2012-09-28|2018-08-31|4D Shape Analysis for Modeling Spatiotemporal Change Trajectories in Huntington’s|
-|[NIH U24 CA180918](https://projectreporter.nih.gov/project_info_description.cfm?aid=8911287&icde=27026906)|[QIICR]((http://qiicr.org))|Ron Kikinis, Andrey Fedorov|2013-09-04|2018-08-31|Quantitative Image Informatics for Cancer Research (QIICR)|
+|[NIH U24 CA180918](https://projectreporter.nih.gov/project_info_description.cfm?aid=8911287&icde=27026906)|[QIICR]((https://qiicr.org))|Ron Kikinis, Andrey Fedorov|2013-09-04|2018-08-31|Quantitative Image Informatics for Cancer Research (QIICR)|
 |[NIH 5R01NS055903](https://projectreporter.nih.gov/project_info_description.cfm?aid=8900362&icde=27164764&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_KIDS                 |Nopoulos, Peggy|2009-03-01|2018-07-31|Growth and Development of the Striatum in Huntington's Disease|
 |[NIH 1U01CA199459](https://projectreporter.nih.gov/project_info_description.cfm?aid=8971083&icde=27026834)|SlicerDMRI Diffusion MRI|O'Donnell, Lauren Jean|2015-09-22|2018-07-31|Open Source Diffusion MRI Technology For Brain Cancer Research|
 |[NIH 5R01EB020667-02](https://projectreporter.nih.gov/project_info_description.cfm?aid=9100712&icde=34329960)|OpenIGTLink             |Tokuda, Junichi|2015-07-01|2018-06-30|OpenIGTLink: A Network Communication Interface for Closed-Loop Image-Guided Interventions|
@@ -132,15 +163,15 @@ Many of the activities around the Slicer effort are made possible through fundin
 |[NIH 5U01CA151261](https://projectreporter.nih.gov/project_info_description.cfm?aid=8707214&icde=27026645)|ProstateQIN             |Fennessy, Fiona|2010-09-01|2016-07-01|Quantitative Mri Of Prostate Cancer As A Biomarker And Guide For Treatment|
 |[NIH 1U01NS082074](https://projectreporter.nih.gov/project_info_description.cfm?aid=8596213&icde=27164895&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_GENETICS             |Calhoun/Turner|2013-07-01|2016-06-30|Imaging and Genetics in Huntington's Disease|
 |[NIH 1U01NS083173](https://projectreporter.nih.gov/project_info_description.cfm?aid=8529927&icde=27164835&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_PET                  |Feigin, Andrew|2013-07-01|2016-06-30|Brain Network Imaging: A Novel Biomarker for Preclinical Huntington’s Disease|
-|[NIH 1R01CA170665](https://projectreporter.nih.gov/project_info_description.cfm?aid=8384153&icde=27037397&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](http://tubetk.org)|Dayton, Paul A.|2012-09-01|2016-06-01|Micro-Tumor Detection By Quantifying Tumor-Induced Vascular Abnormalities|
+|[NIH 1R01CA170665](https://projectreporter.nih.gov/project_info_description.cfm?aid=8384153&icde=27037397&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](https://tubetk.org)|Dayton, Paul A.|2012-09-01|2016-06-01|Micro-Tumor Detection By Quantifying Tumor-Induced Vascular Abnormalities|
 |[NIH 1U01NS083223](https://projectreporter.nih.gov/project_info_description.cfm?aid=8652000&icde=27164795&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_WHITEMATTER          |Westin, Carl-Fredrik|2014-01-01|2015-12-31|Characterization of White Matter in Huntington’s Disease Using Diffusion MRI|
 |CCO RC                    |SlicerRT               |Fichtinger, Gabor|2010-01-01|2015-12-31|Cancer Care Ontario Research Chair, Canada|
 |[NIH 1U01NS082083](https://projectreporter.nih.gov/project_info_description.cfm?aid=8462829&icde=27164863&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_FMRI_DWI             |Rao, Stephen Mark|2012-09-26|2015-08-31|Functional Connectivity in Premanifest Huntington’s Disease|
 |[NIH R41CA196565](https://projectreporter.nih.gov/project_info_description.cfm?aid=8905274&icde=27036277&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|Duke Prostate Registration|Palmeri, Mark L. & McCormick, Matthew M.|2015-04-01|2015-04-01|Prostate Cancer Assessment Via Integrated 3D Arfi Elasticity Imaging And Multi-Parametric Mri|
-|[NIH 1R43EB016621](https://projectreporter.nih.gov/project_info_description.cfm?aid=8472102&icde=27037328&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](http://tubetk.org)|Aylward, Stephen R.|2013-05-01|2015-04-01|In-Field Fast Procedure Support And Automation|
-|[NIH 1R41NS081792](https://projectreporter.nih.gov/project_info_description.cfm?aid=8453963&icde=27037364&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](http://tubetk.org)|Aylward, Stephen R.|2013-01-01|2014-12-01|Multimodality Image-Based Assessment System For Traumatic Brain Injury|
+|[NIH 1R43EB016621](https://projectreporter.nih.gov/project_info_description.cfm?aid=8472102&icde=27037328&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](https://tubetk.org)|Aylward, Stephen R.|2013-05-01|2015-04-01|In-Field Fast Procedure Support And Automation|
+|[NIH 1R41NS081792](https://projectreporter.nih.gov/project_info_description.cfm?aid=8453963&icde=27037364&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](https://tubetk.org)|Aylward, Stephen R.|2013-01-01|2014-12-01|Multimodality Image-Based Assessment System For Traumatic Brain Injury|
 |[NIH 2R42CA153488](https://projectreporter.nih.gov/project_info_description.cfm?aid=8390856&icde=27037039&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|PET-CT guided needle biopsy|Cleary, Kevin R.|2012-09-01|2014-08-01|Improving Liver Lesion Biopsy In The Ct Suite Through Fusion With Pet Images|
-|[NIH 1R43CA165621](https://projectreporter.nih.gov/project_info_description.cfm?aid=8252988&icde=27037450&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](http://tubetk.org)|Aylward, Stephen R|2012-12-01|2014-08-01|Quantitative Ultrasound Analysis Of Vascular Morphology For Cancer Assessment|
+|[NIH 1R43CA165621](https://projectreporter.nih.gov/project_info_description.cfm?aid=8252988&icde=27037450&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|[TubeTK](https://tubetk.org)|Aylward, Stephen R|2012-12-01|2014-08-01|Quantitative Ultrasound Analysis Of Vascular Morphology For Cancer Assessment|
 |[NIH 5U01NS082085](https://projectreporter.nih.gov/project_info_description.cfm?aid=8462830&icde=27164813&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_SUBCORTICAL_SHAPE    |Miller, Michael & Ross, Christopher|2012-09-26|2014-07-31|Basal Ganglia Shape Analysis and Circuitry in Huntington's Disease|
 |[NIH 5U54EB005149](https://projectreporter.nih.gov/project_info_description.cfm?aid=8501010&icde=27164945&ddparam=&ddvalue=&ddsub=&cr=5&csb=default&cs=ASC)|HD_DWI                  |Kikinis, Ron|2010-09-30|2014-06-30|National Alliance for Medical Image Computing|
 |[NIH 5R01NS054893](https://projectreporter.nih.gov/project_info_description.cfm?aid=8077226&icde=27164732&ddparam=&ddvalue=&ddsub=&cr=1&csb=default&cs=ASC)|HD_FMRI                 |Paulsen, Jane|2007-05-15|2013-04-30|Cognitive and Functional Brain Changes in Preclinical Huntington's Disease (HD)|
@@ -160,9 +191,9 @@ We invite commercial entities to use 3D Slicer.
 ### Commercial Partners
 
 - [Ebatinca SL](https://ebatinca.com/) is an international technology company in Las Palmas, Spain focused on technology for sustainable development.
-- [Isomics](http://www.isomics.com/) uses 3D Slicer in a variety of academic and commercial research partnerships in fields such as planning and guidance for neurosurgery, quantitative imaging for clinical trials, clinical image informatics.
-- [Kitware](http://www.kitware.com/opensource/slicer.html) focuses on solving the world’s most complex scientific challenges through customized software solutions. The company has a long history of contributing to open source platforms that serve as the foundation of many medical visualization and data processing applications. Kitware helps customers develop commercial products based on 3D Slicer and has used the platform to rapidly prototype solutions in nearly every aspect of medical imaging.
-- [Pixel Medical](http://pixelmedical.ca) builds on and contributes to 3D Slicer to develop innovative medical software from idea to clinical prototype to finished product, and to support academic research projects. Areas of expertise include radiation therapy, image guided therapy, virtual & augmented reality, hardware & device support, and machine learning & artificial intelligence.
+- [Isomics](https://www.isomics.com/) uses 3D Slicer in a variety of academic and commercial research partnerships in fields such as planning and guidance for neurosurgery, quantitative imaging for clinical trials, clinical image informatics.
+- [Kitware](https://www.kitware.com/opensource/slicer.html) focuses on solving the world’s most complex scientific challenges through customized software solutions. The company has a long history of contributing to open source platforms that serve as the foundation of many medical visualization and data processing applications. Kitware helps customers develop commercial products based on 3D Slicer and has used the platform to rapidly prototype solutions in nearly every aspect of medical imaging.
+- [Pixel Medical](https://pixelmedical.ca) builds on and contributes to 3D Slicer to develop innovative medical software from idea to clinical prototype to finished product, and to support academic research projects. Areas of expertise include radiation therapy, image guided therapy, virtual & augmented reality, hardware & device support, and machine learning & artificial intelligence.
 
 _Listed in alphabetical order._
 
@@ -172,9 +203,9 @@ Many companies prefer not to disclose what software components they use in their
 
 - Allen Institute for Brain Science: Allen Institute for Brain Science is developing Cell Locator, a Desktop application for manually aligning specimens to annotated 3D spaces. See more information on this [Kitware blog](https://blog.kitware.com/cell-locator-a-3d-slicer-based-desktop-application-that-manually-aligns-specimens-to-annotated-3d-spaces-developed-for-the-allen-institute-for-brain-science/).
 - Radiopharmaceutical Imaging and Dosimetry: RPTDose, a 3D Slicer-based application that streamlines and integrates quantitative imaging analysis and dose estimation techniques to guide and optimize the use of radiopharmaceutical therapy agents in clinical trials. See more information on this [Kitware blog](https://blog.kitware.com/kitware-customer-highlight-radiopharmaceutical-imaging-and-dosimetry-llc-rapid/).
-- [SonoVol](http://sonovol.com/) is developing a whole-body ultrasound imaging system for small animals. This start-up company arose from research in the Department of Biomedical Engineering at the University of North Carolina at Chapel Hill. See more information on this [Kitware blog](https://blog.kitware.com/kitware-customer-highlight-sonovol/).
+- [SonoVol](https://sonovol.com/) is developing a whole-body ultrasound imaging system for small animals. This start-up company arose from research in the Department of Biomedical Engineering at the University of North Carolina at Chapel Hill. See more information on this [Kitware blog](https://blog.kitware.com/kitware-customer-highlight-sonovol/).
 - Xoran Technologies: Image-guided Platform for Deep Brain Stimulation Surgery. See more information on this [Kitware blog](https://blog.kitware.com/xoran-technologies-and-kitware-collaborate-on-image-guided-platform-for-deep-brain-stimulation-surgery/).
-- [Xstrahl](http://www.xstrahl.com/) is developing a Small Animal Radiation Research Platform (SARRP) that uses 3D Slicer as its front-end application for radiation therapy beam placement and system control. See more information on this [Kitware blog](https://blog.kitware.com/kitware-customer-highlight-muriplan-from-xstrahl-a-3d-slicer-based-radiotherapy-treatment-planning-system/).
+- [Xstrahl](https://www.xstrahl.com/) is developing a Small Animal Radiation Research Platform (SARRP) that uses 3D Slicer as its front-end application for radiation therapy beam placement and system control. See more information on this [Kitware blog](https://blog.kitware.com/kitware-customer-highlight-muriplan-from-xstrahl-a-3d-slicer-based-radiotherapy-treatment-planning-system/).
 
 _Listed in alphabetical order._
 

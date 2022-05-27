@@ -18,7 +18,6 @@
 
 #include "vtkSlicerMarkupsWidget.h"
 
-#include "vtkMRMLApplicationLogic.h"
 #include "vtkMRMLInteractionEventData.h"
 #include "vtkMRMLInteractionNode.h"
 #include "vtkMRMLScene.h"
@@ -42,6 +41,7 @@
 
 // MRML includes
 #include "vtkMRMLTransformNode.h"
+#include <vtkMRMLApplicationLogic.h>
 
 //----------------------------------------------------------------------
 vtkSlicerMarkupsWidget::vtkSlicerMarkupsWidget()
@@ -58,6 +58,7 @@ vtkSlicerMarkupsWidget::vtkSlicerMarkupsWidget()
   this->SetEventTranslation(WidgetStateDefine, vtkCommand::LeftButtonReleaseEvent, vtkEvent::NoModifier, WidgetEventControlPointPlace);
   this->SetEventTranslation(WidgetStateDefine, vtkCommand::RightButtonPressEvent, vtkEvent::NoModifier, WidgetEventReserved);
   this->SetEventTranslation(WidgetStateDefine, vtkCommand::RightButtonReleaseEvent, vtkEvent::NoModifier, WidgetEventStopPlace);
+  this->SetEventTranslation(WidgetStateDefine, vtkCommand::LeftButtonDoubleClickEvent, vtkEvent::NoModifier, WidgetEventStopPlace);
 
   // Manipulate
   this->SetEventTranslationClickAndDrag(WidgetStateOnWidget, vtkCommand::LeftButtonPressEvent, vtkEvent::NoModifier,
@@ -96,14 +97,17 @@ vtkSlicerMarkupsWidget::vtkSlicerMarkupsWidget()
   this->SetEventTranslationClickAndDrag(WidgetStateOnTranslationHandle, vtkCommand::LeftButtonPressEvent, vtkEvent::NoModifier,
     WidgetStateTranslate, WidgetEventTranslateStart, WidgetEventTranslateEnd);
   this->SetEventTranslation(WidgetStateOnTranslationHandle, vtkMRMLInteractionEventData::RightButtonClickEvent, vtkEvent::NoModifier, WidgetEventMenu);
+  this->SetEventTranslation(WidgetStateOnTranslationHandle, vtkMRMLInteractionEventData::LeftButtonClickEvent, vtkEvent::NoModifier, WidgetEventJumpCursor);
 
   this->SetEventTranslationClickAndDrag(WidgetStateOnRotationHandle, vtkCommand::LeftButtonPressEvent, vtkEvent::NoModifier,
     WidgetStateRotate, WidgetEventRotateStart, WidgetEventRotateEnd);
   this->SetEventTranslation(WidgetStateOnRotationHandle, vtkMRMLInteractionEventData::RightButtonClickEvent, vtkEvent::NoModifier, WidgetEventMenu);
+  this->SetEventTranslation(WidgetStateOnRotationHandle, vtkMRMLInteractionEventData::LeftButtonClickEvent, vtkEvent::NoModifier, WidgetEventJumpCursor);
 
   this->SetEventTranslationClickAndDrag(WidgetStateOnScaleHandle, vtkCommand::LeftButtonPressEvent, vtkEvent::NoModifier,
     WidgetStateScale, WidgetEventScaleStart, WidgetEventScaleEnd);
   this->SetEventTranslation(WidgetStateOnScaleHandle, vtkMRMLInteractionEventData::RightButtonClickEvent, vtkEvent::NoModifier, WidgetEventMenu);
+  this->SetEventTranslation(WidgetStateOnScaleHandle, vtkMRMLInteractionEventData::LeftButtonClickEvent, vtkEvent::NoModifier, WidgetEventJumpCursor);
 
 
   // Update active interaction handle component
@@ -135,10 +139,9 @@ bool vtkSlicerMarkupsWidget::ProcessControlPointMoveStart(vtkMRMLInteractionEven
     {
     return false;
     }
-  if (markupsNode->GetNthControlPointLocked(activeControlPoint))
-    {
-    return false;
-    }
+  // Do not reject this event if control point is locked
+  // because then we would not receive the mouse release event
+  // and so we could not process mouse clicks.
   this->SetWidgetState(WidgetStateTranslateControlPoint);
   this->StartWidgetInteraction(eventData);
   return true;
@@ -208,7 +211,13 @@ bool vtkSlicerMarkupsWidget::ProcessMouseMove(vtkMRMLInteractionEventData* event
   if (state == vtkSlicerMarkupsWidget::WidgetStateDefine)
     {
     const char* associatedNodeID = this->GetAssociatedNodeID(eventData);
-    this->UpdatePreviewPoint(eventData, associatedNodeID, vtkMRMLMarkupsNode::PositionPreview);
+    int positionPreviewState = vtkMRMLMarkupsNode::PositionPreview;
+    this->UpdatePreviewPointIndex(eventData);
+    if (PreviewPointIndex >= 0)
+      {
+      positionPreviewState = markupsNode->GetNthControlPointPositionStatus(PreviewPointIndex);
+      }
+    this->UpdatePreviewPoint(eventData, associatedNodeID, positionPreviewState);
     }
   else if (state == WidgetStateIdle
     || state == WidgetStateOnWidget
@@ -276,7 +285,7 @@ bool vtkSlicerMarkupsWidget::ProcessMouseMove(vtkMRMLInteractionEventData* event
 
     if (markupsNode->GetCurveClosed())
       {
-      rep->UpdateCenter();
+      rep->UpdateCenterOfRotation();
       }
 
     this->LastEventPosition[0] = eventPos[0];
@@ -413,35 +422,63 @@ bool vtkSlicerMarkupsWidget::ProcessControlPointDelete(vtkMRMLInteractionEventDa
 //-------------------------------------------------------------------------
 bool vtkSlicerMarkupsWidget::ProcessWidgetJumpCursor(vtkMRMLInteractionEventData* vtkNotUsed(eventData))
 {
-  if (this->WidgetState != WidgetStateOnWidget)
+  if (this->WidgetState != WidgetStateOnWidget &&
+    this->WidgetState != WidgetStateOnTranslationHandle &&
+    this->WidgetState != WidgetStateOnRotationHandle &&
+    this->WidgetState != WidgetStateOnScaleHandle)
     {
     return false;
     }
+
   vtkMRMLMarkupsNode* markupsNode = this->GetMarkupsNode();
   vtkMRMLMarkupsDisplayNode* markupsDisplayNode = this->GetMarkupsDisplayNode();
   if (!markupsNode || !markupsDisplayNode)
     {
     return false;
     }
+
+  int componentIndex = markupsDisplayNode->GetActiveComponentIndex();;
+  int componentType = markupsDisplayNode->GetActiveComponentType();
+
   // Use first active control point for jumping //TODO: Have an 'even more active' point concept
-  std::vector<int> activeControlPointIndices;
-  markupsDisplayNode->GetActiveControlPoints(activeControlPointIndices);
-  int controlPointIndex = -1;
-  if (!activeControlPointIndices.empty())
+  if (componentType == vtkMRMLMarkupsDisplayNode::ComponentControlPoint)
     {
-    controlPointIndex = activeControlPointIndices[0];
+    std::vector<int> activeControlPointIndices;
+    markupsDisplayNode->GetActiveControlPoints(activeControlPointIndices);
+
+    if (!activeControlPointIndices.empty())
+      {
+      componentIndex = activeControlPointIndices[0];
+      }
+    if (componentIndex < 0 || componentIndex >= markupsNode->GetNumberOfControlPoints())
+      {
+      return false;
+      }
     }
-  if (controlPointIndex < 0 || controlPointIndex >= markupsNode->GetNumberOfControlPoints())
-    {
-    return false;
-    }
+
   markupsNode->GetScene()->SaveStateForUndo();
 
   vtkNew<vtkMRMLInteractionEventData> jumpToPointEventData;
   jumpToPointEventData->SetType(vtkMRMLMarkupsDisplayNode::JumpToPointEvent);
-  jumpToPointEventData->SetComponentType(vtkMRMLMarkupsDisplayNode::ComponentControlPoint);
-  jumpToPointEventData->SetComponentIndex(controlPointIndex);
+  jumpToPointEventData->SetComponentType(componentType);
+  jumpToPointEventData->SetComponentIndex(componentIndex);
   jumpToPointEventData->SetViewNode(this->WidgetRep->GetViewNode());
+
+  if (componentType == vtkMRMLMarkupsDisplayNode::ComponentRotationHandle
+    || componentType == vtkMRMLMarkupsDisplayNode::ComponentTranslationHandle
+    || componentType == vtkMRMLMarkupsDisplayNode::ComponentScaleHandle)
+    {
+    // For interaction handle, send the position of the handle as well.
+    // The position of the handle may be different in each view, so we need to get the position from the representation.
+    vtkSlicerMarkupsWidgetRepresentation* rep = vtkSlicerMarkupsWidgetRepresentation::SafeDownCast(this->WidgetRep);
+    if (rep)
+      {
+      double position_World[3] = { 0.0, 0.0, 0.0 };
+      rep->GetInteractionHandlePositionWorld(componentType, markupsDisplayNode->GetActiveComponentIndex(), position_World);
+      jumpToPointEventData->SetWorldPosition(position_World);
+      }
+    }
+
   markupsDisplayNode->InvokeEvent(vtkMRMLMarkupsDisplayNode::JumpToPointEvent, jumpToPointEventData);
   return true;
 }
@@ -516,6 +553,28 @@ bool vtkSlicerMarkupsWidget::ConvertDisplayPositionToWorld(const int displayPos[
   return false;
 }
 
+// -------------------------------------------------------------------------
+void vtkSlicerMarkupsWidget::UpdatePreviewPointIndex(vtkMRMLInteractionEventData* vtkNotUsed(eventData))
+{
+    vtkMRMLMarkupsNode* markupsNode = this->GetMarkupsNode();
+    if (!markupsNode)
+      {
+      return;
+      }
+    int numberOfControlPoints = markupsNode->GetNumberOfControlPoints();
+    for (int i = 0; i < numberOfControlPoints; i++)
+      {
+      int pointStatus = markupsNode->GetNthControlPointPositionStatus(i);
+      if (pointStatus == vtkMRMLMarkupsNode::PositionPreview)
+        {
+        this->PreviewPointIndex = i;
+        return;
+        }
+      }
+    // if no preview points found, set to -1
+    this->PreviewPointIndex = -1;
+}
+
 //-------------------------------------------------------------------------
 void vtkSlicerMarkupsWidget::UpdatePreviewPoint(vtkMRMLInteractionEventData* eventData, const char* associatedNodeID, int positionStatus)
 {
@@ -555,8 +614,15 @@ void vtkSlicerMarkupsWidget::UpdatePreviewPoint(vtkMRMLInteractionEventData* eve
     viewNodeID = this->WidgetRep->GetViewNode()->GetID();
     }
 
+  this->UpdatePreviewPointIndex(eventData);
+  int updatePointID = this->PreviewPointIndex;
+  if (updatePointID < 0)
+    {
+    updatePointID = markupsNode->GetControlPointPlacementStartIndex();
+    }
+
   this->PreviewPointIndex = this->GetMarkupsDisplayNode()->UpdateActiveControlPointWorld(
-    this->PreviewPointIndex, eventData, accurateWorldOrientationMatrix, viewNodeID,
+    updatePointID, eventData, accurateWorldOrientationMatrix, viewNodeID,
     associatedNodeID, positionStatus);
 }
 
@@ -573,9 +639,19 @@ bool vtkSlicerMarkupsWidget::RemovePreviewPoint()
     // no preview point
     return false;
     }
-  if (markupsNode->GetNthControlPointPositionStatus(this->PreviewPointIndex) == vtkMRMLMarkupsNode::PositionPreview)
+  int previewIndex = this->PreviewPointIndex;
+  int status = markupsNode->GetNthControlPointPositionStatus(previewIndex);
+  if (status == vtkMRMLMarkupsNode::PositionPreview)
     {
-    markupsNode->RemoveNthControlPoint(this->PreviewPointIndex);
+    if (markupsNode->GetNthControlPointAutoCreated(previewIndex))
+      {
+      markupsNode->RemoveNthControlPoint(previewIndex);
+      markupsNode->GetMarkupsDisplayNode()->SetActiveControlPoint(-1);
+      }
+    else
+      {
+      markupsNode->UnsetNthControlPointPosition(previewIndex);
+      }
     }
   this->PreviewPointIndex = -1;
   return true;
@@ -648,10 +724,31 @@ bool vtkSlicerMarkupsWidget::ProcessWidgetMenu(vtkMRMLInteractionEventData* even
   menuEventData->SetComponentType(markupsDisplayNode->GetActiveComponentType()); //TODO: This will always pass the active component for the mouse
   menuEventData->SetComponentIndex(markupsDisplayNode->GetActiveComponentIndex());
   menuEventData->SetViewNode(this->WidgetRep->GetViewNode());
+
+  // Copy display position
   if (eventData->IsDisplayPositionValid())
     {
     menuEventData->SetDisplayPosition(eventData->GetDisplayPosition());
     }
+
+  // Copy/compute world position
+  double worldPos[3] = { 0.0 };
+  if (eventData->IsWorldPositionValid())
+    {
+    eventData->GetWorldPosition(worldPos);
+    menuEventData->SetWorldPosition(worldPos, eventData->IsWorldPositionAccurate());
+    }
+  else if (eventData->IsDisplayPositionValid())
+    {
+    double worldOrientationMatrix[9] = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 };
+    int displayPos[2] = { 0 };
+    eventData->GetDisplayPosition(displayPos);
+    if (this->ConvertDisplayPositionToWorld(displayPos, worldPos, worldOrientationMatrix))
+      {
+      menuEventData->SetWorldPosition(worldPos);
+      }
+    }
+
   markupsDisplayNode->InvokeEvent(vtkMRMLDisplayNode::MenuEvent, menuEventData);
   return true;
 }
@@ -710,9 +807,27 @@ bool vtkSlicerMarkupsWidget::ProcessWidgetAction(vtkMRMLInteractionEventData* ev
 }
 
 //-----------------------------------------------------------------------------
+bool vtkSlicerMarkupsWidget::ProcessWidgetStopPlace(vtkMRMLInteractionEventData* vtkNotUsed(eventData))
+{
+    vtkMRMLMarkupsNode* markupsNode = this->GetMarkupsNode();
+    if (!markupsNode)
+      {
+      return false;
+      }
+    markupsNode->Modified();
+    return true;
+}
+//-----------------------------------------------------------------------------
+
 bool vtkSlicerMarkupsWidget::ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData)
 {
   unsigned long widgetEvent = this->TranslateInteractionEventToWidgetEvent(eventData);
+
+  if (this->ApplicationLogic)
+    {
+    this->ApplicationLogic->PauseRender();
+    }
+
 
   bool processedEvent = false;
   switch (widgetEvent)
@@ -723,7 +838,7 @@ bool vtkSlicerMarkupsWidget::ProcessInteractionEvent(vtkMRMLInteractionEventData
     case WidgetEventStopPlace:
       // cancel point placement
       this->GetInteractionNode()->SwitchToViewTransformMode();
-      processedEvent = true;
+      processedEvent = ProcessWidgetStopPlace(eventData);
       break;
     case WidgetEventMouseMove:
       processedEvent = ProcessMouseMove(eventData);
@@ -781,6 +896,11 @@ bool vtkSlicerMarkupsWidget::ProcessInteractionEvent(vtkMRMLInteractionEventData
   if (!processedEvent)
     {
     processedEvent = this->ProcessButtonClickEvent(eventData);
+    }
+
+  if (this->ApplicationLogic)
+    {
+    this->ApplicationLogic->ResumeRender();
     }
 
   return processedEvent;
@@ -925,6 +1045,12 @@ void vtkSlicerMarkupsWidget::TranslatePoint(double eventPos[2], bool snapToSlice
     return;
     }
 
+  if (markupsNode->GetNthControlPointLocked(activeControlPointIndex))
+    {
+    // point is locked, do not translate
+    return;
+    }
+
   eventPos[0] -= this->StartEventOffsetPosition[0];
   eventPos[1] -= this->StartEventOffsetPosition[1];
 
@@ -962,7 +1088,7 @@ void vtkSlicerMarkupsWidget::TranslatePoint(double eventPos[2], bool snapToSlice
     worldPos[2] += worldPosProjDiff[2];
     }
 
-  markupsNode->SetNthControlPointPositionWorldFromArray(activeControlPointIndex, worldPos);
+  markupsNode->SetNthControlPointPositionWorld(activeControlPointIndex, worldPos);
 }
 
 //----------------------------------------------------------------------
@@ -1585,7 +1711,7 @@ int vtkSlicerMarkupsWidget::AddPointFromWorldCoordinate(const double worldCoordi
     {
     // convert point preview to final point
     addedControlPoint = this->PreviewPointIndex;
-    markupsNode->SetNthControlPointPositionWorldFromArray(addedControlPoint, worldCoordinates);
+    markupsNode->SetNthControlPointPositionWorld(addedControlPoint, worldCoordinates);
     this->PreviewPointIndex = -1;
     }
   else
@@ -1700,18 +1826,27 @@ bool vtkSlicerMarkupsWidget::PlacePoint(vtkMRMLInteractionEventData* eventData)
 
   // if this was a one time place, go back to view transform mode
   vtkMRMLInteractionNode *interactionNode = this->GetInteractionNode();
-  if (interactionNode && !interactionNode->GetPlaceModePersistence()
-    && markupsNode->GetNumberOfControlPoints() >= markupsNode->GetRequiredNumberOfControlPoints())
-    {
-    vtkDebugMacro("End of one time place, place mode persistence = " << interactionNode->GetPlaceModePersistence());
-    interactionNode->SetCurrentInteractionMode(vtkMRMLInteractionNode::ViewTransform);
 
-    // The mouse is over the control point and we are not in place mode anymore
-    if (this->GetMarkupsDisplayNode())
+  if(interactionNode)
+    {
+    bool hasRequiredPoints = markupsNode->GetRequiredNumberOfControlPoints() > 0;
+    bool hasRequiredPointNumber = markupsNode->GetNumberOfControlPoints() >= markupsNode->GetRequiredNumberOfControlPoints();
+    bool requiredPointsReached = hasRequiredPoints && hasRequiredPointNumber && !bool(markupsNode->GetNumberOfUndefinedControlPoints() > 0);
+    bool lockedPointsReached = markupsNode->GetFixedNumberOfControlPoints() && !bool(markupsNode->GetNumberOfUndefinedControlPoints() > 0);
+
+    if((requiredPointsReached && !interactionNode->GetPlaceModePersistence())
+      || (!hasRequiredPoints && !interactionNode->GetPlaceModePersistence()) || lockedPointsReached)
       {
-      this->GetMarkupsDisplayNode()->SetActiveControlPoint(controlPointIndex);
+      vtkDebugMacro("End of one time place, place mode persistence = " << interactionNode->GetPlaceModePersistence());
+      interactionNode->SetCurrentInteractionMode(vtkMRMLInteractionNode::ViewTransform);
+
+      // The mouse is over the control point and we are not in place mode anymore
+      if (this->GetMarkupsDisplayNode())
+        {
+        this->GetMarkupsDisplayNode()->SetActiveControlPoint(controlPointIndex);
+        }
+      this->WidgetState = WidgetStateOnWidget;
       }
-    this->WidgetState = WidgetStateOnWidget;
     }
 
   bool success = (controlPointIndex >= 0);
@@ -1739,3 +1874,11 @@ int vtkSlicerMarkupsWidget::GetActiveComponentIndex()
     }
   return displayNode->GetActiveComponentIndex();
 }
+
+//-----------------------------------------------------------------------------
+vtkMRMLSelectionNode* vtkSlicerMarkupsWidget::selectionNode()
+  {
+  return vtkMRMLSelectionNode::SafeDownCast(
+    this->GetMarkupsNode()->GetScene()->GetNodeByID("vtkMRMLSelectionNodeSingleton"));
+
+  }

@@ -22,7 +22,7 @@
 #define __qSlicerApplication_h
 
 // Qt includes
-#include <QPalette>
+class QPalette;
 
 // CTK includes
 #include <ctkPimpl.h>
@@ -77,7 +77,7 @@ public:
   ///
   /// so we follow the pattern suggested here:
   ///
-  /// http://stackoverflow.com/questions/13878373/where-am-i-supposed-to-reimplement-qapplicationnotify-function
+  /// https://stackoverflow.com/questions/13878373/where-am-i-supposed-to-reimplement-qapplicationnotify-function
   ///
   bool notify(QObject * receiver, QEvent * event) override;
 
@@ -121,6 +121,7 @@ public:
   QString nodeModule(vtkMRMLNode* node, double *confidence=nullptr)const;
 
   Q_INVOKABLE ctkSettingsDialog* settingsDialog()const;
+  Q_INVOKABLE void openSettingsDialog(const QString& settingsPanel=QString());
 
   /// Log application information.
   ///
@@ -132,7 +133,6 @@ public:
   ///   - Memory
   ///   - CPU
   ///   - Developer mode enabled
-  ///   - Prefer executable CLI
   ///   - Additional module paths
   ///
   /// \note Starting the application with `--application-information` will
@@ -166,7 +166,7 @@ public slots:
   /// \note qSlicerApplication is a temporary host for the function as it should be
   /// moved into a DataManager where module can register new node
   /// types/modules
-  void openNodeModule(vtkMRMLNode* node);
+  void openNodeModule(vtkMRMLNode* node, QString role=QString(), QString context=QString());
 
   /// Popup a dialog asking the user if the application should be restarted.
   /// If no \a reason is given, the text will default to ""Are you sure you want to restart?"

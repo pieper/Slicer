@@ -18,6 +18,8 @@
 // Qt includes
 #include <QDebug>
 #include <QSettings>
+#include <QMainWindow>
+#include <QMenu>
 
 // MRMLDisplayableManager includes
 #include <vtkMRMLSliceViewDisplayableManagerFactory.h>
@@ -25,8 +27,12 @@
 
 // QTGUI includes
 #include <qSlicerApplication.h>
+#include "qSlicerCoreApplication.h"
 #include <qSlicerIOManager.h>
 #include <qSlicerNodeWriter.h>
+#include "qSlicerModuleManager.h"
+
+#include "vtkMRMLScene.h"
 
 // SubjectHierarchy Plugins includes
 #include "qSlicerSubjectHierarchyPluginHandler.h"
@@ -51,45 +57,134 @@
 // Markups logic includes
 #include "vtkSlicerMarkupsLogic.h"
 
-// Makrups vtk widgets includes
-#include "vtkSlicerAngleWidget.h"
-#include "vtkSlicerCurveWidget.h"
-#include "vtkSlicerLineWidget.h"
-#include "vtkSlicerPlaneWidget.h"
-#include "vtkSlicerPointsWidget.h"
-#include "vtkSlicerROIWidget.h"
-
 // Markups widgets
-#include "qSlicerMarkupsROIWidget.h"
-#include "qSlicerMarkupsAngleMeasurementsWidget.h"
-#include "qSlicerMarkupsCurveSettingsWidget.h"
-#include "qSlicerMarkupsAdditionalOptionsWidgetsFactory.h"
+#include "qMRMLMarkupsAngleMeasurementsWidget.h"
+#include "qMRMLMarkupsCurveSettingsWidget.h"
+#include "qMRMLMarkupsPlaneWidget.h"
+#include "qMRMLMarkupsROIWidget.h"
+#include "qMRMLMarkupsToolBar.h"
+#include "qMRMLMarkupsOptionsWidgetsFactory.h"
+#include "qMRMLNodeComboBox.h"
 
 // DisplayableManager initialization
 #include <vtkAutoInit.h>
+
 VTK_MODULE_INIT(vtkSlicerMarkupsModuleMRMLDisplayableManager);
+
+static const double UPDATE_VIRTUAL_OUTPUT_NODES_PERIOD_SEC = 0.020; // refresh output with a maximum of 50FPS
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_Markups
 class qSlicerMarkupsModulePrivate
 {
+QVTK_OBJECT
+Q_DECLARE_PUBLIC(qSlicerMarkupsModule);
+protected:
+  qSlicerMarkupsModule* const q_ptr;
 public:
-  qSlicerMarkupsModulePrivate();
+  qSlicerMarkupsModulePrivate(qSlicerMarkupsModule& object);
+
+  /// Adds Markups toolbar to the application GUI
+  virtual void addToolBar();
+
+  virtual ~qSlicerMarkupsModulePrivate();
+  qMRMLMarkupsToolBar* ToolBar;
+  bool MarkupsModuleOwnsToolBar{ true };
+  bool AutoShowToolBar{ true };
+  vtkWeakPointer<vtkMRMLMarkupsNode> MarkupsToShow;
+
 };
 
 //-----------------------------------------------------------------------------
 // qSlicerMarkupsModulePrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerMarkupsModulePrivate::qSlicerMarkupsModulePrivate() = default;
+qSlicerMarkupsModulePrivate::qSlicerMarkupsModulePrivate(qSlicerMarkupsModule& object)
+  : q_ptr(&object)
+{
+  this->ToolBar = new qMRMLMarkupsToolBar;
+  this->ToolBar->setWindowTitle(QObject::tr("Markups"));
+  this->ToolBar->setObjectName("MarkupsToolbar");
+  this->ToolBar->setVisible(false);
+}
+
+//-----------------------------------------------------------------------------
+qSlicerMarkupsModulePrivate::~qSlicerMarkupsModulePrivate()
+{
+  if (this->MarkupsModuleOwnsToolBar)
+    {
+    // the toolbar has not been added to the main window
+    // so it is still owned by this class, therefore
+    // we are responsible for deleting it
+    delete this->ToolBar;
+    this->ToolBar = nullptr;
+    }
+
+  /// NOTE: This prevents deletion of QWidgets by the destructor of the factory,
+  /// which produces a segmentation fault. Though I can't confirm, I believe
+  /// this behaviour is due to deletion of QWidgets in global scope destructors
+  /// and how this conflicts with the lifecycle of QWidgets.
+  qMRMLMarkupsOptionsWidgetsFactory::instance()->unregisterAll();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerMarkupsModulePrivate::addToolBar()
+{
+  Q_Q(qSlicerMarkupsModule);
+
+  QMainWindow* mainWindow = qSlicerApplication::application()->mainWindow();
+  if (mainWindow == nullptr)
+    {
+    qDebug("qSlicerMarkupsModulePrivate::addToolBar: no main window is available, toolbar is not added");
+    return;
+    }
+
+  this->ToolBar->setWindowTitle("Markups");
+  this->ToolBar->setObjectName("MarkupsToolBar");
+  //// Add a toolbar break to make the sequence toolbar appear in a separate row
+  //// (it is a long toolbar and would make many toolbar buttons disappear from
+  //// all the standard toolbars if they are all displayed in a single row).
+  mainWindow->addToolBarBreak();
+  mainWindow->addToolBar(this->ToolBar);
+  this->MarkupsModuleOwnsToolBar = false;
+  foreach(QMenu * toolBarMenu, mainWindow->findChildren<QMenu*>())
+    {
+    if (toolBarMenu->objectName() == QString("WindowToolBarsMenu"))
+      {
+      toolBarMenu->addAction(this->ToolBar->toggleViewAction());
+      break;
+      }
+    }
+
+  //// Main window takes care of saving and restoring toolbar geometry and state.
+  //// However, when state is restored the markups toolbar was not created yet.
+  //// We need to restore the main window state again, now, that the Markups toolbar is available.
+  QSettings settings;
+  settings.beginGroup("MainWindow");
+  bool restore = settings.value("RestoreGeometry", false).toBool();
+  if (restore)
+    {
+    mainWindow->restoreState(settings.value("windowState").toByteArray());
+    }
+  this->ToolBar->initializeToolBarLayout();
+}
 
 //-----------------------------------------------------------------------------
 // qSlicerMarkupsModule methods
 
 //-----------------------------------------------------------------------------
 qSlicerMarkupsModule::qSlicerMarkupsModule(QObject* _parent)
-  : Superclass(_parent), d_ptr(new qSlicerMarkupsModulePrivate)
+  : Superclass(_parent), d_ptr(new qSlicerMarkupsModulePrivate(*this))
 {
+  Q_D(qSlicerMarkupsModule);
+  /*
+  vtkMRMLScene* scene = qSlicerCoreApplication::application()->mrmlScene();
+  if (scene)
+    {
+    // Need to listen for any new makrups nodes being added to show toolbar
+    this->qvtkConnect(scene, vtkMRMLScene::NodeAddedEvent, this, SLOT(onNodeAddedEvent(vtkObject*, vtkObject*)));
+    }
+    */
 }
 
 //-----------------------------------------------------------------------------
@@ -134,6 +229,7 @@ QIcon qSlicerMarkupsModule::icon()const
 //-----------------------------------------------------------------------------
 void qSlicerMarkupsModule::setup()
 {
+  Q_D(qSlicerMarkupsModule);
   this->Superclass::setup();
 
   vtkSlicerMarkupsLogic *logic = vtkSlicerMarkupsLogic::SafeDownCast(this->logic());
@@ -143,58 +239,18 @@ void qSlicerMarkupsModule::setup()
     return;
     }
 
-  // Register markups
-  // NOTE: the order of registration determines the order of the create push buttons in the GUI
-
-  vtkNew<vtkMRMLMarkupsFiducialNode> fiducialNode;
-  vtkNew<vtkSlicerPointsWidget> pointsWidget;
-  logic->RegisterMarkupsNode(fiducialNode, pointsWidget);
-
-  vtkNew<vtkMRMLMarkupsLineNode> lineNode;
-  vtkNew<vtkSlicerLineWidget> lineWidget;
-  logic->RegisterMarkupsNode(lineNode, lineWidget);
-
-  vtkNew<vtkMRMLMarkupsAngleNode> angleNode;
-  vtkNew<vtkSlicerAngleWidget> angleWidget;
-  logic->RegisterMarkupsNode(angleNode, angleWidget);
-
-  vtkNew<vtkMRMLMarkupsCurveNode> curveNode;
-  vtkNew<vtkSlicerCurveWidget> curveWidget;
-  logic->RegisterMarkupsNode(curveNode, curveWidget);
-
-  vtkNew<vtkMRMLMarkupsClosedCurveNode> closedCurveNode;
-  vtkNew<vtkSlicerCurveWidget> closedCurveWidget;
-  logic->RegisterMarkupsNode(closedCurveNode, closedCurveWidget);
-
-  vtkNew<vtkMRMLMarkupsPlaneNode> planeNode;
-  vtkNew<vtkSlicerPlaneWidget> planeWidget;
-  logic->RegisterMarkupsNode(planeNode, planeWidget);
-
-  vtkNew<vtkMRMLMarkupsROINode> roiNode;
-  vtkNew<vtkSlicerROIWidget> roiWidget;
-  logic->RegisterMarkupsNode(roiNode, roiWidget);
-
   // Register displayable managers (same displayable manager handles both slice and 3D views)
   vtkMRMLSliceViewDisplayableManagerFactory::GetInstance()->RegisterDisplayableManager("vtkMRMLMarkupsDisplayableManager");
   vtkMRMLThreeDViewDisplayableManagerFactory::GetInstance()->RegisterDisplayableManager("vtkMRMLMarkupsDisplayableManager");
 
   // Register IO
   qSlicerIOManager* ioManager = qSlicerApplication::application()->ioManager();
-  qSlicerMarkupsReader *markupsReader = new qSlicerMarkupsReader(vtkSlicerMarkupsLogic::SafeDownCast(this->logic()), this);
+  qSlicerMarkupsReader *markupsReader = new qSlicerMarkupsReader(logic, this);
   ioManager->registerIO(markupsReader);
   ioManager->registerIO(new qSlicerMarkupsWriter(this));
 
-  // settings
-  /*
-    if (qSlicerApplication::application())
-    {
-    qSlicerMarkupsSettingsPanel* panel =
-    new qSlicerMarkupsSettingsPanel;
-    qSlicerApplication::application()->settingsDialog()->addPanel(
-    "Markups", panel);
-    panel->setMarkupsLogic(vtkSlicerMarkupsLogic::SafeDownCast(this->logic()));
-    }
-  */
+  // Add toolbar
+  d->addToolBar();
 
   // Register Subject Hierarchy core plugins
   qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(new qSlicerSubjectHierarchyMarkupsPlugin());
@@ -204,17 +260,18 @@ void qSlicerMarkupsModule::setup()
 qSlicerAbstractModuleRepresentation* qSlicerMarkupsModule::createWidgetRepresentation()
 {
   // Create and configure the additional widgets
-  auto optionsWidgetFactory = qSlicerMarkupsAdditionalOptionsWidgetsFactory::instance();
-  optionsWidgetFactory->registerAdditionalOptionsWidget(new qSlicerMarkupsAngleMeasurementsWidget());
-  optionsWidgetFactory->registerAdditionalOptionsWidget(new qSlicerMarkupsCurveSettingsWidget());
-  optionsWidgetFactory->registerAdditionalOptionsWidget(new qSlicerMarkupsROIWidget());
+  auto optionsWidgetFactory = qMRMLMarkupsOptionsWidgetsFactory::instance();
+  optionsWidgetFactory->registerOptionsWidget(new qMRMLMarkupsAngleMeasurementsWidget());
+  optionsWidgetFactory->registerOptionsWidget(new qMRMLMarkupsCurveSettingsWidget());
+  optionsWidgetFactory->registerOptionsWidget(new qMRMLMarkupsPlaneWidget());
+  optionsWidgetFactory->registerOptionsWidget(new qMRMLMarkupsROIWidget());
 
   // Create and configure module widget.
   auto moduleWidget = new qSlicerMarkupsModuleWidget();
   // Set the number of columns for the grid of "add markups buttons" to the number of markups
   // registered in this module.
 
-  moduleWidget->setCreateMarkupsButtonsColumns(7);
+  moduleWidget->setCreateMarkupsButtonsColumns(4);
 
   return moduleWidget;
 }
@@ -228,23 +285,14 @@ vtkMRMLAbstractLogic* qSlicerMarkupsModule::createLogic()
 //-----------------------------------------------------------------------------
 QStringList qSlicerMarkupsModule::associatedNodeTypes() const
 {
-  return QStringList()
-    << "vtkMRMLAnnotationFiducialNode"
-    << "vtkMRMLMarkupsDisplayNode"
-    << "vtkMRMLMarkupsFiducialNode"
-    << "vtkMRMLMarkupsLineNode"
-    << "vtkMRMLMarkupsAngleNode"
-    << "vtkMRMLMarkupsCurveNode"
-    << "vtkMRMLMarkupsClosedCurveNode"
-    << "vtkMRMLMarkupsPlaneNode"
-    << "vtkMRMLMarkupsROINode"
-    << "vtkMRMLMarkupsFiducialStorageNode"
-    << "vtkMRMLMarkupsJsonStorageNode";
+  // This module can edit properties
+  return QStringList() << "vtkMRMLMarkupsNode";
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerMarkupsModule::setMRMLScene(vtkMRMLScene* scene)
 {
+  Q_D(qSlicerMarkupsModule);
   this->Superclass::setMRMLScene(scene);
   vtkSlicerMarkupsLogic* logic = vtkSlicerMarkupsLogic::SafeDownCast(this->logic());
   if (!logic)
@@ -272,14 +320,6 @@ void qSlicerMarkupsModule::readDefaultMarkupsDisplaySettings(vtkMRMLMarkupsDispl
     markupsDisplayNode->SetSnapMode(vtkMRMLMarkupsDisplayNode::GetSnapModeFromString(
       settings.value("Markups/SnapMode").toString().toUtf8()));
     }
-  if (settings.contains("Markups/PropertiesLabelVisibility"))
-    {
-    markupsDisplayNode->SetPropertiesLabelVisibility(settings.value("Markups/PropertiesLabelVisibility").toBool());
-    }
-  if (settings.contains("Markups/PointLabelsVisibility"))
-    {
-    markupsDisplayNode->SetPointLabelsVisibility(settings.value("Markups/PointLabelsVisibility").toBool());
-    }
   if (settings.contains("Markups/FillVisibility"))
     {
     markupsDisplayNode->SetFillVisibility(settings.value("Markups/FillVisibility").toBool());
@@ -302,8 +342,13 @@ void qSlicerMarkupsModule::readDefaultMarkupsDisplaySettings(vtkMRMLMarkupsDispl
     }
   if (settings.contains("Markups/GlyphType"))
     {
-    markupsDisplayNode->SetGlyphType(vtkMRMLMarkupsDisplayNode::GetGlyphTypeFromString(
-      settings.value("Markups/GlyphType").toString().toUtf8()));
+    int glyphType = vtkMRMLMarkupsDisplayNode::GetGlyphTypeFromString(settings.value("Markups/GlyphType").toString().toUtf8());
+    // If application settings is old then it may contain invalid GlyphType. In this case use Sphere3D glyph instead.
+    if (glyphType == vtkMRMLMarkupsDisplayNode::GlyphTypeInvalid)
+      {
+      glyphType = vtkMRMLMarkupsDisplayNode::Sphere3D;
+      }
+    markupsDisplayNode->SetGlyphType(glyphType);
     }
   if (settings.contains("Markups/GlyphScale"))
     {
@@ -411,6 +456,11 @@ void qSlicerMarkupsModule::readDefaultMarkupsDisplaySettings(vtkMRMLMarkupsDispl
     {
     markupsDisplayNode->SetOpacity(settings.value("Markups/Opacity").toDouble());
     }
+  if (settings.contains("Markups/InteractionHandleScale"))
+    {
+    markupsDisplayNode->SetInteractionHandleScale(settings.value("Markups/InteractionHandleScale").toDouble());
+    }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -425,9 +475,6 @@ void qSlicerMarkupsModule::writeDefaultMarkupsDisplaySettings(vtkMRMLMarkupsDisp
 
   settings.setValue("Markups/SnapMode", vtkMRMLMarkupsDisplayNode::GetSnapModeAsString(
     markupsDisplayNode->GetSnapMode()));
-  settings.setValue("Markups/PropertiesLabelVisibility", markupsDisplayNode->GetPropertiesLabelVisibility());
-
-  settings.setValue("Markups/PointLabelsVisibility", markupsDisplayNode->GetPointLabelsVisibility());
   settings.setValue("Markups/FillVisibility", markupsDisplayNode->GetFillVisibility());
   settings.setValue("Markups/OutlineVisibility", markupsDisplayNode->GetOutlineVisibility());
   settings.setValue("Markups/FillOpacity", markupsDisplayNode->GetFillOpacity());
@@ -459,7 +506,7 @@ void qSlicerMarkupsModule::writeDefaultMarkupsDisplaySettings(vtkMRMLMarkupsDisp
   settings.setValue("Markups/OccludedOpacity", markupsDisplayNode->GetOccludedOpacity());
 
   settings.setValue("Markups/TextProperty", QString::fromStdString(
-    vtkMRMLMarkupsDisplayNode::GetTextPropertyAsString(markupsDisplayNode->GetTextProperty())));
+    vtkMRMLDisplayNode::GetTextPropertyAsString(markupsDisplayNode->GetTextProperty())));
 
   color = markupsDisplayNode->GetSelectedColor();
   settings.setValue("Markups/SelectedColor", QColor::fromRgbF(color[0], color[1], color[2]));
@@ -468,4 +515,75 @@ void qSlicerMarkupsModule::writeDefaultMarkupsDisplaySettings(vtkMRMLMarkupsDisp
   color = markupsDisplayNode->GetActiveColor();
   settings.setValue("Markups/ActiveColor", QColor::fromRgbF(color[0], color[1], color[2]));
   settings.setValue("Markups/Opacity", markupsDisplayNode->GetOpacity());
+
+  settings.setValue("Markups/InteractionHandleScale", markupsDisplayNode->GetInteractionHandleScale());
 }
+
+//-----------------------------------------------------------------------------
+qMRMLMarkupsToolBar* qSlicerMarkupsModule::toolBar()
+{
+  Q_D(qSlicerMarkupsModule);
+  return d->ToolBar;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerMarkupsModule::setToolBarVisible(bool visible)
+{
+  Q_D(qSlicerMarkupsModule);
+  d->ToolBar->setVisible(visible);
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerMarkupsModule::isToolBarVisible()
+{
+  Q_D(qSlicerMarkupsModule);
+  return d->ToolBar->isVisible();
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerMarkupsModule::autoShowToolBar()
+{
+  Q_D(qSlicerMarkupsModule);
+  return d->AutoShowToolBar;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerMarkupsModule::setAutoShowToolBar(bool autoShow)
+{
+  Q_D(qSlicerMarkupsModule);
+  d->AutoShowToolBar = autoShow;
+}
+//-----------------------------------------------------------------------------
+bool qSlicerMarkupsModule::showMarkups(vtkMRMLMarkupsNode* markupsNode)
+{
+  qSlicerCoreApplication* app = qSlicerCoreApplication::application();
+  if (!app
+      || !app->moduleManager()
+      || !dynamic_cast<qSlicerMarkupsModule*>(app->moduleManager()->module("Markups")))
+    {
+    qCritical("Markups module is not available");
+    return false;
+    }
+  qSlicerMarkupsModule* markupsModule = dynamic_cast<qSlicerMarkupsModule*>(app->moduleManager()->module("Markups"));
+  if (markupsModule->autoShowToolBar())
+    {
+    markupsModule->setToolBarVisible(true);
+    }
+  return true;
+}
+
+/*
+// --------------------------------------------------------------------------
+void qSlicerMarkupsModule::onNodeAddedEvent(vtkObject*, vtkObject* node)
+{
+  Q_D(qSlicerMarkupsModule);
+
+  vtkMRMLMarkupsNode* markupsNode = vtkMRMLMarkupsNode::SafeDownCast(node);
+  if (!markupsNode)
+    {
+    return;
+    }
+
+  qSlicerMarkupsModule::showMarkups(markupsNode);
+}
+*/

@@ -1,18 +1,18 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.16.3...3.19.7 FATAL_ERROR)
 
 #-----------------------------------------------------------------------------
-# Enable C++11
+# Setting C++ Standard
 #-----------------------------------------------------------------------------
 set(_msg "Setting C++ standard")
 message(STATUS "${_msg}")
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 message(STATUS "${_msg} - C++${CMAKE_CXX_STANDARD}")
-if(NOT CMAKE_CXX_STANDARD MATCHES "^(11|14|17)$")
-  message(FATAL_ERROR "CMAKE_CXX_STANDARD must be set to 11, 14 or 17")
+if(NOT CMAKE_CXX_STANDARD MATCHES "^(14|17)$")
+  message(FATAL_ERROR "CMAKE_CXX_STANDARD must be set to 14 or 17")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -40,10 +40,10 @@ endif()
 
 #-----------------------------------------------------------------------------
 if(NOT DEFINED Slicer_VERSION_MAJOR)
-  set(Slicer_VERSION_MAJOR "4")
+  set(Slicer_VERSION_MAJOR "5")
 endif()
 if(NOT DEFINED Slicer_VERSION_MINOR)
-  set(Slicer_VERSION_MINOR "13")
+  set(Slicer_VERSION_MINOR "1")
 endif()
 if(NOT DEFINED Slicer_VERSION_PATCH)
   set(Slicer_VERSION_PATCH "0")
@@ -62,7 +62,7 @@ set(Slicer_CMAKE_DIR ${Slicer_SOURCE_DIR}/CMake)
 set(Slicer_EXTENSIONS_CMAKE_DIR ${Slicer_SOURCE_DIR}/Extensions/CMake)
 
 #-----------------------------------------------------------------------------
-# http://www.slicer.org/slicerWiki/index.php/Documentation/Nightly/Developers/DevelopmentWithGit
+# https://www.slicer.org/w/index.php/Documentation/Nightly/Developers/DevelopmentWithGit
 #-----------------------------------------------------------------------------
 include(SlicerCheckSourceTree)
 
@@ -143,9 +143,6 @@ test_big_endian(CMAKE_WORDS_BIGENDIAN)
 #-----------------------------------------------------------------------------
 # Prerequisites
 #-----------------------------------------------------------------------------
-find_package(Subversion)
-mark_as_superbuild(Subversion_SVN_EXECUTABLE)
-
 find_package(Git)
 if(NOT GIT_FOUND)
   message(FATAL_ERROR "error: Install Git and try to re-configure")
@@ -175,6 +172,29 @@ endif()
 mark_as_superbuild(Slicer_REQUIRED_QT_VERSION)
 
 #-----------------------------------------------------------------------------
+# Python requirements
+#-----------------------------------------------------------------------------
+if(NOT DEFINED Slicer_REQUIRED_PYTHON_VERSION)
+  set(Slicer_REQUIRED_PYTHON_VERSION "3.9.10")
+endif()
+mark_as_superbuild(Slicer_REQUIRED_PYTHON_VERSION)
+
+if(NOT Slicer_REQUIRED_PYTHON_VERSION MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+  message(FATAL_ERROR "Slicer_REQUIRED_PYTHON_VERSION [${Slicer_REQUIRED_PYTHON_VERSION}] is invalid. Value expected to be formatted as X.Y.Z")
+endif()
+
+set(Slicer_REQUIRED_PYTHON_VERSION_MAJOR ${CMAKE_MATCH_1})
+set(Slicer_REQUIRED_PYTHON_VERSION_MINOR ${CMAKE_MATCH_2})
+set(Slicer_REQUIRED_PYTHON_VERSION_PATCH ${CMAKE_MATCH_3})
+
+set(Slicer_REQUIRED_PYTHON_VERSION_DOT ${Slicer_REQUIRED_PYTHON_VERSION_MAJOR}.${Slicer_REQUIRED_PYTHON_VERSION_MINOR})
+
+set(Slicer_REQUIRED_PYTHON_ABIFLAGS "")
+if(Slicer_REQUIRED_PYTHON_VERSION_DOT VERSION_LESS "3.8")
+  set(Slicer_REQUIRED_PYTHON_ABIFLAGS "m")
+endif()
+
+#-----------------------------------------------------------------------------
 # Build shared lib by default
 #------------------------------------------------------------------------------
 # option(BUILD_SHARED_LIBS "Build Slicer with shared libraries." ON)
@@ -186,11 +206,6 @@ set(Slicer_BUILD_SHARED ${BUILD_SHARED_LIBS})
 # Slicer application options
 #-----------------------------------------------------------------------------
 include(SlicerApplicationOptions)
-
-#-----------------------------------------------------------------------------
-# Slicer version number
-#-----------------------------------------------------------------------------
-include(SlicerVersion)
 
 #-----------------------------------------------------------------------------
 # Append the library version information to the library target properties.
@@ -220,8 +235,8 @@ option(WITH_COVERAGE "Enable/Disable coverage" OFF)
 mark_as_superbuild(WITH_COVERAGE)
 
 option(Slicer_USE_VTK_DEBUG_LEAKS "Enable VTKs Debug Leaks functionality in both VTK and Slicer." ON)
+mark_as_superbuild(Slicer_USE_VTK_DEBUG_LEAKS:BOOL)
 set(VTK_DEBUG_LEAKS ${Slicer_USE_VTK_DEBUG_LEAKS})
-mark_as_superbuild(VTK_DEBUG_LEAKS:BOOL)
 
 option(Slicer_BUILD_DICOM_SUPPORT "Build Slicer with DICOM support" ON)
 mark_as_superbuild(Slicer_BUILD_DICOM_SUPPORT)
@@ -229,7 +244,7 @@ mark_as_superbuild(Slicer_BUILD_DICOM_SUPPORT)
 option(Slicer_BUILD_DIFFUSION_SUPPORT "Build Slicer with diffusion (DWI, DTI) support" ON)
 mark_as_superbuild(Slicer_BUILD_DIFFUSION_SUPPORT)
 
-option(Slicer_BUILD_I18N_SUPPORT "Build Slicer with Internationalization support" OFF)
+option(Slicer_BUILD_I18N_SUPPORT "Build Slicer with Internationalization support" ON)
 mark_as_superbuild(Slicer_BUILD_I18N_SUPPORT)
 
 option(Slicer_BUILD_WEBENGINE_SUPPORT "Build Slicer with Qt WebEngine support" ON)
@@ -267,6 +282,9 @@ mark_as_superbuild(Slicer_BUILD_QT_DESIGNER_PLUGINS)
 option(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT "Build Slicer extensions manager" ON)
 mark_as_superbuild(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
 
+option(Slicer_BUILD_MULTIMEDIA_SUPPORT "Build Slicer with Multimedia support" ON)
+mark_as_superbuild(Slicer_BUILD_MULTIMEDIA_SUPPORT)
+
 CMAKE_DEPENDENT_OPTION(Slicer_UPDATE_TRANSLATION "update translation" OFF "Slicer_BUILD_I18N_SUPPORT" OFF)
 mark_as_advanced(Slicer_UPDATE_TRANSLATION)
 mark_as_superbuild(Slicer_UPDATE_TRANSLATION)
@@ -287,10 +305,19 @@ set_property(CACHE Slicer_REVISION_TYPE PROPERTY STRINGS
 mark_as_advanced(Slicer_REVISION_TYPE)
 mark_as_superbuild(Slicer_REVISION_TYPE)
 
-# Default Slicer_WC_COMMIT_COUNT_OFFSET is chosen to provide continuity of revisions when switching from SVN to git
-# at SVN revision=28825 / git hash 47deb76d7556e40de4e25e585c4b24a63a153da5 in official Slicer repository
-# (https://github.com/Slicer/Slicer.git).
-set(Slicer_WC_COMMIT_COUNT_OFFSET "3037" CACHE STRING
+# Default Slicer_WC_COMMIT_COUNT_OFFSET
+
+set(_commit_count_offsets
+  # Value is chosen to provide continuity of revisions when switching from SVN to git
+  # at SVN revision=28825 / git hash 47deb76d7556e40de4e25e585c4b24a63a153da5 in official Slicer repository
+  # (https://github.com/Slicer/Slicer.git).
+  "3037"
+  # Allocate revisions for patch releases between v5.0.0 and v5.1.0
+  "100"
+  )
+list(JOIN _commit_count_offsets "+" _commit_count_offsets_expr)
+math(EXPR _commit_count_offset "${_commit_count_offsets_expr}")
+set(Slicer_WC_COMMIT_COUNT_OFFSET "${_commit_count_offset}" CACHE STRING
   "This value is added to commit count to compute Slicer_COMMIT_COUNT (that may be used to set Slicer_REVISION).")
 mark_as_advanced(Slicer_WC_COMMIT_COUNT_OFFSET)
 mark_as_superbuild(Slicer_WC_COMMIT_COUNT_OFFSET)
@@ -298,6 +325,11 @@ mark_as_superbuild(Slicer_WC_COMMIT_COUNT_OFFSET)
 option(Slicer_USE_FOLDERS "Organize build targets into folders" ON)
 mark_as_superbuild(Slicer_USE_FOLDERS)
 mark_as_advanced(Slicer_USE_FOLDERS)
+
+#-----------------------------------------------------------------------------
+# Slicer version number
+#-----------------------------------------------------------------------------
+include(SlicerVersion)
 
 #-----------------------------------------------------------------------------
 # External projects related options
@@ -338,7 +370,7 @@ mark_as_superbuild(Slicer_INSTALL_ITKPython)
 option(Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT "Build Slicer with parameter serializer support" OFF)
 mark_as_superbuild(Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT)
 
-set(_default_vtk "8")
+set(_default_vtk "9")
 set(Slicer_VTK_VERSION_MAJOR ${_default_vtk} CACHE STRING "VTK major version (8 or 9)")
 set_property(CACHE Slicer_VTK_VERSION_MAJOR PROPERTY STRINGS "8" "9")
 if(NOT "${Slicer_VTK_VERSION_MAJOR}" MATCHES "^(8|9)$")
@@ -436,8 +468,10 @@ include(SlicerFunctionAddPythonQtResources)
 if(Slicer_BUILD_I18N_SUPPORT)
   set(Slicer_LANGUAGES
     "fr"
+    CACHE STRING "Semicolon separated list of supported Slicer languages. Expected format : language[_country] (both en and en_US are supported)."
     )
-  set_property(GLOBAL PROPERTY Slicer_LANGUAGES ${Slicer_LANGUAGES})
+  mark_as_advanced(Slicer_LANGUAGES)
+  mark_as_superbuild(Slicer_LANGUAGES)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -579,13 +613,19 @@ endif()
 # Note that the modules will be installed when packaging.
   set(Slicer_REQUIRED_QT_MODULES
     Core Widgets
-    Multimedia
     Network OpenGL
     PrintSupport # Required by "Annotations" module
     UiTools #no dll
     Xml XmlPatterns
     Svg Sql
     )
+
+  if(Slicer_BUILD_MULTIMEDIA_SUPPORT)
+    list(APPEND Slicer_REQUIRED_QT_MODULES
+      Multimedia
+      MultimediaWidgets
+      )
+  endif()
 
   # Add the Qt5X11Extras component for Linux systems
   # This component is needed for building VTK
@@ -676,7 +716,7 @@ set(Slicer_VTK_USE_QVTKOPENGLWIDGET 1)
 # Testing
 #-----------------------------------------------------------------------------
 # NOTE: For CTEST_USE_LAUNCHER to work, it's required to include CTest at the superbuild level.
-#       See http://www.kitware.com/blog/home/post/11
+#       See https://www.kitware.com/blog/home/post/11
 
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1) # Do not add CTest default targets
 include(CTest)
@@ -704,7 +744,9 @@ set(ExternalData_OBJECT_STORES_DEFAULT "${Slicer_BINARY_DIR}/ExternalData/Object
 if(DEFINED "ENV{ExternalData_OBJECT_STORES}")
   set(ExternalData_OBJECT_STORES_DEFAULT $ENV{ExternalData_OBJECT_STORES})
 endif()
-set(ExternalData_OBJECT_STORES "${ExternalData_OBJECT_STORES_DEFAULT}")
+if(NOT DEFINED ExternalData_OBJECT_STORES)
+  set(ExternalData_OBJECT_STORES "${ExternalData_OBJECT_STORES_DEFAULT}")
+endif()
 message(STATUS "Setting ExternalData_OBJECT_STORES to '${ExternalData_OBJECT_STORES}'")
 
 set(Slicer_ExternalData_DATA_MANAGEMENT_TARGET ${PROJECT_NAME}Data)
@@ -772,7 +814,6 @@ set(Slicer_ModuleWidgets_INCLUDE_DIRS CACHE INTERNAL "Slicer Module Widgets incl
 # ExternalData configuration for test data
 #-----------------------------------------------------------------------------
 list(APPEND ExternalData_URL_TEMPLATES "https://github.com/Slicer/SlicerTestingData/releases/download/%(algo)/%(hash)")
-list(APPEND ExternalData_URL_TEMPLATES "http://slicer.kitware.com/midas3/api/rest?method=midas.bitstream.download&checksum=%(hash)")
 include(ExternalData)
 set(Slicer_ExternalData_OBJECT_STORES ${ExternalData_OBJECT_STORES})
 set(Slicer_ExternalData_URL_TEMPLATES ${ExternalData_URL_TEMPLATES})
@@ -798,7 +839,6 @@ if(BUILD_TESTING)
     COPYONLY)
 
   add_subdirectory(CMake/Testing)
-  add_subdirectory(Extensions/CMake/Testing)
 
   if(Slicer_BUILD_CLI_SUPPORT)
     set(SEM_LAUNCH_COMMAND ${Slicer_LAUNCH_COMMAND})
@@ -861,21 +901,35 @@ include(ctkFunctionAddExecutableUtf8)
 # Set Slicer_PYTHON_VERSION and Slicer_PYTHON_VERSION_DOT
 #-----------------------------------------------------------------------------
 if(Slicer_USE_PYTHONQT)
-  find_package(PythonLibs REQUIRED)
-  find_package(PythonInterp REQUIRED)
+  find_package(PythonLibs ${Slicer_REQUIRED_PYTHON_VERSION_DOT} REQUIRED)
+  find_package(PythonInterp ${Slicer_REQUIRED_PYTHON_VERSION_DOT} REQUIRED)
+
   # Extract python lib path
   get_filename_component(PYTHON_DIR_PATH ${PYTHON_EXECUTABLE} PATH)
   set(PYTHON_LIBRARY_PATH ${PYTHON_DIR_PATH}/../lib)
   if(WIN32)
     set(PYTHON_LIBRARY_PATH ${PYTHON_DIR_PATH})
   endif()
+
+  # Extract python version components
   ctkMacroSetPaths("${PYTHON_LIBRARY_PATH}")
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print(sys.version[:3])"
-    OUTPUT_VARIABLE Slicer_PYTHON_VERSION_DOT
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  string(REGEX REPLACE "[.]" "" Slicer_PYTHON_VERSION ${Slicer_PYTHON_VERSION_DOT})
-  message(STATUS "Configuring ${Slicer_MAIN_PROJECT_APPLICATION_NAME} with python ${Slicer_PYTHON_VERSION_DOT}")
+  function(_python_sys_attribute attribute varname)
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print(sys.${attribute})"
+      OUTPUT_VARIABLE value
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(${varname} ${value} PARENT_SCOPE)
+  endfunction()
+
+  _python_sys_attribute("version_info.major" Slicer_PYTHON_VERSION_MAJOR)
+  _python_sys_attribute("version_info.minor" Slicer_PYTHON_VERSION_MINOR)
+  _python_sys_attribute("version_info.micro" Slicer_PYTHON_VERSION_PATCH)
+  _python_sys_attribute("abiflags" Slicer_PYTHON_ABIFLAGS)
+
+  set(Slicer_PYTHON_VERSION_DOT "${Slicer_PYTHON_VERSION_MAJOR}.${Slicer_PYTHON_VERSION_MINOR}")
+  set(Slicer_PYTHON_VERSION "${Slicer_PYTHON_VERSION_MAJOR}${Slicer_PYTHON_VERSION_MINOR}")
+
+  message(STATUS "Configuring ${Slicer_MAIN_PROJECT_APPLICATION_NAME} with python ${Slicer_PYTHON_VERSION_DOT}${Slicer_PYTHON_ABIFLAGS}")
 
   set(CTK_COMPILE_PYTHON_SCRIPTS_GLOBAL_TARGET_NAME "Slicer")
 endif()
@@ -1154,7 +1208,6 @@ if(NOT Slicer_INSTALL_NO_DEVELOPMENT)
   install(DIRECTORY
     Testing
     DESTINATION ${Slicer_INSTALL_SHARE_DIR} COMPONENT Development
-    PATTERN ".svn" EXCLUDE
     PATTERN "CMakeLists.txt" EXCLUDE
     )
 endif()
@@ -1219,6 +1272,28 @@ if(Slicer_USE_PYTHONQT)
     ${CTK_COMPILE_PYTHON_SCRIPTS_GLOBAL_TARGET_NAME}
     DEPENDS SlicerPythonResources
     )
+
+  set(_python_dir ${Slicer_SUPERBUILD_DIR}/python-install)
+  if(NOT Slicer_USE_SYSTEM_python OR NOT EXISTS ${_python_dir})
+    # Custom target to ensure there are cached byte-code files for all the python
+    # standard library and site-packages modules.
+    #
+    # Considering (1) some of the tests purposefully include invalid code
+    # that would lead the compilation to fail and (2) test directories are
+    # explicitly excluded from packages in "CMake/SlicerBlockInstallPython.cmake",
+    # the corresponding files are excluded from the compilation passing the "-x"
+    # argument.
+    add_custom_command(
+      COMMAND ${PYTHON_EXECUTABLE} -m compileall -q -x "[\/\\\\]test[s]?[\/\\\\]" ${_python_dir}/${PYTHON_STDLIB_SUBDIR}
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python_compile_stdlib_and_sitepackages_complete
+      COMMENT "Compiling python stdlib and site-packages modules: ${_python_dir}/${PYTHON_STDLIB_SUBDIR}"
+      VERBATIM
+      )
+    add_custom_target(CompileStdLibAndSitePackagesPythonFiles ALL
+      DEPENDS
+        ${CMAKE_CURRENT_BINARY_DIR}/python_compile_stdlib_and_sitepackages_complete
+      )
+  endif()
 endif()
 
 #-----------------------------------------------------------------------------

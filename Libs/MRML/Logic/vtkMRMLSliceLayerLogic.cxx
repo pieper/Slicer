@@ -36,6 +36,7 @@
 #include <vtkImageReslice.h>
 #include <vtkInformation.h>
 #include <vtkInformationVector.h>
+#include <vtkMatrix4x4.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPointData.h>
@@ -332,9 +333,12 @@ void vtkMRMLSliceLayerLogic::UpdateNodeReferences ()
   vtkSmartPointer<vtkMRMLVolumeDisplayNode> displayNode;
   vtkSmartPointer<vtkMRMLDiffusionTensorDisplayPropertiesNode> dtPropNode;
 
-  if ( this->VolumeNode )
+  // Store the current volume node in a local variable because this->VolumeNode might change
+  // by modules in response to adding a display node to the scene.
+  vtkSmartPointer<vtkMRMLVolumeNode> volumeNode = this->VolumeNode;
+  if (volumeNode)
     {
-    const char *id = this->VolumeNode->GetDisplayNodeID();
+    const char *id = volumeNode->GetDisplayNodeID();
     if (id)
       {
       if (this->GetMRMLScene())
@@ -345,25 +349,25 @@ void vtkMRMLSliceLayerLogic::UpdateNodeReferences ()
     else
       {
       // TODO: this is a hack
-      vtkDebugMacro("UpdateNodeReferences: Volume Node " << this->VolumeNode->GetID() << " doesn't have a display node, adding one.");
-      if (vtkMRMLDiffusionTensorVolumeNode::SafeDownCast(this->VolumeNode))
+      vtkDebugMacro("UpdateNodeReferences: Volume Node " << volumeNode->GetID() << " doesn't have a display node, adding one.");
+      if (vtkMRMLDiffusionTensorVolumeNode::SafeDownCast(volumeNode))
         {
         displayNode.TakeReference(vtkMRMLDiffusionTensorVolumeDisplayNode::New());
         dtPropNode.TakeReference(vtkMRMLDiffusionTensorDisplayPropertiesNode::New());
         }
-      else if (vtkMRMLDiffusionWeightedVolumeNode::SafeDownCast(this->VolumeNode))
+      else if (vtkMRMLDiffusionWeightedVolumeNode::SafeDownCast(volumeNode))
         {
         displayNode.TakeReference(vtkMRMLDiffusionWeightedVolumeDisplayNode::New());
         }
-      else if (vtkMRMLVectorVolumeNode::SafeDownCast(this->VolumeNode))
+      else if (vtkMRMLVectorVolumeNode::SafeDownCast(volumeNode))
         {
         displayNode.TakeReference(vtkMRMLVectorVolumeDisplayNode::New());
         }
-      else if (vtkMRMLLabelMapVolumeNode::SafeDownCast(this->VolumeNode))
+      else if (vtkMRMLLabelMapVolumeNode::SafeDownCast(volumeNode))
         {
         displayNode.TakeReference(vtkMRMLLabelMapVolumeDisplayNode::New());
         }
-      else if (vtkMRMLScalarVolumeNode::SafeDownCast(this->VolumeNode))
+      else if (vtkMRMLScalarVolumeNode::SafeDownCast(volumeNode))
         {
         displayNode.TakeReference(vtkMRMLScalarVolumeDisplayNode::New());
         }
@@ -386,7 +390,7 @@ void vtkMRMLSliceLayerLogic::UpdateNodeReferences ()
 
       displayNode->SetDefaultColorMap();
 
-      this->VolumeNode->SetAndObserveDisplayNodeID(displayNode->GetID());
+      volumeNode->SetAndObserveDisplayNodeID(displayNode->GetID());
       }
     }
 
@@ -681,46 +685,46 @@ void vtkMRMLSliceLayerLogic::UpdateImageDisplay()
   if ( volumeNode && volumeNode->IsA("vtkMRMLDiffusionTensorVolumeNode") )
     {
     vtkImageData* image = nullptr;
-      vtkAlgorithmOutput* imageDataConnection = volumeNode->GetImageDataConnection();
-      if (imageDataConnection)
-        {
-        imageDataConnection->GetProducer()->UpdateInformation();
-        image = vtkImageData::SafeDownCast(
-          imageDataConnection->GetProducer()->GetOutputDataObject(imageDataConnection->GetIndex()));
-        vtkDataArray* tensors = image ? image->GetPointData()->GetTensors() : nullptr;
+    vtkAlgorithmOutput* imageDataConnection = volumeNode->GetImageDataConnection();
+    if (imageDataConnection)
+      {
+      imageDataConnection->GetProducer()->UpdateInformation();
+      image = vtkImageData::SafeDownCast(
+        imageDataConnection->GetProducer()->GetOutputDataObject(imageDataConnection->GetIndex()));
+      vtkDataArray* tensors = image ? image->GetPointData()->GetTensors() : nullptr;
 
-        // HACK: vtkAssignAttribute fails to propagate the tensor array scalar to its
-        // output image data scalar type. It reuses what scalar type was
-        // previously set on the SCALARS array. See VTK#14692
-        vtkDataObject::SetPointDataActiveScalarInfo(
-          imageDataConnection->GetProducer()->GetOutputInformation(0),
-          tensors ? tensors->GetDataType() : VTK_FLOAT,
-          tensors ? tensors->GetNumberOfComponents() : 9);
-        // HACK: vtkAssignAttribute needs the tensor array to "have a name"/"be active".
-        // It seems it is already the case, no need for the hack. See VTK#14693
-        // vtkDataObject::SetActiveAttributeInfo(imageDataConnection->GetProducer()->GetOutputInformation(0),
-        //                                       vtkDataObject::FIELD_ASSOCIATION_POINTS,
-        //                                       vtkDataSetAttributes::TENSORS,
-        //                                       "tensors",-1,9,-1);
-        this->AssignAttributeTensorsToScalars->SetInputConnection(imageDataConnection);
-        }
-      else
-        {
-        this->AssignAttributeTensorsToScalars->SetInputConnection(imageDataConnection);
-        }
-      this->Reslice->SetInputConnection( this->AssignAttributeTensorsToScalars->GetOutputPort() );
-      this->ResliceUVW->SetInputConnection( this->AssignAttributeTensorsToScalars->GetOutputPort() );
+      // HACK: vtkAssignAttribute fails to propagate the tensor array scalar to its
+      // output image data scalar type. It reuses what scalar type was
+      // previously set on the SCALARS array. See VTK#14692
+      vtkDataObject::SetPointDataActiveScalarInfo(
+        imageDataConnection->GetProducer()->GetOutputInformation(0),
+        tensors ? tensors->GetDataType() : VTK_FLOAT,
+        tensors ? tensors->GetNumberOfComponents() : 9);
+      // HACK: vtkAssignAttribute needs the tensor array to "have a name"/"be active".
+      // It seems it is already the case, no need for the hack. See VTK#14693
+      // vtkDataObject::SetActiveAttributeInfo(imageDataConnection->GetProducer()->GetOutputInformation(0),
+      //                                       vtkDataObject::FIELD_ASSOCIATION_POINTS,
+      //                                       vtkDataSetAttributes::TENSORS,
+      //                                       "tensors",-1,9,-1);
+      this->AssignAttributeTensorsToScalars->SetInputConnection(imageDataConnection);
+      }
+    else
+      {
+      this->AssignAttributeTensorsToScalars->SetInputConnection(imageDataConnection);
+      }
+    this->Reslice->SetInputConnection( this->AssignAttributeTensorsToScalars->GetOutputPort() );
+    this->ResliceUVW->SetInputConnection( this->AssignAttributeTensorsToScalars->GetOutputPort() );
 
-      this->AssignAttributeScalarsToTensors->SetInputConnection(this->Reslice->GetOutputPort() );
-      // don't activate 3D UVW reslice pipeline if we use single 2D reslice pipeline
-      if (this->SliceNode && this->SliceNode->GetSliceResolutionMode() != vtkMRMLSliceNode::SliceResolutionMatch2DView)
-        {
-          this->AssignAttributeScalarsToTensorsUVW->SetInputConnection(this->ResliceUVW->GetOutputPort() );
-        }
-      else
-        {
-          this->AssignAttributeScalarsToTensorsUVW->SetInputConnection(nullptr);
-        }
+    this->AssignAttributeScalarsToTensors->SetInputConnection(this->Reslice->GetOutputPort() );
+    // don't activate 3D UVW reslice pipeline if we use single 2D reslice pipeline
+    if (this->SliceNode && this->SliceNode->GetSliceResolutionMode() != vtkMRMLSliceNode::SliceResolutionMatch2DView)
+      {
+        this->AssignAttributeScalarsToTensorsUVW->SetInputConnection(this->ResliceUVW->GetOutputPort() );
+      }
+    else
+      {
+        this->AssignAttributeScalarsToTensorsUVW->SetInputConnection(nullptr);
+      }
     bool verbose = false;
     if (image && verbose)
       {
@@ -740,6 +744,15 @@ void vtkMRMLSliceLayerLogic::UpdateImageDisplay()
       std::cerr << "\nAssignScalarToTensor output: \n";
       std::cerr << " typ: " << assignScalarsToTensorOutput->GetScalarType() << std::endl;
       assignScalarsToTensorOutput->GetPointData()->Print(std::cerr);
+      }
+
+    vtkMRMLDiffusionTensorVolumeDisplayNode *tensorDisplayNode = vtkMRMLDiffusionTensorVolumeDisplayNode::SafeDownCast(this->VolumeDisplayNode);
+    vtkMRMLDiffusionTensorVolumeNode *tensorNode = vtkMRMLDiffusionTensorVolumeNode::SafeDownCast(this->VolumeNode);
+    if (tensorDisplayNode && tensorNode)
+      {
+      vtkNew<vtkMatrix4x4> rotationMatrix;
+      tensorNode->GetMeasurementFrameMatrix(rotationMatrix.GetPointer());
+      tensorDisplayNode->SetTensorRotationMatrix(rotationMatrix.GetPointer());
       }
     }
   else if (volumeNode)

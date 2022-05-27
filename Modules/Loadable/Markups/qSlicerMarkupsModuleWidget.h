@@ -30,7 +30,7 @@ class QModelIndex;
 class QStringList;
 class QTableWidgetItem;
 class QShortcut;
-class qSlicerMarkupsAdditionalOptionsWidget;
+class qMRMLMarkupsOptionsWidget;
 class qSlicerMarkupsModuleWidgetPrivate;
 class vtkMRMLMarkupsNode;
 class vtkMRMLNode;
@@ -71,13 +71,17 @@ public:
   /// volume spacing and multiply it by the volume spacing scale factor
   /// \sa volumeSpacingScaleFactor
   void updateMaximumScaleFromVolumes();
-  /// Refresh a row of the gui from the mth markup in the currently active
-  /// markup node as defined by the selection node combo box
+  /// Refresh a row of the control points table from the m-th markup.
   void updateRow(int m);
+  /// Refresh all the rows of the control points table from the markup node.
+  void updateRows();
 
   /// Add observations to the markups node, and remove them from other markups
   /// nodes (from all nodes if markupsNode is null)
   void setMRMLMarkupsNode(vtkMRMLMarkupsNode* markupsNode);
+
+  /// Get currently selected markups node
+  vtkMRMLMarkupsNode* mrmlMarkupsNode();
 
   /// Set up the logic default display settings from the application settings
   void updateLogicFromSettings();
@@ -96,7 +100,9 @@ public:
   QStringList& associatedMarkups();
 
   // Add additional widget
-  QList<qSlicerMarkupsAdditionalOptionsWidget*>& additionalWidgets();
+  QList<qMRMLMarkupsOptionsWidget*>& additionalWidgets();
+
+  Q_INVOKABLE void updateToolBar(vtkMRMLMarkupsNode* node);
 
 public slots:
 
@@ -132,20 +138,24 @@ public slots:
   void onSaveToDefaultDisplayPropertiesPushButtonClicked();
 
   /// List button slots
-  void onVisibilityOnAllMarkupsInListPushButtonClicked();
-  void onVisibilityOffAllMarkupsInListPushButtonClicked();
-  void onVisibilityAllMarkupsInListToggled();
-  void onLockAllMarkupsInListPushButtonClicked();
-  void onUnlockAllMarkupsInListPushButtonClicked();
-  void onLockAllMarkupsInListToggled();
-  void onSelectAllMarkupsInListPushButtonClicked();
-  void onDeselectAllMarkupsInListPushButtonClicked();
-  void onSelectedAllMarkupsInListToggled();
-  void onAddMarkupPushButtonClicked();
-  void onMoveMarkupUpPushButtonClicked();
-  void onMoveMarkupDownPushButtonClicked();
-  void onDeleteMarkupPushButtonClicked(bool confirm=true);
-  void onDeleteAllMarkupsInListPushButtonClicked();
+  void onVisibilityOnAllControlPointsInListPushButtonClicked();
+  void onVisibilityOffAllControlPointsInListPushButtonClicked();
+  void onVisibilityAllControlPointsInListToggled();
+  void onLockAllControlPointsInListPushButtonClicked();
+  void onUnlockAllControlPointsInListPushButtonClicked();
+  void onLockAllControlPointsInListToggled();
+  void onSelectAllControlPointsInListPushButtonClicked();
+  void onDeselectAllControlPointsInListPushButtonClicked();
+  void onSelectedAllControlPointsInListToggled();
+  void onAddControlPointPushButtonClicked();
+  void onMoveControlPointUpPushButtonClicked();
+  void onMoveControlPointDownPushButtonClicked();
+  void onRestoreControlPointPushButtonClicked();
+  void onResetControlPointPushButtonClicked();
+  void onUnsetControlPointPushButtonClicked();
+  void onMissingControlPointPushButtonClicked();
+  void onDeleteControlPointPushButtonClicked(bool confirm=true);
+  void onDeleteAllControlPointsInListPushButtonClicked();
 
   /// Update the selection node from the tree view
   void onActiveMarkupItemChanged(vtkIdType);
@@ -157,7 +167,7 @@ public slots:
   /// make sure that a display node is added
   void onActiveMarkupMRMLNodeAdded(vtkMRMLNode *markupsNode);
 
-  /// Create markup by class.
+  /// Create markups node by class.
   void onCreateMarkupByClass(const QString& className);
 
   /// Toggle the markups node visibility flag
@@ -165,6 +175,9 @@ public slots:
 
   /// Toggle the markups node locked flag
   void onListLockedUnlockedPushButtonClicked();
+
+  /// Toggle the markups node control point number locked flag
+  void onFixedNumberOfControlPointsPushButtonClicked();
 
   /// Update the markup label from the line edit entry
   void onNameFormatLineEditTextEdited(const QString text);
@@ -225,7 +238,7 @@ public slots:
   void onSliceIntersectionsVisibilityToggled(bool checked);
 
   /// update visibility of the coordinate columns in the table
-  void onHideCoordinateColumnsToggled(bool checked);
+  void onHideCoordinateColumnsToggled(int index);
 
   /// update the coordinates shown in the table to be either the transformed coordinates (checked) or the untransformed coordinates (unchecked)
   void onTransformedCoordinatesToggled(bool checked);
@@ -246,12 +259,131 @@ public slots:
   /// Update set of create markups push buttons
   void onCreateMarkupsPushButtons();
 
-  /// Update set of create markups push buttons
-  void onPlaceMarkupsAdditionalOptionsWidgets();
+  /// Update internal list of markups options widgets from qMRMLMarkupsOptionsWidgetsFactory
+  void onUpdateMarkupsOptionsWidgets();
+
+  // Enable or disable markup table buttons
+  void enableMarkupTableButtons(bool enable);
 
   void updateImportExportWidgets();
-
   void onImportExportApply();
+
+  /// Create or get first color legend if group box is expanded
+  void onColorLegendCollapsibleGroupBoxToggled(bool);
+
+  //-----------------------------------------------------------
+  // All public methods below are deprecated
+  //
+  // These methods are deprecated because they use old terms (markup instead of control point),
+
+  /// \deprecated Use onVisibilityOnAllControlPointsInListPushButtonClicked instead.
+  void onVisibilityOnAllMarkupsInListPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onVisibilityOnAllMarkupsInListPushButtonClicked method is deprecated, please use onVisibilityOnAllControlPointsInListPushButtonClicked instead");
+    this->onVisibilityOnAllControlPointsInListPushButtonClicked();
+    };
+  /// \deprecated Use onVisibilityOffAllControlPointsInListPushButtonClicked instead.
+  void onVisibilityOffAllMarkupsInListPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onVisibilityOffAllMarkupsInListPushButtonClicked method is deprecated, please use onVisibilityOffAllControlPointsInListPushButtonClicked instead");
+    this->onVisibilityOffAllControlPointsInListPushButtonClicked();
+    };
+  /// \deprecated Use onVisibilityAllControlPointsInListToggled instead.
+  void onVisibilityAllMarkupsInListToggled()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onVisibilityAllMarkupsInListToggled method is deprecated, please use onVisibilityAllControlPointsInListToggled instead");
+    this->onVisibilityAllControlPointsInListToggled();
+    };
+  /// \deprecated Use onLockAllControlPointsInListPushButtonClicked instead.
+  void onLockAllMarkupsInListPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onLockAllMarkupsInListPushButtonClicked method is deprecated, please use onLockAllControlPointsInListPushButtonClicked instead");
+    this->onLockAllControlPointsInListPushButtonClicked();
+    };
+  /// \deprecated Use onUnlockAllControlPointsInListPushButtonClicked instead.
+  void onUnlockAllMarkupsInListPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onUnlockAllMarkupsInListPushButtonClicked method is deprecated, please use onUnlockAllControlPointsInListPushButtonClicked instead");
+    this->onUnlockAllControlPointsInListPushButtonClicked();
+    };
+  /// \deprecated Use onLockAllControlPointsInListToggled instead.
+  void onLockAllMarkupsInListToggled()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onLockAllMarkupsInListToggled method is deprecated, please use onLockAllControlPointsInListToggled instead");
+    this->onLockAllControlPointsInListToggled();
+    };
+  /// \deprecated Use onSelectAllControlPointsInListPushButtonClicked instead.
+  void onSelectAllMarkupsInListPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onSelectAllMarkupsInListPushButtonClicked method is deprecated, please use onSelectAllControlPointsInListPushButtonClicked instead");
+    this->onSelectAllControlPointsInListPushButtonClicked();
+    };
+  /// \deprecated Use onDeselectAllControlPointsInListPushButtonClicked instead.
+  void onDeselectAllMarkupsInListPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onDeselectAllMarkupsInListPushButtonClicked method is deprecated, please use onDeselectAllControlPointsInListPushButtonClicked instead");
+    this->onDeselectAllControlPointsInListPushButtonClicked();
+    };
+  /// \deprecated Use onSelectedAllControlPointsInListToggled instead.
+  void onSelectedAllMarkupsInListToggled()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onSelectedAllMarkupsInListToggled method is deprecated, please use onSelectedAllControlPointsInListToggled instead");
+    this->onSelectedAllControlPointsInListToggled();
+    };
+  /// \deprecated Use onAddControlPointPushButtonClicked instead.
+  void onAddMarkupPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onAddMarkupPushButtonClicked method is deprecated, please use onAddControlPointPushButtonClicked instead");
+    this->onAddControlPointPushButtonClicked();
+    };
+  /// \deprecated Use onMoveControlPointUpPushButtonClicked instead.
+  void onMoveMarkupUpPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onMoveMarkupUpPushButtonClicked method is deprecated, please use onMoveControlPointUpPushButtonClicked instead");
+    this->onMoveControlPointUpPushButtonClicked();
+    };
+  /// \deprecated Use onMoveControlPointDownPushButtonClicked instead.
+  void onMoveMarkupDownPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onMoveMarkupDownPushButtonClicked method is deprecated, please use onMoveControlPointDownPushButtonClicked instead");
+    this->onMoveControlPointDownPushButtonClicked();
+    };
+  /// \deprecated Use onRestoreControlPointPushButtonClicked instead.
+  void onRestoreMarkupPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onRestoreMarkupPushButtonClicked method is deprecated, please use onRestoreControlPointPushButtonClicked instead");
+    this->onRestoreControlPointPushButtonClicked();
+    };
+  /// \deprecated Use onResetControlPointPushButtonClicked instead.
+  void onResetMarkupPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onResetMarkupPushButtonClicked method is deprecated, please use onResetControlPointPushButtonClicked instead");
+    this->onResetControlPointPushButtonClicked();
+    };
+  /// \deprecated Use onUnsetControlPointPushButtonClicked instead.
+  void onUnsetMarkupPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onUnsetMarkupPushButtonClicked method is deprecated, please use onUnsetControlPointPushButtonClicked instead");
+    this->onUnsetControlPointPushButtonClicked();
+    };
+  /// \deprecated Use onMissingControlPointPushButtonClicked instead.
+  void onMissingMarkupPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onMissingMarkupPushButtonClicked method is deprecated, please use onMissingControlPointPushButtonClicked instead");
+    this->onMissingControlPointPushButtonClicked();
+    };
+  /// \deprecated Use onDeleteControlPointPushButtonClicked instead.
+  void onDeleteMarkupPushButtonClicked(bool confirm=true)
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onDeleteMarkupPushButtonClicked method is deprecated, please use onDeleteControlPointPushButtonClicked instead");
+    this->onDeleteControlPointPushButtonClicked(confirm);
+    };
+  /// \deprecated Use onDeleteAllControlPointsInListPushButtonClicked instead.
+  void onDeleteAllMarkupsInListPushButtonClicked()
+    {
+    qWarning("qSlicerMarkupsModuleWidget::onDeleteAllMarkupsInListPushButtonClicked method is deprecated, please use onDeleteAllControlPointsInListPushButtonClicked instead");
+    this->onDeleteAllControlPointsInListPushButtonClicked();
+    };
 
 protected:
   QScopedPointer<qSlicerMarkupsModuleWidgetPrivate> d_ptr;

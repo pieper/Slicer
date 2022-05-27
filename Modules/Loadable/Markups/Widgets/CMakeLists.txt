@@ -16,17 +16,21 @@ set(${KIT}_SRCS
   qMRML${MODULE_NAME}FiducialProjectionPropertyWidget.h
   qMRML${MODULE_NAME}InteractionHandleWidget.cxx
   qMRML${MODULE_NAME}InteractionHandleWidget.h
-  qSlicer${MODULE_NAME}ROIWidget.cxx
-  qSlicer${MODULE_NAME}ROIWidget.h
-  qSlicer${MODULE_NAME}AdditionalOptionsWidget_p.h
-  qSlicer${MODULE_NAME}AdditionalOptionsWidget.cxx
-  qSlicer${MODULE_NAME}AdditionalOptionsWidget.h
-  qSlicer${MODULE_NAME}AngleMeasurementsWidget.h
-  qSlicer${MODULE_NAME}AngleMeasurementsWidget.cxx
-  qSlicer${MODULE_NAME}CurveSettingsWidget.h
-  qSlicer${MODULE_NAME}CurveSettingsWidget.cxx
-  qSlicer${MODULE_NAME}AdditionalOptionsWidgetsFactory.h
-  qSlicer${MODULE_NAME}AdditionalOptionsWidgetsFactory.cxx
+  qMRML${MODULE_NAME}ToolBar.cxx
+  qMRML${MODULE_NAME}ToolBar.h
+  qMRML${MODULE_NAME}ToolBar_p.h
+  qMRML${MODULE_NAME}PlaneWidget.cxx
+  qMRML${MODULE_NAME}PlaneWidget.h
+  qMRML${MODULE_NAME}ROIWidget.cxx
+  qMRML${MODULE_NAME}ROIWidget.h
+  qMRML${MODULE_NAME}AbstractOptionsWidget.cxx
+  qMRML${MODULE_NAME}AbstractOptionsWidget.h
+  qMRML${MODULE_NAME}AngleMeasurementsWidget.h
+  qMRML${MODULE_NAME}AngleMeasurementsWidget.cxx
+  qMRML${MODULE_NAME}CurveSettingsWidget.h
+  qMRML${MODULE_NAME}CurveSettingsWidget.cxx
+  qMRML${MODULE_NAME}OptionsWidgetsFactory.h
+  qMRML${MODULE_NAME}OptionsWidgetsFactory.cxx
   qSlicer${MODULE_NAME}PlaceWidget.cxx
   qSlicer${MODULE_NAME}PlaceWidget.h
   qSlicerSimpleMarkupsWidget.cxx
@@ -37,11 +41,14 @@ set(${KIT}_MOC_SRCS
   qMRML${MODULE_NAME}DisplayNodeWidget.h
   qMRML${MODULE_NAME}FiducialProjectionPropertyWidget.h
   qMRML${MODULE_NAME}InteractionHandleWidget.h
-  qSlicer${MODULE_NAME}ROIWidget.h
-  qSlicer${MODULE_NAME}AdditionalOptionsWidget.h
-  qSlicer${MODULE_NAME}AngleMeasurementsWidget.h
-  qSlicer${MODULE_NAME}CurveSettingsWidget.h
-  qSlicer${MODULE_NAME}AdditionalOptionsWidgetsFactory.h
+  qMRML${MODULE_NAME}ToolBar.h
+  qMRML${MODULE_NAME}ToolBar_p.h
+  qMRML${MODULE_NAME}PlaneWidget.h
+  qMRML${MODULE_NAME}ROIWidget.h
+  qMRML${MODULE_NAME}AbstractOptionsWidget.h
+  qMRML${MODULE_NAME}AngleMeasurementsWidget.h
+  qMRML${MODULE_NAME}CurveSettingsWidget.h
+  qMRML${MODULE_NAME}OptionsWidgetsFactory.h
   qSlicer${MODULE_NAME}PlaceWidget.h
   qSlicerSimpleMarkupsWidget.h
   )
@@ -50,9 +57,10 @@ set(${KIT}_UI_SRCS
   Resources/UI/qMRML${MODULE_NAME}DisplayNodeWidget.ui
   Resources/UI/qMRML${MODULE_NAME}FiducialProjectionPropertyWidget.ui
   Resources/UI/qMRML${MODULE_NAME}InteractionHandleWidget.ui
-  Resources/UI/qSlicer${MODULE_NAME}ROIWidget.ui
-  Resources/UI/qSlicer${MODULE_NAME}AngleMeasurementsWidget.ui
-  Resources/UI/qSlicer${MODULE_NAME}CurveSettingsWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}PlaneWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}ROIWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}AngleMeasurementsWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}CurveSettingsWidget.ui
   Resources/UI/qSlicer${MODULE_NAME}PlaceWidget.ui
   Resources/UI/qSlicerSimpleMarkupsWidget.ui
   )

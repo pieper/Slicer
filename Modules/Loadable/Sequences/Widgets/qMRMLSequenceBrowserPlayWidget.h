@@ -44,6 +44,12 @@ class Q_SLICER_MODULE_SEQUENCES_WIDGETS_EXPORT qMRMLSequenceBrowserPlayWidget
   Q_OBJECT
   QVTK_OBJECT
 
+  /// Enable displaying recording control buttons (record and snapshot).
+  /// The buttons are only visible if this flag is enabled and there is at least one sequence that
+  /// has recording enabled.
+  Q_PROPERTY(bool RecordingControlsVisible READ recordingControlsVisible WRITE setRecordingControlsVisible)
+
+
 public:
   typedef qMRMLWidget Superclass;
   qMRMLSequenceBrowserPlayWidget(QWidget *newParent = 0);
@@ -58,6 +64,12 @@ public:
   /// Add a keyboard shortcut for next frame button
   void setNextFrameShortcut(QString keySequence);
 
+  /// Returns true if recording controls (record and snapshot buttons) are allowed to be shown.
+  ///
+  /// \note Regardless of this flag, recording controls are not shown if recording is not enabled
+  /// for any of the browsed sequences.
+  bool recordingControlsVisible() const;
+
 public slots:
   void setMRMLSequenceBrowserNode(vtkMRMLSequenceBrowserNode* browserNode);
   void setMRMLSequenceBrowserNode(vtkMRMLNode* browserNode);
@@ -65,6 +77,7 @@ public slots:
   void setRecordingEnabled(bool play);
   void setPlaybackRateFps(double playbackRateFps);
   void setPlaybackLoopEnabled(bool loopEnabled);
+  void setRecordingControlsVisible(bool show);
   void onVcrFirst();
   void onVcrPrevious();
   void onVcrNext();

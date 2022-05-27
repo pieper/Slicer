@@ -1,6 +1,6 @@
 
 #-----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.16.3...3.19.7 FATAL_ERROR)
 #-----------------------------------------------------------------------------
 
 if(Slicer_SOURCE_DIR)
@@ -17,27 +17,10 @@ endif()
 project(SlicerExtensions)
 
 #-----------------------------------------------------------------------------
-set(_url $ENV{MIDAS_PACKAGE_URL})
-if("${_url}" STREQUAL "")
-  set(_url "http://slicer.kitware.com/midas3")
+set(SLICER_PACKAGE_MANAGER_URL $ENV{SLICER_PACKAGE_MANAGER_URL})
+if("${SLICER_PACKAGE_MANAGER_URL}" STREQUAL "")
+  set(SLICER_PACKAGE_MANAGER_URL "https://slicer-packages.kitware.com")
 endif()
-
-set(_email $ENV{MIDAS_PACKAGE_EMAIL})
-if("${_email}" STREQUAL "")
-  set(_email "YOUR-MIDAS-LOGIN-NOTFOUND")
-endif()
-
-set(_api_key $ENV{MIDAS_PACKAGE_API_KEY})
-if("${_api_key}" STREQUAL "")
-  set(_api_key "YOUR-MIDAS-APIKEY-NOTFOUND")
-endif()
-
-#-----------------------------------------------------------------------------
-# Common options
-#-----------------------------------------------------------------------------
-set(MIDAS_PACKAGE_URL ${_url} CACHE STRING "MIDAS URL where the extension should be uploaded.")
-set(MIDAS_PACKAGE_EMAIL ${_email} CACHE STRING "Email allowing to authenticate to the MIDAS server.")
-set(MIDAS_PACKAGE_API_KEY ${_api_key} CACHE STRING "Token allowing to authenticate to the MIDAS server.")
 
 #-----------------------------------------------------------------------------
 # Compute default values

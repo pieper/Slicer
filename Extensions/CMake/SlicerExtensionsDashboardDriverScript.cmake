@@ -299,9 +299,6 @@ list(APPEND CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}")
 #-----------------------------------------------------------------------------
 setIfNotDefined(CTEST_TEST_TIMEOUT 900) # 15mins
 setIfNotDefined(CTEST_PARALLEL_LEVEL 8)
-setIfNotDefined(MIDAS_PACKAGE_URL "http://slicer.kitware.com/midas3")
-setIfNotDefined(MIDAS_PACKAGE_EMAIL "MIDAS_PACKAGE_EMAIL-NOTDEFINED" OBFUSCATE)
-setIfNotDefined(MIDAS_PACKAGE_API_KEY "MIDAS_PACKAGE_API_KEY-NOTDEFINED" OBFUSCATE)
 setIfNotDefined(CTEST_DROP_SITE "slicer.cdash.org")
 
 #-----------------------------------------------------------------------------
@@ -330,9 +327,7 @@ setIfNotDefined(run_extension_ctest_with_packages TRUE)
 if(NOT DEFINED CDASH_PROJECT_NAME)
   set(CDASH_PROJECT_NAME  "SlicerPreview")
   if("${Slicer_RELEASE_TYPE}" STREQUAL "Stable")
-    # XXX Rename Slicer CDash project
-    set(CDASH_PROJECT_NAME "Slicer4")
-    #set(CDASH_PROJECT_NAME  "SlicerStable")
+    set(CDASH_PROJECT_NAME  "SlicerStable")
   endif()
 endif()
 list(APPEND variables CDASH_PROJECT_NAME)
@@ -347,14 +342,6 @@ if(NOT EXISTS "${CTEST_GIT_COMMAND}")
   message(FATAL_ERROR "CTEST_GIT_COMMAND is set to a non-existent path [${CTEST_GIT_COMMAND}]")
 endif()
 message(STATUS "CTEST_GIT_COMMAND: ${CTEST_GIT_COMMAND}")
-
-if(NOT DEFINED CTEST_SVN_COMMAND)
-  find_program(CTEST_SVN_COMMAND NAMES svn)
-endif()
-if(NOT EXISTS "${CTEST_SVN_COMMAND}")
-  message(WARNING "CTEST_SVN_COMMAND is set to a non-existent path [${CTEST_SVN_COMMAND}]")
-endif()
-message(STATUS "CTEST_SVN_COMMAND: ${CTEST_SVN_COMMAND}")
 
 #-----------------------------------------------------------------------------
 set(CTEST_COMMAND ${CMAKE_CTEST_COMMAND})
@@ -592,11 +579,6 @@ CMAKE_CXX_COMPILER:FILEPATH=${CMAKE_CXX_COMPILER}")
 CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}")
       endif()
 
-      if(DEFINED CTEST_SVN_COMMAND)
-        set(OPTIONAL_CACHE_CONTENT "${OPTIONAL_CACHE_CONTENT}
-Subversion_SVN_EXECUTABLE:FILEPATH=${CTEST_SVN_COMMAND}")
-      endif()
-
       #-----------------------------------------------------------------------------
       # Write initial cache.
       #-----------------------------------------------------------------------------
@@ -606,9 +588,6 @@ CTEST_MODEL:STRING=${model}
 CTEST_SITE:STRING=${CTEST_SITE}
 Slicer_EXTENSIONS_TRACK_QUALIFIER:STRING=${EXTENSIONS_TRACK_QUALIFIER}
 GIT_EXECUTABLE:FILEPATH=${CTEST_GIT_COMMAND}
-MIDAS_PACKAGE_URL:STRING=${MIDAS_PACKAGE_URL}
-MIDAS_PACKAGE_EMAIL:STRING=${MIDAS_PACKAGE_EMAIL}
-MIDAS_PACKAGE_API_KEY:STRING=${MIDAS_PACKAGE_API_KEY}
 Slicer_DIR:PATH=${Slicer_DIR}
 Slicer_UPLOAD_EXTENSIONS:BOOL=${Slicer_UPLOAD_EXTENSIONS}
 ${OPTIONAL_CACHE_CONTENT}

@@ -15,7 +15,7 @@ if(Slicer_USE_PYTHONQT)
     message(WARNING "###############################################################################
 Skipping generation of python install rules
 
-Unexistant directory PYTHON_DIR:${PYTHON_DIR}/${PYTHON_STDLIB_SUBDIR}
+Non-existing directory PYTHON_DIR:${PYTHON_DIR}/${PYTHON_STDLIB_SUBDIR}
 
 This probably means that you are building Slicer against your own installation of Python.
 
@@ -42,6 +42,7 @@ To create a Slicer package including python libraries, you can *NOT* provide you
     REGEX "lib[-]old/" EXCLUDE
     REGEX "plat[-].*" EXCLUDE
     REGEX "/test/" EXCLUDE
+    REGEX "/tests/" EXCLUDE
     ${extra_exclude_pattern}
     )
   # Strip symbols of selected libraries for which ones (1) stripping has a
@@ -73,8 +74,17 @@ To create a Slicer package including python libraries, you can *NOT* provide you
         COMPONENT Runtime)
     endif()
   elseif(WIN32)
+    # Copy Python36.dll
     get_filename_component(PYTHON_LIB_BASE ${PYTHON_LIBRARY} NAME_WE)
     install(FILES "${PYTHON_LIBRARY_PATH}/${PYTHON_LIB_BASE}.dll"
+      DESTINATION bin
+      COMPONENT Runtime)
+    # Copy python3.dll
+    # The file name is always exactly this, as this file is guaranteed
+    # to be ABI compatible across all Python3 versions
+    # (see https://www.python.org/dev/peps/pep-0384/#linkage
+    # and https://github.com/Slicer/Slicer/issues/5816 for details).
+    install(FILES "${PYTHON_LIBRARY_PATH}/python3.dll"
       DESTINATION bin
       COMPONENT Runtime)
   endif()
@@ -130,7 +140,7 @@ To create a Slicer package including python libraries, you can *NOT* provide you
   # Install headers
   set(python_include_subdir /Include/)
   if(UNIX)
-    set(python_include_subdir /include/python3.6m/)
+    set(python_include_subdir /include/python${Slicer_PYTHON_VERSION_DOT}${Slicer_PYTHON_ABIFLAGS}/)
   endif()
 
   install(FILES "${PYTHON_DIR}${python_include_subdir}/pyconfig.h"

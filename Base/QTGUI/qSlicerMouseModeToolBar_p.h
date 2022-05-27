@@ -79,7 +79,7 @@ public:
   /// update mouse cursor shape according to current interaction mode and selection
   void updateCursor();
 
-  void updatePlaceWidgetMenuActionList();
+  void updatePlaceWidget();
 
   QCursor cursorFromIcon(QIcon& icon);
 
@@ -100,6 +100,8 @@ public:
   QAction* AdjustViewAction;
   QAction* AdjustWindowLevelAction;
   QAction* PlaceWidgetAction;
+  QAction* ToolBarAction;
+
   QMenu* PlaceWidgetMenu;
 
   QAction* AdjustWindowLevelAdjustModeAction;

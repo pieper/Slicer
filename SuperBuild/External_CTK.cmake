@@ -29,6 +29,11 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
     set(_wrap_qtwebkit 0)
 
+  set(_wrap_qtmultimedia 0)
+  if(Slicer_BUILD_MULTIMEDIA_SUPPORT AND Slicer_USE_PYTHONQT)
+    set(_wrap_qtmultimedia 1)
+  endif()
+
   if(Slicer_USE_PYTHONQT)
     list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
       -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
@@ -70,7 +75,7 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   ExternalProject_SetIfNotDefined(
     Slicer_${proj}_GIT_TAG
-    "2a7851a405bda83639c6bc43dee7aa1e0a4928d7"
+    "ec816cbb77986f6ee28c41a495e82238dee0e2d3"
     QUIET
     )
 
@@ -98,7 +103,8 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
       -DCTK_INSTALL_BIN_DIR:STRING=${Slicer_INSTALL_BIN_DIR}
       -DCTK_INSTALL_LIB_DIR:STRING=${Slicer_INSTALL_LIB_DIR}
       -DCTK_INSTALL_QTPLUGIN_DIR:STRING=${Slicer_INSTALL_QtPlugins_DIR}
-      -DCTK_USE_GIT_PROTOCOL:BOOL=${Slicer_USE_GIT_PROTOCOL}
+      # turn off git protocol, as it is not supported by GitHub
+      -DCTK_USE_GIT_PROTOCOL:BOOL=OFF
       -DCTK_USE_SYSTEM_VTK:BOOL=${CTK_USE_SYSTEM_VTK}
       -DVTK_DIR:PATH=${VTK_DIR}
       -DCTK_USE_SYSTEM_ITK:BOOL=${CTK_USE_SYSTEM_ITK}
@@ -121,6 +127,7 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTGUI:BOOL=${Slicer_USE_PYTHONQT}
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTUITOOLS:BOOL=${Slicer_USE_PYTHONQT}
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTNETWORK:BOOL=${Slicer_USE_PYTHONQT}
+      -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTMULTIMEDIA:BOOL=${_wrap_qtmultimedia}
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTWEBKIT:BOOL=${_wrap_qtwebkit}
       -DCTK_LIB_Scripting/Python/Widgets:BOOL=${Slicer_USE_PYTHONQT}
       -DCTK_ENABLE_Python_Wrapping:BOOL=${Slicer_USE_PYTHONQT}

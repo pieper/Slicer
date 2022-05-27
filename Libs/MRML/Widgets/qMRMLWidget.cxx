@@ -30,6 +30,7 @@
 
 // Qt includes
 #include <QApplication>
+#include <QIcon>
 #include <QSurfaceFormat>
 
 #ifdef _WIN32
@@ -130,6 +131,15 @@ void qMRMLWidget::preInitializeApplication()
   // Enable automatic scaling based on the pixel density of the monitor
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
+  // Enable QIcon to provide higher-resolution pixmaps than the size in device independent units.
+  // These pixmaps render sharply on a high-dpi display.
+  // If Qt::AA_UseHighDpiPixmaps is enabled then when an icon is loaded by the filename "base.png" then the icon
+  // class will also look for higher-resolution variants of this image by the names base@2x.png, base@3x.png, etc.
+  // On a high-DPI monitor (with DevicePixelRatio > 1) QIcon will actually load a higher-resolution pixmap
+  // that best matches the DevicePixelRatio of the display, resulting in crisp rendering of the icon.
+  // See https://doc.qt.io/qt-5/qicon.html#pixmap for more details.
+  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
   // Enables resource sharing between the OpenGL contexts used by classes like QOpenGLWidget and QQuickWidget
   QApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 }
@@ -140,4 +150,20 @@ void qMRMLWidget::postInitializeApplication()
   // Currently there is no initialization steps to be performed after
   // application creation right now, but we still keep this method
   // as a placeholder to make it easier to add steps later.
+}
+
+//-----------------------------------------------------------------------------
+QPixmap qMRMLWidget::pixmapFromIcon(const QIcon& icon)
+{
+  // QIcon stores multiple versions of the image (in different sizes) and uses the
+  // most suitable one (depending on DevicePixelRatio).
+  // In cases where a QIcon cannot be used (such as in QLabel), we need to get the best
+  // QPixmap from the QIcon (base.png, base@2x, ...) manually.
+
+  // To achieve this, we first determine the pixmap size in device independent units,
+  // which is the size of the base image (icon.availableSizes().first(), because for that
+  // DevicePixelRatio=1.0), and then we retrieve the pixmap for this size.
+
+  QPixmap pixmap = icon.pixmap(icon.availableSizes().first());
+  return pixmap;
 }

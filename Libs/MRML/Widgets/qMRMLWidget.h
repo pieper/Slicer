@@ -38,7 +38,7 @@ class QMRML_WIDGETS_EXPORT qMRMLWidget : public QWidget
 
 public:
   typedef QWidget Superclass;
-  explicit qMRMLWidget(QWidget *parent=nullptr, Qt::WindowFlags f=nullptr);
+  explicit qMRMLWidget(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
   ~qMRMLWidget() override;
 
   /// Return a pointer on the current MRML scene
@@ -50,6 +50,10 @@ public:
 
   /// Initialization that needs to be performed after application object is created.
   Q_INVOKABLE static void postInitializeApplication();
+
+  // Get the pixmap from the icon that is the most suitable for current screen resolution.
+  // Useful for cases when a widget cannot take a QIcon as input only as QPixmap.
+  Q_INVOKABLE static QPixmap pixmapFromIcon(const QIcon& icon);
 
 public slots:
   /// Set the MRML \a scene associated with the widget

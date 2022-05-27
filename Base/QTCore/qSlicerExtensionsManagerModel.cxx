@@ -233,6 +233,7 @@ public:
   QStringList ColumnNames;
 
   bool NewExtensionEnabledByDefault;
+  bool Interactive;
 
   QNetworkAccessManager NetworkManager;
   qRestAPI CheckForUpdatesApi;
@@ -264,6 +265,7 @@ public:
 qSlicerExtensionsManagerModelPrivate::qSlicerExtensionsManagerModelPrivate(qSlicerExtensionsManagerModel& object)
   : q_ptr(&object)
   , NewExtensionEnabledByDefault(true)
+  , Interactive(true)
 {
 }
 
@@ -297,7 +299,7 @@ void qSlicerExtensionsManagerModelPrivate::init()
   this->initializeColumnIdToNameMap(Self::ArchiveNameColumn, "archivename");
   this->initializeColumnIdToNameMap(Self::MD5Column, "md5");
 
-  // See http://www.developer.nokia.com/Community/Wiki/Using_QStandardItemModel_in_QML
+  // See https://www.developer.nokia.com/Community/Wiki/Using_QStandardItemModel_in_QML
   QHash<int, QByteArray> roleNames;
   int columnIdx = 0;
   foreach(const QString& columnName, this->columnNames())
@@ -783,41 +785,56 @@ bool qSlicerExtensionsManagerModelPrivate::validateExtensionMetadata(
     const ExtensionMetadataType &extensionMetadata, int serverAPI)
 {
   bool valid = true;
-  QStringList expectedNonEmptyKeys;
+  QStringList requiredNonEmptyKeys; // essential keys, return with failure if not found
+  QStringList expectedNonEmptyKeys; // log warning if not found (but return with success)
   if (serverAPI == qSlicerExtensionsManagerModel::Midas_v1)
     {
-    expectedNonEmptyKeys
+    requiredNonEmptyKeys
         << "item_id"
         << "name"
         << "productname";
     }
   else if (serverAPI == qSlicerExtensionsManagerModel::Girder_v1)
     {
-    expectedNonEmptyKeys
+    requiredNonEmptyKeys
         << "_id"
         << "meta.app_id"
         << "meta.app_revision"
         << "meta.arch"
         << "meta.baseName"
-        << "meta.category"
-        << "meta.description"
-        << "meta.homepage"
-        << "meta.icon_url"
         << "meta.os"
-        << "meta.repository_type"
-        << "meta.repository_url"
-        << "meta.revision"
-//        << "meta.screenshots"
         << "name";
+    expectedNonEmptyKeys
+      << "meta.category"
+      << "meta.description"
+      << "meta.homepage"
+      << "meta.icon_url"
+      << "meta.repository_type"
+      << "meta.repository_url"
+      << "meta.revision"
+      << "meta.screenshots";
     }
   else
     {
     qWarning() << Q_FUNC_INFO << " failed: missing implementation for serverAPI" << serverAPI;
     return false;
     }
+  // Check required keys (error if missing)
+  foreach(const QString& key, requiredNonEmptyKeys)
+    {
+    if (extensionMetadata.value(key).toString().isEmpty())
+      {
+      qWarning() << Q_FUNC_INFO << " failed: required key '" << key << "' is missing from extension metadata.";
+      valid = false;
+      }
+    }
+  // Check expected keys (warning if missing)
   foreach(const QString& key, expectedNonEmptyKeys)
     {
-    valid = valid && !extensionMetadata.value(key).toString().isEmpty();
+    if (extensionMetadata.value(key).toString().isEmpty())
+      {
+      qWarning() << Q_FUNC_INFO << " failed: expected key '" << key << "' is missing from extension metadata.";
+      }
     }
   return valid;
 }
@@ -1139,10 +1156,11 @@ qSlicerExtensionsManagerModel::ExtensionMetadataType qSlicerExtensionsManagerMod
     }
 
   ExtensionMetadataType updatedExtensionMetadata = result;
+  QHash<QString, QString> serverToExtensionDescriptionKey = q->serverToExtensionDescriptionKey(q->serverAPI());
   foreach(const QString& key, result.keys())
     {
     updatedExtensionMetadata.insert(
-      q->serverToExtensionDescriptionKey(q->serverAPI()).value(key, key), result.value(key));
+      serverToExtensionDescriptionKey.value(key, key), result.value(key));
     }
 
   return updatedExtensionMetadata;
@@ -1150,6 +1168,9 @@ qSlicerExtensionsManagerModel::ExtensionMetadataType qSlicerExtensionsManagerMod
 
 // --------------------------------------------------------------------------
 // qSlicerExtensionsManagerModel methods
+
+CTK_GET_CPP(qSlicerExtensionsManagerModel, bool, interactive, Interactive);
+CTK_SET_CPP(qSlicerExtensionsManagerModel, bool, setInteractive, Interactive);
 
 // --------------------------------------------------------------------------
 qSlicerExtensionsManagerModel::qSlicerExtensionsManagerModel(QObject* _parent)
@@ -1166,20 +1187,41 @@ qSlicerExtensionsManagerModel::~qSlicerExtensionsManagerModel() = default;
 // --------------------------------------------------------------------------
 int qSlicerExtensionsManagerModel::serverAPI() const
 {
-  QString serverApi = qEnvironmentVariable("SLICER_EXTENSIONS_MANAGER_SERVER_API", "Girder_v1");
-  if (serverApi == "Midas_v1")
+  int defaultServerAPI = Self::Girder_v1;
+  QString serverApiStr = qEnvironmentVariable("SLICER_EXTENSIONS_MANAGER_SERVER_API", Self::serverAPIToString(defaultServerAPI));
+  int serverAPI = Self::serverAPIFromString(serverApiStr);
+  if (serverAPI == -1)
     {
-    return Self::Midas_v1;
+    qWarning()
+        << "Unknown value" << serverApiStr << "associated with SLICER_EXTENSIONS_MANAGER_SERVER_API env. variable. "
+        << "Defaulting to" << Self::serverAPIToString(defaultServerAPI);
+    return defaultServerAPI;
     }
-  else if (serverApi == "Girder_v1")
+  return serverAPI;
+}
+
+// --------------------------------------------------------------------------
+QString qSlicerExtensionsManagerModel::serverAPIToString(int serverAPI)
+{
+  switch (serverAPI)
     {
-    return Self::Girder_v1;
+    case Girder_v1: return "Girder_v1";
+    case Midas_v1: return "Midas_v1";
+    default: return "";
     }
-  else
+}
+
+// --------------------------------------------------------------------------
+int qSlicerExtensionsManagerModel::serverAPIFromString(const QString& str)
+{
+  for (int idx = 0; idx < ServerAPI_Last; ++idx)
     {
-    qWarning().noquote() << "Unknown value '" << serverApi << "' associated with SLICER_EXTENSIONS_MANAGER_SERVER_API env. variable. Using 'Midas_v1'";
-    return Self::Midas_v1;
+    if (str == Self::serverAPIToString(idx))
+      {
+      return idx;
+      }
     }
+  return -1;
 }
 
 // --------------------------------------------------------------------------
@@ -1607,7 +1649,7 @@ void qSlicerExtensionsManagerModel::onInstallDownloadFinished(
 
   QNetworkReply* const reply = task->reply();
   QUrl downloadUrl = reply->url();
-  Q_ASSERT(QUrlQuery(downloadUrl).hasQueryItem("items"));
+  Q_ASSERT(downloadUrl.path().contains("/download"));
 
   emit this->downloadFinished(reply);
 
@@ -1720,16 +1762,11 @@ bool qSlicerExtensionsManagerModel::installExtension(
   const ExtensionMetadataType& extensionIndexMetadata =
     Self::parseExtensionDescriptionFile(extensionIndexDescriptionFile);
 
-  // Enable or disable the extension if state was not already set
-  if (!extensionMetadata.contains("enabled"))
-    {
-    extensionMetadata.insert("enabled", d->NewExtensionEnabledByDefault);
-    }
-
   // Copy metadata if not provided from server (e.g. installing from file)
   if (extensionMetadata.isEmpty())
     {
     extensionMetadata.insert("archivename", QFileInfo(archiveFile).fileName());
+    extensionMetadata.insert("extensionname", extensionName);
 
     // Copy expected keys from archive description
     QStringList expectedKeys;
@@ -1756,6 +1793,12 @@ bool qSlicerExtensionsManagerModel::installExtension(
     extensionMetadata.insert("os", this->slicerOs());
     extensionMetadata.insert("arch", this->slicerArch());
     extensionMetadata.insert("slicer_revision", this->slicerRevision());
+    }
+
+  // Enable or disable the extension if state was not already set
+  if (!extensionMetadata.contains("enabled"))
+    {
+    extensionMetadata.insert("enabled", d->NewExtensionEnabledByDefault);
     }
 
   // Gather information on dependency extensions
@@ -1805,35 +1848,53 @@ bool qSlicerExtensionsManagerModel::installExtension(
       }
     }
 
+  bool success = true;
+
   // Warn about unresolved dependencies
   if (!unresolvedDependencies.isEmpty())
     {
-    QString msg = QString("<p>%1 depends on the following extensions, which could not be found:</p><ul>").arg(extensionName);
-    foreach (const QString& dependencyName, unresolvedDependencies)
+    success = false;
+    qWarning() << QString("%1 extension depends on the following extensions, which could not be found: %2")
+      .arg(extensionName)
+      .arg(unresolvedDependencies.join(", "));
+    if (d->Interactive)
       {
-      msg += QString("<li>%1</li>").arg(dependencyName);
+      QString msg = QString("<p>%1 depends on the following extensions, which could not be found:</p><ul>").arg(extensionName);
+      foreach(const QString& dependencyName, unresolvedDependencies)
+        {
+        msg += QString("<li>%1</li>").arg(dependencyName);
+        }
+      msg += "</ul><p>The extension may not function properly.</p>";
+      QMessageBox::warning(nullptr, "Unresolved dependencies", msg);
       }
-    msg += "</ul><p>The extension may not function properly.</p>";
-    QMessageBox::warning(nullptr, "Unresolved dependencies", msg);
     }
 
   // Prompt to install dependencies (if any)
   if (!dependenciesMetadata.isEmpty())
     {
-    QString msg = QString("<p>%1 depends on the following extensions:</p><ul>").arg(extensionName);
-    foreach (const QString& dependencyName, dependenciesMetadata.keys())
+    QMessageBox::StandardButton result = QMessageBox::Yes;
+    if (d->Interactive)
       {
-      msg += QString("<li>%1</li>").arg(dependencyName);
+      QString msg = QString("<p>%1 depends on the following extensions:</p><ul>").arg(extensionName);
+      foreach (const QString& dependencyName, dependenciesMetadata.keys())
+        {
+        msg += QString("<li>%1</li>").arg(dependencyName);
+        }
+      msg += "</ul><p>Would you like to install them now?</p>";
+      result = QMessageBox::question(nullptr, "Install dependencies", msg, QMessageBox::Yes | QMessageBox::No);
       }
-    msg += "</ul><p>Would you like to install them now?</p>";
-    const QMessageBox::StandardButton result =
-      QMessageBox::question(nullptr, "Install dependencies", msg,
-                            QMessageBox::Yes | QMessageBox::No);
+    else
+      {
+      QString msg = QString("The following extensions are required by %1 extension therefore they will be installed now: %2")
+        .arg(extensionName)
+        .arg(dependenciesMetadata.keys().join(", "));
+      qDebug() << msg;
+      }
 
     if (result == QMessageBox::Yes)
       {
       // Install dependencies
-      msg.clear();
+      QString msg;
       foreach (const ExtensionMetadataType& dependency, dependenciesMetadata)
         {
         bool res = this->downloadAndInstallExtension(
@@ -1841,12 +1902,20 @@ bool qSlicerExtensionsManagerModel::installExtension(
         if (!res)
           {
           msg += QString("<li>%1</li>").arg(dependency.value("extensionname").toString());
+          success = false;
           }
         }
       if (!msg.isEmpty())
         {
         d->critical(QString("Error while installing dependent extensions:<ul>%1<ul>").arg(msg));
         }
+      }
+    else
+      {
+      qWarning() << QString("%1 extension requires extensions %2 but the user chose not to install them.")
+        .arg(extensionName)
+        .arg(dependenciesMetadata.keys().join(", "));
+      success = false;
       }
     }
 
@@ -1874,7 +1943,7 @@ bool qSlicerExtensionsManagerModel::installExtension(
     }
   d->info(msg);
 
-  return true;
+  return success;
 }
 
 // --------------------------------------------------------------------------
@@ -2086,7 +2155,7 @@ void qSlicerExtensionsManagerModel::onUpdateDownloadFinished(
   // Get network reply
   QNetworkReply* const reply = task->reply();
   QUrl downloadUrl = reply->url();
-  Q_ASSERT(QUrlQuery(downloadUrl).hasQueryItem("items"));
+  Q_ASSERT(downloadUrl.path().contains("/download"));
 
   // Notify observers of event
   emit this->downloadFinished(reply);
@@ -2984,7 +3053,11 @@ qSlicerExtensionsManagerModel::parseExtensionDescriptionFile(const QString& file
       {
       continue;
       }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QStringList components = line.split(" ", Qt::SkipEmptyParts);
+#else
     QStringList components = line.split(" ", QString::SkipEmptyParts);
+#endif
     if (components.size() == 0)
       {
       continue;

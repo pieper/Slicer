@@ -1,7 +1,13 @@
-import os
-import vtk, qt, ctk, slicer
 import logging
+import os
+
+import ctk
+import vtk
+import qt
+
+import slicer
 from SegmentEditorEffects import *
+
 
 class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
   """ ThresholdEffect is an Effect implementing the global threshold
@@ -149,11 +155,13 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.scriptedEffect.addOptionsWidget(self.thresholdSlider)
 
     self.autoThresholdModeSelectorComboBox = qt.QComboBox()
-    self.autoThresholdModeSelectorComboBox.addItem("auto->maximum", MODE_SET_LOWER_MAX)
-    self.autoThresholdModeSelectorComboBox.addItem("minimum->auto", MODE_SET_MIN_UPPER)
-    self.autoThresholdModeSelectorComboBox.addItem("as lower", MODE_SET_LOWER)
-    self.autoThresholdModeSelectorComboBox.addItem("as upper", MODE_SET_UPPER)
-    self.autoThresholdModeSelectorComboBox.setToolTip("How to set lower and upper threshold values. Current refers to keeping the current value.")
+    self.autoThresholdModeSelectorComboBox.addItem("threshold above", MODE_SET_LOWER_MAX)
+    self.autoThresholdModeSelectorComboBox.addItem("threshold below", MODE_SET_MIN_UPPER)
+    self.autoThresholdModeSelectorComboBox.addItem("set as lower value", MODE_SET_LOWER)
+    self.autoThresholdModeSelectorComboBox.addItem("set as upper value", MODE_SET_UPPER)
+    self.autoThresholdModeSelectorComboBox.setToolTip("How to set lower and upper values of the threshold range."
+      " Threshold above/below: sets the range from the computed value to maximum/minimum."
+      " Set as lower/upper value: only modifies one side of the threshold range.")
 
     self.autoThresholdMethodSelectorComboBox = qt.QComboBox()
     self.autoThresholdMethodSelectorComboBox.addItem("Otsu", METHOD_OTSU)
@@ -186,19 +194,18 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
     self.setAutoThresholdButton = qt.QPushButton("Set")
     self.setAutoThresholdButton.setToolTip("Set threshold using selected method.")
-
     # qt.QSizePolicy(qt.QSizePolicy.Expanding, qt.QSizePolicy.Expanding)
     # fails on some systems, therefore set the policies using separate method calls
     qSize = qt.QSizePolicy()
     qSize.setHorizontalPolicy(qt.QSizePolicy.Expanding)
     self.setAutoThresholdButton.setSizePolicy(qSize)
 
-    autoThresholdFrame = qt.QHBoxLayout()
-    autoThresholdFrame.addWidget(self.autoThresholdModeSelectorComboBox)
-    autoThresholdFrame.addWidget(self.autoThresholdMethodSelectorComboBox)
-    autoThresholdFrame.addWidget(self.selectPreviousAutoThresholdButton)
-    autoThresholdFrame.addWidget(self.selectNextAutoThresholdButton)
-    autoThresholdFrame.addWidget(self.setAutoThresholdButton)
+    autoThresholdFrame = qt.QGridLayout()
+    autoThresholdFrame.addWidget(self.autoThresholdMethodSelectorComboBox, 0, 0, 1, 1)
+    autoThresholdFrame.addWidget(self.selectPreviousAutoThresholdButton, 0, 1, 1, 1)
+    autoThresholdFrame.addWidget(self.selectNextAutoThresholdButton, 0, 2, 1, 1)
+    autoThresholdFrame.addWidget(self.autoThresholdModeSelectorComboBox, 1, 0, 1, 3)
+    autoThresholdFrame.addWidget(self.setAutoThresholdButton, 2, 0, 1, 3)
 
     autoThresholdGroupBox = ctk.ctkCollapsibleGroupBox()
     autoThresholdGroupBox.setTitle("Automatic threshold")
@@ -211,38 +218,44 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     histogramBrushFrame = qt.QHBoxLayout()
     histogramFrame.addLayout(histogramBrushFrame)
 
+    self.regionLabel = qt.QLabel("Region shape:")
+    histogramBrushFrame.addWidget(self.regionLabel)
+
     self.histogramBrushButtonGroup = qt.QButtonGroup()
     self.histogramBrushButtonGroup.setExclusive(True)
 
-    self.boxROIButton = qt.QPushButton()
+    self.boxROIButton = qt.QToolButton()
     self.boxROIButton.setText("Box")
     self.boxROIButton.setCheckable(True)
     self.boxROIButton.clicked.connect(self.updateMRMLFromGUI)
     histogramBrushFrame.addWidget(self.boxROIButton)
     self.histogramBrushButtonGroup.addButton(self.boxROIButton)
 
-    self.circleROIButton = qt.QPushButton()
+    self.circleROIButton = qt.QToolButton()
     self.circleROIButton.setText("Circle")
     self.circleROIButton.setCheckable(True)
     self.circleROIButton.clicked.connect(self.updateMRMLFromGUI)
     histogramBrushFrame.addWidget(self.circleROIButton)
     self.histogramBrushButtonGroup.addButton(self.circleROIButton)
 
-    self.drawROIButton = qt.QPushButton()
+    self.drawROIButton = qt.QToolButton()
     self.drawROIButton.setText("Draw")
     self.drawROIButton.setCheckable(True)
     self.drawROIButton.clicked.connect(self.updateMRMLFromGUI)
     histogramBrushFrame.addWidget(self.drawROIButton)
     self.histogramBrushButtonGroup.addButton(self.drawROIButton)
 
-    self.lineROIButton = qt.QPushButton()
+    self.lineROIButton = qt.QToolButton()
     self.lineROIButton.setText("Line")
     self.lineROIButton.setCheckable(True)
     self.lineROIButton.clicked.connect(self.updateMRMLFromGUI)
     histogramBrushFrame.addWidget(self.lineROIButton)
     self.histogramBrushButtonGroup.addButton(self.lineROIButton)
 
+    histogramBrushFrame.addStretch()
+
     self.histogramView = ctk.ctkTransferFunctionView()
+    self.histogramView = self.histogramView
     histogramFrame.addWidget(self.histogramView)
     scene = self.histogramView.scene()
 
@@ -296,27 +309,29 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
     lowerGroupBox = qt.QGroupBox("Lower")
     lowerHistogramLayout = qt.QHBoxLayout()
+    lowerHistogramLayout.setContentsMargins(0,3,0,3)
     lowerGroupBox.setLayout(lowerHistogramLayout)
     histogramItemFrame.addWidget(lowerGroupBox)
     self.histogramLowerMethodButtonGroup = qt.QButtonGroup()
     self.histogramLowerMethodButtonGroup.setExclusive(True)
 
-    self.histogramLowerThresholdMinimumButton = qt.QPushButton()
-    self.histogramLowerThresholdMinimumButton.setText("Minimum")
+    self.histogramLowerThresholdMinimumButton = qt.QToolButton()
+    self.histogramLowerThresholdMinimumButton.setText("Min")
+    self.histogramLowerThresholdMinimumButton.setToolTip("Minimum")
     self.histogramLowerThresholdMinimumButton.setCheckable(True)
     self.histogramLowerThresholdMinimumButton.clicked.connect(self.updateMRMLFromGUI)
     lowerHistogramLayout.addWidget(self.histogramLowerThresholdMinimumButton)
     self.histogramLowerMethodButtonGroup.addButton(self.histogramLowerThresholdMinimumButton)
 
-    self.histogramLowerThresholdLowerButton = qt.QPushButton()
+    self.histogramLowerThresholdLowerButton = qt.QToolButton()
     self.histogramLowerThresholdLowerButton.setText("Lower")
     self.histogramLowerThresholdLowerButton.setCheckable(True)
     self.histogramLowerThresholdLowerButton.clicked.connect(self.updateMRMLFromGUI)
     lowerHistogramLayout.addWidget(self.histogramLowerThresholdLowerButton)
     self.histogramLowerMethodButtonGroup.addButton(self.histogramLowerThresholdLowerButton)
 
-    self.histogramLowerThresholdAverageButton = qt.QPushButton()
-    self.histogramLowerThresholdAverageButton.setText("Average")
+    self.histogramLowerThresholdAverageButton = qt.QToolButton()
+    self.histogramLowerThresholdAverageButton.setText("Mean")
     self.histogramLowerThresholdAverageButton.setCheckable(True)
     self.histogramLowerThresholdAverageButton.clicked.connect(self.updateMRMLFromGUI)
     lowerHistogramLayout.addWidget(self.histogramLowerThresholdAverageButton)
@@ -327,27 +342,29 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
     upperGroupBox = qt.QGroupBox("Upper")
     upperHistogramLayout = qt.QHBoxLayout()
+    upperHistogramLayout.setContentsMargins(0,3,0,3)
     upperGroupBox.setLayout(upperHistogramLayout)
     histogramItemFrame.addWidget(upperGroupBox)
     self.histogramUpperMethodButtonGroup = qt.QButtonGroup()
     self.histogramUpperMethodButtonGroup.setExclusive(True)
 
-    self.histogramUpperThresholdAverageButton = qt.QPushButton()
-    self.histogramUpperThresholdAverageButton.setText("Average")
+    self.histogramUpperThresholdAverageButton = qt.QToolButton()
+    self.histogramUpperThresholdAverageButton.setText("Mean")
     self.histogramUpperThresholdAverageButton.setCheckable(True)
     self.histogramUpperThresholdAverageButton.clicked.connect(self.updateMRMLFromGUI)
     upperHistogramLayout.addWidget(self.histogramUpperThresholdAverageButton)
     self.histogramUpperMethodButtonGroup.addButton(self.histogramUpperThresholdAverageButton)
 
-    self.histogramUpperThresholdUpperButton = qt.QPushButton()
+    self.histogramUpperThresholdUpperButton = qt.QToolButton()
     self.histogramUpperThresholdUpperButton.setText("Upper")
     self.histogramUpperThresholdUpperButton.setCheckable(True)
     self.histogramUpperThresholdUpperButton.clicked.connect(self.updateMRMLFromGUI)
     upperHistogramLayout.addWidget(self.histogramUpperThresholdUpperButton)
     self.histogramUpperMethodButtonGroup.addButton(self.histogramUpperThresholdUpperButton)
 
-    self.histogramUpperThresholdMaximumButton = qt.QPushButton()
-    self.histogramUpperThresholdMaximumButton.setText("Maximum")
+    self.histogramUpperThresholdMaximumButton = qt.QToolButton()
+    self.histogramUpperThresholdMaximumButton.setText("Max")
+    self.histogramUpperThresholdMaximumButton.setToolTip("Maximum")
     self.histogramUpperThresholdMaximumButton.setCheckable(True)
     self.histogramUpperThresholdMaximumButton.clicked.connect(self.updateMRMLFromGUI)
     upperHistogramLayout.addWidget(self.histogramUpperThresholdMaximumButton)
@@ -379,7 +396,6 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
   def masterVolumeNodeChanged(self):
     # Set scalar range of master volume image data to threshold slider
-    import vtkSegmentationCorePython as vtkSegmentationCore
     masterImageData = self.scriptedEffect.masterVolumeImageData()
     if masterImageData:
       lo, hi = masterImageData.GetScalarRange()
@@ -578,7 +594,6 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
 
     try:
       # Get master volume image data
-      import vtkSegmentationCorePython as vtkSegmentationCore
       masterImageData = self.scriptedEffect.masterVolumeImageData()
       # Get modifier labelmap
       modifierLabelmap = self.scriptedEffect.defaultModifierLabelmap()
@@ -695,8 +710,10 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     if viewWidget.className() != "qMRMLSliceWidget":
       return abortEvent
 
+    anyModifierKeyPressed = callerInteractor.GetShiftKey() or callerInteractor.GetControlKey() or callerInteractor.GetAltKey()
+
     # Clicking in a view should remove all previous pipelines
-    if eventId == vtk.vtkCommand.LeftButtonPressEvent and not callerInteractor.GetShiftKey():
+    if eventId == vtk.vtkCommand.LeftButtonPressEvent and not anyModifierKeyPressed:
       self.clearHistogramDisplay()
 
     if self.histogramPipeline is None:
@@ -705,13 +722,15 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     xy = callerInteractor.GetEventPosition()
     ras = self.xyToRas(xy, viewWidget)
 
-    if eventId == vtk.vtkCommand.LeftButtonPressEvent and not callerInteractor.GetShiftKey():
+    if eventId == vtk.vtkCommand.LeftButtonPressEvent and not anyModifierKeyPressed:
       self.histogramPipeline.state = HISTOGRAM_STATE_MOVING
       self.histogramPipeline.addPoint(ras)
       self.updateHistogram()
       abortEvent = True
     elif eventId == vtk.vtkCommand.LeftButtonReleaseEvent:
-      self.histogramPipeline.state = HISTOGRAM_STATE_PLACED
+      if self.histogramPipeline.state == HISTOGRAM_STATE_MOVING:
+        self.histogramPipeline.state = HISTOGRAM_STATE_PLACED
+        abortEvent = True
     elif eventId == vtk.vtkCommand.MouseMoveEvent:
       if self.histogramPipeline.state == HISTOGRAM_STATE_MOVING:
         self.histogramPipeline.addPoint(ras)
@@ -911,6 +930,7 @@ class SegmentEditorThresholdEffect(AbstractScriptedSegmentEditorEffect):
     self.backgroundFunction.SetAlpha(1.0)
     self.backgroundFunction.Build()
 
+
 #
 # PreviewPipeline
 #
@@ -947,12 +967,14 @@ class PreviewPipeline:
     self.colorMapper.SetInputConnection(self.thresholdFilter.GetOutputPort())
     self.mapper.SetInputConnection(self.colorMapper.GetOutputPort())
 
+
 ###
 #
 # Histogram threshold
 #
 class HistogramEventFilter(qt.QObject):
   thresholdEffect = None
+
   def setThresholdEffect(self, thresholdEffect):
     self.thresholdEffect = thresholdEffect
 
@@ -1183,6 +1205,7 @@ class HistogramPipeline:
     self.worldOriginToWorldTransform.Translate(center)
 
     self.sliceWidget.sliceView().scheduleRender()
+
 
 HISTOGRAM_BRUSH_TYPE_PARAMETER_NAME = "BrushType"
 

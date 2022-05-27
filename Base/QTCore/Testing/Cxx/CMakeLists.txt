@@ -37,6 +37,7 @@ if(BUILD_TESTING)
       "19615-macosx-amd64-LoadableExtensionTemplate-svn19615-2012-03-18.json"
       "19615-macosx-amd64-ScriptedLoadableExtensionTemplate-svn19615-2012-03-18.json"
       "19615-macosx-amd64-SuperBuildLoadableExtensionTemplate-svn19615-2012-03-18.json"
+      "30338_slicerheart_win_amd64_1db3627.json"
       )
     configure_file(
       ../Data/Input/${filename}
@@ -55,7 +56,7 @@ if(BUILD_TESTING)
   set(CMAKE_TESTDRIVER_BEFORE_TESTMAIN "DEBUG_LEAKS_ENABLE_EXIT_ERROR();" )
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
   set(KIT_TEST_SRCS
-    qSlicerAbstractCoreModuleTest1
+    qSlicerAbstractCoreModuleTest1.cxx
     qSlicerCoreApplicationTest1.cxx
     qSlicerCoreIOManagerTest1.cxx
     qSlicerLoadableModuleFactoryTest1.cxx

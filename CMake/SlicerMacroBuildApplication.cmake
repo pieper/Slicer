@@ -178,7 +178,6 @@ macro(slicerMacroBuildAppLibrary)
     set(TS_DIR
       "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Translations/"
     )
-    get_property(Slicer_LANGUAGES GLOBAL PROPERTY Slicer_LANGUAGES)
 
     include(SlicerMacroTranslation)
     SlicerMacroTranslation(
@@ -405,9 +404,11 @@ macro(slicerMacroBuildApplication)
   # --------------------------------------------------------------------------
   # Build the executable
   # --------------------------------------------------------------------------
-  set(Slicer_HAS_CONSOLE_IO_SUPPORT TRUE)
+  set(Slicer_HAS_CONSOLE_IO_SUPPORT TRUE)  # SlicerApp-real is a console application
+  set(Slicer_HAS_CONSOLE_LAUNCHER TRUE)    # Slicer launcher is a console application
   if(WIN32)
     set(Slicer_HAS_CONSOLE_IO_SUPPORT ${Slicer_BUILD_WIN32_CONSOLE})
+    set(Slicer_HAS_CONSOLE_LAUNCHER ${Slicer_BUILD_WIN32_CONSOLE_LAUNCHER})
   endif()
 
   set(SLICERAPP_EXE_OPTIONS)
@@ -474,7 +475,7 @@ macro(slicerMacroBuildApplication)
 
   if(WIN32)
     if(Slicer_USE_PYTHONQT)
-      # HACK - See http://www.na-mic.org/Bug/view.php?id=1180
+      # HACK - See https://mantisarchive.slicer.org/view.php?id=1180
       get_filename_component(_python_library_name_we ${PYTHON_LIBRARY} NAME_WE)
       add_custom_command(
         TARGET ${slicerapp_target}
@@ -677,7 +678,7 @@ macro(slicerMacroBuildApplication)
       set_target_properties(${SLICERAPP_APPLICATION_NAME}ConfigureLauncher PROPERTIES FOLDER ${SLICERAPP_FOLDER})
 
       if(NOT APPLE)
-        if(Slicer_HAS_CONSOLE_IO_SUPPORT)
+        if(Slicer_HAS_CONSOLE_LAUNCHER)
           install(
             PROGRAMS "${Slicer_BINARY_DIR}/${SLICERAPP_APPLICATION_NAME}${CMAKE_EXECUTABLE_SUFFIX}"
             DESTINATION "."

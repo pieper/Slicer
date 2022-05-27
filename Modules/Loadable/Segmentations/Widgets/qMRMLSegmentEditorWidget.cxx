@@ -98,6 +98,7 @@
 #include <QAction>
 #include <QButtonGroup>
 #include <QDebug>
+#include <QGridLayout>
 #include <QInputDialog>
 #include <QMainWindow>
 #include <QMenu>
@@ -109,11 +110,8 @@
 #include <QTableView>
 #include <QToolButton>
 #include <QVBoxLayout>
-#include <QWidgetAction>
 
 // CTK includes
-#include <ctkFlowLayout.h>
-#include <ctkSliderWidget.h>
 #include <ctkCollapsibleButton.h>
 
 static const int BINARY_LABELMAP_SCALAR_TYPE = VTK_UNSIGNED_CHAR;
@@ -207,10 +205,6 @@ public:
   /// then false is returned;
   bool segmentationIJKToRAS(vtkMatrix4x4* ijkToRas);
 
-  /// Updates surface smoothing factor in segmentation node and updates surface representation
-  /// if it is enabled.
-  bool setSurfaceSmoothingFactor(double smoothingFactor);
-
 public:
   /// Segment editor parameter set node containing all selections and working images
   vtkWeakPointer<vtkMRMLSegmentEditorNode> ParameterSetNode;
@@ -230,6 +224,7 @@ public:
   /// Ordering of effects
   QStringList EffectNameOrder;
   bool UnorderedEffectsVisible;
+  int EffectColumnCount;
 
   /// List of registered effect instances
   QList<qSlicerSegmentEditorAbstractEffect*> RegisteredEffects;
@@ -258,6 +253,9 @@ public:
 
   /// Button group for the effects
   QButtonGroup EffectButtonGroup;
+
+  /// Button group for the UndoRedoGroupBox
+  QButtonGroup UndoRedoButtonGroup;
 
   /// These volumes are owned by this widget and a pointer is given to each effect
   /// so that they can access and modify it
@@ -295,9 +293,6 @@ public:
   // information in this flag.
   bool RotateWarningInNodeSelectorLayout;
 
-  QAction* SurfaceSmoothingEnabledAction;
-  ctkSliderWidget* SurfaceSmoothingSlider;
-
   QString DefaultTerminologyEntrySettingsKey;
   QString DefaultTerminologyEntry;
 };
@@ -319,7 +314,7 @@ qMRMLSegmentEditorWidgetPrivate::qMRMLSegmentEditorWidgetPrivate(qMRMLSegmentEdi
   , AlignedMasterVolumeUpdateMasterVolumeNodeTransform(nullptr)
   , AlignedMasterVolumeUpdateSegmentationNodeTransform(nullptr)
   , MaskModeComboBoxFixedItemsCount(0)
-  , EffectButtonStyle(Qt::ToolButtonTextUnderIcon)
+  , EffectButtonStyle(Qt::ToolButtonIconOnly)
   , RotateWarningInNodeSelectorLayout(true)
 {
   this->AlignedMasterVolume = vtkOrientedImageData::New();
@@ -344,6 +339,7 @@ qMRMLSegmentEditorWidgetPrivate::qMRMLSegmentEditorWidgetPrivate(qMRMLSegmentEdi
     << "Mask volume";
   this->UnorderedEffectsVisible = true;
   this->DefaultTerminologyEntrySettingsKey = "Segmentations/DefaultTerminologyEntry";
+  this->EffectColumnCount = 2;
 }
 
 //-----------------------------------------------------------------------------
@@ -395,11 +391,11 @@ void qMRMLSegmentEditorWidgetPrivate::init()
   this->SpecifyGeometryButton->setMaximumHeight(this->MasterVolumeNodeComboBox->sizeHint().height());
   this->SpecifyGeometryButton->setMaximumWidth(this->MasterVolumeNodeComboBox->sizeHint().height());
 
-  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Everywhere"), vtkMRMLSegmentEditorNode::PaintAllowedEverywhere);
-  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Inside all segments"), vtkMRMLSegmentEditorNode::PaintAllowedInsideAllSegments);
-  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Inside all visible segments"), vtkMRMLSegmentEditorNode::PaintAllowedInsideVisibleSegments);
-  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Outside all segments"), vtkMRMLSegmentEditorNode::PaintAllowedOutsideAllSegments);
-  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Outside all visible segments"), vtkMRMLSegmentEditorNode::PaintAllowedOutsideVisibleSegments);
+  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Everywhere"), vtkMRMLSegmentationNode::EditAllowedEverywhere);
+  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Inside all segments"), vtkMRMLSegmentationNode::EditAllowedInsideAllSegments);
+  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Inside all visible segments"), vtkMRMLSegmentationNode::EditAllowedInsideVisibleSegments);
+  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Outside all segments"), vtkMRMLSegmentationNode::EditAllowedOutsideAllSegments);
+  this->MaskModeComboBox->addItem(qMRMLSegmentEditorWidget::tr("Outside all visible segments"), vtkMRMLSegmentationNode::EditAllowedOutsideVisibleSegments);
   this->MaskModeComboBox->insertSeparator(this->MaskModeComboBox->count());
   this->MaskModeComboBoxFixedItemsCount = this->MaskModeComboBox->count();
 
@@ -420,35 +416,6 @@ void qMRMLSegmentEditorWidgetPrivate::init()
 
   this->SwitchToSegmentationsButton->setMenu(segmentationsButtonMenu);
 
-  QMenu* show3DButtonMenu = new QMenu(qMRMLSegmentEditorWidget::tr("Show 3D"), this->Show3DButton);
-
-  this->SurfaceSmoothingEnabledAction = new QAction(qMRMLSegmentEditorWidget::tr("Surface smoothing"), show3DButtonMenu);
-  this->SurfaceSmoothingEnabledAction->setToolTip(qMRMLSegmentEditorWidget::tr("Apply smoothing when converting binary lablemap to closed surface representation."));
-  this->SurfaceSmoothingEnabledAction->setCheckable(true);
-  show3DButtonMenu->addAction(this->SurfaceSmoothingEnabledAction);
-  QObject::connect(this->SurfaceSmoothingEnabledAction, SIGNAL(toggled(bool)), q, SLOT(onEnableSurfaceSmoothingToggled(bool)));
-
-  QMenu* surfaceSmoothingFactorMenu = new QMenu(qMRMLSegmentEditorWidget::tr("Smoothing factor"), show3DButtonMenu);
-  surfaceSmoothingFactorMenu->setObjectName("slicerSpacingManualMode");
-  surfaceSmoothingFactorMenu->setIcon(QIcon(":/Icon/SlicerManualSliceSpacing.png"));
-
-  this->SurfaceSmoothingSlider = new ctkSliderWidget(surfaceSmoothingFactorMenu);
-  this->SurfaceSmoothingSlider->setToolTip(qMRMLSegmentEditorWidget::tr("Higher value means stronger smoothing during closed surface representation conversion."));
-  this->SurfaceSmoothingSlider->setDecimals(2);
-  this->SurfaceSmoothingSlider->setRange(0.0, 1.0);
-  this->SurfaceSmoothingSlider->setSingleStep(0.1);
-  this->SurfaceSmoothingSlider->setValue(0.5);
-  this->SurfaceSmoothingSlider->setTracking(false);
-  QObject::connect(this->SurfaceSmoothingSlider, SIGNAL(valueChanged(double)),
-    q, SLOT(onSurfaceSmoothingFactorChanged(double)));
-  QWidgetAction* sliceSpacingAction = new QWidgetAction(surfaceSmoothingFactorMenu);
-  sliceSpacingAction->setCheckable(true);
-  sliceSpacingAction->setDefaultWidget(this->SurfaceSmoothingSlider);
-  surfaceSmoothingFactorMenu->addAction(sliceSpacingAction);
-  show3DButtonMenu->addMenu(surfaceSmoothingFactorMenu);
-
-  this->Show3DButton->setMenu(show3DButtonMenu);
-
   // Make connections
   QObject::connect( this->SegmentationNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     q, SLOT(onSegmentationNodeChanged(vtkMRMLNode*)) );
@@ -465,7 +432,6 @@ void qMRMLSegmentEditorWidgetPrivate::init()
   QObject::connect( this->AddSegmentButton, SIGNAL(clicked()), q, SLOT(onAddSegment()) );
   QObject::connect( this->RemoveSegmentButton, SIGNAL(clicked()), q, SLOT(onRemoveSegment()) );
   QObject::connect( this->SwitchToSegmentationsButton, SIGNAL(clicked()), q, SLOT(onSwitchToSegmentations()) );
-  QObject::connect( this->Show3DButton, SIGNAL(toggled(bool)), q, SLOT(onCreateSurfaceToggled(bool)) );
 
   QObject::connect( this->MaskModeComboBox, SIGNAL(currentIndexChanged(int)), q, SLOT(onMaskModeChanged(int)));
   QObject::connect( this->MasterVolumeIntensityMaskCheckBox, SIGNAL(toggled(bool)), q, SLOT(onMasterVolumeIntensityMaskChecked(bool)));
@@ -474,8 +440,6 @@ void qMRMLSegmentEditorWidgetPrivate::init()
 
   QObject::connect( this->UndoButton, SIGNAL(clicked()), q, SLOT(undo()) );
   QObject::connect( this->RedoButton, SIGNAL(clicked()), q, SLOT(redo()) );
-
-  QObject::connect( this->EffectHelpBrowser, SIGNAL(anchorClicked(QUrl)), q, SLOT(anchorClicked(QUrl)), Qt::QueuedConnection );
 
   q->qvtkConnect(this->SegmentationHistory, vtkCommand::ModifiedEvent,
     q, SLOT(onSegmentationHistoryChanged()));
@@ -488,29 +452,22 @@ void qMRMLSegmentEditorWidgetPrivate::init()
   this->SegmentsTableView->setOpacityColumnVisible(false);
   this->AddSegmentButton->setEnabled(false);
   this->RemoveSegmentButton->setEnabled(false);
-  this->Show3DButton->setEnabled(false);
   this->SwitchToSegmentationsButton->setEnabled(false);
   this->EffectsGroupBox->setEnabled(false);
   this->OptionsGroupBox->setEnabled(false);
 
+  this->EffectsGroupBox->setLayout(new QGridLayout(this->EffectsGroupBox));
+
   this->EffectButtonGroup.setExclusive(true);
   QObject::connect(&this->EffectButtonGroup, SIGNAL(buttonClicked(QAbstractButton*)), q, SLOT(onEffectButtonClicked(QAbstractButton*) ) );
+
+  this->UndoRedoButtonGroup.addButton(this->UndoButton);
+  this->UndoRedoButtonGroup.addButton(this->RedoButton);
 
   // Create layout for effect options
   QVBoxLayout* layout = new QVBoxLayout(this->EffectsOptionsFrame);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
-
-  // Instantiate and expose effects
-
-  // Setup effect button group layout
-  ctkFlowLayout* effectsGroupLayout = new ctkFlowLayout();
-  effectsGroupLayout->setContentsMargins(4, 4, 4, 4);
-  effectsGroupLayout->setSpacing(4);
-  effectsGroupLayout->setAlignItems(false);
-  effectsGroupLayout->setAlignment(Qt::AlignJustify);
-  effectsGroupLayout->setPreferredExpandingDirections(Qt::Vertical);
-  this->EffectsGroupBox->setLayout(effectsGroupLayout);
 
   // Update effect buttons
   q->updateEffectList();
@@ -1030,37 +987,6 @@ bool qMRMLSegmentEditorWidgetPrivate::segmentationIJKToRAS(vtkMatrix4x4* ijkToRa
   return true;
 }
 
-//-----------------------------------------------------------------------------
-bool qMRMLSegmentEditorWidgetPrivate::setSurfaceSmoothingFactor(double smoothingFactor)
-{
-  if (!this->ParameterSetNode)
-    {
-    return false;
-    }
-  vtkMRMLSegmentationNode* segmentationNode = this->ParameterSetNode->GetSegmentationNode();
-  if (!segmentationNode || !segmentationNode->GetSegmentation())
-    {
-    return false;
-    }
-
-  MRMLNodeModifyBlocker blocker(segmentationNode);
-
-  segmentationNode->GetSegmentation()->SetConversionParameter(
-    vtkBinaryLabelmapToClosedSurfaceConversionRule::GetSmoothingFactorParameterName(),
-    QVariant(smoothingFactor).toString().toUtf8().constData());
-
-  bool closedSurfacePresent = segmentationNode->GetSegmentation()->ContainsRepresentation(
-    vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName());
-  if (closedSurfacePresent)
-    {
-    QApplication::setOverrideCursor(QCursor(Qt::BusyCursor));
-    segmentationNode->GetSegmentation()->CreateRepresentation(
-      vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName(), true);
-    segmentationNode->Modified();
-    QApplication::restoreOverrideCursor();
-    }
-  return true;
-}
 
 //-----------------------------------------------------------------------------
 // qMRMLSegmentEditorWidget methods
@@ -1093,8 +1019,8 @@ void qMRMLSegmentEditorWidget::updateEffectList()
     effectButton->setToolTip("No editing");
     effectButton->setToolButtonStyle(d->EffectButtonStyle);
     effectButton->setProperty("Effect", QVariant::fromValue<QObject*>(nullptr));
-    effectButton->setSizePolicy(QSizePolicy::MinimumExpanding, effectButton->sizePolicy().verticalPolicy());
-    d->EffectButtonGroup.addButton(effectButton);
+    effectButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred); // make all effect buttons the same width
+    d->EffectButtonGroup.addButton(effectButton);;
     }
 
 
@@ -1131,8 +1057,8 @@ void qMRMLSegmentEditorWidget::updateEffectList()
     effectButton->setIcon(effect->icon());
     effectButton->setText(effect->name());
     effectButton->setToolTip(effect->name());
-    effectButton->setSizePolicy(QSizePolicy::MinimumExpanding, effectButton->sizePolicy().verticalPolicy());
     effectButton->setProperty("Effect", QVariant::fromValue<QObject*>(effect));
+    effectButton->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Preferred);  // make all effect buttons the same width
     d->EffectButtonGroup.addButton(effectButton);
 
     // Add effect options frame to the options widget and hide them
@@ -1149,7 +1075,8 @@ void qMRMLSegmentEditorWidget::updateEffectList()
   foreach (QAbstractButton* button, effectButtons)
     {
     button->hide();
-    d->EffectsGroupBox->layout()->removeWidget(button);
+    QLayoutItem *child;
+    while ((child = d->EffectsGroupBox->layout()->takeAt(0)) != 0);
     }
 
   QList<qSlicerSegmentEditorAbstractEffect*> displayedEffects; // list of effect buttons to be displayed
@@ -1175,6 +1102,8 @@ void qMRMLSegmentEditorWidget::updateEffectList()
     }
 
   // Add buttons of displayed effect to layout
+  int rowIndex = 0;
+  int columnIndex = 0;
   foreach(qSlicerSegmentEditorAbstractEffect* effect, displayedEffects)
     {
     QToolButton* effectButton = d->toolButton(effect);
@@ -1184,7 +1113,42 @@ void qMRMLSegmentEditorWidget::updateEffectList()
       continue;
       }
     effectButton->show();
-    d->EffectsGroupBox->layout()->addWidget(effectButton);
+    auto gridLayout = dynamic_cast<QGridLayout*>(d->EffectsGroupBox->layout());
+    gridLayout->addWidget(effectButton, rowIndex, columnIndex);
+    if(columnIndex == d->EffectColumnCount - 1)
+      {
+      columnIndex = 0;
+      ++rowIndex;
+      }
+    else
+      {
+      ++columnIndex;
+      }
+    }
+
+  // Set UndoRedoGroupBox buttons with same column count as EffectsGroupBox
+  rowIndex = 0;
+  columnIndex = 0;
+  QList<QAbstractButton*> undoRedoButtons = d->UndoRedoButtonGroup.buttons();
+  foreach(QAbstractButton* button, undoRedoButtons)
+    {
+    auto undoRedoGridLayout = dynamic_cast<QGridLayout*>(d->UndoRedoGroupBox->layout());
+    undoRedoGridLayout->addWidget(button, rowIndex, columnIndex);
+    QToolButton* toolButton = qobject_cast<QToolButton*>(button);
+    if (toolButton)
+      {
+      toolButton->setToolButtonStyle(d->EffectButtonStyle);
+      }
+
+    if(columnIndex == d->EffectColumnCount - 1)
+      {
+      columnIndex = 0;
+      ++rowIndex;
+      }
+    else
+      {
+      ++columnIndex;
+      }
     }
 }
 
@@ -1219,25 +1183,18 @@ void qMRMLSegmentEditorWidget::updateWidgetFromMRML()
   d->EffectsOptionsFrame->setEnabled(d->SegmentationNode != nullptr);
   d->MasterVolumeNodeComboBox->setEnabled(d->SegmentationNode != nullptr);
 
-  double surfaceSmoothingFactor = 0.5;
-  if (d->SegmentationNode && d->SegmentationNode->GetSegmentation())
-    {
-    surfaceSmoothingFactor = QString(d->SegmentationNode->GetSegmentation()->GetConversionParameter(
-      vtkBinaryLabelmapToClosedSurfaceConversionRule::GetSmoothingFactorParameterName()).c_str()).toDouble();
-    }
-  bool wasBlocked = d->SurfaceSmoothingEnabledAction->blockSignals(true);
-  d->SurfaceSmoothingEnabledAction->setChecked(surfaceSmoothingFactor >= 0.0);
-  d->SurfaceSmoothingEnabledAction->blockSignals(wasBlocked);
-
-  wasBlocked = d->SurfaceSmoothingSlider->blockSignals(true);
-  d->SurfaceSmoothingSlider->setValue(surfaceSmoothingFactor);
-  d->SurfaceSmoothingSlider->setEnabled(surfaceSmoothingFactor >= 0.0);
-  d->SurfaceSmoothingSlider->blockSignals(wasBlocked);
-
   QString selectedSegmentID;
-  if (d->ParameterSetNode->GetSelectedSegmentID())
+  if (d->ParameterSetNode->GetSelectedSegmentID() && strcmp(d->ParameterSetNode->GetSelectedSegmentID(), "") != 0)
     {
     selectedSegmentID = QString(d->ParameterSetNode->GetSelectedSegmentID());
+
+    // Check if selected segment ID is invalid.
+    if (!d->SegmentationNode
+      || !d->SegmentationNode->GetSegmentation()
+      || d->SegmentationNode->GetSegmentation()->GetSegmentIndex(d->ParameterSetNode->GetSelectedSegmentID()) < 0)
+      {
+      selectedSegmentID.clear();
+      }
     }
 
   // Disable adding new segments until master volume is set (or reference geometry is specified for the segmentation).
@@ -1249,7 +1206,7 @@ void qMRMLSegmentEditorWidget::updateWidgetFromMRML()
   // Only enable remove button if a segment is selected
   d->RemoveSegmentButton->setEnabled(!selectedSegmentID.isEmpty() && (!d->Locked));
 
-  d->Show3DButton->setEnabled(!d->Locked);
+  d->Show3DButton->setLocked(d->Locked);
   d->SwitchToSegmentationsButton->setEnabled(true);
 
   // Segments list section
@@ -1298,7 +1255,7 @@ void qMRMLSegmentEditorWidget::updateMaskingSection()
 
   bool wasBlocked = d->MaskModeComboBox->blockSignals(true);
   int maskModeIndex = -1;
-  if (d->ParameterSetNode->GetMaskMode() == vtkMRMLSegmentEditorNode::PaintAllowedInsideSingleSegment)
+  if (d->ParameterSetNode->GetMaskMode() == vtkMRMLSegmentationNode::EditAllowedInsideSingleSegment)
     {
     // segment item
     maskModeIndex = d->MaskModeComboBox->findData(d->ParameterSetNode->GetMaskSegmentID());
@@ -1485,6 +1442,8 @@ void qMRMLSegmentEditorWidget::updateWidgetFromSegmentationNode()
     bool wasBlocked = d->SegmentsTableView->blockSignals(true);
     d->SegmentsTableView->setSegmentationNode(d->SegmentationNode);
     d->SegmentsTableView->blockSignals(wasBlocked);
+
+    d->Show3DButton->setSegmentationNode(d->SegmentationNode);
 
     if (segmentationNode)
       {
@@ -1709,16 +1668,6 @@ void qMRMLSegmentEditorWidget::updateEffectsSectionFromMRML()
     d->OptionsGroupBox->setTitle(activeEffect->name());
     d->EffectHelpBrowser->setCollapsibleText(activeEffect->helpText());
     d->MaskingGroupBox->show();
-
-    // Perform updates to prevent layout collapse
-    d->EffectHelpBrowser->setMinimumHeight(d->EffectHelpBrowser->sizeHint().height());
-    if (d->EffectHelpBrowser->layout())
-      {
-      d->EffectHelpBrowser->layout()->update();
-      }
-    activeEffect->optionsFrame()->setMinimumHeight(activeEffect->optionsFrame()->sizeHint().height());
-    activeEffect->optionsLayout()->activate();
-    this->setMinimumHeight(this->sizeHint().height());
     }
   else
     {
@@ -1749,8 +1698,13 @@ void qMRMLSegmentEditorWidget::updateEffectsSectionFromMRML()
       }
     }
 
-  // Set cursor for active effect
-  d->setEffectCursor(activeEffect);
+  // Set cursor for active effect, but only when in view/transform node.
+  // In other mouse modes, the application sets a custom cursor and the Segment Editor must not override that.
+  if (!d->InteractionNode
+    || d->InteractionNode->GetCurrentInteractionMode() == vtkMRMLInteractionNode::ViewTransform)
+    {
+    d->setEffectCursor(activeEffect);
+    }
 
   // Set active effect
   d->LastActiveEffect = d->ActiveEffect;
@@ -2153,6 +2107,8 @@ void qMRMLSegmentEditorWidget::onAddSegment()
     QStringList segmentIDList;
     segmentIDList << QString(addedSegmentID.c_str());
     d->SegmentsTableView->setSelectedSegmentIDs(segmentIDList);
+    // Make sure update of the effect buttons happens if the selected segment IDs do not change
+    this->updateEffectsSectionFromMRML();
     }
 
   // Assign the new segment the terminology of the (now second) last segment
@@ -2356,28 +2312,7 @@ void qMRMLSegmentEditorWidget::onSegmentAddedRemoved()
     qCritical() << Q_FUNC_INFO << ": Invalid segment editor parameter set node";
     }
 
-  // Update state of Show3DButton
-  if (segmentationNode)
-    {
-    // Enable button if there is at least one segment in the segmentation
-    d->Show3DButton->setEnabled( !d->Locked
-      && segmentationNode->GetSegmentation()->GetNumberOfSegments() > 0
-      && segmentationNode->GetSegmentation()->GetMasterRepresentationName() !=
-        vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName() );
-    d->SwitchToSegmentationsButton->setEnabled(true);
-
-    // Change button state based on whether it contains closed surface representation
-    bool closedSurfacePresent = segmentationNode->GetSegmentation()->ContainsRepresentation(
-      vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName() );
-    d->Show3DButton->blockSignals(true);
-    d->Show3DButton->setChecked(closedSurfacePresent);
-    d->Show3DButton->blockSignals(false);
-    }
-  else
-    {
-    d->Show3DButton->setEnabled(false);
-    d->SwitchToSegmentationsButton->setEnabled(false);
-    }
+  d->SwitchToSegmentationsButton->setEnabled(segmentationNode!= nullptr);
 
   // Update mask mode combo box with current segment names
 
@@ -2543,6 +2478,21 @@ void qMRMLSegmentEditorWidget::setEffectNameOrder(const QStringList& effectNames
     return;
     }
   d->EffectNameOrder = effectNames;
+  this->updateEffectList();
+}
+
+//------------------------------------------------------------------------------
+int qMRMLSegmentEditorWidget::effectColumnCount() const
+{
+  Q_D(const qMRMLSegmentEditorWidget);
+  return d->EffectColumnCount;
+}
+
+//------------------------------------------------------------------------------
+void qMRMLSegmentEditorWidget::setEffectColumnCount(int columnCount)
+{
+  Q_D(qMRMLSegmentEditorWidget);
+  d->EffectColumnCount = columnCount;
   this->updateEffectList();
 }
 
@@ -2947,7 +2897,7 @@ void qMRMLSegmentEditorWidget::onMaskModeChanged(int index)
     {
     // specific index is selected
     d->ParameterSetNode->SetMaskSegmentID(d->MaskModeComboBox->itemData(index).toString().toUtf8());
-    d->ParameterSetNode->SetMaskMode(vtkMRMLSegmentEditorNode::PaintAllowedInsideSingleSegment);
+    d->ParameterSetNode->SetMaskMode(vtkMRMLSegmentationNode::EditAllowedInsideSingleSegment);
     }
   else
     {
@@ -3031,7 +2981,7 @@ void qMRMLSegmentEditorWidget::setSwitchToSegmentationsButtonVisible(bool visibl
 bool qMRMLSegmentEditorWidget::undoEnabled() const
 {
   Q_D(const qMRMLSegmentEditorWidget);
-  return (d->UndoButton->isVisible() || d->RedoButton->isVisible());
+  return d->UndoRedoGroupBox->isVisible();
 }
 
 //-----------------------------------------------------------------------------
@@ -3042,8 +2992,7 @@ void qMRMLSegmentEditorWidget::setUndoEnabled(bool enabled)
     {
     d->SegmentationHistory->RemoveAllStates();
     }
-  d->UndoButton->setVisible(enabled);
-  d->RedoButton->setVisible(enabled);
+  d->UndoRedoGroupBox->setVisible(enabled);
 }
 
 //-----------------------------------------------------------------------------
@@ -3376,6 +3325,15 @@ void qMRMLSegmentEditorWidget::setEffectButtonStyle(Qt::ToolButtonStyle toolButt
     QToolButton* toolButton = dynamic_cast<QToolButton*>(button);
     toolButton->setToolButtonStyle(d->EffectButtonStyle);
     }
+  QList<QAbstractButton*> undoRedoButtons = d->UndoRedoButtonGroup.buttons();
+  foreach(QAbstractButton* button, undoRedoButtons)
+    {
+    QToolButton* toolButton = qobject_cast<QToolButton*>(button);
+    if (toolButton)
+      {
+      toolButton->setToolButtonStyle(d->EffectButtonStyle);
+      }
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -3410,121 +3368,6 @@ void qMRMLSegmentEditorWidget::masterVolumeNodeSelectorRemoveAttribute(const QSt
   d->MasterVolumeNodeComboBox->removeAttribute(nodeType, attributeName);
 }
 
-//-----------------------------------------------------------------------------
-void qMRMLSegmentEditorWidget::anchorClicked(const QUrl &url)
-{
-  if (url.path().isEmpty())
-    {
-    this->updateEffectLayouts();
-    }
-}
-
-//-----------------------------------------------------------------------------
-void qMRMLSegmentEditorWidget::updateEffectLayouts()
-{
-  Q_D(qMRMLSegmentEditorWidget);
-
-  if (d->ActiveEffect)
-    {
-    d->EffectHelpBrowser->setMinimumHeight(d->EffectHelpBrowser->sizeHint().height());
-    if (d->EffectHelpBrowser->layout())
-      {
-      d->EffectHelpBrowser->layout()->update();
-      }
-    d->ActiveEffect->optionsFrame()->setMinimumHeight(d->ActiveEffect->optionsFrame()->sizeHint().height());
-    d->ActiveEffect->optionsLayout()->activate();
-    }
-  else
-    {
-    d->OptionsGroupBox->setMinimumHeight(d->OptionsGroupBox->sizeHint().height());
-    d->OptionsGroupBox->layout()->activate();
-    }
-
-  this->setMinimumHeight(this->sizeHint().height());
-}
-
-//-----------------------------------------------------------------------------
-void qMRMLSegmentEditorWidget::onEnableSurfaceSmoothingToggled(bool smoothingEnabled)
-{
-  Q_D(qMRMLSegmentEditorWidget);
-
-  // Get segmentation node
-  vtkMRMLSegmentationNode* segmentationNode = nullptr;
-  if (d->ParameterSetNode)
-    {
-    segmentationNode = d->ParameterSetNode->GetSegmentationNode();
-    }
-  else
-    {
-    qCritical() << Q_FUNC_INFO << ": Invalid segment editor parameter set node";
-    }
-  if (!segmentationNode || !segmentationNode->GetSegmentation())
-    {
-    qCritical() << Q_FUNC_INFO << ": No segmentation selected";
-    return;
-    }
-
-  // Get smoothing factor
-  double originalSmoothingFactor = QString( segmentationNode->GetSegmentation()->GetConversionParameter(
-    vtkBinaryLabelmapToClosedSurfaceConversionRule::GetSmoothingFactorParameterName() ).c_str() ).toDouble();
-  double newSmoothingFactor = fabs(originalSmoothingFactor);
-  if (originalSmoothingFactor == 0.0)
-    {
-    // if original smoothing factor was 0 then we cannot toggle smoothing
-    // therefore we reset it to the default
-    newSmoothingFactor = 0.5;
-    }
-  if (!smoothingEnabled)
-    {
-    newSmoothingFactor *= -1;
-    }
-
-  // Set smoothing factor
-  if (newSmoothingFactor != originalSmoothingFactor)
-    {
-    d->setSurfaceSmoothingFactor(newSmoothingFactor);
-    this->updateWidgetFromMRML();
-    }
-}
-
-//---------------------------------------------------------------------------
-void qMRMLSegmentEditorWidget::onSurfaceSmoothingFactorChanged(double newSmoothingFactor)
-{
-  Q_D(qMRMLSegmentEditorWidget);
-  // Get segmentation node
-  vtkMRMLSegmentationNode* segmentationNode = nullptr;
-  if (d->ParameterSetNode)
-    {
-    segmentationNode = d->ParameterSetNode->GetSegmentationNode();
-    }
-  else
-    {
-    qCritical() << Q_FUNC_INFO << ": Invalid segment editor parameter set node";
-    }
-  if (!segmentationNode || !segmentationNode->GetSegmentation())
-    {
-    qCritical() << Q_FUNC_INFO << ": No segmentation selected";
-    return;
-    }
-
-  // Get smoothing factor
-  double originalSmoothingFactor = QString( segmentationNode->GetSegmentation()->GetConversionParameter(
-    vtkBinaryLabelmapToClosedSurfaceConversionRule::GetSmoothingFactorParameterName() ).c_str() ).toDouble();
-
-  // Sign of smoothing factor is used to indicate that smoothing is enabled or not.
-  // if smoothing factor is negative then it means smoothing is disabled.
-  // Here we allow changing the absolute value of the smoothing factor, while maintaining its sign.
-
-  // Set smoothing factor
-  if (newSmoothingFactor != fabs(originalSmoothingFactor))
-    {
-    if (originalSmoothingFactor < 0.0)
-      {
-      newSmoothingFactor = -newSmoothingFactor;
-      }
-    d->setSurfaceSmoothingFactor(newSmoothingFactor);
-    }
-}
 
 
 //-----------------------------------------------------------------------------
@@ -3577,7 +3420,7 @@ void qMRMLSegmentEditorWidget::onExportToFilesActionClicked()
     }
 
   // Create dialog to show the parameters widget in a popup window
-  QDialog* exportDialog = new QDialog(nullptr, Qt::Dialog);
+  QDialog* exportDialog = new QDialog(this, Qt::Dialog);
   exportDialog->setObjectName("SegmentationExportToFileWindow");
   exportDialog->setWindowTitle("Export segments to files");
 
@@ -3601,7 +3444,7 @@ void qMRMLSegmentEditorWidget::onExportToFilesActionClicked()
   exportDialog->exec();
 
   // Delete dialog when done
-  delete exportDialog;
+  exportDialog->deleteLater();
 }
 
 //-----------------------------------------------------------------------------
@@ -3786,10 +3629,12 @@ void qMRMLSegmentEditorWidget::showSegmentationGeometryDialog()
     return;
     }
 
-  qMRMLSegmentationGeometryDialog geometryDialog(d->SegmentationNode, this);
-  geometryDialog.setEditEnabled(true);
-  geometryDialog.setResampleLabelmaps(true);
-  if (!geometryDialog.exec())
+  qMRMLSegmentationGeometryDialog* geometryDialog = new qMRMLSegmentationGeometryDialog(d->SegmentationNode, this);
+  geometryDialog->setEditEnabled(true);
+  geometryDialog->setResampleLabelmaps(true);
+  int success = geometryDialog->exec();
+  geometryDialog->deleteLater();
+  if (!success)
     {
     // cancel clicked
     return;

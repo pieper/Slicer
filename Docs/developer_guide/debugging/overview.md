@@ -8,7 +8,7 @@ Python code running in Slicer can be debugged (execute code line-by-line, inspec
 
 ## C++ debugging
 
-Debugging C++ code requires building 3D Slicer in Debug mode by following the [build instructions](../build_instructions.md).
+Debugging C++ code requires building 3D Slicer in Debug mode by following the [build instructions](../build_instructions/overview.md).
 
 The executable Slicer application (`Slicer` or `Slicer.exe`) is the launcher of the real application binary (`SlicerApp-real`). The launcher sets up paths for dynamically-loaded libraries that on Windows and Linux are required to run the real application library.
 
@@ -35,7 +35,8 @@ Detailed instructions for setting up debuggers are available for [Windows](windo
 
 See some background information in [VTK leak debugging in Slicer3](https://www.slicer.org/wiki/Slicer3:VTK_Leak_Debugging) and [Strategies for Writing and Debugging Code in Slicer3](https://www.slicer.org/wiki/Strategies_for_Writing_and_Debugging_Code_in_Slicer_3) pages.
 
-1. Turn ON the VTK_DEBUG_LEAKS CMake variable and build Slicer.
+1. If you build the application from source, make sure VTK_DEBUG_LEAKS CMake flag is set to ON. Slicer Preview Releases are built with this flag is ON, while in Slicer Stable Releases the flag is OFF.
+
 2. Create a test that reproduces the memory leak systematically.
 
     After execution, the memory leaks are printed automatically by VTK on the standard output:
@@ -125,7 +126,15 @@ See some background information in [VTK leak debugging in Slicer3](https://www.s
         - Open the "Output" tab and copy paste the contents into an advanced file editor (not Visual Studio)
 
       - With GDB
-        - Start gdb using the launcher (`./Slicer --gdb`) or sometimes the following works as well: `gdb ./bin/SlicerApp-real`
+        - Start gdb using the launcher:
+          - In the build tree: `./Slicer --gdb`
+          - For an installed Slicer:
+
+              ```txt
+              ./Slicer --launch bash
+              gdb ./bin/SlicerApp-real
+              ```
+
         - Place breakpoints in the functions
 
             ```txt
@@ -369,9 +378,28 @@ It may help pinpointing issues if Slicer is started with as few features as poss
 
 ## Console output on Windows
 
-On Windows, the application is built with no console output. A workaround for this issue is described in the following bug reports:
+On Windows, by default the application launcher is built as a Windows GUI application (as opposed to a console application) to avoid opening a console window when starting the application.
 
-- <https://github.com/Slicer/Slicer/issues/2376>
-- <https://github.com/Slicer/Slicer/issues/2917>
+If the launcher is a Windows GUI application, it is still possible to show the console output by using one of these options:
 
-To add console output, you need to compile Slicer application with `Slicer_BUILD_WIN32_CONSOLE` set to ON at the configure time (uninitialized/OFF by default).
+Option A. Run the application with capturing and displaying the output using the `more` command (this captures the output of both the launcher and the launched application):
+
+```shell
+Slicer.exe --help 2>&1 | more
+```
+
+The `2>&1` argument redirects the error output to the standard output, making error messages visible on the console, too.
+
+Option B. Instead of `more` command (that requires pressing space key after the console window is full), `tee` command can be used (that continuously displays the output on screen and also writes it to a file). Unfortunately, `tee` is not a standard command on Windows, therefore either a third-party implementation can be used (such as [`wtee`](https://github.com/gvalkov/wtee/releases/tag/v1.0.1)) or the built-in `tee` command in Windows powershell:
+
+```shell
+powershell ".\Slicer.exe 2>&1 | tee out.txt"
+```
+
+Option C. Run the application with a new console (the launcher sets up the environment, creates a new console, and starts the SlicerApp-real executable directly, which can access this console):
+
+```shell
+Slicer.exe --launch %comspec% /c start SlicerApp-real.exe
+```
+
+To add console output permanently, the application launcher can be switched to a console application by setting `Slicer_BUILD_WIN32_CONSOLE_LAUNCHER` CMake variable to ON when configuring the application build.

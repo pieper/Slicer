@@ -74,6 +74,7 @@ class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_EXPORT qMRMLSegmentEditorWidget : pu
   Q_PROPERTY(int maximumNumberOfUndoStates READ maximumNumberOfUndoStates WRITE setMaximumNumberOfUndoStates)
   Q_PROPERTY(bool readOnly READ readOnly WRITE setReadOnly)
   Q_PROPERTY(Qt::ToolButtonStyle effectButtonStyle READ effectButtonStyle WRITE setEffectButtonStyle)
+  Q_PROPERTY(int effectColumnCount READ effectColumnCount WRITE setEffectColumnCount)
   Q_PROPERTY(bool unorderedEffectsVisible READ unorderedEffectsVisible WRITE setUnorderedEffectsVisible)
   Q_PROPERTY(QString defaultTerminologyEntrySettingsKey READ defaultTerminologyEntrySettingsKey WRITE setDefaultTerminologyEntrySettingsKey)
   Q_PROPERTY(QString defaultTerminologyEntry READ defaultTerminologyEntry WRITE setDefaultTerminologyEntry)
@@ -172,6 +173,10 @@ public:
   /// Get appearance of effect buttons. Showing text may make it easier
   /// to find an effect but uses more space.
   Qt::ToolButtonStyle effectButtonStyle() const;
+
+  /// Get number of columns being used by the effects.
+  /// \return Number of columns being used for effects.
+  int effectColumnCount() const;
 
   /// Add node type attribute that filter the segmentation nodes to display.
   /// \sa qMRMLNodeComboBox::addAttribute
@@ -297,8 +302,8 @@ public slots:
   /// to find an effect but uses more space.
   void setEffectButtonStyle(Qt::ToolButtonStyle toolButtonStyle);
 
-  /// Perform updates to prevent layout collapse
-  void updateEffectLayouts();
+  /// Request displaying effects in the grid layout with the specified column count
+  void setEffectColumnCount(int columnCount);
 
   /// Update list of effect buttons.
   /// It adds all effects registered with the effect factory
@@ -411,12 +416,6 @@ protected slots:
   /// Update GUI if segmentation history is changed (e.g., undo/redo button states)
   void onSegmentationHistoryChanged();
 
-  /// Update layout after expanding/collapsing the help text browser
-  void anchorClicked(const QUrl &url);
-
-  /// Enable/disable surface smoothing
-  void onEnableSurfaceSmoothingToggled(bool enabled);
-  void onSurfaceSmoothingFactorChanged(double newSmoothingFactor);
   /// Switch to Segmentations module and jump to Import/Export section
   void onImportExportActionClicked();
   /// Open Export to files dialog

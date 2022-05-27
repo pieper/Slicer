@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.16.3...3.19.7 FATAL_ERROR)
 # Two possible approaches to use this script:
 # (1) Copy and adapt to your specific configuration or (2) Use as it is by passing options
 # Either way, the script can be executed using ctest:
@@ -46,7 +46,7 @@ dashboard_set(EXTENSION_DASHBOARD_SUBDIR   "${Slicer_RELEASE_TYPE}")
 dashboard_set(EXTENSION_DIRECTORY_BASENAME "S")
 
 dashboard_set(EXTENSIONS_INDEX_GIT_TAG        "origin/${EXTENSIONS_INDEX_BRANCH}") # origin/master, origin/X.Y, ...
-dashboard_set(EXTENSIONS_INDEX_GIT_REPOSITORY "git://github.com/Slicer/ExtensionsIndex.git")
+dashboard_set(EXTENSIONS_INDEX_GIT_REPOSITORY "https://github.com/Slicer/ExtensionsIndex.git")
 
 # Build Name: <OPERATING_SYSTEM>-<COMPILER>-<BITNESS>bits-Qt<QT_VERSION>[-<BUILD_NAME_SUFFIX>]-<CTEST_BUILD_CONFIGURATION
 set(BUILD_NAME_SUFFIX "")

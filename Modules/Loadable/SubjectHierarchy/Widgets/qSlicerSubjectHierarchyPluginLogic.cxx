@@ -30,13 +30,13 @@
 #include "qSlicerSubjectHierarchyAbstractPlugin.h"
 
 #include "qSlicerSubjectHierarchyCloneNodePlugin.h"
-#include "qSlicerSubjectHierarchyChartsPlugin.h"
 #include "qSlicerSubjectHierarchyParseLocalDataPlugin.h"
 #include "qSlicerSubjectHierarchyRegisterPlugin.h"
 #include "qSlicerSubjectHierarchyFolderPlugin.h"
 #include "qSlicerSubjectHierarchyOpacityPlugin.h"
 #include "qSlicerSubjectHierarchyViewContextMenuPlugin.h"
 #include "qSlicerSubjectHierarchyVisibilityPlugin.h"
+#include "qSlicerSubjectHierarchyExportPlugin.h"
 
 // MRML includes
 #include "vtkMRMLAbstractViewNode.h"
@@ -142,13 +142,13 @@ void qSlicerSubjectHierarchyPluginLogic::registerCorePlugins()
   qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
     new qSlicerSubjectHierarchyCloneNodePlugin());
   qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
-    new qSlicerSubjectHierarchyChartsPlugin());
-  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
     new qSlicerSubjectHierarchyRegisterPlugin());
   qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
     new qSlicerSubjectHierarchyOpacityPlugin());
   qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
     new qSlicerSubjectHierarchyVisibilityPlugin());
+  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(
+    new qSlicerSubjectHierarchyExportPlugin());
 }
 
 //-----------------------------------------------------------------------------
@@ -563,6 +563,16 @@ void qSlicerSubjectHierarchyPluginLogic::onDisplayMenuEvent(vtkObject* displayNo
     {
     eventDataMap["ViewNodeID"] = QVariant(eventData->GetViewNode()->GetID());
     }
+  if (eventData->IsWorldPositionValid())
+    {
+    double worldPos[3] = { 0.0 };
+    eventData->GetWorldPosition(worldPos);
+    QVariantList worldPosVector;
+    worldPosVector.push_back(worldPos[0]);
+    worldPosVector.push_back(worldPos[1]);
+    worldPosVector.push_back(worldPos[2]);
+    eventDataMap["WorldPosition"] = QVariant(worldPosVector);
+    }
 
   // Have all plugins show context view menu actions for current item
   foreach (qSlicerSubjectHierarchyAbstractPlugin* plugin, qSlicerSubjectHierarchyPluginHandler::instance()->allPlugins())
@@ -583,6 +593,19 @@ void qSlicerSubjectHierarchyPluginLogic::onDisplayMenuEvent(vtkObject* displayNo
       }
     }
   d->EditPropertiesAction->setVisible(editActionVisible);
+
+  // View context menu actions are filtered by enabledViewContextMenuActions for this item.
+  QStringList allowedViewContextMenuActionListForItem = this->allowedViewContextMenuActionNamesForItem(itemID);
+  if (!allowedViewContextMenuActionListForItem.empty())
+    {
+    for (QAction* action : d->ViewContextMenuActions)
+      {
+      if (!allowedViewContextMenuActionListForItem.contains(action->objectName()))
+        {
+        action->setVisible(false);
+        }
+      }
+    }
 
   // Set current item ID for Edit properties action
   d->CurrentItemID = itemID;
@@ -738,7 +761,6 @@ QString qSlicerSubjectHierarchyPluginLogic::buildMenuFromActions(QMenu* menu, QL
   std::sort(actions.begin(), actions.end(),
     [](const QAction* a, const QAction* b) -> bool { return a->property("section").toDouble() < b->property("section").toDouble(); });
 
-  static bool printDebugInformation = true;
   int lastSection = static_cast<int>(actions.front()->property("section").toDouble() + 0.5);
   foreach (QAction* action, actions)
     {
@@ -772,4 +794,35 @@ QString qSlicerSubjectHierarchyPluginLogic::buildMenuFromActions(QMenu* menu, QL
     }
 
   return menuInfo;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerSubjectHierarchyPluginLogic::setAllowedViewContextMenuActionNamesForItem(vtkIdType itemID, const QStringList& actionObjectNames)
+{
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->mrmlScene());
+  if (!shNode)
+    {
+    qWarning() << Q_FUNC_INFO << " failed: invalid subject hierarchy node";
+    return;
+    }
+  std::string allowedViewContextMenuActions = actionObjectNames.join(";").toStdString();
+  shNode->SetItemAttribute(itemID, "allowedViewContextMenuActions", allowedViewContextMenuActions);
+}
+
+//-----------------------------------------------------------------------------
+QStringList qSlicerSubjectHierarchyPluginLogic::allowedViewContextMenuActionNamesForItem(vtkIdType itemID)
+{
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->mrmlScene());
+  if (!shNode)
+    {
+    qWarning() << Q_FUNC_INFO << " failed: invalid subject hierarchy node";
+    return QStringList();
+    }
+  std::string shNodeEnabledViewContextMenuActions = shNode->GetItemAttribute(itemID, "allowedViewContextMenuActions");
+  if (shNodeEnabledViewContextMenuActions.empty())
+    {
+    return QStringList();
+    }
+  QStringList allowedViewContextMenuActionListForItem = QString::fromStdString(shNodeEnabledViewContextMenuActions).split(";");
+  return allowedViewContextMenuActionListForItem;
 }

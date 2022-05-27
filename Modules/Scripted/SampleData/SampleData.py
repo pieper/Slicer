@@ -1,10 +1,15 @@
 import logging
 import os
 import textwrap
-import unittest
-import vtk, qt, ctk, slicer
+
+import ctk
+import qt
+import vtk
+
+import slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import computeChecksum, extractAlgoAndDigest, TESTING_DATA_URL
+
 
 #
 # SampleData methods
@@ -52,6 +57,7 @@ def downloadSamples(sampleName):
   and load it if it is available.  Returns the loaded nodes."""
   return SampleDataLogic().downloadSamples(sampleName)
 
+
 #
 # SampleData
 #
@@ -75,7 +81,12 @@ The SampleData module can be used to download data for working with in slicer.  
 <p>This work was was funded by Cancer Care Ontario
 and the Ontario Consortium for Adaptive Interventions in Radiation Oncology (OCAIRO)</p>
 
-<p>CTA abdomen (Panoramix) dataset comes from <a href="http://www.osirix-viewer.com/resources/dicom-image-library/">Osirix DICOM image library</a>
+<p>MRHead, CBCT-MR Head, and CT-MR Brain data sets were donated to 3D Slicer project by the persons visible in the images, to be used without any restrictions.</p>
+
+<p>CTLiver dataset comes from <a href="http://medicaldecathlon.com/">Medical Decathlon project</a> (imagesTr/liver_100.nii.gz in Task03_Liver collection)
+with a permissive copyright-license (<a href="https://creativecommons.org/licenses/by-sa/4.0/">CC-BY-SA 4.0</a>), allowing for data to be shared, distributed and improved upon.</p>
+
+<p>CTA abdomen (Panoramix) dataset comes from <a href="https://www.osirix-viewer.com/resources/dicom-image-library/">Osirix DICOM image library</a>
 and is exclusively available for research and teaching. You are not authorized to redistribute or sell it, or
 use it for commercial purposes.</p>
 """
@@ -94,23 +105,22 @@ use it for commercial purposes.</p>
     except AttributeError:
       slicer.modules.sampleDataSources = {}
 
-
   def addMenu(self):
-    actionIcon = self.parent.icon
-    a = qt.QAction(actionIcon, 'Download Sample Data', slicer.util.mainWindow())
+    a = qt.QAction('Download Sample Data', slicer.util.mainWindow())
     a.setToolTip('Go to the SampleData module to download data from the network')
     a.connect('triggered()', self.select)
 
     fileMenu = slicer.util.lookupTopLevelWidget('FileMenu')
     if fileMenu:
       for action in fileMenu.actions():
-        if action.text == 'Save':
-          fileMenu.insertAction(action,a)
-
+        if action.objectName == "FileSaveSceneAction":
+          fileMenu.insertAction(action, a)
+          fileMenu.insertSeparator(action)
 
   def select(self):
     m = slicer.util.mainWindow()
     m.moduleSelector().selectModule('SampleData')
+
 
 #
 # SampleDataSource
@@ -391,6 +401,7 @@ class SampleDataWidget(ScriptedLoadableModuleWidget):
       return
     slicer.util.findChild(self.parent, '%sCollapsibleGroupBox' % category).setVisible(visible)
 
+
 #
 # SampleData logic
 #
@@ -554,12 +565,21 @@ class SampleDataLogic:
           ('SHA256:6a5b6caccb76576a863beb095e3bfb910c50ca78f4c9bf043aa42f976cfa53d1',
            'SHA256:2da3f655ed20356ee8cdf32aa0f8f9420385de4b6e407d28e67f9974d7ce1593',
            'SHA256:fa1fe5910a69182f2b03c0150d8151ac6c75df986449fb5a6c5ae67141e0f5e7')),
-        ('CTPCardioSeq', "CTP Cardio Volume Sequence",
+        ('CBCTMRHead', 'CBCT-MR Head',
+          (TESTING_DATA_URL + 'SHA256/4ce7aa75278b5a7b757ed0c8d7a6b3caccfc3e2973b020532456dbc8f3def7db',
+           TESTING_DATA_URL + 'SHA256/b5e9f8afac58d6eb0e0d63d059616c25a98e0beb80f3108410b15260a6817842',),
+          ('DZ-CBCT.nrrd', 'DZ-MR.nrrd'),
+          ('DZ-CBCT', 'DZ-MR'),
+          ('SHA256:4ce7aa75278b5a7b757ed0c8d7a6b3caccfc3e2973b020532456dbc8f3def7db',
+           'SHA256:b5e9f8afac58d6eb0e0d63d059616c25a98e0beb80f3108410b15260a6817842')),
+        ('CTLiver', None, TESTING_DATA_URL + 'SHA256/e16eae0ae6fefa858c5c11e58f0f1bb81834d81b7102e021571056324ef6f37e',
+          'CTLiver.nrrd', 'CTLiver', 'SHA256:e16eae0ae6fefa858c5c11e58f0f1bb81834d81b7102e021571056324ef6f37e'),
+        ('CTPCardioSeq', "CTP Cardio Sequence",
           'https://github.com/Slicer/SlicerDataStore/releases/download/SHA256/7fbb6ad0aed9c00820d66e143c2f037568025ed63db0a8db05ae7f26affeb1c2',
           'CTP-cardio.seq.nrrd', 'CTPCardioSeq',
           'SHA256:7fbb6ad0aed9c00820d66e143c2f037568025ed63db0a8db05ae7f26affeb1c2',
           None, None, None, "SequenceFile"),
-        ('CTCardioSeq', "CT Cardio Volume Sequence",
+        ('CTCardioSeq', "CT Cardio Sequence",
           'https://github.com/Slicer/SlicerDataStore/releases/download/SHA256/d1a1119969acead6c39c7c3ec69223fa2957edc561bc5bf384a203e2284dbc93',
           'CT-cardio.seq.nrrd', 'CTCardioSeq',
           'SHA256:d1a1119969acead6c39c7c3ec69223fa2957edc561bc5bf384a203e2284dbc93',
@@ -764,6 +784,7 @@ class SampleDataLogic:
     logging.log(logLevel, message)
 
   """Utility methods for backwards compatibility"""
+
   def downloadMRHead(self):
     return self.downloadSample('MRHead')
 
@@ -803,7 +824,7 @@ class SampleDataLogic:
     return self.downloadSamples('MRUSProstate')
 
   def humanFormatSize(self,size):
-    """ from http://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size"""
+    """ from https://stackoverflow.com/questions/1094841/reusable-library-to-get-human-readable-version-of-file-size"""
     for x in ['bytes','KB','MB','GB']:
       if size < 1024.0 and size > -1024.0:
         return f"{size:3.1f} {x}"

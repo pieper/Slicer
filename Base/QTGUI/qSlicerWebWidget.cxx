@@ -23,6 +23,7 @@
 #include <QDesktopServices>
 #include <QNetworkCookieJar>
 #include <QNetworkReply>
+#include <QPalette>
 #include <QSettings>
 #include <QTime>
 #include <QUrl>
@@ -113,12 +114,13 @@ void qSlicerWebWidgetPrivate::init()
 
   this->PythonProxy = new qSlicerWebPythonProxy(q);
   QWebEngineProfile* profile = QWebEngineProfile::defaultProfile();
-  this->initializeWebEngineProfile(profile);
 
   this->WebEnginePage = new qSlicerWebEnginePage(profile, this->WebView);
   this->WebEnginePage->JavaScriptConsoleMessageLoggingEnabled = developerModeEnabled;
   this->WebEnginePage->WebWidget = q;
   this->WebView->setPage(this->WebEnginePage);
+
+  this->initializeWebEngineProfile(profile);
 
   this->WebChannel = new QWebChannel(this->WebView->page());
   this->initializeWebChannel(this->WebChannel);
@@ -151,6 +153,9 @@ void qSlicerWebWidgetPrivate::init()
                    q, SIGNAL(pdfPrintingFinished(QString, bool)));
 
   this->ProgressBar->setVisible(false);
+
+  // Set background color behind the document's body to match current theme
+  this->WebEnginePage->setBackgroundColor(q->palette().color(QPalette::Window));
 }
 
 // --------------------------------------------------------------------------
@@ -192,7 +197,7 @@ void qSlicerWebWidgetPrivate::initializeWebEngineProfile(QWebEngineProfile* prof
     return;
     }
 
-  if (!profile->scripts()->findScript("qwebchannel_appended.js").isNull())
+  if (!this->WebEnginePage->scripts().findScript("qwebchannel_appended.js").isNull())
     {
     // profile is already initialized
     return;
@@ -214,7 +219,7 @@ void qSlicerWebWidgetPrivate::initializeWebEngineProfile(QWebEngineProfile* prof
     script.setWorldId(QWebEngineScript::MainWorld);
     script.setInjectionPoint(QWebEngineScript::DocumentCreation);
     script.setRunsOnSubFrames(false);
-    profile->scripts()->insert(script);
+    this->WebEnginePage->scripts().insert(script);
     }
 
   // setup default download handler shared across all widgets

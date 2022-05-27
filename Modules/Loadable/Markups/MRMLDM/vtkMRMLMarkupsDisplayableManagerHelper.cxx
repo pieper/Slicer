@@ -66,7 +66,8 @@ vtkMRMLMarkupsDisplayableManagerHelper::vtkMRMLMarkupsDisplayableManagerHelper()
   this->ObservedMarkupNodeEvents.push_back(vtkMRMLMarkupsNode::PointAddedEvent);
   this->ObservedMarkupNodeEvents.push_back(vtkMRMLMarkupsNode::PointRemovedEvent);
   this->ObservedMarkupNodeEvents.push_back(vtkMRMLMarkupsNode::LockModifiedEvent);
-  this->ObservedMarkupNodeEvents.push_back(vtkMRMLMarkupsNode::CenterPointModifiedEvent);
+  this->ObservedMarkupNodeEvents.push_back(vtkMRMLMarkupsNode::CenterOfRotationModifiedEvent);
+  this->ObservedMarkupNodeEvents.push_back(vtkMRMLMarkupsNode::FixedNumberOfControlPointsModifiedEvent);
 }
 
 //---------------------------------------------------------------------------

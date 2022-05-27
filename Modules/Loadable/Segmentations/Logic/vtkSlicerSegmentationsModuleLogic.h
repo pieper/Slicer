@@ -396,9 +396,12 @@ public:
 
   /// Returns the name of the status tag
   static const char* GetStatusTagName();
-  /// Returns the value of the status tag for the given segment
+  /// Returns the value of the status tag for the given segment.
+  /// If status tag is not specified then vtkSlicerSegmentationsModuleLogic::NotStarted is returned.
   static int GetSegmentStatus(vtkSegment* segment);
-  /// Returns the value of the status tag for the given segment
+  /// Set the value of the status tag for the given segment.
+  /// If setting of vtkSlicerSegmentationsModuleLogic::NotStarted is requested and the
+  /// status tag does not exist or it is empty then the status tag is not modified.
   static void SetSegmentStatus(vtkSegment* segment, int status);
   /// Clear the contents of a single segment
   static bool ClearSegment(vtkMRMLSegmentationNode* segmentationNode, std::string segmentID);
@@ -435,6 +438,20 @@ public:
   /// \param labelValues Output label values from the color node. Length of the array must be the same as the number of segmentIds.
   static void GenerateMergedLabelmapInReferenceGeometry(vtkMRMLSegmentationNode* segmentationNode, vtkMRMLVolumeNode* referenceVolumeNode,
     vtkStringArray* segmentIDs, int extentComputationMode, vtkOrientedImageData* mergedLabelmap_Reference, vtkIntArray* labelValues=nullptr);
+
+  /// Determine if any part of the effective extent is outside of the reference volume geometry
+  /// \param referenceVolumeNode Volume node that contains the reference geometry.
+  /// \param segmentationNode Segmentation node that contains the effective extent to be checked.
+  /// \param segmentIDs List of segment IDs that will be used to calculate the effective extent.
+  /// \return True if the effective segmentation extent is outside of the reference volume, False otherwise.
+  static bool IsEffectiveExentOutsideReferenceVolume(vtkMRMLVolumeNode* referenceVolumeNode, vtkMRMLSegmentationNode* segmentationNode,
+    vtkStringArray* segmentIDs = nullptr);
+
+  /// Determine if any part of the segmentation extent is outside of the reference geometry
+  /// \param referenceVolumeNode Image that contains the reference geometry.
+  /// \param segmentationNode Image that contains the segmentation geometry.
+  /// \return True if the segmentation extent is outside of the reference volume, False otherwise.
+  static bool IsSegmentationExentOutsideReferenceGeometry(vtkOrientedImageData* referenceGeometry, vtkOrientedImageData* segmentationGeometry);
 
 protected:
   void SetMRMLSceneInternal(vtkMRMLScene * newScene) override;

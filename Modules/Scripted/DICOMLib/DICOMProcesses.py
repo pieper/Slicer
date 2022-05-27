@@ -1,8 +1,12 @@
-import os, subprocess, time
-import slicer
-import qt
-import ctk
 import logging
+import os
+import subprocess
+import time
+
+import ctk
+import qt
+
+import slicer
 
 #########################################################
 #
@@ -200,7 +204,9 @@ class DICOMStoreSCPProcess(DICOMProcess):
     Returns true if process by that name exists (after attempting to
     terminate the process).
     """
-    import sys, os.path, ctypes, ctypes.wintypes
+    import ctypes
+    import ctypes.wintypes
+    import os.path
 
     psapi = ctypes.WinDLL('Psapi.dll')
     enum_processes = psapi.EnumProcesses
@@ -311,9 +317,30 @@ class DICOMListener(DICOMStoreSCPProcess):
   def __init__(self, database, fileToBeAddedCallback=None, fileAddedCallback=None):
     self.dicomDatabase = database
     self.indexer = ctk.ctkDICOMIndexer()
+    # Enable background indexing to improve performance.
+    self.indexer.backgroundImportEnabled = True
     self.fileToBeAddedCallback = fileToBeAddedCallback
     self.fileAddedCallback = fileAddedCallback
     self.lastFileAdded = None
+
+    # A timer is used to ensure that indexing is completed after new files come in,
+    # but without enforcing completing the indexing after each file (because
+    # waiting for indexing to be completed has an overhead).
+    autoUpdateDelaySec = 10.0 
+    self.delayedAutoUpdateTimer = qt.QTimer() 
+    self.delayedAutoUpdateTimer.setSingleShot(True) 
+    self.delayedAutoUpdateTimer.interval = autoUpdateDelaySec * 1000 
+    self.delayedAutoUpdateTimer.connect('timeout()', self.completeIncomingFilesIndexing)
+
+    # List of received files that are being indexed
+    self.incomingFiles = []
+    # After self.incomingFiles reaches maximumIncomingFiles, indexing will be forced
+    # to limit disk space usage (until indexing is completed, the file is present both
+    # in the incoming folder and in the database) and make sure some updates are visible
+    # in the DICOM browser (even if files are continuously coming in).
+    # Smaller values result in more frequent updates, slightly less disk space usage,
+    # slightly slower import.
+    self.maximumIncomingFiles = 400
 
     databaseDirectory = self.dicomDatabase.databaseDirectory
     if not databaseDirectory:
@@ -329,6 +356,15 @@ class DICOMListener(DICOMStoreSCPProcess):
   def readFromStandardOutput(self):
     super().readFromStandardOutput(readLineCallback=self.processStdoutLine)
 
+  def completeIncomingFilesIndexing(self):
+    """Complete indexing of all incoming files and remove them from the incoming folder."""
+    logging.debug(f"Complete indexing for indexing to complete for {len(self.incomingFiles)} files.")
+    import os
+    self.indexer.waitForImportFinished()
+    for dicomFilePath in self.incomingFiles:
+        os.remove(dicomFilePath)
+    self.incomingFiles = []
+
   def processStdoutLine(self, line):
     searchTag = '# dcmdump (1/1): '
     tagStart = line.find(searchTag)
@@ -339,8 +375,14 @@ class DICOMListener(DICOMStoreSCPProcess):
       if self.fileToBeAddedCallback:
         self.fileToBeAddedCallback()
       self.indexer.addFile(self.dicomDatabase, dicomFilePath, True)
-      os.remove(dicomFilePath)
-      logging.debug("done indexing")
+      self.incomingFiles.append(dicomFilePath)
+      if len(self.incomingFiles) < self.maximumIncomingFiles:
+        self.delayedAutoUpdateTimer.start()
+      else:
+        # Limit of pending incoming files is reached, complete indexing of files
+        # that we have received so far.
+        self.delayedAutoUpdateTimer.stop()
+        self.completeIncomingFilesIndexing()
       self.lastFileAdded = dicomFilePath
       if self.fileAddedCallback:
         logging.debug("calling callback...")
@@ -504,6 +546,7 @@ class DICOMSender(DICOMProcess):
     userMsg = f"Could not send {file} to {self.destinationUrl.host()}:{self.destinationUrl.port()}"
     raise UserWarning(userMsg)
 
+
 class DICOMTestingQRServer:
   """helper class to set up the DICOM servers
   Code here depends only on python and DCMTK executables
@@ -561,7 +604,6 @@ class DICOMTestingQRServer:
       p = subprocess.Popen(cmdLine)
       p.wait()
 
-
   def stop(self):
     self.qrProcess.kill()
     self.qrProcess.communicate()
@@ -602,4 +644,3 @@ AETable END
     fp = open(configFile,'w')
     fp.write(config)
     fp.close()
-

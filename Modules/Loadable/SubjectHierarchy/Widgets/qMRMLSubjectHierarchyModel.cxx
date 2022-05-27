@@ -28,6 +28,9 @@
 #include <QTimer>
 #include <QUrl>
 
+// CTK includes
+#include <ctkUtils.h>
+
 // qMRML includes
 #include "qMRMLSubjectHierarchyModel_p.h"
 
@@ -66,11 +69,11 @@ qMRMLSubjectHierarchyModelPrivate::qMRMLSubjectHierarchyModelPrivate(qMRMLSubjec
   , TransformColumn(-1)
   , DescriptionColumn(-1)
   , NoneEnabled(false)
+  , NoneDisplay(qMRMLSubjectHierarchyModel::tr("None"))
   , SubjectHierarchyNode(nullptr)
   , MRMLScene(nullptr)
   , TerminologiesModuleLogic(nullptr)
   , IsDroppedInside(false)
-  , NoneDisplay(qMRMLSubjectHierarchyModel::tr("None"))
 {
   this->CallBack = vtkSmartPointer<vtkCallbackCommand>::New();
   this->PendingItemModified = -1; // -1 means not updating
@@ -424,7 +427,7 @@ QModelIndex qMRMLSubjectHierarchyModel::indexFromSubjectHierarchyItem(vtkIdType 
     qCritical() << Q_FUNC_INFO << ": Invalid column " << column;
     return QModelIndex();
     }
-  return nodeParentIndex.child(row, column);
+  return ctk::modelChildIndex(const_cast<qMRMLSubjectHierarchyModel*>(this), nodeParentIndex, row, column);
 }
 
 //------------------------------------------------------------------------------

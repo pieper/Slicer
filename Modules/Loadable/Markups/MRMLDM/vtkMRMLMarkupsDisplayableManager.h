@@ -149,8 +149,6 @@ protected:
 
   double LastClickWorldCoordinates[4];
 
-  vtkMRMLMarkupsNode* CreateNewMarkupsNode(const std::string &markupsNodeClassName);
-
   vtkWeakPointer<vtkSlicerMarkupsWidget> LastActiveWidget;
 
 private:

@@ -1,8 +1,11 @@
-import os
-import unittest
-import vtk, qt, ctk, slicer
+import ctk
+import qt
+import vtk
+import vtk.util.numpy_support
+
+import slicer
 from slicer.ScriptedLoadableModule import *
-import logging
+
 
 #
 # Endoscopy
@@ -31,9 +34,10 @@ The View Angle provides is used to approximate the optics of an endoscopy system
     self.parent.helpText += self.getDefaultModuleDocumentationLink()
     self.parent.acknowledgementText = """
 This work is supported by PAR-07-249: R01CA131718 NA-MIC Virtual Colonoscopy
-(See <a>http://www.na-mic.org/Wiki/index.php/NA-MIC_NCBC_Collaboration:NA-MIC_virtual_colonoscopy</a>)
+(See <a>https://www.na-mic.org/Wiki/index.php/NA-MIC_NCBC_Collaboration:NA-MIC_virtual_colonoscopy</a>)
 NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.
 """
+
 
 #
 # qSlicerPythonModuleExampleWidget
@@ -86,7 +90,7 @@ class EndoscopyWidget(ScriptedLoadableModuleWidget):
     inputFiducialsNodeSelector.objectName = 'inputFiducialsNodeSelector'
     inputFiducialsNodeSelector.toolTip = "Select a fiducial list to define control points for the path."
     inputFiducialsNodeSelector.nodeTypes = ['vtkMRMLMarkupsFiducialNode', 'vtkMRMLMarkupsCurveNode',
-      'vtkMRMLAnnotationHierarchyNode', 'vtkMRMLFiducialListNode']
+      'vtkMRMLAnnotationHierarchyNode']
     inputFiducialsNodeSelector.noneEnabled = False
     inputFiducialsNodeSelector.addEnabled = False
     inputFiducialsNodeSelector.removeEnabled = False
@@ -111,7 +115,6 @@ class EndoscopyWidget(ScriptedLoadableModuleWidget):
     createPathButton.enabled = False
     pathFormLayout.addRow(createPathButton)
     createPathButton.connect('clicked()', self.onCreatePathButtonClicked)
-
 
     # Flythrough collapsible button
     flythroughCollapsibleButton = ctk.ctkCollapsibleButton()
@@ -178,7 +181,6 @@ class EndoscopyWidget(ScriptedLoadableModuleWidget):
     inputFiducialsNodeSelector.setMRMLScene(slicer.mrmlScene)
     outputPathNodeSelector.setMRMLScene(slicer.mrmlScene)
 
-
   def setCameraNode(self, newCameraNode):
     """Allow to set the current camera node.
     Connected to signal 'currentNodeChanged()' emitted by camera node selector."""
@@ -214,7 +216,6 @@ class EndoscopyWidget(ScriptedLoadableModuleWidget):
 
   def onCameraNodeModified(self, observer, eventid):
     self.updateWidgetFromMRML()
-
 
   def enableOrDisableCreateButton(self):
     """Connected to both the fiducial and camera node selector. It allows to
@@ -330,10 +331,12 @@ class EndoscopyWidget(ScriptedLoadableModuleWidget):
     self.cameraNode.EndModify(wasModified)
     self.cameraNode.ResetClippingRange()
 
+
 class EndoscopyComputePath:
   """Compute path given a list of fiducials.
+  Path is stored in 'path' member variable as a numpy array.
   If a point list is received then curve points are generated using Hermite spline interpolation.
-  See http://en.wikipedia.org/wiki/Cubic_Hermite_spline
+  See https://en.wikipedia.org/wiki/Cubic_Hermite_spline
 
   Example:
     result = EndoscopyComputePath(fiducialListNode)
@@ -362,8 +365,7 @@ class EndoscopyComputePath:
       if originalPointsPerSegment<pointsPerSegment:
         self.fids.SetNumberOfPointsPerInterpolatingSegment(originalPointsPerSegment)
       # Get it as a numpy array as an independent copy
-      import vtk.util.numpy_support as VN
-      self.path = VN.vtk_to_numpy(resampledPoints.GetData())
+      self.path = vtk.util.numpy_support.vtk_to_numpy(resampledPoints.GetData())
       return
 
     # hermite interpolation functions
@@ -494,10 +496,21 @@ class EndoscopyPathModel:
        - Add one point per path point.
        - Add a single polyline
   """
-  def __init__(self, path, fiducialListNode, outputPathNode=None):
+
+  def __init__(self, path, fiducialListNode, outputPathNode=None, cursorType=None):
+    """
+      :param path: path points as numpy array.
+      :param fiducialListNode: input node, just used for naming the output node.
+      :param outputPathNode: output model node that stores the path points.
+      :param cursorType: can be 'markups' or 'model'. Markups has a number of advantages (radius it is easier to change the size,
+        can jump to views by clicking on it, has more visualization options, can be scaled to fixed display size),
+        but if some applications relied on having a model node as cursor then this argument can be used to achieve that.
+    """
 
     fids = fiducialListNode
     scene = slicer.mrmlScene
+
+    self.cursorType = "markups" if cursorType is None else cursorType
 
     points = vtk.vtkPoints()
     polyData = vtk.vtkPolyData()
@@ -521,8 +534,7 @@ class EndoscopyPathModel:
       linesIDArray.SetTuple1( 0, linesIDArray.GetNumberOfTuples() - 1 )
       lines.SetNumberOfCells(1)
 
-    import vtk.util.numpy_support as VN
-    pointsArray = VN.vtk_to_numpy(points.GetData())
+    pointsArray = vtk.util.numpy_support.vtk_to_numpy(points.GetData())
     self.planePosition, self.planeNormal = self.planeFit(pointsArray.T)
 
     # Create model node
@@ -537,16 +549,27 @@ class EndoscopyPathModel:
     # Camera cursor
     cursor = model.GetNodeReference("CameraCursor")
     if not cursor:
-      # Create model node
-      cursor = scene.AddNewNodeByClass("vtkMRMLModelNode", scene.GenerateUniqueName("Cursor-%s" % fids.GetName()))
+
+      if self.cursorType == "markups":
+        # Markups cursor
+        cursor = scene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", scene.GenerateUniqueName("Cursor-%s" % fids.GetName()))
+        cursor.CreateDefaultDisplayNodes()
+        cursor.GetDisplayNode().SetSelectedColor(1,0,0)  # red
+        cursor.GetDisplayNode().SetSliceProjection(True)
+        cursor.AddControlPoint(vtk.vtkVector3d(0,0,0)," ")  # do not show any visible label
+        cursor.SetNthControlPointLocked(0, True)
+      else:
+        # Model cursor
+        cursor = scene.AddNewNodeByClass("vtkMRMLMarkupsModelNode", scene.GenerateUniqueName("Cursor-%s" % fids.GetName()))
+        cursor.CreateDefaultDisplayNodes()
+        cursor.GetDisplayNode().SetColor(1,0,0)  # red
+        cursor.GetDisplayNode().BackfaceCullingOn()  # so that the camera can see through the cursor from inside
+        # Add a sphere as cursor
+        sphere = vtk.vtkSphereSource()
+        sphere.Update()
+        cursor.SetPolyDataConnection(sphere.GetOutputPort())
+
       model.SetNodeReferenceID("CameraCursor", cursor.GetID())
-      cursor.CreateDefaultDisplayNodes()
-      cursor.GetDisplayNode().SetColor(1,0,0)  # red
-      cursor.GetDisplayNode().BackfaceCullingOn()  # so that the camera can see through the cursor from inside
-      # Add a sphere as cursor
-      sphere = vtk.vtkSphereSource()
-      sphere.Update()
-      cursor.SetPolyDataConnection(sphere.GetOutputPort())
 
     # Transform node
     transform = model.GetNodeReference("CameraTransform")
@@ -557,7 +580,7 @@ class EndoscopyPathModel:
 
     self.transform = transform
 
-  # source: http://stackoverflow.com/questions/12299540/plane-fitting-to-4-or-more-xyz-points
+  # source: https://stackoverflow.com/questions/12299540/plane-fitting-to-4-or-more-xyz-points
   def planeFit(self, points):
     """
     p, n = planeFit(points)

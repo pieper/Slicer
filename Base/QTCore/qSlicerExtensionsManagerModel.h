@@ -48,6 +48,7 @@ class Q_SLICER_BASE_QTCORE_EXPORT qSlicerExtensionsManagerModel : public QObject
   Q_PROPERTY(QStringList installedExtensions READ installedExtensions NOTIFY modelUpdated)
   Q_PROPERTY(QStringList enabledExtensions READ enabledExtensions NOTIFY modelUpdated)
   Q_PROPERTY(bool newExtensionEnabledByDefault READ newExtensionEnabledByDefault WRITE setNewExtensionEnabledByDefault NOTIFY newExtensionEnabledByDefaultChanged)
+  Q_PROPERTY(bool interactive READ interactive WRITE setInteractive NOTIFY interactiveChanged)
   Q_PROPERTY(QString extensionsSettingsFilePath READ extensionsSettingsFilePath WRITE setExtensionsSettingsFilePath NOTIFY extensionsSettingsFilePathChanged)
   Q_PROPERTY(QString extensionsHistorySettingsFilePath READ extensionsHistorySettingsFilePath WRITE setExtensionsHistorySettingsFilePath NOTIFY extensionsHistorySettingsFilePathChanged)
   Q_PROPERTY(QString slicerRevision READ slicerRevision WRITE setSlicerRevision NOTIFY slicerRevisionChanged)
@@ -76,15 +77,29 @@ public:
   enum ServerAPI
     {
     Midas_v1 = 0,
-    Girder_v1
+    Girder_v1,
+    ServerAPI_Last
     };
 
+  /// Return current serverAPI.
+  ///
+  /// \sa serverAPIFromString()
   int serverAPI() const;
+
+  /// Return a string representation of the \a serverAPI.
+  ///
+  /// \sa serverAPIFromString()
+  static QString serverAPIToString(int serverAPI);
+
+  /// Return ServerAPI from the string \a str.
+  ///
+  /// \sa serverAPIToString()
+  static int serverAPIFromString(const QString& str);
 
   /// \brief Backend server URL used to perform API calls.
   ///
   /// If set, it returns the value associated with `SLICER_EXTENSIONS_MANAGER_SERVER_URL`
-  /// enviroment variable. Otherwise, it returns the extensions settings value `Extensions/ServerUrl`.
+  /// environment variable. Otherwise, it returns the extensions settings value `Extensions/ServerUrl`.
   ///
   /// \sa extensionsSettingsFilePath()
   Q_INVOKABLE QUrl serverUrl()const;
@@ -92,7 +107,7 @@ public:
   /// \brief Frontend server URL displaying extension manager web page.
   ///
   /// If set, it returns the value associated with `SLICER_EXTENSIONS_MANAGER_FRONTEND_SERVER_URL`
-  /// enviroment variable. Otherwise, it returns the extensions settings value `Extensions/FrontendServerUrl`.
+  /// environment variable. Otherwise, it returns the extensions settings value `Extensions/FrontendServerUrl`.
   ///
   /// \sa extensionsSettingsFilePath()
   Q_INVOKABLE QUrl frontendServerUrl()const;
@@ -107,6 +122,11 @@ public:
 
   void setNewExtensionEnabledByDefault(bool value);
   bool newExtensionEnabledByDefault()const;
+
+  /// If set to true (by default) then the user may be asked to confirm installation of additional dependencies.
+  /// If set to false then no blocking popups are displayed and dependencies are installed automatically.
+  void setInteractive(bool value);
+  bool interactive()const;
 
   Q_INVOKABLE ExtensionMetadataType extensionMetadata(const QString& extensionName)const;
 
@@ -405,6 +425,8 @@ signals:
   void slicerArchChanged(const QString& slicerArch);
   void slicerOsChanged(const QString& slicerOs);
   void slicerRevisionChanged(const QString& slicerRevision);
+
+  void interactiveChanged(bool interactive);
 
   void slicerVersionChanged(const QString& slicerVersion);
 

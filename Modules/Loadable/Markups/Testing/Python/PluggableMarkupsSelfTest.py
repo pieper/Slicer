@@ -1,9 +1,11 @@
-import os
-import time
-import unittest
-import vtk, qt, ctk, slicer
-from slicer.ScriptedLoadableModule import *
 import logging
+
+import ctk
+import qt
+
+import slicer
+from slicer.ScriptedLoadableModule import *
+
 
 #
 # PluggableMarkupsSelfTest
@@ -24,6 +26,7 @@ class PluggableMarkupsSelfTest(ScriptedLoadableModule):
     This file was originally developed by Rafael Palomar (OUS) and was funded by
     the Research Council of Norway (grant nr. 311393).
     """
+
 
 #
 # PluggableMarkupsSelfTestWidget
@@ -66,6 +69,7 @@ class PluggableMarkupsSelfTestWidget(ScriptedLoadableModuleWidget):
     logic = PluggableMarkupsSelfTestLogic()
     logic.run()
 
+
 class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
   def __init__(self):
@@ -93,9 +97,9 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
     #
     # Step 2: Register all available additional options widgets
     #
-    additionalOptionsWidgetsFactory = slicer.qSlicerMarkupsAdditionalOptionsWidgetsFactory().instance()
+    additionalOptionsWidgetsFactory = slicer.qMRMLMarkupsOptionsWidgetsFactory().instance()
     for additionalOptionsWidget in self.additionalOptionsWidgets():
-      additionalOptionsWidgetsFactory.registerAdditionalOptionsWidget(additionalOptionsWidget)
+      additionalOptionsWidgetsFactory.registerOptionsWidget(additionalOptionsWidget)
 
   def __checkPushButtonExists(self, widget, name):
     pushButtonObjectName = "Create%sPushButton" % name
@@ -129,10 +133,11 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
   def additionalOptionsWidgets(self):
     return [
-      slicer.qSlicerMarkupsCurveSettingsWidget(),
-      slicer.qSlicerMarkupsAngleMeasurementsWidget(),
-      slicer.qSlicerMarkupsROIWidget(),
-      slicer.qSlicerMarkupsTestLineWidget()
+      slicer.qMRMLMarkupsCurveSettingsWidget(),
+      slicer.qMRMLMarkupsAngleMeasurementsWidget(),
+      slicer.qMRMLMarkupsPlaneWidget(),
+      slicer.qMRMLMarkupsROIWidget(),
+      slicer.qMRMLMarkupsTestLineWidget()
     ]
 
   def test_unregister_existing_markups(self):
@@ -189,7 +194,7 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
     if markupsWidget is None:
       raise Exception("Couldn't get the Markups module widget")
 
-    additionalOptionsWidgetsFactory = slicer.qSlicerMarkupsAdditionalOptionsWidgetsFactory().instance()
+    additionalOptionsWidgetsFactory = slicer.qMRMLMarkupsOptionsWidgetsFactory().instance()
     for additionalOptionsWidget in self.additionalOptionsWidgets():
 
       # Check the widget exists
@@ -200,33 +205,33 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
       objectName = additionalOptionsWidget.objectName
 
       # Unregister widget
-      additionalOptionsWidgetsFactory.unregisterAdditionalOptionsWidget(additionalOptionsWidget)
+      additionalOptionsWidgetsFactory.unregisterOptionsWidget(additionalOptionsWidget.className)
 
       # Check the widget does not exist
       if self.__checkWidgetExists(markupsWidget, objectName):
-        raise Exception("%s does exist" % objectName)
+        raise Exception("%s does still exist" % objectName)
 
   def test_register_additional_options_widgets(self):
     """
     This reigisters additional options widgets
     """
 
-    additionalOptionsWidgetsFactory = slicer.qSlicerMarkupsAdditionalOptionsWidgetsFactory().instance()
+    additionalOptionsWidgetsFactory = slicer.qMRMLMarkupsOptionsWidgetsFactory().instance()
 
     markupsWidget = slicer.modules.markups.widgetRepresentation()
     if markupsWidget is None:
       raise Exception("Couldn't get the Markups module widget")
 
     for additionalOptionsWidget in self.additionalOptionsWidgets():
+      name  = additionalOptionsWidget.objectName
       slicer.util.delayDisplay("Registering %s" % additionalOptionsWidget.objectName)
-      additionalOptionsWidgetsFactory.registerAdditionalOptionsWidget(additionalOptionsWidget)
+      additionalOptionsWidgetsFactory.registerOptionsWidget(additionalOptionsWidget)
 
       # Check the widget exists
-      if not self.__checkWidgetExists(markupsWidget, additionalOptionsWidget.objectName):
+      if not self.__checkWidgetExists(markupsWidget, name):
         raise Exception("%s does not exist" % additionalOptionsWidget.objectName)
 
   def run(self):
-
     """
     Run the tests
     """
@@ -234,7 +239,7 @@ class PluggableMarkupsSelfTestLogic(ScriptedLoadableModuleLogic):
 
     self.test_unregister_existing_markups()
     self.test_register_markups()
-    self.test_unregister_additional_options_widgets()
+    # self.test_unregister_additional_options_widgets()
     self.test_register_additional_options_widgets()
 
     logging.info('Process completed')
@@ -244,6 +249,7 @@ class PluggableMarkupsSelfTestTest(ScriptedLoadableModuleTest):
   """
   This is the test case
   """
+
   def setUp(self):
     logic = PluggableMarkupsSelfTestLogic()
     logic.setUp()
