@@ -1,7 +1,9 @@
 import unittest
+import unittest.mock
 
 import vtk
 
+from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
 
@@ -43,7 +45,8 @@ class SlicerUtilVTKObservationMixinTests(unittest.TestCase):
     self.assertEqual(foo.modifiedEventCount(object2), 0)
 
     foo.ModifiedEventCount = {}
-    foo.addObserver(object, event, callback)
+    with self.assertWarns(UserWarning):
+      foo.addObserver(object, event, callback)
     object.Modified()
     self.assertEqual(len(foo.Observations), 1)
     self.assertEqual(foo.modifiedEventCount(object), 1)
@@ -105,6 +108,34 @@ class SlicerUtilVTKObservationMixinTests(unittest.TestCase):
     foo.addObserver(object2, event, callback2)
     self.assertEqual(foo.observer(event, callback2), object2)
 
+  def test_getObserver(self):
+    foo = Foo()
+    obj = vtk.vtkObject()
+    event = vtk.vtkCommand.ModifiedEvent
+    callback = foo.onObjectModified
+
+    group = 'a'
+    priority = 42.0
+
+    foo.addObserver(obj, event, callback, group=group, priority=priority)
+    group_, tag_, priority_ = foo.getObserver(obj, event, callback)
+
+    self.assertEqual(group, group_)
+    self.assertEqual(priority, priority_)
+
+  def test_releaseNodes(self):
+    foo = Foo()
+    node = vtk.vtkObject()
+    callback = unittest.mock.Mock()
+
+    foo.addObserver(node, vtk.vtkCommand.DeleteEvent, callback)
+
+    self.assertEqual(len(foo.Observations), 1)
+    callback.assert_not_called()
+    del node
+    callback.assert_called_once()
+    self.assertEqual(len(foo.Observations), 0)
+
   def test_removeObserver(self):
     foo = Foo()
     object = vtk.vtkObject()
@@ -155,3 +186,70 @@ class SlicerUtilVTKObservationMixinTests(unittest.TestCase):
 
     foo.removeObservers(method=callback)
     self.assertEqual(len(foo.Observations), 1)
+
+  def test_moduleWidgetMixin(self):
+    class MyModule(ScriptedLoadableModuleWidget, VTKObservationMixin):
+      pass
+
+    parent = unittest.mock.Mock()
+    module = MyModule(parent)
+
+    obj = vtk.vtkObject()
+    event = vtk.vtkCommand.ModifiedEvent
+    callback = unittest.mock.Mock()
+
+    module.addObserver(obj, event, callback)
+
+    callback.assert_not_called()
+    obj.Modified()
+    callback.assert_called()
+
+  def test_moduleLogicMixin(self):
+    class MyModuleLogic(ScriptedLoadableModuleLogic, VTKObservationMixin):
+      pass
+
+    logic = MyModuleLogic()
+
+    obj = vtk.vtkObject()
+    event = vtk.vtkCommand.ModifiedEvent
+    callback = unittest.mock.Mock()
+
+    logic.addObserver(obj, event, callback)
+
+    callback.assert_not_called()
+    obj.Modified()
+    callback.assert_called()
+
+  def test_moduleTestMixin(self):
+    class MyModuleTest(ScriptedLoadableModuleTest, VTKObservationMixin):
+      pass
+
+    test = MyModuleTest()
+
+    obj = vtk.vtkObject()
+    event = vtk.vtkCommand.ModifiedEvent
+    callback = unittest.mock.Mock()
+
+    test.addObserver(obj, event, callback)
+
+    callback.assert_not_called()
+    obj.Modified()
+    callback.assert_called()
+
+  def test_moduleTestInitCount(self):
+    # if this fails, then unittest.TestCase.__init__ may have added a super().__init__() call.
+    # See https://github.com/Slicer/Slicer/pull/6243#issuecomment-1061800718 for more information.
+
+    class CountInitCalls:
+      count = 0
+
+      def __init__(self):
+        super().__init__()
+
+        self.count += 1
+
+    class MyModuleTest(ScriptedLoadableModuleTest, CountInitCalls):
+      pass
+
+    test = MyModuleTest()
+    self.assertEqual(test.count, 1)
