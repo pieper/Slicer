@@ -188,6 +188,8 @@ adding a playback button using [this free service](https://addplaybuttontoimage.
     - If the extension was built then you can find the automatically generated extension description in the build folder
     - If the extension was not built then create the extension description file manually, using a text editor
   - Add your .s4ext file to your forked repository: it can be done using a git client or simply by clicking ''Upload files'' button
+    - To make the extension appear in the latest Slicer Preview Release: upload the file into the `master` branch.
+    - To make the extension appear in the latest Slicer Stable Release: upload the file into the branch corresponding to the stable release version, for example: `4.10`.
   - Create a pull request: by clicking ''Create pull request'' button
   - Follow the instructions in the pull request template
 
@@ -277,9 +279,17 @@ Note: Parameters in URLS (such as `&foo=bar`) are not supported. URL shortener s
 
 ## Extensions server
 
-The official Slicer extensions server is <https://extensions.slicer.org/>. To get a list of extensions, specify the Slicer revision and platform in the URL, for example: <https://extensions.slicer.org/catalog/All/30117/win>
+The official Slicer extensions server, the "Extensions Catalog" is available at <https://extensions.slicer.org/>. To get a list of extensions, specify the Slicer revision and platform in the URL, for example: <https://extensions.slicer.org/catalog/All/30117/win>.
 
-The extension server is built so that organizations can set up and maintain their own extensions servers, for example to distribute extensions for custom applications. Extensions server address can be set in Application Settings, in Extensions section.
+The Extensions Catalog is implemented a web application ([source code](https://github.com/KitwareMedical/slicer-extensions-webapp)), which connects
+to a [Girder server](https://slicer-packages.kitware.com/#collection/5f4474d0e1d8c75dfc70547e/folder/5f4474d0e1d8c75dfc705482), a general-purpose
+storage server with the Slicer Package Manager plugin ([source code](https://github.com/girder/slicer_package_manager)), which provides a
+convenient REST API for accessing Slicer extension packages and metadata.
+
+The "Manage extensions" tab in the Extensions Manager in Slicer uses this REST API to get information on updates and get packages to install or update.
+
+The extension server is designed so that organizations can set up and maintain their own extensions servers, for example to distribute
+extensions for custom applications. Extensions server address can be set in the Application Settings, in the Extensions section.
 
 Until August 2021, a Midas-based server at `https://slicer.kitware.com/midas3` was used. This server is not online anymore, as it was not feasible to perform all software updates that would have kept it secure.
 
@@ -683,4 +693,3 @@ It most likely means that the test driver is not linking against `ITKFactoryRegi
 - call `itk::itkFactoryRegistration();` in its main function.
 
 For more details, read [What is the ITKFactoryRegistration library?](https://www.slicer.org/wiki/Documentation/Nightly/Developers/FAQ#What_is_the_ITKFactoryRegistration_library_.3F).
-
