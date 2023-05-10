@@ -1,0 +1,10 @@
+
+git clone https://github.com/openssl/openssl.git openssl-git
+
+cd openssl-git
+
+./Configure darwin64-arm64-cc --prefix="/tmp/openssl-arm" no-asm
+
+make && make install
+
+ln -s /tmp/openssl-arm ./OpenSSL-install
