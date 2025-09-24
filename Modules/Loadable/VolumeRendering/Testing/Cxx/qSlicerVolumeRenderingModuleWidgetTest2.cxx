@@ -43,36 +43,33 @@
 #include <itkFactoryRegistration.h>
 
 //-----------------------------------------------------------------------------
-int qSlicerVolumeRenderingModuleWidgetTest2( int argc, char * argv[] )
+int qSlicerVolumeRenderingModuleWidgetTest2(int argc, char* argv[])
 {
   itk::itkFactoryRegistration();
 
   qSlicerApplication app(argc, argv);
 
   if (argc < 2)
-    {
+  {
     std::cerr << "Usage: qSlicerVolumeRenderingModuleWidgetTest2 volumeName [-I]" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   qSlicerVolumeRenderingModule module;
   module.setMRMLScene(app.mrmlScene());
   module.initialize(nullptr);
 
-  qSlicerVolumeRenderingModuleWidget* moduleWidget =
-    dynamic_cast<qSlicerVolumeRenderingModuleWidget*>(
-      module.widgetRepresentation());
+  qSlicerVolumeRenderingModuleWidget* moduleWidget = dynamic_cast<qSlicerVolumeRenderingModuleWidget*>(module.widgetRepresentation());
 
-  vtkSmartPointer<vtkSlicerVolumesLogic> volumesLogic =
-    vtkSmartPointer<vtkSlicerVolumesLogic>::New();
+  vtkSmartPointer<vtkSlicerVolumesLogic> volumesLogic = vtkSmartPointer<vtkSlicerVolumesLogic>::New();
   volumesLogic->SetMRMLScene(app.mrmlScene());
 
   vtkMRMLVolumeNode* volumeNode = volumesLogic->AddArchetypeVolume(argv[1], "volume");
   if (!volumeNode)
-    {
+  {
     std::cerr << "Bad volume file:" << argv[1] << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   vtkSmartPointer<vtkMRMLViewNode> view = vtkSmartPointer<vtkMRMLViewNode>::New();
   app.mrmlScene()->AddNode(view);
@@ -85,9 +82,9 @@ int qSlicerVolumeRenderingModuleWidgetTest2( int argc, char * argv[] )
   moduleWidget->setMRMLVolumeNode(volumeNode);
 
   if (argc < 3 || QString(argv[2]) != "-I")
-    {
+  {
     QTimer::singleShot(100, qApp, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }

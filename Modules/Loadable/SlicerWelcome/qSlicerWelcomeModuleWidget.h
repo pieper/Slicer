@@ -30,18 +30,14 @@
 
 class qSlicerWelcomeModuleWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_SlicerWelcome
-class Q_SLICER_QTMODULES_WELCOME_EXPORT qSlicerWelcomeModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_WELCOME_EXPORT qSlicerWelcomeModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerWelcomeModuleWidget(QWidget *parent=nullptr);
+  qSlicerWelcomeModuleWidget(QWidget* parent = nullptr);
   ~qSlicerWelcomeModuleWidget() override;
-
 
 public slots:
 
@@ -49,14 +45,17 @@ public slots:
   bool loadRemoteSampleData();
   bool loadDicomData();
   void editApplicationSettings();
-  bool presentTutorials();
   bool exploreLoadedData();
+  void setExtensionUpdatesAvailable(bool updateAvailable);
+  void setApplicationUpdateAvailable(bool updateAvailable);
+  void checkForUpdates();
 
 protected:
   void setup() override;
 
 protected slots:
-  void loadSource(QWidget*);
+  void onAutoUpdateCheckStateChanged(int);
+  void onAutoUpdateSettingsChanged();
 
 protected:
   QScopedPointer<qSlicerWelcomeModuleWidgetPrivate> d_ptr;

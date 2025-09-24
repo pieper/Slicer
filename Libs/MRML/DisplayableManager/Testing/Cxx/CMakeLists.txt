@@ -1,19 +1,21 @@
 set(KIT ${PROJECT_NAME})
 
 set(CMAKE_TESTDRIVER_BEFORE_TESTMAIN "DEBUG_LEAKS_ENABLE_EXIT_ERROR();" )
-create_test_sourcelist(Tests ${KIT}CxxTests.cxx
+set(KIT_TEST_SRCS
   vtkMRMLCameraDisplayableManagerTest1.cxx
+  vtkMRMLCameraWidgetTest1.cxx
+  vtkMRMLModelClipDisplayableManagerTest.cxx
   vtkMRMLModelDisplayableManagerTest.cxx
   vtkMRMLModelSliceDisplayableManagerTest.cxx
   vtkMRMLThreeDReformatDisplayableManagerTest1.cxx
   vtkMRMLThreeDViewDisplayableManagerFactoryTest1.cxx
   vtkMRMLDisplayableManagerFactoriesTest1.cxx
   vtkMRMLSliceViewDisplayableManagerFactoryTest.cxx
+  )
+create_test_sourcelist(Tests ${KIT}CxxTests.cxx
+  ${KIT_TEST_SRCS}
   EXTRA_INCLUDE vtkMRMLDebugLeaksMacro.h
   )
-
-set(TestsToRun ${Tests})
-list(REMOVE_ITEM TestsToRun ${KIT}CxxTests.cxx)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -45,7 +47,7 @@ set_target_properties(${KIT}CxxTests PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER}
 # Add all the tests
 #
 set(TEMP "${Slicer_BINARY_DIR}/Testing/Temporary")
-foreach(test ${TestsToRun})
+foreach(test ${KIT_TEST_SRCS})
   get_filename_component(TESTNAME ${test} NAME_WE)
   simple_test(
     ${TESTNAME}

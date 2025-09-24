@@ -14,7 +14,7 @@
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
   and was supported through CANARIE's Research Software Program, Cancer
-  Care Ontario, OpenAnatomy, and Brigham and Women’s Hospital through NIH grant R01MH112748.
+  Care Ontario, OpenAnatomy, and Brigham and Women's Hospital through NIH grant R01MH112748.
 
 ==============================================================================*/
 
@@ -25,12 +25,10 @@
 #include "qSlicerSegmentationsModuleExport.h"
 #include "qSlicerNodeWriter.h"
 
-class qSlicerSegmentationsNodeWriterPrivate;
 class vtkMRMLNode;
 
 /// Utility class that is ready to use for most of the nodes.
-class Q_SLICER_QTMODULES_SEGMENTATIONS_EXPORT qSlicerSegmentationsNodeWriter
-  : public qSlicerNodeWriter
+class Q_SLICER_QTMODULES_SEGMENTATIONS_EXPORT qSlicerSegmentationsNodeWriter : public qSlicerNodeWriter
 {
   Q_OBJECT
 public:
@@ -38,8 +36,8 @@ public:
   qSlicerSegmentationsNodeWriter(QObject* parent);
   ~qSlicerSegmentationsNodeWriter() override;
 
-  /// Return a qSlicerIOSegmentationNodeWriterOptionsWidget
-  qSlicerIOOptions* options()const override;
+  /// Return a new qSlicerSegmentationsNodeWriterOptionsWidget
+  qSlicerIOOptions* options() const override;
 
   /// Write the node referenced by "nodeID" into the "fileName" file.
   /// Optionally, "useCompression" and "useReferenceGeometry" can be specified.
@@ -47,11 +45,7 @@ public:
   /// Create a storage node if the storable node doesn't have any.
   bool write(const qSlicerIO::IOProperties& properties) override;
 
-protected:
-  QScopedPointer<qSlicerSegmentationsNodeWriterPrivate> d_ptr;
-
 private:
-  Q_DECLARE_PRIVATE(qSlicerSegmentationsNodeWriter);
   Q_DISABLE_COPY(qSlicerSegmentationsNodeWriter);
 };
 

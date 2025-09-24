@@ -32,25 +32,29 @@ class vtkMRMLSliceIntersectionWidget;
 /// \brief Displayable manager for the crosshair on slice (2D) views
 ///
 /// Responsible for any display of the crosshair on Slice views.
-class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLCrosshairDisplayableManager :
-  public vtkMRMLAbstractSliceViewDisplayableManager
+class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLCrosshairDisplayableManager : public vtkMRMLAbstractSliceViewDisplayableManager
 {
 public:
   static vtkMRMLCrosshairDisplayableManager* New();
-  vtkTypeMacro(vtkMRMLCrosshairDisplayableManager,
-                       vtkMRMLAbstractSliceViewDisplayableManager);
+  vtkTypeMacro(vtkMRMLCrosshairDisplayableManager, vtkMRMLAbstractSliceViewDisplayableManager);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   // Utility functions (used by 2D and 3D crosshair displayable managers)
   static vtkMRMLCrosshairNode* FindCrosshairNode(vtkMRMLScene* scene);
 
-  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double &closestDistance2) override;
+  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& closestDistance2) override;
   bool ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData) override;
 
   void SetActionsEnabled(int actions);
   int GetActionsEnabled();
 
   vtkMRMLSliceIntersectionWidget* GetSliceIntersectionWidget();
+
+  /// Displayable manager returns ID of the mouse cursor shape that should be displayed
+  int GetMouseCursor() override;
+
+  // Called to notify the displayable manager that it has got or lost the focus.
+  void SetHasFocus(bool hasFocus, vtkMRMLInteractionEventData* eventData) override;
 
 protected:
   vtkMRMLCrosshairDisplayableManager();
@@ -76,7 +80,7 @@ private:
   void OnMRMLNodeModified(vtkMRMLNode* node) override;
 
   class vtkInternal;
-  vtkInternal * Internal;
+  vtkInternal* Internal;
 };
 
 #endif

@@ -7,7 +7,7 @@
   Version:   $Revision: 1.7 $
 
   Copyright (c) Insight Software Consortium. All rights reserved.
-  See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
+  See ITKCopyright.txt or https://www.itk.org/HTML/Copyright.htm for details.
 
      This software is distributed WITHOUT ANY WARRANTY; without even
      the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -26,7 +26,7 @@ namespace itk
 /** \class ConstrainedValueMultiplicationImageFilter
  * \brief Implements pixel-wise the computation of constrained value addition.
  *
- * This filter is parametrized over the types of the two
+ * This filter is parameterized over the types of the two
  * input images and the type of the output image.
  *
  * Numeric conversions (castings) are done by the C++ defaults.
@@ -48,92 +48,77 @@ namespace itk
  *
  * \author Lino Ramirez. Dept. of Electrical and Computer
  * Engineering. University of Alberta. Canada
- *
- * \ingroup IntensityImageFilters Multithreaded
  */
-namespace Functor {
+namespace Functor
+{
 
-template< class TInput1, class TInput2, class TOutput>
+template <class TInput1, class TInput2, class TOutput>
 class ConstrainedValueMultiplication
 {
 public:
-  ConstrainedValueMultiplication()  = default;
-  ~ConstrainedValueMultiplication()  = default;
-  bool operator!=( const ConstrainedValueMultiplication & ) const
-    {
-    return false;
-    }
-  bool operator==( const ConstrainedValueMultiplication & other ) const
-    {
-    return !(*this != other);
-    }
-  inline TOutput operator()( const TInput1 & A,
-                             const TInput2 & B)
-    {
-    const double dA = static_cast<double>( A );
-    const double dB = static_cast<double>( B );
+  ConstrainedValueMultiplication() = default;
+  ~ConstrainedValueMultiplication() = default;
+  bool operator!=(const ConstrainedValueMultiplication&) const { return false; }
+  bool operator==(const ConstrainedValueMultiplication& other) const { return !(*this != other); }
+  inline TOutput operator()(const TInput1& A, const TInput2& B)
+  {
+    const double dA = static_cast<double>(A);
+    const double dB = static_cast<double>(B);
     const double add = dA * dB;
-    const double cadd1 = ( add < NumericTraits<TOutput>::max() ) ?
-      add : NumericTraits<TOutput>::max();
-    const double cadd2 = ( cadd1 > NumericTraits<TOutput>::NonpositiveMin() ) ?
-      cadd1 : NumericTraits<TOutput>::NonpositiveMin();
-    return static_cast<TOutput>( cadd2 );
-    }
+    // IEEE‑754 double can exactly represent all integers in the range [–2^53, 2^53], but beyond that,
+    // only some integer numbers are representable.
+    //  18446744073709551615 (2^64−1) must be rounded to the nearest representable double: 18446744073709551616
+    constexpr double max_closest_representable = static_cast<double>(NumericTraits<TOutput>::max());
+
+    const double cadd1 = (add < max_closest_representable) ? add : max_closest_representable;
+    const double cadd2 = (cadd1 > NumericTraits<TOutput>::NonpositiveMin()) ? cadd1 : NumericTraits<TOutput>::NonpositiveMin();
+    return static_cast<TOutput>(cadd2);
+  }
 };
-}
+} // namespace Functor
 
 template <class TInputImage1, class TInputImage2, class TOutputImage>
-class ConstrainedValueMultiplicationImageFilter :
-    public
-BinaryFunctorImageFilter<TInputImage1,TInputImage2,TOutputImage,
-                         Functor::ConstrainedValueMultiplication<
-  typename TInputImage1::PixelType,
-  typename TInputImage2::PixelType,
-  typename TOutputImage::PixelType>   >
+class ConstrainedValueMultiplicationImageFilter
+  : public BinaryFunctorImageFilter<TInputImage1,
+                                    TInputImage2,
+                                    TOutputImage,
+                                    Functor::ConstrainedValueMultiplication<typename TInputImage1::PixelType, typename TInputImage2::PixelType, typename TOutputImage::PixelType>>
 {
 public:
   /** Standard class typedefs. */
-  typedef ConstrainedValueMultiplicationImageFilter  Self;
-  typedef BinaryFunctorImageFilter<TInputImage1,TInputImage2,TOutputImage,
-                                   Functor::ConstrainedValueMultiplication<
-    typename TInputImage1::PixelType,
-    typename TInputImage2::PixelType,
-    typename TOutputImage::PixelType> >
-                                    Superclass;
-  typedef SmartPointer<Self>        Pointer;
-  typedef SmartPointer<const Self>  ConstPointer;
+  typedef ConstrainedValueMultiplicationImageFilter Self;
+  typedef BinaryFunctorImageFilter<TInputImage1,
+                                   TInputImage2,
+                                   TOutputImage,
+                                   Functor::ConstrainedValueMultiplication<typename TInputImage1::PixelType, typename TInputImage2::PixelType, typename TOutputImage::PixelType>>
+    Superclass;
+  typedef SmartPointer<Self> Pointer;
+  typedef SmartPointer<const Self> ConstPointer;
 
   /** Method for creation through the object factory. */
   itkNewMacro(Self);
 
   /** Runtime information support. */
-  itkTypeMacro(ConstrainedValueMultiplicationImageFilter,
-               BinaryFunctorImageFilter);
+  itkTypeMacro(ConstrainedValueMultiplicationImageFilter, BinaryFunctorImageFilter);
 
 #ifdef ITK_USE_CONCEPT_CHECKING
   /** Begin concept checking */
-  itkConceptMacro(Input1ConvertibleToDoubleCheck,
-    (Concept::Convertible<typename TInputImage1::PixelType, double>));
-  itkConceptMacro(Input2ConvertibleToDoubleCheck,
-    (Concept::Convertible<typename TInputImage2::PixelType, double>));
-  itkConceptMacro(DoubleConvertibleToOutputCastCheck,
-    (Concept::Convertible<double, typename TOutputImage::PixelType>));
-  itkConceptMacro(DoubleLessThanOutputCheck,
-    (Concept::LessThanComparable<double, typename TOutputImage::PixelType>));
+  itkConceptMacro(Input1ConvertibleToDoubleCheck, (Concept::Convertible<typename TInputImage1::PixelType, double>));
+  itkConceptMacro(Input2ConvertibleToDoubleCheck, (Concept::Convertible<typename TInputImage2::PixelType, double>));
+  itkConceptMacro(DoubleConvertibleToOutputCastCheck, (Concept::Convertible<double, typename TOutputImage::PixelType>));
+  itkConceptMacro(DoubleLessThanOutputCheck, (Concept::LessThanComparable<double, typename TOutputImage::PixelType>));
   /** End concept checking */
 #endif
 
 protected:
-  ConstrainedValueMultiplicationImageFilter()  = default;
-  ~ConstrainedValueMultiplicationImageFilter() override  = default;
+  ConstrainedValueMultiplicationImageFilter() = default;
+  ~ConstrainedValueMultiplicationImageFilter() override = default;
 
 private:
   ConstrainedValueMultiplicationImageFilter(const Self&) = delete;
   void operator=(const Self&) = delete;
-
 };
 
-} /// end namespace itk
-
+} // namespace itk
 
 #endif

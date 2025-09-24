@@ -18,7 +18,6 @@
 
 ==============================================================================*/
 
-
 #ifndef __vtkSlicerUnitsLogic_h
 #define __vtkSlicerUnitsLogic_h
 
@@ -39,24 +38,18 @@ class vtkMRMLUnitNode;
 /// a new unit easily. The logic is in charge of calling a modify on the
 /// the selection node every time a current unit is modified so the listeners
 /// can update themselves.
-class VTK_SLICER_UNITS_MODULE_LOGIC_EXPORT vtkSlicerUnitsLogic
-  : public vtkMRMLAbstractLogic
+class VTK_SLICER_UNITS_MODULE_LOGIC_EXPORT vtkSlicerUnitsLogic : public vtkMRMLAbstractLogic
 {
 public:
-  static vtkSlicerUnitsLogic *New();
+  static vtkSlicerUnitsLogic* New();
   typedef vtkSlicerUnitsLogic Self;
   vtkTypeMacro(vtkSlicerUnitsLogic, vtkMRMLAbstractLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Add unit node to the scene.
   /// Returns nullptr if the logic has no scene.
-  vtkMRMLUnitNode* AddUnitNode(const char* name,
-    const char* quantity = "length",
-    const char* prefix = "",
-    const char* suffix = "",
-    int precision = 3,
-    double min = -10000.,
-    double max = 10000.);
+  vtkMRMLUnitNode*
+  AddUnitNode(const char* name, const char* quantity = "length", const char* prefix = "", const char* suffix = "", int precision = 3, double min = -10000., double max = 10000.);
 
   /// Change the default unit for the corresponding quantity
   void SetDefaultUnit(const char* quantity, const char* id);
@@ -119,12 +112,14 @@ public:
   /// are assumed to be in millimeter the display coefficient should be computed
   /// specifying `milli` as \a valuePrefix.
   ///
-  /// \a prefix and \a basePrefix can be any value documented in GetSIPrefixCoefficient().
+  /// \a displayPrefix and \a valuePrefix can be any value documented in GetSIPrefixCoefficient().
+  /// \a power return value raised to this power, which is useful for compute display coefficient for derived
+  ///  unit, for example getting display prefix for cm2.
   ///
   /// \sa GetSIPrefixCoefficient()
   /// \sa AddUnitNodeToScene()
   /// \sa AddDefaultsUnits(), AddBuiltInUnits()
-  static double GetDisplayCoefficient(const char* displayPrefix, const char* valuePrefix = "");
+  static double GetDisplayCoefficient(const char* displayPrefix, const char* valuePrefix = "", double power = 1);
 
 protected:
   vtkSlicerUnitsLogic();
@@ -135,6 +130,7 @@ protected:
   /// Reimplemented to save the selection node unit nodes.
   /// \sa SaveDefaultUnits(), RestoreDefaultUnits()
   void OnMRMLSceneStartBatchProcess() override;
+  void UpdateFromMRMLScene() override;
   /// Reimplemented to restore the selection node unit nodes.
   /// \sa SaveDefaultUnits(), RestoreDefaultUnits()
   void OnMRMLNodeModified(vtkMRMLNode* modifiedNode) override;
@@ -183,15 +179,15 @@ protected:
   ///
   /// \sa GetDisplayCoefficient()
   vtkMRMLUnitNode* AddUnitNodeToScene(vtkMRMLScene* scene,
-    const char* name,
-    const char* quantity = "length",
-    const char* prefix = "",
-    const char* suffix = "",
-    int precision = 3,
-    double min = -10000.,
-    double max = 10000.,
-    double displayCoeff = 1.0,
-    double displayOffset = 0.0);
+                                      const char* name,
+                                      const char* quantity = "length",
+                                      const char* prefix = "",
+                                      const char* suffix = "",
+                                      int precision = 3,
+                                      double min = -10000.,
+                                      double max = 10000.,
+                                      double displayCoeff = 1.0,
+                                      double displayOffset = 0.0);
 
   /// Save the default units referenced in the selection node singleton.
   /// \sa RestoreDefaultUnits()
@@ -204,6 +200,7 @@ protected:
 
   // Variables
   vtkMRMLScene* UnitsScene;
+
 private:
   vtkSlicerUnitsLogic(const vtkSlicerUnitsLogic&) = delete;
   void operator=(const vtkSlicerUnitsLogic&) = delete;

@@ -33,7 +33,7 @@
 class VTK_SLICER_DICOMLIB_MODULE_LOGIC_EXPORT vtkSlicerDICOMLoadable : public vtkObject
 {
 public:
-  static vtkSlicerDICOMLoadable *New();
+  static vtkSlicerDICOMLoadable* New();
   vtkTypeMacro(vtkSlicerDICOMLoadable, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -52,6 +52,10 @@ public:
   vtkGetMacro(Selected, bool);
   vtkSetMacro(Selected, bool);
   vtkBooleanMacro(Selected, bool);
+
+  vtkGetMacro(LoadSuccess, bool);
+  vtkSetMacro(LoadSuccess, bool);
+  vtkBooleanMacro(LoadSuccess, bool);
 
   vtkGetMacro(Confidence, double);
   vtkSetMacro(Confidence, double);
@@ -102,6 +106,9 @@ protected:
 
   /// List of UIDs for the DICOM instances that are referenced by this loadable
   vtkStringArray* ReferencedInstanceUIDs;
+
+  /// Flag shows that load was successful
+  bool LoadSuccess;
 };
 
 #endif

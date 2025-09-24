@@ -3,7 +3,6 @@
 # WARNING: CLI modules should be topologically ordered.
 #-----------------------------------------------------------------------------
 set(cli_modules
-  ACPCTransform
   AddScalarVolumes
   CastScalarVolume
   CheckerBoardFilter
@@ -27,7 +26,7 @@ set(cli_modules
   N4ITKBiasFieldCorrection
   OrientScalarVolume
   ProbeVolumeWithModel
-  ResampleDTIVolume # Needed by ResampleScalarVectorDWIVolume (compiletime dependency)
+  ResampleDTIVolume # Needed by ResampleScalarVectorDWIVolume (compile time dependency)
   ResampleScalarVectorDWIVolume # Depends on DiffusionApplications, needed by CropVolume (runtime dependency)
   RobustStatisticsSegmenter
   SimpleRegionGrowingSegmentation
@@ -46,7 +45,6 @@ endif()
 
 if(Slicer_BUILD_LEGACY_CLI)
   set(legacy_cli_modules
-    ExpertAutomatedRegistration
     FiducialRegistration
     ResampleScalarVolume
     )
@@ -65,7 +63,7 @@ if(BUILD_TESTING)
   # Configure the default SLICER_BRAINWEB_DATA_ROOT for the location of BrainWeb Data.
   # When this data is available, additional 3D tests are enabled.
   find_path(SLICER_BRAINWEB_DATA_ROOT brainweb165a10f17.mha
-    DOC "Directory with data taken from http://public.kitware.com/pub/itk/Data/BrainWeb/")
+    DOC "Directory with data taken from https://public.kitware.com/pub/itk/Data/BrainWeb/")
   mark_as_advanced(SLICER_BRAINWEB_DATA_ROOT)
 
   # Set CLI testing directories as cache variable so that it can be used by

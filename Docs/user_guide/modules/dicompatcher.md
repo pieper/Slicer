@@ -2,7 +2,7 @@
 
 This module fixes common errors in DICOM files to make them possible to import them into Slicer.
 
-DICOM is a large and complex standard and device manufacturers and third-party software deveopers often make mistakes in their implementation. DICOM patcher module can recognize some common mistakes and certain known device-specific mistakes and create a modified copy of the DICOM files.
+DICOM is a large and complex standard and device manufacturers and third-party software developers often make mistakes in their implementation. DICOM patcher module can recognize some common mistakes and certain known device-specific mistakes and create a modified copy of the DICOM files.
 
 ## Panels and their use
 
@@ -30,11 +30,11 @@ DICOM is a large and complex standard and device manufacturers and third-party s
 
 ## Related Modules
 
-- [DICOM](dicom) DICOM browser that lists all data sets in Slicer's DICOM database.
+- [DICOM](dicom.md) DICOM browser that lists all data sets in Slicer's DICOM database.
 
 ## Information for Developers
 
-This is a Python scripted module. Source code is available [here](https://github.com/Slicer/Slicer/blob/master/Modules/Scripted/DICOMPatcher/DICOMPatcher.py).
+This is a Python scripted module. Source code is available [here](https://github.com/Slicer/Slicer/blob/main/Modules/Scripted/DICOMPatcher/DICOMPatcher.py).
 
 ## Contributors
 

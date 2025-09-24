@@ -13,6 +13,7 @@ Version:   $Revision: 1.0 $
 =========================================================================auto=*/
 
 // MRML includes
+#include <vtkCodedEntry.h>
 #include "vtkMRMLColorNode.h"
 #include "vtkMRMLScene.h"
 #include "vtkMRMLStorageNode.h"
@@ -21,44 +22,24 @@ Version:   $Revision: 1.0 $
 #include <vtkLookupTable.h>
 #include <vtkObjectFactory.h>
 #include <vtkSmartPointer.h>
+#include <vtksys/SystemTools.hxx>
 
 // STD includes
 #include <cassert>
 #include <sstream>
 #include <algorithm>
 
-//------------------------------------------------------------------------------
-vtkMRMLNodeNewMacro(vtkMRMLColorNode);
-
 //----------------------------------------------------------------------------
 vtkMRMLColorNode::vtkMRMLColorNode()
 {
-  this->SetName("");
-  this->FileName = nullptr;
+  this->TypeDisplayName = vtkMRMLTr("vtkMRMLColorNode", "Color");
+
   this->Type = -1;
   this->HideFromEditors = 1;
-
-  this->NoName = nullptr;
-  this->SetNoName("(none)");
-
-  this->NamesInitialised = 0;
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLColorNode::~vtkMRMLColorNode()
-{
-  if (this->FileName)
-    {
-    delete [] this->FileName;
-    this->FileName = nullptr;
-    }
-
-  if (this->NoName)
-    {
-    delete [] this->NoName;
-    this->NoName = nullptr;
-    }
-}
+vtkMRMLColorNode::~vtkMRMLColorNode() {}
 
 //----------------------------------------------------------------------------
 void vtkMRMLColorNode::WriteXML(ostream& of, int nIndent)
@@ -68,11 +49,6 @@ void vtkMRMLColorNode::WriteXML(ostream& of, int nIndent)
   Superclass::WriteXML(of, nIndent);
 
   of << " type=\"" << this->GetType() << "\"";
-
-  if (this->FileName != nullptr)
-    {
-    // don't write it out, it's handled by the storage node
-    }
 }
 
 //----------------------------------------------------------------------------
@@ -85,150 +61,159 @@ void vtkMRMLColorNode::ReadXMLAttributes(const char** atts)
   const char* attName;
   const char* attValue;
   while (*atts != nullptr)
-    {
+  {
     attName = *(atts++);
     attValue = *(atts++);
     if (!strcmp(attName, "name"))
-      {
+    {
       this->SetName(attValue);
-      }
+    }
     else if (!strcmp(attName, "type"))
-      {
+    {
       int type;
       std::stringstream ss;
       ss << attValue;
       ss >> type;
       this->SetType(type);
-      }
+    }
     else if (!strcmp(attName, "filename"))
-      {
-      this->SetFileName(attValue);
-      // don't read in the file with the colours, it's handled by the storage
-      // node
+    {
       if (this->GetStorageNode() == nullptr)
-        {
+      {
         vtkWarningMacro("A color node has a file name, but no storage node, trying to create one");
         this->AddDefaultStorageNode(attValue);
-        }
       }
     }
+  }
   this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
-vtkLookupTable * vtkMRMLColorNode::GetLookupTable()
+vtkLookupTable* vtkMRMLColorNode::GetLookupTable()
 {
   vtkDebugMacro("Subclass has not implemented GetLookupTable, returning NULL");
   return nullptr;
 }
 
 //----------------------------------------------------------------------------
-vtkScalarsToColors * vtkMRMLColorNode::GetScalarsToColors()
+vtkScalarsToColors* vtkMRMLColorNode::GetScalarsToColors()
 {
   return this->GetLookupTable();
 }
 
 //----------------------------------------------------------------------------
-// Copy the node's attributes to this object.
-// Does NOT copy: ID, FilePrefix, Name, ID
-void vtkMRMLColorNode::Copy(vtkMRMLNode *anode)
+void vtkMRMLColorNode::CopyContent(vtkMRMLNode* anode, bool deepCopy /*=true*/)
 {
-  int disabledModify = this->StartModify();
+  MRMLNodeModifyBlocker blocker(this);
+  Superclass::CopyContent(anode, deepCopy);
 
-  Superclass::Copy(anode);
-  vtkMRMLColorNode *node = (vtkMRMLColorNode *) anode;
+  vtkMRMLColorNode* node = vtkMRMLColorNode::SafeDownCast(anode);
+  if (!node)
+  {
+    return;
+  }
 
   if (node->Type != -1)
-    {
-    // not using SetType, as that will basically recreate a new color node,
-    // very slow
+  {
+    // not using SetType, as that will basically recreate a new color node, very slow
     this->Type = node->Type;
+  }
+
+  if (deepCopy)
+  {
+    // Deep copy
+    int size = node->Properties.size();
+    this->Properties.resize(size);
+    for (int index = 0; index < size; index++)
+    {
+      this->Properties[index].DeepCopy(node->Properties[index]);
     }
-  this->SetFileName(node->FileName);
-  this->SetNoName(node->NoName);
-
-  // copy names
-  this->Names = node->Names;
-
-  this->NamesInitialised = node->NamesInitialised;
-
-  this->EndModify(disabledModify);
-
+  }
+  else
+  {
+    // Shallow copy
+    this->Properties = node->Properties;
+  }
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLColorNode::PrintSelf(ostream& os, vtkIndent indent)
 {
+  Superclass::PrintSelf(os, indent);
 
-  Superclass::PrintSelf(os,indent);
-
-  os << indent << "Name: " <<
-      (this->Name ? this->Name : "(none)") << "\n";
-
-
+  os << indent << "Name: " << (this->Name ? this->Name : "(none)") << "\n";
   os << indent << "Type: (" << this->GetTypeAsString() << ")\n";
 
-  os << indent << "NoName = " <<
-    (this->NoName ? this->NoName : "(not set)") <<  "\n";
-
-  os << indent << "Names array initialised: " << (this->GetNamesInitialised() ? "true" : "false") << "\n";
-
-  if (this->Names.size() > 0)
+  if (this->Properties.size() > 0)
+  {
+    os << indent << "Color properties:\n";
+    for (unsigned int i = 0; i < this->Properties.size(); i++)
     {
-    os << indent << "Color Names:\n";
-    for (unsigned int i = 0; i < this->Names.size(); i++)
+      PropertyType& prop = this->Properties[i];
+      if (!prop.Defined)
       {
-      double color[4];
-      this->GetColor(i, color);
-      os << indent << indent << i << " " << this->GetColorName(i)
-         << " (" << color[0] << ", " << color[1] << ", " << color[2]
-         << ", " << color[3] << ")"
-         << std::endl;
-      if ( i >= 10 )
-        {
-        os << indent << indent << "..." << endl;
-        break;
-        }
+        continue;
       }
+      os << indent << indent << i << " ";
+      os << this->GetColorName(i);
+      if (i < static_cast<unsigned int>(this->GetNumberOfColors()))
+      {
+        double color[4];
+        this->GetColor(i, color);
+        os << " (" << color[0] << ", " << color[1] << ", " << color[2] << ", " << color[3] << ")";
+      }
+      else
+      {
+        os << " (undefined)";
+      }
+      if (prop.Category)
+      {
+        os << " Category: " << prop.Category->GetAsPrintableString();
+      }
+      if (prop.Type)
+      {
+        os << " Type: " << prop.Type->GetAsPrintableString();
+      }
+      if (prop.TypeModifier)
+      {
+        os << " Type modifier: " << prop.TypeModifier->GetAsPrintableString();
+      }
+      if (prop.Region)
+      {
+        os << " Region: " << prop.Region->GetAsPrintableString();
+      }
+      if (prop.RegionModifier)
+      {
+        os << " Region modifier: " << prop.RegionModifier->GetAsPrintableString();
+      }
+      os << std::endl;
     }
+  }
 }
 
 //-----------------------------------------------------------
-
-void vtkMRMLColorNode::UpdateScene(vtkMRMLScene *scene)
+void vtkMRMLColorNode::UpdateScene(vtkMRMLScene* scene)
 {
-    Superclass::UpdateScene(scene);
+  Superclass::UpdateScene(scene);
 }
 
-
 //---------------------------------------------------------------------------
-void vtkMRMLColorNode::ProcessMRMLEvents ( vtkObject *caller,
-                                           unsigned long event,
-                                           void *callData )
+void vtkMRMLColorNode::ProcessMRMLEvents(vtkObject* caller, unsigned long event, void* callData)
 {
   Superclass::ProcessMRMLEvents(caller, event, callData);
-/*
-  vtkMRMLColorDisplayNode *dnode = this->GetDisplayNode();
-  if (dnode != nullptr && dnode == vtkMRMLColorDisplayNode::SafeDownCast(caller) &&
-      event ==  vtkCommand::ModifiedEvent)
-    {
-        this->InvokeEvent(vtkMRMLColorNode::DisplayModifiedEvent, nullptr);
-    }
-*/
-  return;
 }
 
 //---------------------------------------------------------------------------
-const char * vtkMRMLColorNode::GetTypeAsString()
+const char* vtkMRMLColorNode::GetTypeAsString()
 {
   if (this->Type == this->User)
-    {
+  {
     return "UserDefined";
-    }
+  }
   if (this->Type == this->File)
-    {
+  {
     return "File";
-    }
+  }
   return "(unknown)";
 }
 
@@ -248,17 +233,18 @@ void vtkMRMLColorNode::SetTypeToFile()
 void vtkMRMLColorNode::SetType(int type)
 {
   if (this->Type == type)
-    {
+  {
     vtkDebugMacro("SetType: type is already set to " << type);
     return;
-    }
+  }
 
   this->Type = type;
 
   vtkDebugMacro(<< this->GetClassName() << " (" << this << "): setting Type to " << type);
 
-  // subclass should over ride this and define colours according to the node
-  // type
+  // subclass should override this and define colors according to the node type
+
+  this->StorableModified();
 
   // invoke a modified event
   this->Modified();
@@ -272,218 +258,474 @@ void vtkMRMLColorNode::SetNamesFromColors()
 {
   const int numPoints = this->GetNumberOfColors();
   // reset the names
-  this->Names.resize(numPoints);
+  this->Properties.resize(numPoints);
 
   for (int i = 0; i < numPoints; ++i)
-    {
-#ifndef NDEBUG
-    bool res =
-#endif
-      this->SetNameFromColor(i);
-    // There is no reason why SetNameFromColor would fail because we control
-    // the array size.
-    assert(res);
-    }
-  this->NamesInitialisedOn();
+  {
+    this->SetNameFromColor(i);
+  }
 }
 
 //---------------------------------------------------------------------------
 bool vtkMRMLColorNode::SetNameFromColor(int index)
 {
-  double rgba[4] = {-1.,-1.,-1.,-1.};
+  double rgba[4] = { -1., -1., -1., -1. };
   bool res = this->GetColor(index, rgba);
   std::stringstream ss;
   ss.precision(3);
   ss.setf(std::ios::fixed, std::ios::floatfield);
-  ss << "R=";
-  ss << rgba[0];
-  ss << " G=";
-  ss << rgba[1];
-  ss << " B=";
-  ss << rgba[2];
-  ss << " A=";
-  ss << rgba[3];
+  ss << "R=" << rgba[0] << " G=" << rgba[1] << " B=" << rgba[2] << " A=" << rgba[3];
   vtkDebugMacro("SetNamesFromColors: " << index << " Name = " << ss.str().c_str());
-  if (this->SetColorName(index, ss.str().c_str()) == 0)
-    {
+  if (!this->SetColorName(index, ss.str().c_str()))
+  {
     vtkErrorMacro("SetNamesFromColors: Error setting color name " << index << " Name = " << ss.str().c_str());
     return false;
-    }
+  }
+
   return res;
 }
 
 //---------------------------------------------------------------------------
-bool vtkMRMLColorNode::HasNameFromColor(int index)
+bool vtkMRMLColorNode::GetProperty(int ind, vtkMRMLColorNode::PropertyType& prop)
 {
-  const char* colorName = this->GetColorName(index);
-  if (colorName && strcmp(colorName, this->GetNoName()) == 0)
-    {
+  if (ind < 0 || ind >= (int)this->Properties.size())
+  {
     return false;
-    }
-  std::stringstream ss;
-  ss << colorName;
-  std::string token;
-  ss >> token;
-  if (token.compare(0,2,"R=") != 0)
-    {
-    return false;
-    }
-  ss >> token;
-  if (token.compare(0,2,"G=") != 0)
-    {
-    return false;
-    }
-  ss >> token;
-  if (token.compare(0,2,"B=") != 0)
-    {
-    return false;
-    }
-  ss >> token;
-  if (token.compare(0,2,"A=") != 0)
-    {
-    return false;
-    }
+  }
+  prop = this->Properties[ind];
   return true;
 }
 
 //---------------------------------------------------------------------------
-const char *vtkMRMLColorNode::GetColorName(int ind)
+bool vtkMRMLColorNode::GetColorDefined(int index)
 {
-  if (!this->GetNamesInitialised())
-    {
-    this->SetNamesFromColors();
-    }
-
-  if (ind < (int)this->Names.size() && ind >= 0)
-    {
-    if (strcmp(this->Names[ind].c_str(), "") == 0)
-      {
-      return this->NoName;
-      }
-    else
-      {
-      return this->Names[ind].c_str();
-      }
-    }
-  else
-    {
-    vtkDebugMacro("vtkMRMLColorNode::GetColorName: index " << ind << " is out of range 0 - " << this->Names.size());
-    return "invalid";
-    }
+  if (index < 0 || index >= (int)this->Properties.size())
+  {
+    return false;
+  }
+  if (!this->Properties[index].Defined)
+  {
+    return false;
+  }
+  return true;
 }
 
 //---------------------------------------------------------------------------
-int vtkMRMLColorNode::GetColorIndexByName(const char *name)
+void vtkMRMLColorNode::SetColorDefined(int ind, bool defined)
+{
+  if (ind < 0 || ind >= (int)this->Properties.size())
+  {
+    vtkErrorMacro("SetColorDefined failed: invalid index " << ind);
+    return;
+  }
+  if (this->Properties[ind].Defined == defined)
+  {
+    return;
+  }
+  this->Properties[ind].Defined = defined;
+  this->StorableModified();
+  this->Modified();
+}
+
+//---------------------------------------------------------------------------
+const char* vtkMRMLColorNode::GetColorName(int index)
+{
+  // Do not use GetProperty because the content of the locally copied property's std::string does not survive the return
+  if (index < 0 || index >= (int)this->Properties.size())
+  {
+    return "";
+  }
+  if (!this->Properties[index].Defined)
+  {
+    return "";
+  }
+  return this->Properties[index].Name.c_str();
+}
+
+//---------------------------------------------------------------------------
+vtkCodedEntry* vtkMRMLColorNode::GetTerminologyCategory(int ind)
+{
+  PropertyType prop;
+  if (!this->GetProperty(ind, prop))
+  {
+    return nullptr;
+  }
+  return prop.Category;
+}
+
+//---------------------------------------------------------------------------
+vtkCodedEntry* vtkMRMLColorNode::GetTerminologyType(int ind)
+{
+  PropertyType prop;
+  if (!this->GetProperty(ind, prop))
+  {
+    return nullptr;
+  }
+  return prop.Type;
+}
+
+//---------------------------------------------------------------------------
+vtkCodedEntry* vtkMRMLColorNode::GetTerminologyTypeModifier(int ind)
+{
+  PropertyType prop;
+  if (!this->GetProperty(ind, prop))
+  {
+    return nullptr;
+  }
+  return prop.TypeModifier;
+}
+
+//---------------------------------------------------------------------------
+vtkCodedEntry* vtkMRMLColorNode::GetTerminologyRegion(int ind)
+{
+  PropertyType prop;
+  if (!this->GetProperty(ind, prop))
+  {
+    return nullptr;
+  }
+  return prop.Region;
+}
+
+//---------------------------------------------------------------------------
+vtkCodedEntry* vtkMRMLColorNode::GetTerminologyRegionModifier(int ind)
+{
+  PropertyType prop;
+  if (!this->GetProperty(ind, prop))
+  {
+    return nullptr;
+  }
+  return prop.RegionModifier;
+}
+
+//---------------------------------------------------------------------------
+std::string vtkMRMLColorNode::GetTerminologyAsString(int ind)
+{
+  PropertyType prop;
+  if (!this->GetProperty(ind, prop))
+  {
+    return std::string();
+  }
+
+  return vtkMRMLColorNode::GetTerminologyAsString("", prop.Category, prop.Type, prop.TypeModifier, "", prop.Region, prop.RegionModifier);
+}
+
+//---------------------------------------------------------------------------
+std::string vtkMRMLColorNode::GetTerminologyAsString(std::string terminologyContextName,
+                                                     vtkCodedEntry* category,
+                                                     vtkCodedEntry* type,
+                                                     vtkCodedEntry* typeModifier,
+                                                     std::string regionContextName,
+                                                     vtkCodedEntry* region /*=nullptr*/,
+                                                     vtkCodedEntry* regionModifier /*=nullptr*/)
+{
+  std::string serializedEntry("");
+  serializedEntry += terminologyContextName + "~";
+  if (category)
+  {
+    serializedEntry += (category->GetCodingSchemeDesignator() ? std::string(category->GetCodingSchemeDesignator()) : "") + "^" //
+                       + (category->GetCodeValue() ? std::string(category->GetCodeValue()) : "") + "^"                         //
+                       + (category->GetCodeMeaning() ? std::string(category->GetCodeMeaning()) : "") + "~";
+  }
+  else
+  {
+    serializedEntry += "^^~";
+  }
+  if (type)
+  {
+    serializedEntry += (type->GetCodingSchemeDesignator() ? std::string(type->GetCodingSchemeDesignator()) : "") + "^" //
+                       + (type->GetCodeValue() ? std::string(type->GetCodeValue()) : "") + "^"                         //
+                       + (type->GetCodeMeaning() ? std::string(type->GetCodeMeaning()) : "") + "~";
+  }
+  else
+  {
+    serializedEntry += "^^~";
+  }
+  if (typeModifier)
+  {
+    serializedEntry += (typeModifier->GetCodingSchemeDesignator() ? std::string(typeModifier->GetCodingSchemeDesignator()) : "") + "^" //
+                       + (typeModifier->GetCodeValue() ? std::string(typeModifier->GetCodeValue()) : "") + "^"                         //
+                       + (typeModifier->GetCodeMeaning() ? std::string(typeModifier->GetCodeMeaning()) : "") + "~";
+  }
+  else
+  {
+    serializedEntry += "^^~";
+  }
+
+  serializedEntry += regionContextName + "~";
+  if (region)
+  {
+    serializedEntry += (region->GetCodingSchemeDesignator() ? std::string(region->GetCodingSchemeDesignator()) : "") + "^" //
+                       + (region->GetCodeValue() ? std::string(region->GetCodeValue()) : "") + "^"                         //
+                       + (region->GetCodeMeaning() ? std::string(region->GetCodeMeaning()) : "") + "~";
+  }
+  else
+  {
+    serializedEntry += "^^~";
+  }
+  if (regionModifier)
+  {
+    serializedEntry += (regionModifier->GetCodingSchemeDesignator() ? std::string(regionModifier->GetCodingSchemeDesignator()) : "") + "^" //
+                       + (regionModifier->GetCodeValue() ? std::string(regionModifier->GetCodeValue()) : "") + "^"                         //
+                       + (regionModifier->GetCodeMeaning() ? std::string(regionModifier->GetCodeMeaning()) : "") + "~";
+  }
+  else
+  {
+    serializedEntry += "^^~";
+  }
+
+  return serializedEntry;
+}
+
+//---------------------------------------------------------------------------
+bool vtkMRMLColorNode::SetTerminologyFromString(int ind, std::string terminologyString)
+{
+  if (ind < 0 || ind >= (int)this->Properties.size())
+  {
+    vtkDebugMacro("vtkMRMLColorNode::GetProperty: index " << ind << " is out of range 0 - " << this->Properties.size());
+    return false;
+  }
+  PropertyType& prop = this->Properties[ind];
+
+  // Serialized terminology entry consists of the following: terminologyContextName, category (codingScheme,
+  // codeValue, codeMeaning triple), type, typeModifier, regionContextName, region, regionModifier
+  std::vector<std::string> entryComponents;
+  vtksys::SystemTools::Split(terminologyString, entryComponents, '~');
+  if (entryComponents.size() != 7)
+  {
+    return false;
+  }
+  if (!entryComponents[1].compare("^^"))
+  {
+    return false; // Empty category (none selection)
+  }
+
+  // Category
+  std::vector<std::string> categoryIds = vtksys::SystemTools::SplitString(entryComponents[1], '^');
+  if (categoryIds.size() != 3)
+  {
+    vtkErrorMacro("DeserializeTerminologyEntry: Invalid category component");
+    return false;
+  }
+  if (prop.Category == nullptr)
+  {
+    prop.Category = vtkSmartPointer<vtkCodedEntry>::New();
+  }
+  prop.Category->SetCodeMeaning(categoryIds[2].c_str());
+  prop.Category->SetCodeValue(categoryIds[1].c_str());
+  prop.Category->SetCodingSchemeDesignator(categoryIds[0].c_str());
+
+  // Type
+  std::vector<std::string> typeIds = vtksys::SystemTools::SplitString(entryComponents[2], '^');
+
+  if (typeIds.size() != 3)
+  {
+    vtkErrorMacro("DeserializeTerminologyEntry: Invalid type component");
+    return false;
+  }
+  if (prop.Type == nullptr)
+  {
+    prop.Type = vtkSmartPointer<vtkCodedEntry>::New();
+  }
+  prop.Type->SetCodeMeaning(typeIds[2].c_str());
+  prop.Type->SetCodeValue(typeIds[1].c_str());
+  prop.Type->SetCodingSchemeDesignator(typeIds[0].c_str());
+
+  // Type modifier (optional)
+  std::vector<std::string> typeModifierIds = vtksys::SystemTools::SplitString(entryComponents[3], '^');
+  if (typeModifierIds.size() == 3)
+  {
+    if (prop.TypeModifier == nullptr)
+    {
+      prop.TypeModifier = vtkSmartPointer<vtkCodedEntry>::New();
+    }
+    prop.TypeModifier->SetCodeMeaning(typeModifierIds[2].c_str());
+    prop.TypeModifier->SetCodeValue(typeModifierIds[1].c_str());
+    prop.TypeModifier->SetCodingSchemeDesignator(typeModifierIds[0].c_str());
+  }
+
+  // Region (optional)
+  std::vector<std::string> regionIds = vtksys::SystemTools::SplitString(entryComponents[5], '^');
+  if (regionIds.size() == 3)
+  {
+    if (prop.Region == nullptr)
+    {
+      prop.Region = vtkSmartPointer<vtkCodedEntry>::New();
+    }
+    prop.Region->SetCodeMeaning(regionIds[2].c_str());
+    prop.Region->SetCodeValue(regionIds[1].c_str());
+    prop.Region->SetCodingSchemeDesignator(regionIds[0].c_str());
+
+    // Region modifier (optional)
+    std::vector<std::string> regionModifierIds = vtksys::SystemTools::SplitString(entryComponents[6], '^');
+    if (regionModifierIds.size() == 3)
+    {
+      if (prop.RegionModifier == nullptr)
+      {
+        prop.RegionModifier = vtkSmartPointer<vtkCodedEntry>::New();
+      }
+      prop.RegionModifier->SetCodeMeaning(regionModifierIds[2].c_str());
+      prop.RegionModifier->SetCodeValue(regionModifierIds[1].c_str());
+      prop.RegionModifier->SetCodingSchemeDesignator(regionModifierIds[0].c_str());
+    }
+  }
+
+  if (this->Properties[ind] != prop)
+  {
+    this->Properties[ind] = prop;
+    this->StorableModified();
+    this->Modified();
+  }
+
+  // Set attribute indicating that the color table contains terminology
+  this->SetContainsTerminology(true);
+
+  return true;
+}
+
+//---------------------------------------------------------------------------
+bool vtkMRMLColorNode::SetTerminology(int ind,
+                                      std::string categoryCodingScheme,
+                                      std::string categoryCodeValue,
+                                      std::string categoryCodeMeaning,
+                                      std::string typeCodingScheme,
+                                      std::string typeCodeValue,
+                                      std::string typeCodeMeaning,
+                                      std::string typeModifierCodingScheme /*=""*/,
+                                      std::string typeModifierCodeValue /*=""*/,
+                                      std::string typeModifierCodeMeaning /*=""*/,
+                                      std::string regionCodingScheme /*=""*/,
+                                      std::string regionCodeValue /*=""*/,
+                                      std::string regionCodeMeaning /*=""*/,
+                                      std::string regionModifierCodingScheme /*=""*/,
+                                      std::string regionModifierCodeValue /*=""*/,
+                                      std::string regionModifierCodeMeaning /*=""*/)
+{
+  vtkNew<vtkCodedEntry> category;
+  if (!categoryCodeValue.empty())
+  {
+    category->SetValueSchemeMeaning(categoryCodeValue.c_str(), categoryCodingScheme.c_str(), categoryCodeMeaning.c_str());
+  }
+  vtkNew<vtkCodedEntry> type;
+  if (!typeCodeValue.empty())
+  {
+    type->SetValueSchemeMeaning(typeCodeValue.c_str(), typeCodingScheme.c_str(), typeCodeMeaning.c_str());
+  }
+  vtkNew<vtkCodedEntry> typeModifier;
+  if (!typeModifierCodeValue.empty())
+  {
+    typeModifier->SetValueSchemeMeaning(typeModifierCodeValue.c_str(), typeModifierCodingScheme.c_str(), typeModifierCodeMeaning.c_str());
+  }
+  vtkNew<vtkCodedEntry> region;
+  if (!regionCodeValue.empty())
+  {
+    region->SetValueSchemeMeaning(regionCodeValue.c_str(), regionCodingScheme.c_str(), regionCodeMeaning.c_str());
+  }
+  vtkNew<vtkCodedEntry> regionModifier;
+  if (!regionModifierCodeValue.empty())
+  {
+    regionModifier->SetValueSchemeMeaning(regionModifierCodeValue.c_str(), regionModifierCodingScheme.c_str(), regionModifierCodeMeaning.c_str());
+  }
+
+  std::string terminologyString = vtkMRMLColorNode::GetTerminologyAsString("", category, type, typeModifier, "", region, regionModifier);
+  return this->SetTerminologyFromString(ind, terminologyString);
+}
+
+//---------------------------------------------------------------------------
+int vtkMRMLColorNode::GetColorIndexByName(const char* name)
 {
   if (name == nullptr)
-    {
-    vtkErrorMacro("vtkMRMLColorNode::GetColorIndexByName: need a non-null name as argument");
+  {
+    vtkErrorMacro("GetColorIndexByName: need a non-null name as argument");
     return -1;
-    }
-
-  if (!this->GetNamesInitialised())
-    {
-    this->SetNamesFromColors();
-    }
+  }
 
   std::string strName = name;
   for (int i = 0; i < this->GetNumberOfColors(); ++i)
-    {
+  {
     if (strName == this->GetColorName(i))
-      {
+    {
       return i;
-      }
     }
+  }
   return -1;
 }
 
 //---------------------------------------------------------------------------
-std::string vtkMRMLColorNode::GetColorNameWithoutSpaces(int ind, const char *subst)
+std::string vtkMRMLColorNode::GetColorNameWithoutSpaces(int ind, const char* subst)
 {
   std::string name = std::string(this->GetColorName(ind));
   if (strstr(name.c_str(), " ") != nullptr)
-    {
-    std::string::size_type spaceIndex = name.find( " ", 0 );
+  {
+    std::string::size_type spaceIndex = name.find(" ", 0);
     while (spaceIndex != std::string::npos)
-      {
+    {
       name.replace(spaceIndex, 1, subst, 0, strlen(subst));
-      spaceIndex = name.find( " ", spaceIndex );
-      }
+      spaceIndex = name.find(" ", spaceIndex);
     }
+  }
 
   return name;
 }
 
 //---------------------------------------------------------------------------
-std::string vtkMRMLColorNode::GetColorNameAsFileName(int colorIndex, const char *subst)
+std::string vtkMRMLColorNode::GetColorNameAsFileName(int colorIndex, const char* subst)
 {
   std::string fileName(this->GetColorName(colorIndex));
-  std::string validCharacters =
+  std::string validCharacters = //
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabscdefghijklmnopqrstuvwxyz"
     "0123456789"
     "-_.()$!~#'%^{}";
   std::string::size_type pos = 0;
   size_t substLength = strlen(subst);
   while ((pos = fileName.find_first_not_of(validCharacters, pos)) != std::string::npos)
-    {
+  {
     fileName.replace(pos, 1, subst, substLength);
     pos += substLength;
     if (pos > 255)
-      {
+    {
       break;
-      }
     }
+  }
   // Truncate to 256 chars
   return fileName.substr(0, 256);
 }
 
 //---------------------------------------------------------------------------
-int vtkMRMLColorNode::SetColorName(int ind, const char *name)
+int vtkMRMLColorNode::SetColorName(int ind, const char* name)
 {
-  if (ind >= static_cast<int>(this->Names.size()) || ind < 0)
-    {
-    vtkErrorMacro("ERROR: SetColorName, index was out of bounds: "<< ind << ", current size is " << this->Names.size() << ", table name = " << (this->GetName() == nullptr ? "null" : this->GetName()));
+  if (ind >= static_cast<int>(this->Properties.size()) || ind < 0)
+  {
+    vtkErrorMacro("SetColorName: Index was out of bounds: " << ind << ", current size is " << this->Properties.size()
+                                                            << ", table name = " << (this->GetName() == nullptr ? "null" : this->GetName()));
     return 0;
-    }
-  std::string newName(name);
-  if (this->Names[ind] != newName)
-    {
-    this->Names[ind] = newName;
-    this->StorableModifiedTime.Modified();
+  }
+  PropertyType& prop = this->Properties[ind];
+  if (prop.Name != name || !prop.Defined)
+  {
+    prop.Name = name;
+    prop.Defined = true;
+    this->StorableModified();
     this->Modified();
-    }
+  }
   return 1;
 }
 
 //---------------------------------------------------------------------------
-int vtkMRMLColorNode::SetColorNameWithSpaces(int ind, const char *name, const char *subst)
+int vtkMRMLColorNode::SetColorNameWithSpaces(int ind, const char* name, const char* subst)
 {
-
   std::string nameString = std::string(name);
   std::string substString = std::string(subst);
-   // does the input name have the subst character in it?
+  // does the input name have the subst character in it?
   if (strstr(name, substString.c_str()) != nullptr)
-    {
+  {
     std::replace(nameString.begin(), nameString.end(), *subst, ' ');
     return this->SetColorName(ind, nameString.c_str());
-    }
+  }
   else
-    {
+  {
     // no substitutions necessary
     return this->SetColorName(ind, name);
-    }
-}
-
-//---------------------------------------------------------------------------
-int vtkMRMLColorNode::GetNumberOfColors()
-{
-  return static_cast<int>(this->Names.size());
-}
-
-//---------------------------------------------------------------------------
-bool vtkMRMLColorNode::GetColor(int vtkNotUsed(index), double vtkNotUsed(color)[4])
-{
-  return false;
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -491,21 +733,21 @@ void vtkMRMLColorNode::Reset(vtkMRMLNode* vtkNotUsed(defaultNode))
 {
   // don't need to call reset on color nodes, as all but the User color table
   // node are static, and that's taken care of in the vtkMRMLColorTableNode
-  //Superclass::Reset(defaultNode);
+  // Superclass::Reset(defaultNode);
 }
 
 //---------------------------------------------------------------------------
 bool vtkMRMLColorNode::GetModifiedSinceRead()
 {
-  return this->Superclass::GetModifiedSinceRead() ||
-    (this->GetScalarsToColors() &&
-     this->GetScalarsToColors()->GetMTime() > this->GetStoredTime());
+  return this->Superclass::GetModifiedSinceRead() || //
+         (this->GetScalarsToColors() &&              //
+          this->GetScalarsToColors()->GetMTime() > this->GetStoredTime());
 }
 
 //---------------------------------------------------------------------------
 vtkLookupTable* vtkMRMLColorNode::CreateLookupTableCopy()
 {
-  vtkLookupTable* copiedLut = copiedLut = vtkLookupTable::New();
+  vtkLookupTable* copiedLut = vtkLookupTable::New();
   copiedLut->DeepCopy(this->GetLookupTable());
 
   // Workaround for VTK bug in vtkLookupTable::DeepCopy
@@ -513,4 +755,50 @@ vtkLookupTable* vtkMRMLColorNode::CreateLookupTableCopy()
   copiedLut->BuildSpecialColors();
 
   return copiedLut;
+}
+
+//---------------------------------------------------------------------------
+bool vtkMRMLColorNode::GetContainsTerminology()
+{
+  return (this->GetAttribute(this->GetContainsTerminologyAttributeName()) != nullptr);
+}
+
+//---------------------------------------------------------------------------
+void vtkMRMLColorNode::SetContainsTerminology(bool containsTerminology)
+{
+  if (containsTerminology)
+  {
+    this->SetAttribute(this->GetContainsTerminologyAttributeName(), "true");
+  }
+  else
+  {
+    this->RemoveAttribute(this->GetContainsTerminologyAttributeName());
+  }
+}
+
+//----------------------------------------------------------------------------
+void vtkMRMLColorNode::SetAllColorsDefined()
+{
+  const size_t numberOfColors = static_cast<size_t>(this->GetNumberOfColors());
+  bool modified = false;
+  if (this->Properties.size() < numberOfColors)
+  {
+    this->Properties.resize(numberOfColors);
+    modified = true;
+  }
+  for (size_t index = 0; index < numberOfColors; index++)
+  {
+    if (this->Properties[index].Defined == true)
+    {
+      // no change
+      continue;
+    }
+    this->Properties[index].Defined = true;
+    modified = true;
+  }
+  if (modified)
+  {
+    this->StorableModified();
+    this->Modified();
+  }
 }

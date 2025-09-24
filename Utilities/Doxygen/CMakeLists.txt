@@ -1,4 +1,4 @@
-find_package(Doxygen 1.8.4 QUIET)
+find_package(Doxygen 1.10.0 QUIET)
 
 if( DOXYGEN_FOUND )
   if( DOXYGEN_DOT_FOUND )
@@ -42,7 +42,7 @@ if( DOXYGEN_FOUND )
     set_target_properties(cpp-doc PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
     set_target_properties(cpp-doc-tarball-clean PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
     set_target_properties(cpp-doc-tarball PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD 1)
-      
+
     #
     # Dev documentation
     #

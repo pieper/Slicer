@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 
 # Given a variable name, this function will display messages indicating what the current
 # value of the variable.
@@ -163,4 +163,3 @@ endfunction()
 if(TEST_slicer_setting_variable_message_test)
   slicer_setting_variable_message_test()
 endif()
-

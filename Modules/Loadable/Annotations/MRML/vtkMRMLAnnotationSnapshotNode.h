@@ -10,17 +10,19 @@
 #include "vtkMRMLAnnotationControlPointsNode.h"
 #include "vtkMRMLAnnotationNode.h"
 
-#include <vtkStdString.h>
+// VTK includes
 class vtkImageData;
 class vtkStringArray;
 class vtkMRMLStorageNode;
 
-/// \ingroup Slicer_QtModules_Annotation
-class  VTK_SLICER_ANNOTATIONS_MODULE_MRML_EXPORT vtkMRMLAnnotationSnapshotNode : public vtkMRMLAnnotationNode
+// STD includes
+#include <string>
+
+class VTK_SLICER_ANNOTATIONS_MODULE_MRML_EXPORT vtkMRMLAnnotationSnapshotNode : public vtkMRMLAnnotationNode
 {
 public:
-  static vtkMRMLAnnotationSnapshotNode *New();
-  vtkTypeMacro(vtkMRMLAnnotationSnapshotNode,vtkMRMLAnnotationNode);
+  static vtkMRMLAnnotationSnapshotNode* New();
+  vtkTypeMacro(vtkMRMLAnnotationSnapshotNode, vtkMRMLAnnotationNode);
 
   //--------------------------------------------------------------------------
   // MRMLNode methods
@@ -29,18 +31,18 @@ public:
   vtkMRMLNode* CreateNodeInstance() override;
   // Description:
   // Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "AnnotationSnapshot";}
+  const char* GetNodeTagName() override { return "AnnotationSnapshot"; }
 
-  const char* GetIcon() override {return ":/Icons/ViewCamera.png";}
+  const char* GetIcon() override { return ":/Icons/ViewCamera.png"; }
 
-  void SetSnapshotDescription(const vtkStdString& newDescription);
-  vtkGetMacro(SnapshotDescription, vtkStdString)
+  void SetSnapshotDescription(const std::string& newDescription);
+  vtkGetMacro(SnapshotDescription, std::string);
 
   void WriteXML(ostream& of, int nIndent) override;
   void ReadXMLAttributes(const char** atts) override;
 
   /// The attached screenshot
-  virtual void SetScreenShot(vtkImageData* );
+  virtual void SetScreenShot(vtkImageData*);
   vtkGetObjectMacro(ScreenShot, vtkImageData);
 
   /// The ScaleFactor of the Screenshot
@@ -73,7 +75,7 @@ protected:
   void operator=(const vtkMRMLAnnotationSnapshotNode&);
 
   /// The associated Description
-  vtkStdString SnapshotDescription;
+  std::string SnapshotDescription;
 
   /// The vtkImageData of the screenshot
   vtkImageData* ScreenShot;
@@ -87,7 +89,6 @@ protected:
   int ScreenShotType;
 
   double ScaleFactor;
-
 };
 
 #endif

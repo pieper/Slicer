@@ -55,22 +55,24 @@ macro(SlicerMacroBuildModuleLogic)
     ${Slicer_ModuleMRML_INCLUDE_DIRS}
     )
 
-  if(Slicer_BUILD_CLI_SUPPORT)
-    # Third-party library
-    find_package(SlicerExecutionModel REQUIRED ModuleDescriptionParser)
-    list(APPEND MODULELOGIC_INCLUDE_DIRECTORIES
-      ${ModuleDescriptionParser_INCLUDE_DIRS}
-      )
+  # Third-party library
+  find_package(SlicerExecutionModel REQUIRED ModuleDescriptionParser)
+  list(APPEND MODULELOGIC_INCLUDE_DIRECTORIES
+    ${ModuleDescriptionParser_INCLUDE_DIRS}
+    )
 
-    # Note: Linking against qSlicerBaseQTCLI provides logic with
-    #       access to the core application modulemanager. Using the module manager
-    #       a module logic can then use the services provided by registrered
-    #       command line module (CLI).
+  # Note: Linking against qSlicerBaseQTCLI provides logic with
+  #       access to the core application modulemanager. Using the module manager
+  #       a module logic can then use the services provided by registered
+  #       command line module (CLI).
 
-    list(APPEND MODULELOGIC_TARGET_LIBRARIES
-      qSlicerBaseQTCLI
-      )
-  else()
+  list(APPEND MODULELOGIC_TARGET_LIBRARIES
+    qSlicerBaseQTCLI
+    )
+  # HACK Explicitly list transitive VTK dependencies because _get_dependencies_recurse
+  # used in vtkAddon/CMake/vtkMacroKitPythonWrap.cmake only recurses over dependencies
+  # that are VTK python wrapped.
+  if(NOT ${MODULELOGIC_DISABLE_WRAP_PYTHON} AND VTK_WRAP_PYTHON AND BUILD_SHARED_LIBS)
     list(APPEND MODULELOGIC_TARGET_LIBRARIES
       SlicerBaseLogic
       MRMLDisplayableManager
@@ -113,14 +115,7 @@ macro(SlicerMacroBuildModuleLogic)
   if(NOT ${MODULELOGIC_DISABLE_WRAP_PYTHON} AND VTK_WRAP_PYTHON AND BUILD_SHARED_LIBS)
 
     set(Slicer_Wrapped_LIBRARIES
-      SlicerBaseLogicPythonD
       )
-
-    foreach(library ${MODULELOGIC_TARGET_LIBRARIES})
-      if(TARGET ${library}PythonD)
-        list(APPEND Slicer_Wrapped_LIBRARIES ${library}PythonD)
-      endif()
-    endforeach()
 
     SlicerMacroPythonWrapModuleVTKLibrary(
       NAME ${MODULELOGIC_NAME}
@@ -129,23 +124,15 @@ macro(SlicerMacroBuildModuleLogic)
       RELATIVE_PYTHON_DIR "."
       )
 
-    # Set python module logic output
-    set_target_properties(${MODULELOGIC_NAME}Python ${MODULELOGIC_NAME}PythonD PROPERTIES
-      RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_QTLOADABLEMODULES_BIN_DIR}"
-      LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_QTLOADABLEMODULES_LIB_DIR}"
-      ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_QTLOADABLEMODULES_LIB_DIR}"
-      )
-
     if(NOT "${MODULELOGIC_FOLDER}" STREQUAL "")
       set_target_properties(${MODULELOGIC_NAME}Python PROPERTIES FOLDER ${MODULELOGIC_FOLDER})
-      set_target_properties(${MODULELOGIC_NAME}PythonD PROPERTIES FOLDER ${MODULELOGIC_FOLDER})
       if(TARGET ${MODULELOGIC_NAME}Hierarchy)
         set_target_properties(${MODULELOGIC_NAME}Hierarchy PROPERTIES FOLDER ${MODULELOGIC_FOLDER})
       endif()
     endif()
 
     # Export target
-    set_property(GLOBAL APPEND PROPERTY Slicer_TARGETS ${MODULELOGIC_NAME}Python ${MODULELOGIC_NAME}PythonD)
+    set_property(GLOBAL APPEND PROPERTY Slicer_TARGETS ${MODULELOGIC_NAME}Python)
   endif()
 
 endmacro()

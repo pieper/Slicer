@@ -48,15 +48,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLLinearTransformSlider* widget = reinterpret_cast<qMRMLLinearTransformSlider*>(data);
 
   CTKCOMPARE(widget->value(), 60.00);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLLinearTransformSliderEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLLinearTransformSliderEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -72,17 +72,14 @@ int qMRMLLinearTransformSliderEventTranslatorPlayerTest1(int argc, char * argv [
   // Test case 1
   QWidget qwidget;
   qMRMLLinearTransformSlider* widget = new qMRMLLinearTransformSlider(&qwidget);
-  etpWidget.addTestCase(widget,
-                        xmlDirectory + "qMRMLLinearTransformSliderEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(widget, xmlDirectory + "qMRMLLinearTransformSliderEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

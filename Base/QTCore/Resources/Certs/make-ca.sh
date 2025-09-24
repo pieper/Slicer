@@ -10,7 +10,7 @@
 # Original script available at [1] and adapted by Jean-Christophe Fillion-Robin
 # to only generate a .crt bundle needed for OpenSSL.
 #
-# [1] http://anduin.linuxfromscratch.org/BLFS/other/make-ca.sh-20170514
+# [1] https://anduin.linuxfromscratch.org/BLFS/other/make-ca.sh-20170514
 #
 # Changes:
 #
@@ -35,7 +35,7 @@
 # 20161210 - Add note about --force switch when same version
 # 20161126 - Add -D/--destdir switch
 # 20161124 - Add -f/--force switch to bypass version check
-#          - Add multiple switches to allow for alternate localtions
+#          - Add multiple switches to allow for alternate locations
 #          - Add help text
 # 20161118 - Drop make-cert.pl script
 #          - Add support for Java and NSSDB
@@ -288,6 +288,13 @@ for tempfile in ${TEMPDIR}/certs/*.tmp; do
   echo "Certificate:  ${certname}"
   echo "Keyhash:      ${keyhash}"
 
+  if [[ "${certname}" == "DST Root CA X3" ]]; then
+    echo "*************************************"
+    echo "* Skipping ${certname}"
+    echo "*************************************"
+    continue
+  fi
+
   # Import certificates trusted for SSL/TLS into
   # GnuTLS certificate bundle
   if test "${satrust}x" == "Cx"; then
@@ -315,7 +322,7 @@ unset tempfile
 # Sanity check
 count=$(ls "${TEMPDIR}"/ssl/certs/*.pem | wc -l)
 # Historically there have been between 152 and 165 certs
-# A minimum of 140 should be safe for a rudimentry sanity check
+# A minimum of 140 should be safe for a rudimentary sanity check
 if test "${count}" -lt "140" ; then
     echo "Error! Only ${count} certificates were generated!"
     echo "Exiting without update!"
@@ -331,8 +338,10 @@ popd > /dev/null
 echo "Copy ${TEMPDIR}/ssl/ca-bundle.crt to ${DESTDIR}/Slicer.crt"
 cp "${TEMPDIR}/ssl/ca-bundle.crt" "${DESTDIR}/Slicer.crt"
 
+# Remove trailing whitespaces
+sed -i 's/[ \t]*$//' "${DESTDIR}/Slicer.crt"
+
 # Clean up the mess
 rm -rf "${TEMPDIR}"
 
 # End /usr/sbin/make-ca.sh
-

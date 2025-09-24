@@ -21,12 +21,11 @@
 /// \brief MRML node to represent a 3D view.
 ///
 /// View node contains view parameters.
-class VTK_MRML_EXPORT vtkMRMLViewNode
-  : public vtkMRMLAbstractViewNode
+class VTK_MRML_EXPORT vtkMRMLViewNode : public vtkMRMLAbstractViewNode
 {
 public:
-  static vtkMRMLViewNode *New();
-  vtkTypeMacro(vtkMRMLViewNode,vtkMRMLAbstractViewNode);
+  static vtkMRMLViewNode* New();
+  vtkTypeMacro(vtkMRMLViewNode, vtkMRMLAbstractViewNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   //--------------------------------------------------------------------------
@@ -36,7 +35,7 @@ public:
   vtkMRMLNode* CreateNodeInstance() override;
 
   /// Read node attributes from XML file
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
@@ -52,9 +51,16 @@ public:
   static double* defaultBackgroundColor();
   static double* defaultBackgroundColor2();
 
+  /// Return default box color
+  static void GetDefaultBoxColor(double color[3]);
+
   /// Indicates if the box is visible
   vtkGetMacro(BoxVisible, int);
   vtkSetMacro(BoxVisible, int);
+
+  /// Box color as RGB
+  vtkSetVector3Macro(BoxColor, double);
+  vtkGetVector3Macro(BoxColor, double);
 
   /// Indicates if the axis labels are visible
   vtkGetMacro(AxisLabelsVisible, int);
@@ -142,6 +148,17 @@ public:
   vtkGetMacro(GPUMemorySize, int);
   vtkSetMacro(GPUMemorySize, int);
 
+  ///@{
+  /// Enable/Disable automatic immediate release of graphics resources
+  /// when not in use. If GPU volume rendering is used, enabling this option
+  /// makes the volume immediately unloaded from GPU memory when visibility
+  /// is turned off.
+  /// Disabled by default to allow faster toggling of visibility.
+  vtkSetMacro(AutoReleaseGraphicsResources, bool);
+  vtkGetMacro(AutoReleaseGraphicsResources, bool);
+  vtkBooleanMacro(AutoReleaseGraphicsResources, bool);
+  ///@}
+
   /// Expected FPS
   vtkSetMacro(ExpectedFPS, double);
   vtkGetMacro(ExpectedFPS, double);
@@ -151,7 +168,7 @@ public:
   static const char* GetVolumeRenderingQualityAsString(int id);
   static int GetVolumeRenderingQualityFromString(const char* name);
 
-  /// Rycasting technique for volume rendering
+  /// Raycasting technique for volume rendering
   vtkGetMacro(RaycastTechnique, int);
   vtkSetMacro(RaycastTechnique, int);
   static const char* GetRaycastTechniqueAsString(int id);
@@ -172,15 +189,15 @@ public:
 
   /// Modes for automatically controlling camera
   enum
-    {
+  {
     RotateAround = 0,
     LookFrom,
     ViewAxisMode_Last
-    };
+  };
 
   /// Rotate camera directions
   enum
-    {
+  {
     PitchUp = 0,
     PitchDown,
     RollLeft,
@@ -188,11 +205,11 @@ public:
     YawLeft,
     YawRight,
     SpinDirection_Last
-    };
+  };
 
   /// Stereo modes
   enum
-    {
+  {
     NoStereo = 0,
     RedBlue,
     Anaglyph,
@@ -202,52 +219,52 @@ public:
     UserDefined_2,
     UserDefined_3,
     StereoType_Last
-    };
+  };
 
   /// Render modes
   enum
-    {
+  {
     Perspective = 0,
     Orthographic,
     RenderMode_Last
-    };
+  };
 
   /// Animation mode
   enum
-    {
+  {
     Off = 0,
     Spin,
     Rock,
     AnimationMode_Last
-    };
+  };
 
   /// Quality setting used for \sa VolumeRenderingQuality
   enum
-    {
+  {
     Adaptive = 0, ///< quality determined from desired update rate
     Normal,       ///< good image quality at reasonable speed
     Maximum,      ///< high image quality, rendering time is not considered
     VolumeRenderingQuality_Last
-    };
+  };
 
   /// Ray casting technique for volume rendering
   enum
-    {
-    Composite = 0, // Composite with directional lighting (default)
+  {
+    Composite = 0,         // Composite with directional lighting (default)
     CompositeEdgeColoring, // Composite with fake lighting (edge coloring, faster) - Not used
     MaximumIntensityProjection,
     MinimumIntensityProjection,
-    GradiantMagnitudeOpacityModulation, // Not used
+    GradiantMagnitudeOpacityModulation,       // Not used
     IllustrativeContextPreservingExploration, // Not used
     RaycastTechnique_Last
-    };
+  };
 
   /// Events
   enum
-    {
+  {
     GraphicalResourcesCreatedEvent = 19001,
     ResetFocalPointRequestedEvent,
-    };
+  };
 
   /// Get/Set a flag indicating whether this node is actively being
   /// manipulated (usually) by a user interface. This flag is used by
@@ -270,7 +287,9 @@ public:
     AnimationModeFlag,
     RenderModeFlag,
     BoxVisibleFlag,
-    BoxLabelVisibileFlag,
+    BoxColorFlag,
+    BoxLabelVisibleFlag,
+    BoxLabelVisibileFlag = BoxLabelVisibleFlag, ///< \deprecated Use BoxLabelVisibleFlag instead
     BackgroundColorFlag,
     StereoTypeFlag,
     OrientationMarkerTypeFlag,
@@ -279,12 +298,17 @@ public:
     RulerColorFlag,
     UseDepthPeelingFlag,
     FPSVisibleFlag,
+    ShadowsVisibilityFlag,
+    AmbientShadowsSizeScaleFlag,
+    AmbientShadowsVolumeOpacityThresholdFlag,
+    AmbientShadowsIntensityScaleFlag,
+    AmbientShadowsIntensityShiftFlag,
   };
 
   ///
   /// toggle the view linking
-  vtkGetMacro (LinkedControl, int );
-  vtkSetMacro (LinkedControl, int );
+  vtkGetMacro(LinkedControl, int);
+  vtkSetMacro(LinkedControl, int);
   vtkBooleanMacro(LinkedControl, int);
 
   /// Get/Set a flag indicating what parameters are being manipulated
@@ -295,6 +319,47 @@ public:
   void SetInteractionFlags(unsigned int);
   vtkGetMacro(InteractionFlags, unsigned int);
 
+  //@{
+  /// Show shadows to improve depth perception.
+  /// Currently, only ambient shadows (screen-space ambient occlusion) method is supported and AmbientShadowsSizeScale, AmbientShadowsVolumeOpacityThreshold,
+  /// AmbientShadowsIntensityScale, and AmbientShadowsIntensityShift parameters control its appearance.
+  vtkGetMacro(ShadowsVisibility, bool);
+  vtkSetMacro(ShadowsVisibility, bool);
+  vtkBooleanMacro(ShadowsVisibility, bool);
+  //@}
+
+  //@{
+  /// Ambient shadows size scale.
+  /// Specifies size of features to be emphasized by shadows.The scale is logarithmic, default (0.0) corresponds
+  /// to object size of about 100 (in scene physical units).
+  vtkGetMacro(AmbientShadowsSizeScale, double);
+  vtkSetMacro(AmbientShadowsSizeScale, double);
+  //@}
+
+  //@{
+  /// Volume rendering opacity above this value will cast shadows.
+  vtkGetMacro(AmbientShadowsVolumeOpacityThreshold, double);
+  vtkSetMacro(AmbientShadowsVolumeOpacityThreshold, double);
+  //@}
+
+  //@{
+  /// Ambient shadows intensity scale.
+  /// Specifies the strength of darkening by to shadows.
+  /// Higher value means stronger darkening.
+  /// Default is 1.0.
+  vtkGetMacro(AmbientShadowsIntensityScale, double);
+  vtkSetMacro(AmbientShadowsIntensityScale, double);
+  //@}
+
+  //@{
+  /// Ambient shadows intensity shift.
+  /// Specifies the minimum level of occlusion that results in visible darkening.
+  /// Higher value means darkening only appear at stronger occlusions.
+  /// Default is 0.0.
+  vtkGetMacro(AmbientShadowsIntensityShift, double);
+  vtkSetMacro(AmbientShadowsIntensityShift, double);
+  //@}
+
 protected:
   vtkMRMLViewNode();
   ~vtkMRMLViewNode() override;
@@ -304,6 +369,7 @@ protected:
   int FiducialsVisible;
   int FiducialLabelsVisible;
   int BoxVisible;
+  double BoxColor[3];
   int AxisLabelsVisible;
   int AxisLabelsCameraDependent;
   double FieldOfView;
@@ -344,6 +410,9 @@ protected:
   /// A value of 0 indicates to use the default value in the settings
   int GPUMemorySize;
 
+  /// Immediately release graphics resources when they are not in use.
+  bool AutoReleaseGraphicsResources;
+
   /// Expected frame per second rendered
   double ExpectedFPS;
 
@@ -371,10 +440,15 @@ protected:
   /// If \sa VolumeRenderingQuality is set to maximum quality, then a fix oversampling factor of 10 is used.
   double VolumeRenderingOversamplingFactor;
 
+  bool ShadowsVisibility{ false };
+  double AmbientShadowsSizeScale{ 0.3 };
+  double AmbientShadowsVolumeOpacityThreshold{ 0.25 };
+  double AmbientShadowsIntensityScale{ 1.0 };
+  double AmbientShadowsIntensityShift{ 0.0 };
+
   int LinkedControl;
   int Interacting;
   unsigned int InteractionFlags;
-
 };
 
 #endif

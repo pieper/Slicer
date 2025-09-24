@@ -40,7 +40,7 @@ class vtkStringArray;
 ///
 /// qMRMLPlotView supports only 2D plots.
 /// For extending this class to 3DPlots it is needed to expand the mother class
-/// cktVTKChartView to use also vtkChartXYZ (currently exploiting only vtkChartXY).
+/// ctkVTKChartView to use also vtkChartXYZ (currently exploiting only vtkChartXY).
 
 class QMRML_WIDGETS_EXPORT qMRMLPlotView : public ctkVTKChartView
 {
@@ -57,7 +57,7 @@ public:
   vtkMRMLScene* mrmlScene() const;
 
   /// Get the PlotView node observed by view.
-  vtkMRMLPlotViewNode* mrmlPlotViewNode()const;
+  vtkMRMLPlotViewNode* mrmlPlotViewNode() const;
 
   /// Redefine the sizeHint so layouts work properly.
   QSize sizeHint() const override;
@@ -76,9 +76,10 @@ public slots:
   /// Unselect all the points
   void RemovePlotSelections();
 
-  /// save the current plot as svg
-  void saveAsSVG(const QString &filePathPrefix);
-
+  /// Save the current plot as vector graphics, in svg file format.
+  /// Note that regardless of the file extension in the input fileName,
+  /// the extension of the created file will always be ".svg".
+  void saveAsSVG(const QString& fileName);
 
 signals:
 
@@ -88,7 +89,7 @@ signals:
   void mrmlSceneChanged(vtkMRMLScene*);
 
   /// Signal emitted when a data point or more has been selected. Returns
-  /// the MRMLPlotSeriesNodes IDs and the correspective arrays with
+  /// the MRMLPlotSeriesNodes IDs and the corresponding arrays with
   /// the data points ids (vtkIdTypeArray).
   void dataSelected(vtkStringArray* mrmlPlotSeriesIDs, vtkCollection* selectionCol);
 

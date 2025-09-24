@@ -34,6 +34,7 @@
 
 // CTK includes
 #include <ctkVTKObject.h>
+#include <ctkVTKSliceView_p.h>
 
 // qMRML includes
 #include "qMRMLSliceView.h"
@@ -49,21 +50,21 @@
 class vtkMRMLDisplayableManagerGroup;
 class vtkMRMLSliceNode;
 class vtkMRMLCameraNode;
+class vtkMRMLSliceViewInteractorStyle;
 class vtkObject;
 
 //-----------------------------------------------------------------------------
-class qMRMLSliceViewPrivate: public QObject
+class qMRMLSliceViewPrivate : public ctkVTKSliceViewPrivate
 {
   Q_OBJECT
   QVTK_OBJECT
   Q_DECLARE_PUBLIC(qMRMLSliceView);
-protected:
-  qMRMLSliceView* const q_ptr;
+
 public:
   qMRMLSliceViewPrivate(qMRMLSliceView& object);
   ~qMRMLSliceViewPrivate() override;
 
-  virtual void init();
+  void init() override;
 
   void setMRMLScene(vtkMRMLScene* scene);
 
@@ -77,10 +78,11 @@ public slots:
 protected:
   void initDisplayableManagers();
 
-  vtkMRMLDisplayableManagerGroup*    DisplayableManagerGroup;
-  vtkMRMLScene*                      MRMLScene;
-  vtkMRMLSliceNode*                  MRMLSliceNode;
-  QColor                             InactiveBoxColor;
+  vtkMRMLDisplayableManagerGroup* DisplayableManagerGroup;
+  vtkMRMLSliceViewInteractorStyle* InteractorObserver;
+  vtkMRMLScene* MRMLScene;
+  vtkMRMLSliceNode* MRMLSliceNode;
+  QColor InactiveBoxColor;
 
   class vtkInternalLightBoxRendererManagerProxy;
   vtkSmartPointer<vtkInternalLightBoxRendererManagerProxy> LightBoxRendererManagerProxy;
@@ -90,21 +92,18 @@ protected:
 // qMRMLSliceWidgetPrivate::vtkInternalLightBoxRendererManagerProxy class
 
 //---------------------------------------------------------------------------
-class qMRMLSliceViewPrivate::vtkInternalLightBoxRendererManagerProxy
-  : public vtkMRMLLightBoxRendererManagerProxy
+class qMRMLSliceViewPrivate::vtkInternalLightBoxRendererManagerProxy : public vtkMRMLLightBoxRendererManagerProxy
 {
 public:
   static vtkInternalLightBoxRendererManagerProxy* New();
-  vtkTypeMacro(vtkInternalLightBoxRendererManagerProxy,
-                       vtkMRMLLightBoxRendererManagerProxy);
-
+  vtkTypeMacro(vtkInternalLightBoxRendererManagerProxy, vtkMRMLLightBoxRendererManagerProxy);
 
   /// Method to query the mapping from an id of a LightBox frame to
   /// the Renderer for that frame
-  vtkRenderer *GetRenderer(int id) override;
+  vtkRenderer* GetRenderer(int id) override;
 
   /// Method to set the real LightBoxManager
-  virtual void SetLightBoxRendererManager(vtkLightBoxRendererManager *mgr);
+  virtual void SetLightBoxRendererManager(vtkLightBoxRendererManager* mgr);
 
 protected:
   vtkInternalLightBoxRendererManagerProxy();
@@ -115,8 +114,6 @@ private:
   void operator=(const vtkInternalLightBoxRendererManagerProxy&) = delete;
 
   vtkWeakPointer<vtkLightBoxRendererManager> LightBoxRendererManager;
-
 };
-
 
 #endif

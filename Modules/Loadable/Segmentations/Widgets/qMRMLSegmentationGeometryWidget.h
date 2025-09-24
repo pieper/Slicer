@@ -37,7 +37,6 @@ class vtkMRMLNode;
 class vtkMRMLSegmentationNode;
 class qMRMLSegmentationGeometryWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_Segmentations_Widgets
 class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_EXPORT qMRMLSegmentationGeometryWidget : public qMRMLWidget
 {
   Q_OBJECT
@@ -46,6 +45,7 @@ class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_EXPORT qMRMLSegmentationGeometryWidg
   Q_PROPERTY(bool editEnabled READ editEnabled WRITE setEditEnabled)
   Q_PROPERTY(double oversamplingFactor READ oversamplingFactor WRITE setOversamplingFactor)
   Q_PROPERTY(bool isotropicSpacing READ isotropicSpacing WRITE setIsotropicSpacing)
+  Q_PROPERTY(bool padSegmentation READ padSegmentation WRITE setPadSegmentation)
 
 public:
   typedef qMRMLWidget Superclass;
@@ -55,13 +55,14 @@ public:
   ~qMRMLSegmentationGeometryWidget() override;
 
   /// Get segmentation MRML node
-  Q_INVOKABLE vtkMRMLSegmentationNode* segmentationNode()const;
-  Q_INVOKABLE QString segmentationNodeID()const;
+  Q_INVOKABLE vtkMRMLSegmentationNode* segmentationNode() const;
+  Q_INVOKABLE QString segmentationNodeID() const;
 
-  bool editEnabled()const;
-  vtkMRMLNode* sourceNode()const;
-  double oversamplingFactor()const;
-  bool isotropicSpacing()const;
+  bool editEnabled() const;
+  vtkMRMLNode* sourceNode() const;
+  double oversamplingFactor() const;
+  bool isotropicSpacing() const;
+  bool padSegmentation() const;
 
   void setSpacing(double aSpacing[3]);
 
@@ -76,6 +77,7 @@ public slots:
   void setSourceNode(vtkMRMLNode* sourceNode);
   void setOversamplingFactor(double aOversamplingFactor);
   void setIsotropicSpacing(bool aIsotropicSpacing);
+  void setPadSegmentation(bool aPadSegmentation);
 
   /// Set reference geometry conversion parameter to the one specified
   void setReferenceImageGeometryForSegmentationNode();
@@ -93,6 +95,7 @@ protected slots:
   void onOversamplingFactorChanged(double);
   void onIsotropicSpacingChanged(bool);
   void onUserSpacingChanged(double*);
+  void onPadSegmentationChanged(bool);
 
 protected:
   QScopedPointer<qMRMLSegmentationGeometryWidgetPrivate> d_ptr;

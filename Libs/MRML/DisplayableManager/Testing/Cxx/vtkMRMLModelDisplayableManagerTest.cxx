@@ -47,9 +47,10 @@
 #include <vtkWindowToImageFilter.h>
 
 // STD includes
+#include <string>
 
-const char vtkMRMLModelDisplayableManagerTest1EventLog[] =
-"# StreamVersion 1\n";
+const char vtkMRMLModelDisplayableManagerTest1EventLog[] = //
+  "# StreamVersion 1\n";
 
 //----------------------------------------------------------------------------
 int vtkMRMLModelDisplayableManagerTest(int argc, char* argv[])
@@ -65,11 +66,11 @@ int vtkMRMLModelDisplayableManagerTest(int argc, char* argv[])
   renderWindow->SetInteractor(renderWindowInteractor.GetPointer());
 
   // Set Interactor Style
-  //vtkNew<vtkMRMLThreeDViewInteractorStyle> iStyle;
-  //renderWindowInteractor->SetInteractorStyle(iStyle.GetPointer());
+  // vtkNew<vtkMRMLThreeDViewInteractorStyle> iStyle;
+  // renderWindowInteractor->SetInteractorStyle(iStyle.GetPointer());
 
   // move back far enough to see the reformat widgets
-  //renderer->GetActiveCamera()->SetPosition(0,0,-500.);
+  // renderer->GetActiveCamera()->SetPosition(0,0,-500.);
 
   // MRML scene
   vtkMRMLScene* scene = vtkMRMLScene::New();
@@ -106,68 +107,64 @@ int vtkMRMLModelDisplayableManagerTest(int argc, char* argv[])
 
   // TODO: Automatically move the camera (simulating movements)
   // to have a good screenshot.
-  renderer->SetBackground(0, 169. / 255, 79. /255);
-  renderer->SetBackground2(0, 83. / 255, 155. /255);
+  renderer->SetBackground(0, 169. / 255, 79. / 255);
+  renderer->SetBackground2(0, 83. / 255, 155. / 255);
   renderer->SetGradientBackground(true);
   renderer->ResetCamera();
 
   // Event recorder
   bool disableReplay = false, record = false, screenshot = false;
   for (int i = 0; i < argc; i++)
-    {
+  {
     disableReplay |= (strcmp("--DisableReplay", argv[i]) == 0);
-    record        |= (strcmp("--Record", argv[i]) == 0);
-    screenshot    |= (strcmp("--Screenshot", argv[i]) == 0);
-    }
+    record |= (strcmp("--Record", argv[i]) == 0);
+    screenshot |= (strcmp("--Screenshot", argv[i]) == 0);
+  }
   vtkNew<vtkInteractorEventRecorder> recorder;
   recorder->SetInteractor(displayableManagerGroup->GetInteractor());
   if (!disableReplay)
-    {
+  {
     if (record)
-      {
+    {
       std::cout << "Recording ..." << std::endl;
       recorder->SetFileName("vtkInteractorEventRecorder.log");
       recorder->On();
       recorder->Record();
-      }
+    }
     else
-      {
+    {
       // Play
       recorder->ReadFromInputStringOn();
       recorder->SetInputString(vtkMRMLModelDisplayableManagerTest1EventLog);
       recorder->Play();
-      }
     }
+  }
 
   int retval = vtkRegressionTestImageThreshold(renderWindow.GetPointer(), 85.0);
-  if ( record || retval == vtkRegressionTester::DO_INTERACTOR)
-    {
+  if (record || retval == vtkRegressionTester::DO_INTERACTOR)
+  {
     displayableManagerGroup->GetInteractor()->Initialize();
     displayableManagerGroup->GetInteractor()->Start();
-    }
+  }
 
   if (record || screenshot)
-    {
+  {
     vtkNew<vtkWindowToImageFilter> windowToImageFilter;
     windowToImageFilter->SetInput(renderWindow.GetPointer());
-#if VTK_MAJOR_VERSION >= 9 || (VTK_MAJOR_VERSION >= 8 && VTK_MINOR_VERSION >= 1)
-    windowToImageFilter->SetScale(1, 1); //set the resolution of the output image
-#else
-    windowToImageFilter->SetMagnification(1); //set the resolution of the output image
-#endif
+    windowToImageFilter->SetScale(1, 1); // set the resolution of the output image
     windowToImageFilter->Update();
 
     vtkNew<vtkTesting> testHelper;
-    testHelper->AddArguments(argc, const_cast<const char **>(argv));
+    testHelper->AddArguments(argc, const_cast<const char**>(argv));
 
-    vtkStdString screenshootFilename = testHelper->GetDataRoot();
+    std::string screenshootFilename = testHelper->GetDataRoot();
     screenshootFilename += "/Baseline/vtkMRMLCameraDisplayableManagerTest1.png";
     vtkNew<vtkPNGWriter> writer;
     writer->SetFileName(screenshootFilename.c_str());
     writer->SetInputConnection(windowToImageFilter->GetOutputPort());
     writer->Write();
     std::cout << "Saved screenshot: " << screenshootFilename << std::endl;
-    }
+  }
 
   vrDisplayableManager->SetMRMLApplicationLogic(nullptr);
   applicationLogic->Delete();
@@ -175,4 +172,3 @@ int vtkMRMLModelDisplayableManagerTest(int argc, char* argv[])
 
   return !retval;
 }
-

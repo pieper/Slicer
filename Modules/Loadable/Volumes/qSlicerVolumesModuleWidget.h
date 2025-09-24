@@ -29,19 +29,18 @@
 class qSlicerVolumesModuleWidgetPrivate;
 class vtkMRMLNode;
 
-/// \ingroup Slicer_QtModules_Volumes
-class Q_SLICER_QTMODULES_VOLUMES_EXPORT qSlicerVolumesModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_VOLUMES_EXPORT qSlicerVolumesModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerVolumesModuleWidget(QWidget *parent=nullptr);
+  qSlicerVolumesModuleWidget(QWidget* parent = nullptr);
   ~qSlicerVolumesModuleWidget() override;
 
   bool setEditedNode(vtkMRMLNode* node, QString role = QString(), QString context = QString()) override;
+
+  void enter() override;
 
 protected:
   void setup() override;
@@ -50,6 +49,7 @@ protected slots:
   void nodeSelectionChanged(vtkMRMLNode*);
   void updateWidgetFromMRML();
   void convertVolume();
+  void colorLegendCollapsibleButtonCollapsed(bool state);
 
 protected:
   QScopedPointer<qSlicerVolumesModuleWidgetPrivate> d_ptr;

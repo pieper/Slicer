@@ -20,9 +20,10 @@
 
 // Tables Widgets includes
 #include "qSlicerTableColumnPropertiesWidget.h"
+#include "ui_qSlicerTableColumnPropertiesWidget.h"
 
 // Markups includes
-//#include <vtkSlicerTablesLogic.h>
+// #include <vtkSlicerTablesLogic.h>
 
 // Slicer includes
 #include "qSlicerApplication.h"
@@ -43,16 +44,15 @@
 static const char SCHEMA_PROPERTY_NAME[] = "SchemaPropertyName";
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_CreateModels
-class qSlicerTableColumnPropertiesWidgetPrivate
-  : public Ui_qSlicerTableColumnPropertiesWidget
+class qSlicerTableColumnPropertiesWidgetPrivate : public Ui_qSlicerTableColumnPropertiesWidget
 {
   Q_DECLARE_PUBLIC(qSlicerTableColumnPropertiesWidget);
+
 protected:
   qSlicerTableColumnPropertiesWidget* const q_ptr;
 
 public:
-  qSlicerTableColumnPropertiesWidgetPrivate( qSlicerTableColumnPropertiesWidget& object);
+  qSlicerTableColumnPropertiesWidgetPrivate(qSlicerTableColumnPropertiesWidget& object);
   ~qSlicerTableColumnPropertiesWidgetPrivate();
   virtual void setupUi(qSlicerTableColumnPropertiesWidget*);
 
@@ -68,7 +68,7 @@ public:
 };
 
 // --------------------------------------------------------------------------
-qSlicerTableColumnPropertiesWidgetPrivate::qSlicerTableColumnPropertiesWidgetPrivate( qSlicerTableColumnPropertiesWidget& object)
+qSlicerTableColumnPropertiesWidgetPrivate::qSlicerTableColumnPropertiesWidgetPrivate(qSlicerTableColumnPropertiesWidget& object)
   : q_ptr(&object)
   , ColumnNameVisible(true)
   , ConfirmTypeChange(true)
@@ -84,13 +84,12 @@ void qSlicerTableColumnPropertiesWidgetPrivate::setupUi(qSlicerTableColumnProper
   this->Ui_qSlicerTableColumnPropertiesWidget::setupUi(widget);
 }
 
-
 //-----------------------------------------------------------------------------
 // qSlicerTableColumnPropertiesWidget methods
 
 //-----------------------------------------------------------------------------
 qSlicerTableColumnPropertiesWidget::qSlicerTableColumnPropertiesWidget(QWidget* parentWidget)
-  : Superclass( parentWidget )
+  : Superclass(parentWidget)
   , d_ptr(new qSlicerTableColumnPropertiesWidgetPrivate(*this))
 {
   this->setup();
@@ -113,29 +112,27 @@ void qSlicerTableColumnPropertiesWidget::setup()
   d->CancelTypeChangeButton->setVisible(false);
 
   d->NullValueLineEdit->setProperty(SCHEMA_PROPERTY_NAME, QString("nullValue"));
-  d->LongNameLineEdit->setProperty(SCHEMA_PROPERTY_NAME, QString("longName"));
+  d->TitleLineEdit->setProperty(SCHEMA_PROPERTY_NAME, QString("title"));
   d->DescriptionLineEdit->setProperty(SCHEMA_PROPERTY_NAME, QString("description"));
   d->UnitLabelLineEdit->setProperty(SCHEMA_PROPERTY_NAME, QString("unitLabel"));
   d->ComponentCountLineEdit->setProperty(SCHEMA_PROPERTY_NAME, QString("componentCount"));
   d->ComponentNamesLineEdit->setProperty(SCHEMA_PROPERTY_NAME, QString("componentNames"));
 
   d->PropertyEditWidgets << d->NullValueLineEdit;
-  d->PropertyEditWidgets << d->LongNameLineEdit;
+  d->PropertyEditWidgets << d->TitleLineEdit;
   d->PropertyEditWidgets << d->DescriptionLineEdit;
   d->PropertyEditWidgets << d->UnitLabelLineEdit;
   d->PropertyEditWidgets << d->ComponentCountLineEdit;
   d->PropertyEditWidgets << d->ComponentNamesLineEdit;
 
   connect(d->DataTypeComboBox, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(onDataTypeChanged(const QString&)));
-  foreach(QLineEdit* widget, d->PropertyEditWidgets)
-    {
+  for (QLineEdit* const widget : d->PropertyEditWidgets)
+  {
     connect(widget, SIGNAL(textEdited(const QString&)), this, SLOT(onPropertyChanged(const QString&)));
-    }
+  }
   connect(d->ApplyTypeChangeButton, SIGNAL(clicked()), this, SLOT(onApplyTypeChange()));
   connect(d->CancelTypeChangeButton, SIGNAL(clicked()), this, SLOT(onCancelTypeChange()));
-
 }
-
 
 //------------------------------------------------------------------------------
 void qSlicerTableColumnPropertiesWidget::setMRMLTableNode(vtkMRMLNode* node)
@@ -148,10 +145,10 @@ void qSlicerTableColumnPropertiesWidget::setMRMLTableNode(vtkMRMLTableNode* node
 {
   Q_D(qSlicerTableColumnPropertiesWidget);
   if (node == d->CurrentTableNode)
-    {
+  {
     // not changed
     return;
-    }
+  }
 
   // Reconnect the appropriate nodes
   this->qvtkReconnect(d->CurrentTableNode, node, vtkCommand::ModifiedEvent, this, SLOT(updateWidget()));
@@ -161,7 +158,7 @@ void qSlicerTableColumnPropertiesWidget::setMRMLTableNode(vtkMRMLTableNode* node
 }
 
 //------------------------------------------------------------------------------
-vtkMRMLTableNode* qSlicerTableColumnPropertiesWidget::mrmlTableNode()const
+vtkMRMLTableNode* qSlicerTableColumnPropertiesWidget::mrmlTableNode() const
 {
   Q_D(const qSlicerTableColumnPropertiesWidget);
   return d->CurrentTableNode;
@@ -172,19 +169,19 @@ void qSlicerTableColumnPropertiesWidget::setColumnProperty(QString propertyName,
 {
   Q_D(qSlicerTableColumnPropertiesWidget);
   if (d->CurrentTableNode == nullptr)
-    {
+  {
     qWarning() << Q_FUNC_INFO << " failed: table node is not selected";
     return;
-    }
+  }
   if (d->ColumnNames.empty())
-    {
+  {
     qWarning() << Q_FUNC_INFO << " failed: table column names are not specified";
     return;
-    }
-  foreach(const QString& columnName, d->ColumnNames)
-    {
+  }
+  for (const QString& columnName : d->ColumnNames)
+  {
     d->CurrentTableNode->SetColumnProperty(columnName.toUtf8().constData(), propertyName.toUtf8().constData(), propertyValue.toUtf8().constData());
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -192,24 +189,24 @@ QString qSlicerTableColumnPropertiesWidget::columnProperty(QString propertyName)
 {
   Q_D(const qSlicerTableColumnPropertiesWidget);
   if (d->CurrentTableNode == nullptr)
-    {
+  {
     qWarning() << Q_FUNC_INFO << " failed: table node is not selected";
     return "";
-    }
+  }
   if (d->ColumnNames.empty())
-    {
+  {
     return "";
-    }
+  }
   std::string commonPropertyValue = d->CurrentTableNode->GetColumnProperty(d->ColumnNames[0].toUtf8().constData(), propertyName.toUtf8().constData());
-  foreach(const QString& columnName, d->ColumnNames)
-    {
+  for (const QString& columnName : d->ColumnNames)
+  {
     std::string currentPropertyValue = d->CurrentTableNode->GetColumnProperty(columnName.toUtf8().constData(), propertyName.toUtf8().constData());
     if (currentPropertyValue != commonPropertyValue)
-      {
+    {
       // not all column types are the same
       return QString();
-      }
     }
+  }
   return commonPropertyValue.c_str();
 }
 
@@ -222,10 +219,10 @@ void qSlicerTableColumnPropertiesWidget::updateWidget()
   d->NameLineEdit->setVisible(d->ColumnNameVisible);
 
   if (d->CurrentTableNode == nullptr)
-    {
+  {
     this->setEnabled(false);
     return;
-    }
+  }
 
   bool componentRowsVisible = vtkVariant(this->columnProperty("componentCount").toStdString()) > 1;
   d->ComponentCountLabel->setVisible(componentRowsVisible);
@@ -239,10 +236,10 @@ void qSlicerTableColumnPropertiesWidget::updateWidget()
   int columnTypeIndex = d->DataTypeComboBox->findText(columnType);
   d->DataTypeComboBox->setCurrentIndex(columnTypeIndex);
 
-  foreach(QLineEdit* widget, d->PropertyEditWidgets)
-    {
+  for (QLineEdit* const widget : d->PropertyEditWidgets)
+  {
     widget->setText(this->columnProperty(widget->property(SCHEMA_PROPERTY_NAME).toString()));
-    }
+  }
 
   this->setEnabled(!d->ColumnNames.empty());
 }
@@ -259,31 +256,31 @@ void qSlicerTableColumnPropertiesWidget::setSelectionFromMRMLTableView(qMRMLTabl
 {
   Q_D(qSlicerTableColumnPropertiesWidget);
   if (tableView == d->TableViewForSelection)
-    {
+  {
     // no change
     return;
-    }
+  }
   vtkMRMLScene* newScene = nullptr;
   vtkMRMLTableNode* newTableNode = nullptr;
 
   if (tableView != nullptr)
-    {
+  {
     newScene = tableView->mrmlScene();
     newTableNode = tableView->mrmlTableNode();
-    }
+  }
 
   this->Superclass::setMRMLScene(newScene);
   this->setMRMLTableNode(newTableNode);
 
   if (d->TableViewForSelection)
-    {
+  {
     disconnect(d->TableViewForSelection, SIGNAL(selectionChanged()), this, SLOT(tableViewSelectionChanged()));
-    }
+  }
   d->TableViewForSelection = tableView;
   if (d->TableViewForSelection)
-    {
+  {
     connect(d->TableViewForSelection, SIGNAL(selectionChanged()), this, SLOT(tableViewSelectionChanged()));
-    }
+  }
 
   this->updateWidget();
 }
@@ -294,23 +291,23 @@ void qSlicerTableColumnPropertiesWidget::tableViewSelectionChanged()
   Q_D(const qSlicerTableColumnPropertiesWidget);
 
   if (d->TableViewForSelection == nullptr)
-    {
+  {
     this->setMRMLTableNode((vtkMRMLTableNode*)nullptr);
     return;
-    }
+  }
 
   this->setMRMLTableNode(d->TableViewForSelection->mrmlTableNode());
 
   QStringList selectedColumnNames;
   if (d->TableViewForSelection && d->TableViewForSelection->mrmlTableNode())
-    {
+  {
     vtkMRMLTableNode* tableNode = d->TableViewForSelection->mrmlTableNode();
     QList<int> selectedColumns = d->TableViewForSelection->selectedMRMLTableColumnIndices();
-    foreach(int columnIndex, selectedColumns)
-      {
+    for (const int& columnIndex : selectedColumns)
+    {
       selectedColumnNames << tableNode->GetColumnName(columnIndex).c_str();
-      }
     }
+  }
   this->setMRMLTableColumnNames(selectedColumnNames);
 }
 
@@ -342,19 +339,19 @@ void qSlicerTableColumnPropertiesWidget::onDataTypeChanged(const QString& newDat
 {
   Q_D(qSlicerTableColumnPropertiesWidget);
   if (newDataType == this->columnProperty("type"))
-    {
+  {
     // no change
     return;
-    }
+  }
   if (d->ConfirmTypeChange)
-    {
+  {
     d->ApplyTypeChangeButton->setVisible(true);
     d->CancelTypeChangeButton->setVisible(true);
-    }
+  }
   else
-    {
+  {
     this->setColumnProperty("type", d->DataTypeComboBox->currentText());
-    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -362,10 +359,10 @@ void qSlicerTableColumnPropertiesWidget::onPropertyChanged(const QString& newPro
 {
   QLineEdit* propertyWidget = qobject_cast<QLineEdit*>(sender());
   if (propertyWidget != nullptr)
-    {
+  {
     QString propertyName = propertyWidget->property(SCHEMA_PROPERTY_NAME).toString();
     this->setColumnProperty(propertyName, newPropertyValue);
-    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -387,14 +384,14 @@ void qSlicerTableColumnPropertiesWidget::onCancelTypeChange()
 }
 
 //------------------------------------------------------------------------------
-bool qSlicerTableColumnPropertiesWidget::columnNameVisible()const
+bool qSlicerTableColumnPropertiesWidget::columnNameVisible() const
 {
   Q_D(const qSlicerTableColumnPropertiesWidget);
   return d->ColumnNameVisible;
 }
 
 //------------------------------------------------------------------------------
-bool qSlicerTableColumnPropertiesWidget::confirmTypeChange()const
+bool qSlicerTableColumnPropertiesWidget::confirmTypeChange() const
 {
   Q_D(const qSlicerTableColumnPropertiesWidget);
   return d->ConfirmTypeChange;
@@ -405,10 +402,10 @@ void qSlicerTableColumnPropertiesWidget::setColumnNameVisible(bool visible)
 {
   Q_D(qSlicerTableColumnPropertiesWidget);
   if (d->ColumnNameVisible == visible)
-    {
+  {
     // no change
     return;
-    }
+  }
   d->ColumnNameVisible = visible;
   this->updateWidget();
 }
@@ -418,13 +415,13 @@ void qSlicerTableColumnPropertiesWidget::setConfirmTypeChange(bool confirm)
 {
   Q_D(qSlicerTableColumnPropertiesWidget);
   if (d->ConfirmTypeChange == confirm)
-    {
+  {
     // no change
     return;
-    }
+  }
   d->ConfirmTypeChange = confirm;
   if (!d->ConfirmTypeChange)
-    {
+  {
     this->onCancelTypeChange();
-    }
+  }
 }

@@ -27,7 +27,7 @@
 
 #include "vtkMRMLCoreTestingMacros.h"
 
-int qSlicerCLILoadableModuleFactoryTest1(int, char * [] )
+int qSlicerCLILoadableModuleFactoryTest1(int, char*[])
 {
   QStringList libraryNames;
   libraryNames << "ThresholdLib.dll"
@@ -38,18 +38,17 @@ int qSlicerCLILoadableModuleFactoryTest1(int, char * [] )
 
   QString expectedModuleName = "Threshold";
   qSlicerCLILoadableModuleFactory factory;
-  foreach (const QString& libraryName, libraryNames)
-    {
+  for (const QString& libraryName : libraryNames)
+  {
     QString moduleName = factory.fileNameToKey(libraryName);
     if (moduleName != expectedModuleName)
-      {
+    {
       std::cerr << __LINE__ << " - Error in  extractModuleName()" << std::endl
-                            << "moduleName = " << qPrintable(moduleName) << std::endl
-                            << "expectedModuleName = " << qPrintable(expectedModuleName) << std::endl;
+                << "moduleName = " << qPrintable(moduleName) << std::endl
+                << "expectedModuleName = " << qPrintable(expectedModuleName) << std::endl;
       return EXIT_FAILURE;
-      }
     }
+  }
 
   return EXIT_SUCCESS;
 }
-

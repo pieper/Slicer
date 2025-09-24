@@ -44,18 +44,22 @@ class vtkTable;
 class VTK_MRML_EXPORT vtkMRMLTableStorageNode : public vtkMRMLStorageNode
 {
 public:
-  static vtkMRMLTableStorageNode *New();
-  vtkTypeMacro(vtkMRMLTableStorageNode,vtkMRMLStorageNode);
+  static vtkMRMLTableStorageNode* New();
+  vtkTypeMacro(vtkMRMLTableStorageNode, vtkMRMLStorageNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
 
   /// Get node XML tag name (like Storage, Model)
-  const char* GetNodeTagName() override {return "TableStorage";}
+  const char* GetNodeTagName() override { return "TableStorage"; }
 
   /// Return true if the node can be read in
-  bool CanReadInReferenceNode(vtkMRMLNode *refNode) override;
+  bool CanReadInReferenceNode(vtkMRMLNode* refNode) override;
 
+  /// Helper function to write out table to file
+  static bool WriteTable(std::string filename, vtkTable* table, std::string delimiter, std::map<vtkIdType, std::vector<std::string>> componentNamesMap);
+
+public:
   /// Get/Set schema file name, which contain description of data type of each column
   virtual void SetSchemaFileName(const char* schemaFileName);
   virtual std::string GetSchemaFileName();
@@ -68,6 +72,13 @@ public:
   vtkSetMacro(AutoFindSchema, bool);
   vtkGetMacro(AutoFindSchema, bool);
   vtkBooleanMacro(AutoFindSchema, bool);
+
+  /// Load legacy "longName" property as "title".
+  /// Enable for loading an old table file that used "longName" property to store column title.
+  /// Disabled by default, as "longName" is often too long to be used as title.
+  vtkSetMacro(ReadLongNameAsTitle, bool);
+  vtkGetMacro(ReadLongNameAsTitle, bool);
+  vtkBooleanMacro(ReadLongNameAsTitle, bool);
 
 protected:
   vtkMRMLTableStorageNode();
@@ -82,10 +93,10 @@ protected:
   void InitializeSupportedWriteFileTypes() override;
 
   /// Read data and set it in the referenced node. Returns 0 on failure.
-  int ReadDataInternal(vtkMRMLNode *refNode) override;
+  int ReadDataInternal(vtkMRMLNode* refNode) override;
 
   /// Write data from a  referenced node. Returns 0 on failure.
-  int WriteDataInternal(vtkMRMLNode *refNode) override;
+  int WriteDataInternal(vtkMRMLNode* refNode) override;
 
   std::string GenerateSchemaFileName(const char* fileName);
 
@@ -100,15 +111,16 @@ protected:
     std::vector<std::string> ComponentNames;
     std::string NullValueString;
   };
+
   using ColumnInfo = struct StructColumnInfo;
 
   /// Determines information about the columns in the table, including column name,
-  /// The raw components that should be includeded in the table, the scalar type,
+  /// The raw components that should be included in the table, the scalar type,
   /// and the names of the components.
   std::vector<ColumnInfo> GetColumnInfo(vtkMRMLTableNode* tableNode, vtkTable* rawTable);
 
   /// Casts the data in the string array to the correct type and stores it in the data array
-  void FillDataFromStringArray(vtkStringArray* stringComponentArray, vtkDataArray* dataArray, std::string nullValueString="");
+  void FillDataFromStringArray(vtkStringArray* stringComponentArray, vtkDataArray* dataArray, std::string nullValueString = "");
 
   /// Adds the column specified by the given columnInfo to the table.
   /// Handles both single and multi-component columns
@@ -117,10 +129,10 @@ protected:
   bool ReadSchema(std::string filename, vtkMRMLTableNode* tableNode);
   bool ReadTable(std::string filename, vtkMRMLTableNode* tableNode);
 
-  bool WriteTable(std::string filename, vtkMRMLTableNode* tableNode);
   bool WriteSchema(std::string filename, vtkMRMLTableNode* tableNode);
 
   bool AutoFindSchema;
+  bool ReadLongNameAsTitle;
 };
 
 #endif

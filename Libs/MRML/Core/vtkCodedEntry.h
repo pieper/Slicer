@@ -16,23 +16,28 @@ or http://www.slicer.org/copyright/copyright.txt for details.
 // VTK includes
 #include <vtkObject.h>
 
+// STL includes
+#include <vector>
+
 /// \brief Simple class for storing standard coded entries (coding scheme, value, meaning triplets)
 ///
 /// vtkCodedEntry is a lightweight class that stores standard coded entries consisting of
 /// CodingSchemeDesignator + CodeValue + CodeMeaning triplets.
 /// This is a commonly used concept in DICOM, see chapter 3: Encoding of Coded Entry Data
-/// (http://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_8.3.html).
+/// (https://dicom.nema.org/medical/dicom/current/output/chtml/part03/sect_8.3.html).
 ///
 class VTK_MRML_EXPORT vtkCodedEntry : public vtkObject
 {
 public:
-
-  static vtkCodedEntry *New();
+  static vtkCodedEntry* New();
   vtkTypeMacro(vtkCodedEntry, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Reset state of object
   virtual void Initialize();
+
+  /// All fields are empty
+  virtual bool IsEmpty();
 
   /// Copy one type into another
   virtual void Copy(vtkCodedEntry* aEntry);
@@ -62,6 +67,12 @@ public:
   /// Convenience function for setting code value, coding scheme, and code meaning with a single method call
   virtual void SetValueSchemeMeaning(const std::string& value, const std::string& scheme, const std::string& meaning);
 
+  /// Convenience function for setting code value, coding scheme, and code meaning with a single method call from a string vector
+  virtual bool SetValueSchemeMeaning(const std::vector<std::string>& valueSchemeMeaning);
+
+  /// Convenience function for getting code value, coding scheme, and code meaning as a string vector
+  virtual std::vector<std::string> GetValueSchemeMeaning();
+
   ///
   /// Get content of the object as a single human-readable string.
   /// Example: ([hnsf'U], UCUM, "Hounsfield unit")
@@ -78,6 +89,9 @@ public:
   /// \return true on success
   bool SetFromString(const std::string& content);
 
+  /// Returns true if the two coded entries have the same content
+  static bool AreEqual(vtkCodedEntry* entry1, vtkCodedEntry* entry2);
+
 protected:
   vtkCodedEntry();
   ~vtkCodedEntry() override;
@@ -85,9 +99,9 @@ protected:
   void operator=(const vtkCodedEntry&);
 
 protected:
-  char* CodeValue{nullptr};
-  char* CodingSchemeDesignator{nullptr};
-  char* CodeMeaning{nullptr};
+  char* CodeValue{ nullptr };
+  char* CodingSchemeDesignator{ nullptr };
+  char* CodeMeaning{ nullptr };
 };
 
 #endif

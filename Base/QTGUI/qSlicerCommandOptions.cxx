@@ -21,18 +21,21 @@
 #include "qSlicerCommandOptions.h"
 #include "qSlicerCoreApplication.h"
 
+#include <QDebug>
+
 // Slicer includes
 
 //-----------------------------------------------------------------------------
 // qSlicerCommandOptions methods
 
 //-----------------------------------------------------------------------------
-qSlicerCommandOptions::qSlicerCommandOptions():Superclass()
+qSlicerCommandOptions::qSlicerCommandOptions()
+  : Superclass()
 {
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCommandOptions::disableToolTips()const
+bool qSlicerCommandOptions::disableToolTips() const
 {
   return this->parsedArgs().value("disable-tooltips").toBool();
 }
@@ -50,13 +53,27 @@ bool qSlicerCommandOptions::noMainWindow() const
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCommandOptions::showPythonInteractor() const
+bool qSlicerCommandOptions::showPythonConsole() const
 {
-  return this->parsedArgs().value("show-python-interactor").toBool();
+  bool show = this->parsedArgs().value("show-python-console").toBool();
+  // Handle the deprecated argument name for a while, for backward compatibility:
+  if (this->parsedArgs().value("show-python-interactor").toBool())
+  {
+    qWarning() << "show-python-interactor command-line argument is deprecated, use show-python-console instead";
+    show = true;
+  }
+  return show;
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCommandOptions::enableQtTesting()const
+bool qSlicerCommandOptions::showPythonInteractor() const
+{
+  qWarning() << "qSlicerCommandOptions::showPythonInteractor() method is deprecated, use qSlicerCommandOptions::showPythonInteractor() instead";
+  return showPythonConsole();
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerCommandOptions::enableQtTesting() const
 {
 #ifdef Slicer_USE_QtTesting
   return this->parsedArgs().value("qt-testing").toBool();
@@ -66,7 +83,7 @@ bool qSlicerCommandOptions::enableQtTesting()const
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCommandOptions::exitAfterStartup()const
+bool qSlicerCommandOptions::exitAfterStartup() const
 {
   return this->parsedArgs().value("exit-after-startup").toBool();
 }
@@ -76,28 +93,23 @@ void qSlicerCommandOptions::addArguments()
 {
   this->Superclass::addArguments();
 
-  this->addArgument("disable-tooltips", "", QVariant::Bool,
-                    "Disable toolstips in the user interface.");
+  this->addArgument("disable-tooltips", "", QVariant::Bool, "Disable toolstips in the user interface.");
 
-  this->addArgument("no-splash", "", QVariant::Bool,
-                    "Disable the startup splash screen.");
+  this->addArgument("no-splash", "", QVariant::Bool, "Disable the startup splash screen.");
 
-  this->addArgument("no-main-window", "", QVariant::Bool,
-                    "Disable display of the main slicer window.  Use with --python-script for alternate interface");
+  this->addArgument("no-main-window", "", QVariant::Bool, "Disable display of the main slicer window.  Use with --python-script for alternate interface");
 
 #ifdef Slicer_USE_PYTHONQT
   if (!qSlicerCoreApplication::testAttribute(qSlicerCoreApplication::AA_DisablePython))
-    {
-    this->addArgument("show-python-interactor", "", QVariant::Bool,
-                      "Show Python interactor at startup.");
-    }
+  {
+    this->addArgument("show-python-console", "", QVariant::Bool, "Show Python console at startup.");
+    this->addArgument("show-python-interactor", "", QVariant::Bool, "Show Python console at startup (deprecated, use show-python-console instead).");
+  }
 #endif
 
 #ifdef Slicer_USE_QtTesting
-  this->addArgument("qt-testing", "", QVariant::Bool,
-                    "Enable QtTesting in the user interface");
+  this->addArgument("qt-testing", "", QVariant::Bool, "Enable QtTesting in the user interface");
 #endif
 
-  this->addArgument("exit-after-startup", "", QVariant::Bool,
-                    "Exit after startup is complete. Useful for measuring startup time");
+  this->addArgument("exit-after-startup", "", QVariant::Bool, "Exit after startup is complete. Useful for measuring startup time");
 }

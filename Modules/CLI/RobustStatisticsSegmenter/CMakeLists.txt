@@ -18,7 +18,13 @@ set(${PROJECT_NAME}_ITK_COMPONENTS
   ITKIOImageBase
   )
 find_package(ITK 4.6 COMPONENTS ${${PROJECT_NAME}_ITK_COMPONENTS} REQUIRED)
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 include(${ITK_USE_FILE})
 
 #-----------------------------------------------------------------------------
@@ -30,9 +36,9 @@ SEMMacroBuildCLI(
     labelMapPreprocessor.h
     SFLS.h
     SFLSSegmentor3D.h
-    SFLSSegmentor3D.txx
+    SFLSSegmentor3D.hxx
     SFLSRobustStatSegmentor3DLabelMap_single.h
-    SFLSRobustStatSegmentor3DLabelMap_single.txx
+    SFLSRobustStatSegmentor3DLabelMap_single.hxx
   INCLUDE_DIRECTORIES
     ${vtkTeem_INCLUDE_DIRS}
     ${SlicerBaseCLI_SOURCE_DIR} ${SlicerBaseCLI_BINARY_DIR}

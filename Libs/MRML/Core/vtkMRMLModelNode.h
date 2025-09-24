@@ -25,6 +25,7 @@ class vtkAlgorithmOutput;
 class vtkAssignAttributes;
 class vtkEventForwarderCommand;
 class vtkDataArray;
+class vtkImplicitPolyDataDistance;
 class vtkPointSet;
 class vtkPolyData;
 class vtkTransformFilter;
@@ -42,8 +43,8 @@ class vtkMRMLDisplayNode;
 class VTK_MRML_EXPORT vtkMRMLModelNode : public vtkMRMLDisplayableNode
 {
 public:
-  static vtkMRMLModelNode *New();
-  vtkTypeMacro(vtkMRMLModelNode,vtkMRMLDisplayableNode);
+  static vtkMRMLModelNode* New();
+  vtkTypeMacro(vtkMRMLModelNode, vtkMRMLDisplayableNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   //--------------------------------------------------------------------------
@@ -53,27 +54,25 @@ public:
   vtkMRMLNode* CreateNodeInstance() override;
 
   /// Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "Model";};
+  const char* GetNodeTagName() override { return "Model"; };
 
   /// Copy node content (excludes basic data, such as name and node references).
   /// \sa vtkMRMLNode::CopyContent
   vtkMRMLCopyContentMacro(vtkMRMLModelNode);
 
   /// alternative method to propagate events generated in Display nodes
-  void ProcessMRMLEvents ( vtkObject * /*caller*/,
-                                   unsigned long /*event*/,
-                                   void * /*callData*/ ) override;
+  void ProcessMRMLEvents(vtkObject* /*caller*/, unsigned long /*event*/, void* /*callData*/) override;
 
   /// Get associated model display MRML node
   vtkMRMLModelDisplayNode* GetModelDisplayNode();
 
   /// Set and observe mesh for this model.
   /// \sa GetMesh()
-  virtual void SetAndObserveMesh(vtkPointSet *Mesh);
+  virtual void SetAndObserveMesh(vtkPointSet* Mesh);
 
   /// Set and observe mesh for this model.
   /// \deprecated Use SetAndObserveMesh instead.
-  virtual void SetAndObservePolyData(vtkPolyData *polyData);
+  virtual void SetAndObservePolyData(vtkPolyData* polyData);
 
   /// Return the input mesh.
   /// \sa SetAndObserveMesh(), GetPolyData(), GetUnstructuredGrid(), GetMeshConnection()
@@ -91,16 +90,16 @@ public:
   /// Set and observe polydata pipeline.
   /// It is propagated to the display nodes.
   /// \sa GetMeshConnection(), SetUnstructuredGridConnection()
-  virtual void SetPolyDataConnection(vtkAlgorithmOutput *inputPort);
+  virtual void SetPolyDataConnection(vtkAlgorithmOutput* inputPort);
 
   /// Set and observe unstructured grid pipeline.
   /// It is propagated to the display nodes.
   /// \sa GetMeshConnection(), SetPolyDataConnection()
-  virtual void SetUnstructuredGridConnection(vtkAlgorithmOutput *inputPort);
+  virtual void SetUnstructuredGridConnection(vtkAlgorithmOutput* inputPort);
 
   /// Return the input mesh pipeline.
   /// \sa GetPolyDataConnection(), GetUnstructuredGridConnection()
-  vtkGetObjectMacro(MeshConnection,vtkAlgorithmOutput)
+  vtkGetObjectMacro(MeshConnection, vtkAlgorithmOutput);
 
   /// Return the input mesh pipeline if the mesh
   /// is a polydata.
@@ -114,10 +113,11 @@ public:
 
   /// Mesh Type hint
   /// \sa GetMeshType()
-  typedef enum {
+  enum MeshTypeHint
+  {
     PolyDataMeshType = 0,
     UnstructuredGridMeshType
-  } MeshTypeHint;
+  };
 
   /// Get the mesh type of that model. The safest way
   /// to know if the mesh is unstructuredGrid is to check
@@ -133,26 +133,26 @@ public:
   /// return value for GetModifiedSinceRead()
   /// \sa GetModifiedSinceRead()
   enum
-    {
+  {
     MeshModifiedEvent = 17001,
     PolyDataModifiedEvent = 17001 ///< \deprecated Use MeshModifiedEvent
-    };
+  };
 
   /// Utility function that adds an array to the mesh's point data.
   //// \sa AddCellScalars, AddScalars
-  void AddPointScalars(vtkDataArray *array);
+  void AddPointScalars(vtkDataArray* array);
 
   /// Add an array to the mesh's cell data.
   /// \sa AddPointScalars, AddScalars
-  void AddCellScalars(vtkDataArray *array);
+  void AddCellScalars(vtkDataArray* array);
 
   /// Add an array to the mesh's point or cell data
   /// location is either vtkAssignAttribute::POINT_DATA or
   /// vtkAssignAttribute::CELL_DATA
-  void AddScalars(vtkDataArray *array, int location);
+  void AddScalars(vtkDataArray* array, int location);
 
   /// Remove an array from the mesh's point/cell data.
-  void RemoveScalars(const char *scalarName);
+  void RemoveScalars(const char* scalarName);
 
   /// Return true if the mesh point data has an array with a
   /// \a scalarName name.
@@ -171,14 +171,14 @@ public:
   /// vtkDataSetAttributes::GetAttributeTypeAsString, SetActiveScalars converts
   /// it to an integer type to pass onto the Point/Cell methods
   /// Also updates the display node's active scalars
-  int SetActivePointScalars(const char *scalarName, int attributeType);
+  int SetActivePointScalars(const char* scalarName, int attributeType);
 
   /// Get the currently active point array name, type =
   /// vtkDataSetAttributes::AttributeTypes for an active array.
   /// Returns an empty string if it can't find one or if no input mesh
   /// is set.
   /// \sa GetActiveCellScalarName
-  const char *GetActivePointScalarName(int type);
+  const char* GetActivePointScalarName(int type);
 
   /// Set the active poly data point scalar array, checks for the
   /// scalarName as being a valid point array, and then will set it to be the active
@@ -187,13 +187,13 @@ public:
   /// vtkDataSetAttributes::GetAttributeTypeAsString, SetActiveScalars converts
   /// it to an integer type to pass onto the Point/Cell methods
   /// Also updates the display node's active scalars
-  int SetActiveCellScalars(const char *scalarName, int attributeType);
+  int SetActiveCellScalars(const char* scalarName, int attributeType);
 
   /// Get the currently active Point/Cell array name, type =
   /// vtkDataSetAttributes::AttributeTypes for an active array.
   /// Returns an empty string if it can't find one or if no input mesh
   /// is set.
-  const char *GetActiveCellScalarName(int type);
+  const char* GetActiveCellScalarName(int type);
 
   /// Utility function that returns the attribute type from its name.
   /// It is the opposite of vtkDataSetAttributes::GetAttributeTypeAsString(int)
@@ -210,9 +210,12 @@ public:
   /// Returns 1 on success, 0 on failure.
   /// Based on code from K. Teich, MGH
   /// Warning: Not demand driven pipeline compliant
-  int CompositeScalars(const char* backgroundName, const char* overlayName,
-                       float overlayMin, float overlayMax,
-                       int showOverlayPositive, int showOverlayNegative,
+  int CompositeScalars(const char* backgroundName,
+                       const char* overlayName,
+                       float overlayMin,
+                       float overlayMax,
+                       int showOverlayPositive,
+                       int showOverlayNegative,
                        int reverseOverlay);
 
   /// Get bounding box in global RAS form (xmin,xmax, ymin,ymax, zmin,zmax).
@@ -232,7 +235,7 @@ public:
   /// bounds may not fully contain the transformed model points.
   virtual void TransformBoundsToRAS(double inputBounds_Local[6], double outputBounds_RAS[6]);
 
-  bool CanApplyNonLinearTransforms()const override;
+  bool CanApplyNonLinearTransforms() const override;
   void ApplyTransform(vtkAbstractTransform* transform) override;
 
   vtkMRMLStorageNode* CreateDefaultStorageNode() override;
@@ -251,6 +254,15 @@ public:
   /// \sa vtkMRMLStorableNode::GetModifiedSinceRead()
   bool GetModifiedSinceRead() override;
 
+  /// Determine if the mesh stores scalar data data that the user may want to see and if
+  /// such data is found then display it.
+  /// Currently, it displays single-component scalar array (with a colormap),
+  /// and 3 or 4 component unsigned char array as RGB or RGBA value (with direct mapping).
+  /// Return true if suitable scalar data was found and set to be displayed.
+  bool ShowDefaultScalarData();
+
+  vtkImplicitFunction* GetImplicitFunctionWorld() override;
+
 protected:
   vtkMRMLModelNode();
   ~vtkMRMLModelNode() override;
@@ -258,20 +270,19 @@ protected:
   void operator=(const vtkMRMLModelNode&);
 
   /// Called by SetPolyDataConnection and SetUnstructuredGridConnection
-  virtual void SetMeshConnection(vtkAlgorithmOutput *inputPort);
+  virtual void SetMeshConnection(vtkAlgorithmOutput* inputPort);
 
   /// Called when a display node is added/removed/modified. Propagate the mesh
   /// to the new display node.
-  virtual void UpdateDisplayNodeMesh(vtkMRMLDisplayNode *dnode);
+  virtual void UpdateDisplayNodeMesh(vtkMRMLDisplayNode* dnode);
 
   ///
   /// Called when a node reference ID is added (list size increased).
-  void OnNodeReferenceAdded(vtkMRMLNodeReference *reference) override;
+  void OnNodeReferenceAdded(vtkMRMLNodeReference* reference) override;
 
   ///
   /// Called when a node reference ID is modified.
-  void OnNodeReferenceModified(vtkMRMLNodeReference *reference) override;
-
+  void OnNodeReferenceModified(vtkMRMLNodeReference* reference) override;
 
   /// Internal function that sets the mesh to all the display nodes.
   /// Can be called if the mesh is changed.
@@ -281,10 +292,16 @@ protected:
   /// Can be reimplemented if you want to set a different mesh
   virtual void SetMeshToDisplayNode(vtkMRMLModelDisplayNode* modelDisplayNode);
 
+  /// Updates the implicit function connection
+  void UpdateImplicitDistanceFunction();
+
   /// Data
   vtkAlgorithmOutput* MeshConnection;
   vtkEventForwarderCommand* DataEventForwarder;
   MeshTypeHint MeshType;
+
+  vtkSmartPointer<vtkTransformFilter> PolyDataLocalToWorldTransformFilter;
+  vtkSmartPointer<vtkImplicitPolyDataDistance> ImplicitPolyDataDistanceWorld;
 };
 
 #endif

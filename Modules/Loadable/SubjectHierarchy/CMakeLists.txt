@@ -1,6 +1,5 @@
 #-----------------------------------------------------------------------------
 set(MODULE_NAME "SubjectHierarchy")
-set(MODULE_TITLE "Subject Hierarchy")
 
 string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
 
@@ -48,7 +47,6 @@ set(MODULE_RESOURCES
 #-----------------------------------------------------------------------------
 slicerMacroBuildLoadableModule(
   NAME ${MODULE_NAME}
-  TITLE ${MODULE_TITLE}
   EXPORT_DIRECTIVE ${MODULE_EXPORT_DIRECTIVE}
   INCLUDE_DIRECTORIES ${MODULE_INCLUDE_DIRECTORIES}
   SRCS ${MODULE_SRCS}
@@ -58,6 +56,11 @@ slicerMacroBuildLoadableModule(
   RESOURCES ${MODULE_RESOURCES}
   WITH_GENERIC_TESTS
   )
+
+#-----------------------------------------------------------------------------
+if(Slicer_USE_PYTHONQT)
+  add_subdirectory(${MODULE_NAME}Lib)
+endif()
 
 #-----------------------------------------------------------------------------
 if(BUILD_TESTING)

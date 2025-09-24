@@ -28,12 +28,11 @@
 
 #include <PythonQt.h>
 // ----------------------------------------------------------------------------
-class qSlicerScriptedLoadableModuleTester: public QObject
+class qSlicerScriptedLoadableModuleTester : public QObject
 {
   Q_OBJECT
 
 private:
-
   QString preparePythonSource(const QString& scriptName);
 
   qSlicerPythonManager PythonManager;
@@ -51,7 +50,6 @@ private slots:
 
   void testSetup();
   void testSetup_data();
-
 };
 
 // ----------------------------------------------------------------------------
@@ -65,14 +63,14 @@ QString qSlicerScriptedLoadableModuleTester::preparePythonSource(const QString& 
 bool qSlicerScriptedLoadableModuleTester::resetTmp()
 {
   if (this->TemporaryDirName.isEmpty())
-    {
+  {
     return false;
-    }
+  }
   QDir tmp = QDir::temp();
   ctk::removeDirRecursively(tmp.filePath(this->TemporaryDirName));
   tmp.mkdir(this->TemporaryDirName);
   tmp.cd(this->TemporaryDirName);
-  this->Tmp = tmp;
+  this->Tmp.setPath(tmp.path());
   return this->Tmp.exists();
 }
 
@@ -83,18 +81,17 @@ void qSlicerScriptedLoadableModuleTester::initTestCase()
 
   QVERIFY(QDir::temp().exists());
 
-  this->TemporaryDirName =
-      QString("qSlicerScriptedLoadableModuleTester.%1").arg(QTime::currentTime().toString("hhmmsszzz"));
+  this->TemporaryDirName = QString("qSlicerScriptedLoadableModuleTester.%1").arg(QTime::currentTime().toString("hhmmsszzz"));
 }
 
 // ----------------------------------------------------------------------------
 void qSlicerScriptedLoadableModuleTester::cleanupTestCase()
 {
   if (this->Tmp != QDir::current() && this->Tmp.exists())
-    {
+  {
     ctk::removeDirRecursively(this->Tmp.absolutePath());
-    this->Tmp = QDir();
-    }
+    this->Tmp.setPath(QString());
+  }
 }
 
 // ----------------------------------------------------------------------------

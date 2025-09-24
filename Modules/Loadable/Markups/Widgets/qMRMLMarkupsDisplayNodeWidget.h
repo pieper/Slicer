@@ -18,8 +18,9 @@
 #ifndef __qMRMLMarkupsDisplayNodeWidget_h
 #define __qMRMLMarkupsDisplayNodeWidget_h
 
-// Qt includes
-#include <QWidget>
+// MRMLWidgets includes
+#include "qMRMLWidget.h"
+#include "qMRMLScalarsDisplayWidget.h"
 
 // CTK includes
 #include <ctkVTKObject.h>
@@ -32,44 +33,39 @@ class vtkMRMLScene;
 class vtkMRMLNode;
 class vtkMRMLMarkupsDisplayNode;
 class vtkMRMLMarkupsNode;
-class vtkMRMLColorNode;
 class vtkMRMLSelectionNode;
 
-class Q_SLICER_MODULE_MARKUPS_WIDGETS_EXPORT qMRMLMarkupsDisplayNodeWidget : public QWidget
+class Q_SLICER_MODULE_MARKUPS_WIDGETS_EXPORT qMRMLMarkupsDisplayNodeWidget : public qMRMLWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
-/*
-  Q_PROPERTY(ControlMode scalarRangeMode READ scalarRangeMode WRITE setScalarRangeMode)
-  Q_PROPERTY(double minimumValue READ minimumValue WRITE setMinimumValue)
-  Q_PROPERTY(double maximumValue READ maximumValue WRITE setMaximumValue)
-  Q_PROPERTY(bool clippingConfigurationButtonVisible READ clippingConfigurationButtonVisible WRITE setClippingConfigurationButtonVisible)
-  */
 public:
-
-  qMRMLMarkupsDisplayNodeWidget(QWidget *parent=nullptr);
+  typedef qMRMLWidget Superclass;
+  qMRMLMarkupsDisplayNodeWidget(QWidget* parent = nullptr);
   ~qMRMLMarkupsDisplayNodeWidget() override;
 
-  vtkMRMLMarkupsDisplayNode* mrmlMarkupsDisplayNode()const;
+  vtkMRMLMarkupsDisplayNode* mrmlMarkupsDisplayNode() const;
 
-  bool visibility()const;
+  bool visibility() const;
 
-  bool glyphSizeIsAbsolute()const;
-  bool curveLineSizeIsAbsolute()const;
+  bool glyphSizeIsAbsolute() const;
+  bool curveLineSizeIsAbsolute() const;
 
-  bool pointLabelsVisibility()const;
+  bool propertiesLabelVisibility() const;
+  bool pointLabelsVisibility() const;
 
 signals:
-  ///
   /// Signal sent if the any property in the display node is changed
   void displayNodeChanged();
+  /// Signal sent if the auto/manual value is updated
+  void scalarRangeModeValueChanged(vtkMRMLDisplayNode::ScalarRangeFlagType value);
 
 public slots:
   /// Set the markups display node to show edit properties of
-  void setMRMLMarkupsDisplayNode(vtkMRMLMarkupsDisplayNode *node);
+  void setMRMLMarkupsDisplayNode(vtkMRMLMarkupsDisplayNode* node);
   /// Utility function to be connected with generic signals
-  void setMRMLMarkupsDisplayNode(vtkMRMLNode *node);
+  void setMRMLMarkupsDisplayNode(vtkMRMLNode* node);
 
   /// Set the markups display node to show edit properties of,
   /// by specifying markups node.
@@ -82,7 +78,8 @@ public slots:
   void setGlyphSizeIsAbsolute(bool absolute);
   void setCurveLineSizeIsAbsolute(bool absolute);
 
-  void setPointLabelsVisibility(bool);
+  void setPropertiesLabelVisibility(bool visible);
+  void setPointLabelsVisibility(bool visible);
 
   void setMaximumMarkupsScale(double maxScale);
   void setMaximumMarkupsSize(double maxScale);
@@ -91,13 +88,16 @@ public slots:
   void setOutlineVisibility(bool visibility);
   void onFillOpacitySliderWidgetChanged(double opacity);
   void onOutlineOpacitySliderWidgetChanged(double opacity);
+  void setOccludedVisibility(bool visibility);
+  void setOccludedOpacity(double OccludedOpacity);
 
 protected slots:
   void updateWidgetFromMRML();
-  vtkMRMLSelectionNode* getSelectionNode(vtkMRMLScene *mrmlScene);
+  vtkMRMLSelectionNode* getSelectionNode(vtkMRMLScene* mrmlScene);
 
   void onSelectedColorPickerButtonChanged(QColor qcolor);
   void onUnselectedColorPickerButtonChanged(QColor qcolor);
+  void onActiveColorPickerButtonChanged(QColor qcolor);
   void onGlyphTypeComboBoxChanged(QString value);
   void onGlyphScaleSliderWidgetChanged(double value);
   void onGlyphSizeSliderWidgetChanged(double value);
@@ -105,6 +105,9 @@ protected slots:
   void onCurveLineDiameterSliderWidgetChanged(double value);
   void onTextScaleSliderWidgetChanged(double value);
   void onOpacitySliderWidgetChanged(double value);
+  void onSnapModeWidgetChanged();
+  void onTextPropertyWidgetsChanged();
+
   void onInteractionCheckBoxChanged(int state);
 
 protected:

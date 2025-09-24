@@ -43,14 +43,7 @@ set(KIT_include_directories
   )
 
 # Source files
-set(KIT_VTK_SRCS
-  vtkSlicerCLIModuleLogic.cxx
-  vtkSlicerCLIModuleLogic.h
-  )
-
-# Source files
 set(KIT_SRCS
-  ${KIT_VTK_SRCS}
   qSlicerCLIExecutableModuleFactory.cxx
   qSlicerCLIExecutableModuleFactory.h
   qSlicerCLILoadableModuleFactory.cxx
@@ -93,6 +86,7 @@ set(KIT_target_libraries
   qSlicerBaseQTGUI
   ModuleDescriptionParser ${ITK_LIBRARIES}
   MRMLCLI
+  SlicerBaseLogic
   )
 
 if(Slicer_USE_QtTesting)
@@ -119,28 +113,6 @@ SlicerMacroBuildBaseQtLibrary(
 
 if(Slicer_BUILD_QT_DESIGNER_PLUGINS)
   add_subdirectory(DesignerPlugins)
-endif()
-
-# --------------------------------------------------------------------------
-# Python Wrapping
-# --------------------------------------------------------------------------
-if(VTK_WRAP_PYTHON)
-  include(vtkMacroKitPythonWrap)
-
-  vtkMacroKitPythonWrap(
-    KIT_NAME ${PROJECT_NAME}
-    KIT_SRCS ${KIT_VTK_SRCS}
-    KIT_INSTALL_BIN_DIR ${Slicer_INSTALL_BIN_DIR}
-    KIT_INSTALL_LIB_DIR ${Slicer_INSTALL_LIB_DIR}
-    KIT_PYTHON_LIBRARIES SlicerBaseLogicPythonD
-    )
-  set_property(GLOBAL APPEND PROPERTY Slicer_TARGETS ${PROJECT_NAME}Python ${PROJECT_NAME}PythonD)
-  # Folder
-  set_target_properties(${PROJECT_NAME}Python PROPERTIES FOLDER "Core-Base")
-  set_target_properties(${PROJECT_NAME}PythonD PROPERTIES FOLDER "Core-Base")
-  if(TARGET ${PROJECT_NAME}Hierarchy)
-    set_target_properties(${PROJECT_NAME}Hierarchy PROPERTIES FOLDER "Core-Base")
-  endif()
 endif()
 
 # --------------------------------------------------------------------------

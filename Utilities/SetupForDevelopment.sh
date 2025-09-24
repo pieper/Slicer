@@ -2,7 +2,7 @@
 
 # Run this script to set up development with git.
 # For more information, see:
-# http://www.slicer.org/slicerWiki/index.php/Documentation/Labs/DevelopmentWithGit
+# https://www.slicer.org/w/index.php/Documentation/Labs/DevelopmentWithGit
 #
 
 printErrorAndExit() {
@@ -23,8 +23,8 @@ if test -d .git/.git; then
 Please 'rm -rf' this directory."
 fi
 
-# Make 'git pull' on master always use rebase.
-git config branch.master.rebase true
+# Make 'git pull' on main always use rebase.
+git config branch.main.rebase true
 
 # Make automatic and manual rebase operations to display a summary and stat
 # display of changes merged in the fast-forward operation.
@@ -46,5 +46,5 @@ echo
 
 # Record the version of this setup so the developer can be notified that
 # this script and/or hooks have been modified.
-SetupForDevelopment_VERSION=8
+SetupForDevelopment_VERSION=10
 git config hooks.SetupForDevelopment ${SetupForDevelopment_VERSION}

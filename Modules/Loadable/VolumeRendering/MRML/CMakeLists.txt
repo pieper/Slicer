@@ -8,6 +8,7 @@ find_package(JsonCpp REQUIRED)
 
 set(${KIT}_INCLUDE_DIRECTORIES
   ${JsonCpp_INCLUDE_DIR}
+  ${vtkSlicerMarkupsModuleMRML_SOURCE_DIR}
   )
 
 set(${KIT}_SRCS
@@ -23,6 +24,8 @@ set(${KIT}_SRCS
   vtkMRMLShaderPropertyStorageNode.h
   vtkMRMLVolumePropertyNode.cxx
   vtkMRMLVolumePropertyNode.h
+  vtkMRMLVolumePropertyJsonStorageNode.cxx
+  vtkMRMLVolumePropertyJsonStorageNode.h
   vtkMRMLVolumePropertyStorageNode.cxx
   vtkMRMLVolumePropertyStorageNode.h
   vtkMRML${MODULE_NAME}DisplayNode.cxx
@@ -33,7 +36,7 @@ set(${KIT}_TARGET_LIBRARIES
   ${ITK_LIBRARIES}
   ${JsonCpp_LIBRARY}
   ${MRML_LIBRARIES}
-  vtkSlicerAnnotationsModuleMRML
+  vtkSlicerMarkupsModuleMRML
   )
 
 #-----------------------------------------------------------------------------

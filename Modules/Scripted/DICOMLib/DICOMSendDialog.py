@@ -1,93 +1,114 @@
-from __future__ import print_function
-import os, copy
-import qt
-import vtk
 import logging
+import qt
 
 import slicer
-from slicer.util import VTKObservationMixin
 
-from slicer.util import settingsValue, toBool
 import DICOMLib
 
 
 class DICOMSendDialog(qt.QDialog):
-  """Implement the Qt dialog for doing a DICOM Send (storage SCU)
-  """
+    """Implement the Qt dialog for doing a DICOM Send (storage SCU)"""
 
-  def __init__(self, files, parent="mainWindow"):
-    super(DICOMSendDialog, self).__init__(slicer.util.mainWindow() if parent == "mainWindow" else parent)
-    self.setWindowTitle('Send DICOM Study')
-    self.setWindowModality(1)
-    self.setLayout(qt.QVBoxLayout())
-    self.files = files
-    self.settings = qt.QSettings()
-    self.sendAddress = self.settings.value('DICOM.sendAddress')
-    self.sendPort = self.settings.value('DICOM.sendPort')
+    def __init__(self, files, parent="mainWindow"):
+        super().__init__(slicer.util.mainWindow() if parent == "mainWindow" else parent)
+        self.setWindowTitle("Send DICOM Study")
+        self.setWindowModality(1)
+        self.setLayout(qt.QVBoxLayout())
+        self.files = files
+        self.cancelRequested = False
+        self.sendingIsInProgress = False
+        self.setMinimumWidth(200)
+        self.open()
 
-    self.open()
+    def open(self):
+        self.studyLabel = qt.QLabel("Send %d items to destination" % len(self.files))
+        self.layout().addWidget(self.studyLabel)
 
-  def open(self):
-    self.studyLabel = qt.QLabel('Send %d items to destination' % len(self.files))
-    self.layout().addWidget(self.studyLabel)
+        # Send Parameters
+        self.dicomFrame = qt.QFrame(self)
+        self.dicomFormLayout = qt.QFormLayout()
+        self.dicomFrame.setLayout(self.dicomFormLayout)
 
-    # Send Parameters
-    self.dicomFrame = qt.QFrame(self)
-    self.dicomFormLayout = qt.QFormLayout()
-    self.dicomFrame.setLayout(self.dicomFormLayout)
-    self.dicomEntries = {}
-    self.dicomParameters = {
-      "Destination Address": self.sendAddress,
-      "Destination Port": self.sendPort
-    }
-    for label in self.dicomParameters.keys():
-      self.dicomEntries[label] = qt.QLineEdit()
-      self.dicomEntries[label].text = self.dicomParameters[label]
-      self.dicomFormLayout.addRow(label + ": ", self.dicomEntries[label])
-    self.layout().addWidget(self.dicomFrame)
+        self.settings = qt.QSettings()
 
-    # button box
-    bbox = qt.QDialogButtonBox(self)
-    bbox.addButton(bbox.Ok)
-    bbox.addButton(bbox.Cancel)
-    bbox.accepted.connect(self.onOk)
-    bbox.rejected.connect(self.onCancel)
-    self.layout().addWidget(bbox)
+        self.protocolSelectorCombobox = qt.QComboBox()
+        self.protocolSelectorCombobox.addItems(["DIMSE", "DICOMweb"])
+        self.protocolSelectorCombobox.setCurrentText(self.settings.value("DICOM/Send/Protocol", "DIMSE"))
+        self.protocolSelectorCombobox.currentIndexChanged.connect(self.onProtocolSelectorChange)
+        self.dicomFormLayout.addRow("Protocol: ", self.protocolSelectorCombobox)
 
-    qt.QDialog.open(self)
+        self.serverAETitleEdit = qt.QLineEdit()
+        self.serverAETitleEdit.setToolTip("AE Title")
+        self.serverAETitleEdit.text = self.settings.value("DICOM/Send/AETitle", "CTK")
+        self.dicomFormLayout.addRow("AE Title: ", self.serverAETitleEdit)
+        # Enable AET only for DIMSE
+        self.serverAETitleEdit.enabled = self.protocolSelectorCombobox.currentText == "DIMSE"
 
-  def onOk(self):
-    address = self.dicomEntries['Destination Address'].text
-    port = self.dicomEntries['Destination Port'].text
-    self.settings.setValue('DICOM.sendAddress', address)
-    self.settings.setValue('DICOM.sendPort', port)
-    self.progress = slicer.util.createProgressDialog(value=0, maximum=len(self.files))
-    self.progressValue = 0
+        self.serverAddressLineEdit = qt.QLineEdit()
+        self.serverAddressLineEdit.setToolTip("Address includes hostname and port number in standard URL format (hostname:port).")
+        self.serverAddressLineEdit.text = self.settings.value("DICOM/Send/URL", "")
+        self.dicomFormLayout.addRow("Destination Address: ", self.serverAddressLineEdit)
 
-    try:
-      DICOMLib.DICOMSender(self.files, address, port, progressCallback=self.onProgress)
-    except Exception as result:
-      slicer.util.warningDisplay('Could not send data: %s' % result, windowTitle='DICOM Send', parent=self)
-    self.progress.close()
-    self.progress = None
-    self.progressValue = None
-    self.close()
+        self.layout().addWidget(self.dicomFrame)
 
-  def onCancel(self):
-    self.close()
+        # button box
+        self.bbox = qt.QDialogButtonBox(self)
+        self.bbox.addButton(self.bbox.Ok)
+        self.bbox.addButton(self.bbox.Cancel)
+        self.bbox.accepted.connect(self.onOk)
+        self.bbox.rejected.connect(self.onCancel)
+        self.layout().addWidget(self.bbox)
 
-  def onProgress(self, message):
-    self.progress.show()
-    self.progress.activateWindow()
-    self.centerProgress()
-    self.progressValue += 1
-    self.progress.setValue(self.progressValue)
-    self.progress.setLabelText(message)
-    slicer.app.processEvents()
+        self.progressBar = qt.QProgressBar(self.parent().window())
+        self.progressBar.hide()
+        self.dicomFormLayout.addRow(self.progressBar)
 
-  def centerProgress(self):
-    mainWindow = slicer.util.mainWindow()
-    screenMainPos = mainWindow.pos
-    x = screenMainPos.x() + int((mainWindow.width - self.progress.width)/2)
-    y = screenMainPos.y() + int((mainWindow.height - self.progress.height)/2)
-    self.progress.move(x,y)
+        qt.QDialog.open(self)
+
+    def onProtocolSelectorChange(self):
+        # Enable AET only for DIMSE
+        self.serverAETitleEdit.enabled = self.protocolSelectorCombobox.currentText == "DIMSE"
+
+    def onOk(self):
+        self.sendingIsInProgress = True
+        address = self.serverAddressLineEdit.text
+        aeTitle = self.serverAETitleEdit.text
+        protocol = self.protocolSelectorCombobox.currentText
+        self.settings.setValue("DICOM/Send/URL", address)
+        self.settings.setValue("DICOM/Send/AETitle", aeTitle)
+        self.settings.setValue("DICOM/Send/Protocol", protocol)
+        self.progressBar.value = 0
+        self.progressBar.maximum = len(self.files) + 1
+        self.progressBar.show()
+        self.cancelRequested = False
+        okButton = self.bbox.button(self.bbox.Ok)
+
+        try:
+            with slicer.util.tryWithErrorDisplay("DICOM sending failed."):
+                okButton.enabled = False
+                DICOMLib.DICOMSender(self.files,
+                                     address,
+                                     protocol,
+                                     aeTitle=aeTitle,
+                                     progressCallback=self.onProgress,
+                                     auth=DICOMLib.DICOMUtils.getGlobalDICOMAuth())
+                logging.debug("DICOM sending of %s files succeeded" % len(self.files))
+                self.close()
+        except Exception:
+            self.progressBar.hide()
+        finally:
+            okButton.enabled = True
+            self.sendingIsInProgress = False
+
+    def onCancel(self):
+        if self.sendingIsInProgress:
+            self.cancelRequested = True
+        else:
+            self.close()
+
+    def onProgress(self, message):
+        self.progressBar.value += 1
+        # message can be long, do not display it, but still log it (might be useful for troubleshooting)
+        logging.debug("DICOM send: " + message)
+        slicer.app.processEvents()
+        return not self.cancelRequested

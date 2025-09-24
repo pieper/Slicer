@@ -41,7 +41,6 @@ class vtkMRMLScalarVolumeNode;
 class vtkPolyData;
 
 /// \brief MRML node containing segmentations
-/// \ingroup Segmentations
 ///
 /// Segmentation node stores a set of segments (also known as contours or segmented regions).
 /// Segments may overlap and may be stored in various representations (binary labelmap image,
@@ -56,7 +55,7 @@ public:
   // Define constants
   static const char* GetSegmentIDAttributeName() { return "segmentID"; };
 
-  static vtkMRMLSegmentationNode *New();
+  static vtkMRMLSegmentationNode* New();
   vtkTypeMacro(vtkMRMLSegmentationNode, vtkMRMLDisplayableNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -64,7 +63,7 @@ public:
   vtkMRMLNode* CreateNodeInstance() override;
 
   /// Set node attributes from name/value pairs
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
@@ -74,7 +73,7 @@ public:
   vtkMRMLCopyContentMacro(vtkMRMLSegmentationNode);
 
   /// Get unique node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "Segmentation";};
+  const char* GetNodeTagName() override { return "Segmentation"; };
 
   /// Get bounding box in global RAS form (xmin,xmax, ymin,ymax, zmin,zmax).
   /// This method returns the bounds of the object with any transforms that may
@@ -89,7 +88,7 @@ public:
 
   /// Returns true if the transformable node can apply non linear transforms
   /// \sa ApplyTransform
-  bool CanApplyNonLinearTransforms()const override;
+  bool CanApplyNonLinearTransforms() const override;
 
   /// Apply a transform matrix on the segmentation
   /// \sa SetAndObserveTransformNodeID, ApplyTransform, CanApplyNonLinearTransforms
@@ -121,7 +120,7 @@ public:
   virtual vtkIdType GetSegmentSubjectHierarchyItem(std::string segmentID, vtkMRMLSubjectHierarchyNode* shNode);
 
 #ifndef __VTK_WRAP__
-//BTX
+  // BTX
   /// Build merged labelmap of the binary labelmap representations of the specified segments
   /// \param mergedImageData Output image data for the merged labelmap image data. Voxels of background volume will be
   /// of signed short type. Label value of n-th segment in segmentIDs list will be (n + 1), or will be specified in labelValues.
@@ -134,9 +133,12 @@ public:
   ///   If not specified, then the label values in the segmentation will be used.
   ///   The size of the array should match the number of segment IDs used in the merged labelmap.
   /// \return Success flag
-  virtual bool GenerateMergedLabelmap(vtkOrientedImageData* mergedImageData, int extentComputationMode, vtkOrientedImageData* mergedLabelmapGeometry = nullptr,
-    const std::vector<std::string>& segmentIDs = std::vector<std::string>(), vtkIntArray* labelValues = nullptr);
-//ETX
+  virtual bool GenerateMergedLabelmap(vtkOrientedImageData* mergedImageData,
+                                      int extentComputationMode,
+                                      vtkOrientedImageData* mergedLabelmapGeometry = nullptr,
+                                      const std::vector<std::string>& segmentIDs = std::vector<std::string>(),
+                                      vtkIntArray* labelValues = nullptr);
+// ETX
 #endif // __VTK_WRAP__
 
   /// Python-accessible version of the more generic \sa GenerateMergedLabelmap.
@@ -153,11 +155,13 @@ public:
   ///   The size of the array should match the number of segment IDs used in the merged labelmap.
   /// \sa GenerateMergedLabelmap
   virtual bool GenerateMergedLabelmapForAllSegments(vtkOrientedImageData* mergedImageData,
-    int extentComputationMode = vtkSegmentation::EXTENT_UNION_OF_EFFECTIVE_SEGMENTS,
-    vtkOrientedImageData* mergedLabelmapGeometry = nullptr, vtkStringArray* segmentIDs = nullptr, vtkIntArray* labelValues = nullptr);
+                                                    int extentComputationMode = vtkSegmentation::EXTENT_UNION_OF_EFFECTIVE_SEGMENTS,
+                                                    vtkOrientedImageData* mergedLabelmapGeometry = nullptr,
+                                                    vtkStringArray* segmentIDs = nullptr,
+                                                    vtkIntArray* labelValues = nullptr);
 
   enum
-    {
+  {
     /// Modification is allowed everywhere.
     EditAllowedEverywhere = 0,
     /// Modification is allowed inside all segments.
@@ -172,7 +176,13 @@ public:
     EditAllowedInsideSingleSegment,
     /// Insert valid types above this line
     EditAllowed_Last
-    };
+  };
+
+  //@{
+  /// Convert between constants IDs to/from string
+  static const char* ConvertMaskModeToString(int mode);
+  static int ConvertMaskModeFromString(const char* modeStr);
+  //@}
 
   /// Generates an edit mask image.
   /// If a mask voxel is non-zero it means that the image at that position is editable.
@@ -180,16 +190,19 @@ public:
   /// \param editMode defines editable regions based on existing segments
   /// \param referenceGeometry defines image geometry (extent and IJK to world matrix) of the output
   /// \param editedSegmentID this segment will be always editable (regardless of editMode), optional
-  /// \param masterVolume used for intensity-based masking
+  /// \param sourceVolume used for intensity-based masking
   /// \param editableIntensityRange used for intensity-based masking
   /// \param displayNode used when edit mode refers to visible segments.
   ///   If not specified then the first display node is used.
   /// \return Returns true is mask is successfully generated.
-  virtual bool GenerateEditMask(vtkOrientedImageData* maskImage, int editMode,
-    vtkOrientedImageData* referenceGeometry,
-    std::string editedSegmentID="", std::string maskSegmentID="",
-    vtkOrientedImageData* masterVolume = nullptr, double editableIntensityRange[2] = nullptr,
-    vtkMRMLSegmentationDisplayNode* displayNode = nullptr);
+  virtual bool GenerateEditMask(vtkOrientedImageData* maskImage,
+                                int editMode,
+                                vtkOrientedImageData* referenceGeometry,
+                                std::string editedSegmentID = "",
+                                std::string maskSegmentID = "",
+                                vtkOrientedImageData* sourceVolume = nullptr,
+                                double editableIntensityRange[2] = nullptr,
+                                vtkMRMLSegmentationDisplayNode* displayNode = nullptr);
 
   /// Expose reference identifier to get the volume node defining the reference image geometry if any
   static std::string GetReferenceImageGeometryReferenceRole() { return "referenceImageGeometryRef"; };
@@ -203,12 +216,25 @@ public:
 
   // Convenience functions for commonly needed features
 
-  /// Change master representation. All other representations are automatically computed
-  /// from the master representation.
-  virtual bool SetMasterRepresentationToBinaryLabelmap();
-  /// Change master representation. All other representations are automatically computed
-  /// from the master representation.
-  virtual bool SetMasterRepresentationToClosedSurface();
+  //@{
+  /// Change source representation. All other representations are automatically computed
+  /// from the source representation.
+  virtual bool SetSourceRepresentationToBinaryLabelmap();
+  virtual bool SetSourceRepresentationToClosedSurface();
+  //@}
+
+  /// \deprecated Use SetSourceRepresentationToBinaryLabelmap instead.
+  virtual bool SetMasterRepresentationToBinaryLabelmap()
+  {
+    vtkWarningMacro("vtkSegmentation::SetMasterRepresentationToBinaryLabelmap() method is deprecated, please use SetSourceRepresentationToBinaryLabelmap method instead");
+    return this->SetSourceRepresentationToClosedSurface();
+  };
+  /// \deprecated Use SetSourceRepresentationToClosedSurface instead.
+  virtual bool SetMasterRepresentationToClosedSurface()
+  {
+    vtkWarningMacro("vtkSegmentation::SetMasterRepresentationToClosedSurface() method is deprecated, please use SetSourceRepresentationToClosedSurface method instead");
+    return this->SetSourceRepresentationToClosedSurface();
+  };
 
   /// Generate binary labelmap representation for all segments.
   virtual bool CreateBinaryLabelmapRepresentation();
@@ -216,17 +242,18 @@ public:
   /// Remove binary labelmap representation for all segments.
   virtual void RemoveBinaryLabelmapRepresentation();
 
-  /// Get a segment as binary labelmap.
-  /// If representation does not exist yet then call CreateBinaryLabelmapRepresentation() before.
-  /// This function returns a copy of the segment binary labelmap.
-  virtual void GetBinaryLabelmapRepresentation(const std::string segmentId, vtkOrientedImageData* outputBinaryLabelmap);
+  /// Get a segment as a binary labelmap.
+  /// If representation does not exist yet then CreateBinaryLabelmapRepresentation() must be called before this method.
+  /// This function returns a copy of the segment binary labelmap in outputBinaryLabelmap.
+  /// Returns true on success.
+  virtual bool GetBinaryLabelmapRepresentation(const std::string segmentId, vtkOrientedImageData* outputBinaryLabelmap);
 
-  /// Get a segment as binary labelmap.
-  /// If representation does not exist yet then call CreateBinaryLabelmapRepresentation() before.
+  /// Get low-level access to the image data of a segment's binary labelmap representation.
+  /// If representation does not exist yet then CreateBinaryLabelmapRepresentation() must be called before this method.
   /// This function returns a pointer to the original labelmap representation in the segment.
   /// The binary labelmap can be a shared labelmap containing multiple segments.
-  /// To get a list of all segments in a shared labelmap, call vtkSegmentation::GetSegmentIDsSharingRepresentation()
-  /// The label value used for each segment can be retreived using vtkSegment::GetLabelValue().
+  /// To get a list of all segments in a shared labelmap, call vtkSegmentation::GetSegmentIDsSharingRepresentation().
+  /// The label value used for each segment can be retrieved using vtkSegment::GetLabelValue().
   virtual vtkOrientedImageData* GetBinaryLabelmapInternalRepresentation(const std::string segmentId);
 
   /// Generate closed surface representation for all segments.
@@ -236,25 +263,27 @@ public:
   /// Remove closed surface representation for all segments.
   virtual void RemoveClosedSurfaceRepresentation();
 
-  /// Get a segment as binary labelmap.
-  /// If representation does not exist yet then call CreateClosedSurfaceRepresentation() before.
-  /// This function returns a copy of the segment closed surface.
-  virtual void GetClosedSurfaceRepresentation(const std::string segmentId, vtkPolyData* outputClosedSurface);
+  /// Get a segment as a surface mesh.
+  /// If representation does not exist yet then CreateClosedSurfaceRepresentation() must be called before this method.
+  /// This function returns a copy of the segment closed surface in outputClosedSurface.
+  /// Returns true on success.
+  virtual bool GetClosedSurfaceRepresentation(const std::string segmentId, vtkPolyData* outputClosedSurface);
 
-  /// Get a segment as binary labelmap.
-  /// If representation does not exist yet then call CreateClosedSurfaceRepresentation() before.
-  /// This function returns a copy of the segment closed surface.
+  /// Get low-level access to the vtkPolyData object that stores a segment's closed surface representation.
+  /// If representation does not exist yet then CreateClosedSurfaceRepresentation() must be called before this method.
+  /// This function gives direct access to the internal data object, therefore modifications to this object will change the segmentation.
+  /// Internal representation of the data object may change in the future (for example it may be possible that one vtkPolyData
+  /// will be shared between multiple segments), therefore to get closed surface representation of a segment for read-only access,
+  /// GetClosedSurfaceRepresentation() method is recommended.
   virtual vtkPolyData* GetClosedSurfaceInternalRepresentation(const std::string segmentId);
 
   /// Add new segment from a closed surface.
   /// \return Segment ID of the new segment. Empty string if an error occurred.
-  virtual std::string AddSegmentFromClosedSurfaceRepresentation(vtkPolyData* polyData,
-    std::string segmentName = "", double color[3] = nullptr, std::string segmentId = "");
+  virtual std::string AddSegmentFromClosedSurfaceRepresentation(vtkPolyData* polyData, std::string segmentName = "", double color[3] = nullptr, std::string segmentId = "");
 
   /// Add new segment from a binary labelmap.
   /// \return Segment ID of the new segment. Empty string if an error occurred.
-  std::string AddSegmentFromBinaryLabelmapRepresentation(vtkOrientedImageData* imageData,
-    std::string segmentName = "", double color[3] = nullptr, std::string segmentId = "");
+  std::string AddSegmentFromBinaryLabelmapRepresentation(vtkOrientedImageData* imageData, std::string segmentName = "", double color[3] = nullptr, std::string segmentId = "");
 
   /// Delete segment from segmentation.
   void RemoveSegment(const std::string& segmentID);
@@ -265,6 +294,7 @@ public:
   /// Get position of the segment's center (in the segmentation node's coordinate system)
   void GetSegmentCenter(const std::string& segmentID, double center[3]);
 
+  //@{
   /// Get position of the segment's center in world coordinate system.
   /// It is the position returned by \sa GetSegmentCenter() transformed by the segmentation node's
   /// parent transform.
@@ -272,21 +302,37 @@ public:
   /// Python-accessible version of \sa GetSegmentCenterRAS.
   /// Get position of the segment's center in world coordinate system.
   void GetSegmentCenterRAS(const std::string& segmentID, double centerRAS[3]);
+  //@}
 
+  //@{
   /// Indicates whether or not the segment filter is visible in the segments view
   vtkSetMacro(SegmentListFilterEnabled, bool);
   vtkGetMacro(SegmentListFilterEnabled, bool);
   vtkBooleanMacro(SegmentListFilterEnabled, bool);
+  //@}
 
+  //@{
   /// Contains a serialized representation of the filtering options used by the segments view
   vtkSetMacro(SegmentListFilterOptions, std::string);
   vtkGetMacro(SegmentListFilterOptions, std::string);
+  //@}
 
+  //@{
   /// The vtkMRMLColorTableNode that is used to convert to and from labelmap representations.
-  /// If a segment name matches the name of a color in the table, then the value of the color will be used as the labelmap value
+  /// If terminology or name of a segment name matches an entry in this color table, then the value of the color will be used as the label value
   /// for the segment when exporting the segmentation to labelmap.
   void SetLabelmapConversionColorTableNodeID(const char* labelmapConversionColorTableNodeID);
+  const char* GetLabelmapConversionColorTableNodeID();
   vtkMRMLColorTableNode* GetLabelmapConversionColorTableNode();
+  //@}
+
+  /// ReferenceImageGeometryChangedEvent is fired when the ReferenceImageGeometry node reference is Added, Modified, or Removed
+  /// SegmentationChangedEvent is fired when a different vtkSegmentation object is set into the node.
+  enum
+  {
+    ReferenceImageGeometryChangedEvent = 23000,
+    SegmentationChangedEvent
+  };
 
 protected:
   /// Set segmentation object
@@ -295,9 +341,9 @@ protected:
   /// Callback function for all events from the segmentation object.
   static void SegmentationModifiedCallback(vtkObject* caller, unsigned long eid, void* clientData, void* callData);
 
-  /// Callback function observing the master representation of the segmentation (and each segment within)
+  /// Callback function observing the source representation of the segmentation (and each segment within)
   /// Invalidates all representations other than the master. These representations will be automatically converted later on demand.
-  void OnMasterRepresentationModified();
+  void OnSourceRepresentationModified();
 
   /// Callback function observing segment added events.
   /// Triggers update of display properties
@@ -313,6 +359,15 @@ protected:
 
   static const char* GetLabelmapConversionColorTableNodeReferenceRole() { return "labelmapConversionColorTableNode"; };
   static const char* GetLabelmapConversionColorTableNodeReferenceMRMLAttributeName() { return "labelmapConversionColorTableNodeRef"; };
+
+  /// Reimplemented to invoke ReferenceImageGeometryChangedEvent
+  void OnNodeReferenceAdded(vtkMRMLNodeReference* reference) override;
+
+  /// Reimplemented to invoke ReferenceImageGeometryChangedEvent
+  void OnNodeReferenceModified(vtkMRMLNodeReference* reference) override;
+
+  /// Reimplemented to invoke ReferenceImageGeometryChangedEvent
+  void OnNodeReferenceRemoved(vtkMRMLNodeReference* reference) override;
 
 protected:
   vtkMRMLSegmentationNode();
@@ -334,4 +389,4 @@ protected:
   std::string SegmentListFilterOptions;
 };
 
-#endif // __vtkMRMLSegmentationNode_h
+#endif

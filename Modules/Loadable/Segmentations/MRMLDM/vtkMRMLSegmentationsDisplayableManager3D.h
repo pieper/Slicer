@@ -29,21 +29,28 @@
 /// \brief Display segmentations in 3D views
 ///
 /// Displays poly data representations of segmentations in 3D viewers
-/// If master representation is a poly data then show master representation.
+/// If source representation is a poly data then show source representation.
 /// Otherwise show first poly data representation if any.
 /// Otherwise try converting to closed surface representation
 ///
-class VTK_SLICER_SEGMENTATIONS_MODULE_MRMLDISPLAYABLEMANAGER_EXPORT vtkMRMLSegmentationsDisplayableManager3D
-  : public vtkMRMLAbstractThreeDViewDisplayableManager
+class VTK_SLICER_SEGMENTATIONS_MODULE_MRMLDISPLAYABLEMANAGER_EXPORT vtkMRMLSegmentationsDisplayableManager3D : public vtkMRMLAbstractThreeDViewDisplayableManager
 {
 public:
-
   static vtkMRMLSegmentationsDisplayableManager3D* New();
-  vtkTypeMacro(vtkMRMLSegmentationsDisplayableManager3D,vtkMRMLAbstractThreeDViewDisplayableManager);
+  vtkTypeMacro(vtkMRMLSegmentationsDisplayableManager3D, vtkMRMLAbstractThreeDViewDisplayableManager);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-protected:
+  /// Find display node managed by the displayable manager at a specified world RAS position.
+  /// \return Non-zero in case a node is found at the position, 0 otherwise
+  int Pick3D(double ras[3]) override;
 
+  /// Get the MRML ID of the picked node, returns empty string if no pick
+  const char* GetPickedNodeID() override;
+
+  /// Get the ID of the picked segment, returns empty string if no pick
+  virtual const char* GetPickedSegmentID();
+
+protected:
   vtkMRMLSegmentationsDisplayableManager3D();
   ~vtkMRMLSegmentationsDisplayableManager3D() override;
 
@@ -63,18 +70,7 @@ protected:
   /// Initialize the displayable manager
   void Create() override;
 
-  /// Find display node managed by the displayable manager at a specified world RAS position.
-  /// \return Non-zero in case a node is found at the position, 0 otherwise
-  int Pick3D(double ras[3]) override;
-
-  /// Get the MRML ID of the picked node, returns empty string if no pick
-  const char* GetPickedNodeID() override;
-
-  /// Get the ID of the picked segment, returns empty string if no pick
-  virtual const char* GetPickedSegmentID();
-
 private:
-
   vtkMRMLSegmentationsDisplayableManager3D(const vtkMRMLSegmentationsDisplayableManager3D&) = delete;
   void operator=(const vtkMRMLSegmentationsDisplayableManager3D&) = delete;
 

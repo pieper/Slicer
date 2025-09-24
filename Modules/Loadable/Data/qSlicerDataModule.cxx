@@ -17,6 +17,8 @@
   and was partially funded by NIH grant 3P41RR013218-12S1
 
 ==============================================================================*/
+// Qt includes
+#include <QDebug>
 
 // Slicer includes
 #include "qSlicerApplication.h"
@@ -28,10 +30,10 @@
 #include "qSlicerDataModule.h"
 #include "qSlicerDataModuleWidget.h"
 #include "qSlicerSaveDataDialog.h"
+#include "qSlicerExportNodeDialog.h"
 #include "qSlicerSceneBundleReader.h"
 #include "qSlicerSceneReader.h"
 #include "qSlicerSceneWriter.h"
-#include "qSlicerSlicer2SceneReader.h"
 
 // SlicerLogic includes
 #include <vtkSlicerApplicationLogic.h>
@@ -48,12 +50,11 @@
 //-----------------------------------------------------------------------------
 class qSlicerDataModulePrivate
 {
-public:
 };
 
 //-----------------------------------------------------------------------------
 qSlicerDataModule::qSlicerDataModule(QObject* parentObject)
-  :Superclass(parentObject)
+  : Superclass(parentObject)
   , d_ptr(new qSlicerDataModulePrivate)
 {
 }
@@ -62,7 +63,7 @@ qSlicerDataModule::qSlicerDataModule(QObject* parentObject)
 qSlicerDataModule::~qSlicerDataModule() = default;
 
 //-----------------------------------------------------------------------------
-QIcon qSlicerDataModule::icon()const
+QIcon qSlicerDataModule::icon() const
 {
   return QIcon(":/Icons/SubjectHierarchy.png");
 }
@@ -70,7 +71,7 @@ QIcon qSlicerDataModule::icon()const
 //-----------------------------------------------------------------------------
 QStringList qSlicerDataModule::categories() const
 {
-  return QStringList() << "" << "Informatics";
+  return QStringList() << "" << qSlicerAbstractCoreModule::tr("Informatics");
 }
 
 //-----------------------------------------------------------------------------
@@ -78,26 +79,31 @@ QStringList qSlicerDataModule::dependencies() const
 {
   QStringList moduleDependencies;
   // Cameras: Required in qSlicerSceneReader
-  moduleDependencies << "Cameras";
+  moduleDependencies << /*no tr*/ "Cameras";
   return moduleDependencies;
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerDataModule::setup()
 {
+  Q_D(const qSlicerDataModule);
+
   this->Superclass::setup();
 
-  qSlicerAbstractCoreModule* camerasModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("Cameras");
-  vtkSlicerCamerasModuleLogic* camerasLogic =
-    vtkSlicerCamerasModuleLogic::SafeDownCast(camerasModule ? camerasModule->logic() : nullptr);
+  vtkSlicerCamerasModuleLogic* camerasLogic = vtkSlicerCamerasModuleLogic::SafeDownCast(this->moduleLogic(/*no tr*/ "Cameras"));
+  // NOTE: here we assume that camerasLogic with a nullptr value can be passed
+  // to the qSlicerSceneReader. Therefore we trigger a warning but don't return
+  // immediately.
+  if (!camerasLogic)
+  {
+    qCritical() << Q_FUNC_INFO << ": Cameras module is not found";
+  }
 
   qSlicerIOManager* ioManager = qSlicerApplication::application()->ioManager();
 
   // Readers
   ioManager->registerIO(new qSlicerSceneReader(camerasLogic, this));
   ioManager->registerIO(new qSlicerSceneBundleReader(this));
-  ioManager->registerIO(new qSlicerSlicer2SceneReader(this->appLogic(), this));
 
   // Writers
   ioManager->registerIO(new qSlicerSceneWriter(this));
@@ -105,12 +111,13 @@ void qSlicerDataModule::setup()
   // Dialogs
   ioManager->registerDialog(new qSlicerDataDialog(this));
   ioManager->registerDialog(new qSlicerSaveDataDialog(this));
+  ioManager->registerDialog(new qSlicerExportNodeDialog(this));
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation * qSlicerDataModule::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation* qSlicerDataModule::createWidgetRepresentation()
 {
-  qSlicerDataModuleWidget *widget = new qSlicerDataModuleWidget;
+  qSlicerDataModuleWidget* widget = new qSlicerDataModuleWidget;
   return widget;
 }
 
@@ -121,36 +128,33 @@ vtkMRMLAbstractLogic* qSlicerDataModule::createLogic()
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerDataModule::helpText()const
+QString qSlicerDataModule::helpText() const
 {
-  QString help = QString(
-    "The Data module is the central data-organizing point where all loaded data is "
-    "presented for access and manipulation is the Data module. It allows organizing "
-    "the data in folders or patient/study trees (automatically done for DICOM), "
-    "visualizing any displayable data, transformation of whole branches, and a "
-    "multitude of data type specific features.");
+  QString help = QString(tr("The Data module is the central data-organizing point where all loaded data is "
+                            "presented for access and manipulation. It allows organizing "
+                            "the data in folders or patient/study trees (automatically done for DICOM), "
+                            "visualizing any displayable data, transformation of whole branches, and a "
+                            "multitude of data type specific features."));
   help += this->defaultDocumentationLink();
   return help;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerDataModule::acknowledgementText()const
+QString qSlicerDataModule::acknowledgementText() const
 {
-  QString about =
-    "<center><table border=\"0\"><tr>"
-    "<td><img src=\":Logos/NAMIC.png\" alt\"NA-MIC\"></td>"
-    "<td><img src=\":Logos/NAC.png\" alt\"NAC\"></td>"
-    "</tr><tr>"
-    "<td><img src=\":Logos/BIRN-NoText.png\" alt\"BIRN\"></td>"
-    "<td><img src=\":Logos/NCIGT.png\" alt\"NCIGT\"></td>"
-    "</tr></table></center>"
-    "This work was supported by NA-MIC, NAC, BIRN, NCIGT, CTSC, and the Slicer "
-    "Community.";
+  QString about = "<center><table border=\"0\"><tr>"
+                  "<td><img src=\":Logos/NAMIC.png\" alt\"NA-MIC\"></td>"
+                  "<td><img src=\":Logos/NAC.png\" alt\"NAC\"></td>"
+                  "</tr><tr>"
+                  "<td><img src=\":Logos/BIRN-NoText.png\" alt\"BIRN\"></td>"
+                  "<td><img src=\":Logos/NCIGT.png\" alt\"NCIGT\"></td>"
+                  "</tr></table></center>"
+                  + tr("This work was supported by NA-MIC, NAC, BIRN, NCIGT, CTSC, and the Slicer Community.");
   return about;
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerDataModule::contributors()const
+QStringList qSlicerDataModule::contributors() const
 {
   QStringList moduleContributors;
   moduleContributors << QString("Csaba Pinter (Queen's)");

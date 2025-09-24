@@ -10,16 +10,13 @@ class qSlicerCropVolumeModuleWidgetPrivate;
 class vtkMRMLNode;
 class vtkMRMLCropVolumeParametersNode;
 
-/// \ingroup Slicer_QtModules_CropVolume
-class Q_SLICER_QTMODULES_CROPVOLUME_EXPORT qSlicerCropVolumeModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_CROPVOLUME_EXPORT qSlicerCropVolumeModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerCropVolumeModuleWidget(QWidget *parent=nullptr);
+  qSlicerCropVolumeModuleWidget(QWidget* parent = nullptr);
   ~qSlicerCropVolumeModuleWidget() override;
 
   bool setEditedNode(vtkMRMLNode* node, QString role = QString(), QString context = QString()) override;
@@ -38,12 +35,16 @@ protected slots:
   void setInputVolume(vtkMRMLNode*);
   void setOutputVolume(vtkMRMLNode* node);
   void setInputROI(vtkMRMLNode*);
+  void setFitROIMode(int);
   void initializeInputROI(vtkMRMLNode*);
   /// when ROIs get added to the node selector, if the selector doesn't
   /// have a current node, select it
   void onInputROIAdded(vtkMRMLNode* node);
 
   void onROIVisibilityChanged(bool);
+  void onReorientInputVolumeInitialize();
+  void onReorientInputVolumeApply();
+  void onReorientInputVolumeCancel();
   void onROIFit();
   void onInterpolationModeChanged();
   void onApply();

@@ -26,7 +26,9 @@ endif()
 if(NOT Slicer_USE_SYSTEM_${proj})
   set(requirements_file ${CMAKE_BINARY_DIR}/${proj}-requirements.txt)
   file(WRITE ${requirements_file} [===[
-  pip==20.1.1 --hash=sha256:b27c4dedae8c41aa59108f2fa38bf78e0890e590545bc8ece7cdceb4ba60f6e4
+  # [pip]
+  pip==25.1.1 --hash=sha256:2913a38a2abf4ea6b64ab507bd9e967f3b53dc1ede74b01b0931e1ce548751af
+  # [/pip]
   ]===])
 
   ExternalProject_Add(${proj}
@@ -42,8 +44,28 @@ if(NOT Slicer_USE_SYSTEM_${proj})
       ${${proj}_DEPENDENCIES}
     )
 
-  ExternalProject_GenerateProjectDescription_Step(${proj}
-    VERSION ${_version}
+  #-----------------------------------------------------------------------------
+  # Slicer Launcher setting specific to build tree
+
+  # environment variables
+  set(${proj}_ENVVARS_LAUNCHER_BUILD
+    "PIP_DISABLE_PIP_VERSION_CHECK=1"
+    )
+  mark_as_superbuild(
+    VARS ${proj}_ENVVARS_LAUNCHER_BUILD
+    LABELS "ENVVARS_LAUNCHER_BUILD"
+    )
+
+  #-----------------------------------------------------------------------------
+  # Slicer Launcher setting specific to install tree
+
+  # environment variables
+  set(${proj}_ENVVARS_LAUNCHER_INSTALLED
+    "PIP_DISABLE_PIP_VERSION_CHECK=1"
+    )
+  mark_as_superbuild(
+    VARS ${proj}_ENVVARS_LAUNCHER_INSTALLED
+    LABELS "ENVVARS_LAUNCHER_INSTALLED"
     )
 
 else()

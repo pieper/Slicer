@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>702</width>
-    <height>441</height>
+    <width>607</width>
+    <height>638</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -26,7 +26,8 @@
    <item row="0" column="0" colspan="2">
     <widget class="QLabel" name="InstructionsLabel">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Questions and feature requests:&lt;/span&gt; visit the &lt;a href=&quot;https://discourse.slicer.org&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;Slicer forum&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Bug reports: &lt;/span&gt;&lt;a href=&quot;https://discourse.slicer.org/new-topic?body=Problem%20report%20for%20[appname-version-platform]:%20[please%20describe%20expected%20and%20actual%20behavior]&amp;amp;category=support&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;post a new topic to the Slicer forum&lt;/span&gt;&lt;/a&gt; to tell us about your problem or submit a bug report to the &lt;a href=&quot;https://issues.slicer.org&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;3D Slicer bugtracker&lt;/span&gt;&lt;/a&gt;. Describe the steps that lead to the error and also attach log messages.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Warning - if you work with patient data:&lt;/span&gt; Check that the log messages do not contain any information that may identify a patient. Send the log messages to specific people instead of sharing them publicly on a mailing list or website.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>     </property>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Questions and feature requests:&lt;/span&gt; visit the &lt;a href=&quot;https://discourse.slicer.org&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;Slicer forum&lt;/span&gt;&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Bug reports: &lt;/span&gt;&lt;a href=&quot;https://discourse.slicer.org/new-topic?body=Problem%20report%20for%20[appname-version-platform]:%20[please%20describe%20expected%20and%20actual%20behavior]&amp;amp;category=support&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;post a new topic to the Slicer forum&lt;/span&gt;&lt;/a&gt; to tell us about your problem or submit a bug report to the &lt;a href=&quot;https://issues.slicer.org&quot;&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;3D Slicer bugtracker&lt;/span&gt;&lt;/a&gt;. Describe the steps that lead to the error and also attach log messages.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Warning - if you work with patient data:&lt;/span&gt; Check that the log messages do not contain any information that may identify a patient. Send the log messages to specific people instead of sharing them publicly on a mailing list or website.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
      </property>
@@ -45,10 +46,7 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="ctkComboBox" name="RecentLogFilesComboBox"/>
-   </item>
-   <item row="2" column="0" colspan="2">
+   <item row="4" column="0" colspan="2">
     <widget class="QPlainTextEdit" name="LogText">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
@@ -62,14 +60,17 @@
        <height>50</height>
       </size>
      </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
-   <item row="4" column="0" colspan="2">
+   <item row="6" column="0" colspan="2">
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="ctkPushButton" name="LogCopyToClipboardPushButton">
        <property name="text">
-        <string>Copy log messages to clipboard</string>
+        <string>Copy log to clipboard</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
@@ -79,10 +80,27 @@
      <item>
       <widget class="ctkPushButton" name="LogFileOpenPushButton">
        <property name="text">
-        <string>Open log file in editor</string>
+        <string>Open log in editor</string>
        </property>
        <property name="autoDefault">
         <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="ctkPushButton" name="LogOpenFileLocationPushButton">
+       <property name="text">
+        <string>Open log location</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="LogFileEditCheckBox">
+       <property name="text">
+        <string>Edit Log</string>
        </property>
       </widget>
      </item>
@@ -95,14 +113,32 @@
      </item>
     </layout>
    </item>
+   <item row="2" column="0" colspan="2">
+    <widget class="QTableWidget" name="RecentLogFilesComboBox">
+     <property name="sizeAdjustPolicy">
+      <enum>QAbstractScrollArea::AdjustIgnored</enum>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectRows</enum>
+     </property>
+     <attribute name="horizontalHeaderCascadingSectionResizes">
+      <bool>false</bool>
+     </attribute>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="RecentLogFilesLabel_2">
+     <property name="text">
+      <string>Log file content:</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
-  <customwidget>
-   <class>ctkComboBox</class>
-   <extends>QComboBox</extends>
-   <header>ctkComboBox.h</header>
-  </customwidget>
   <customwidget>
    <class>ctkPushButton</class>
    <extends>QPushButton</extends>
@@ -111,7 +147,7 @@
  </customwidgets>
  <resources>
   <include location="../SlicerApp.qrc"/>
-  <include location="../../../../Base/QTGUI/Resources/qSlicerBaseQTGUI.qrc"/>
+  <include location="../../../QTGUI/Resources/qSlicerBaseQTGUI.qrc"/>
  </resources>
  <connections/>
 </ui>

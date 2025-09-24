@@ -33,6 +33,7 @@
 #include "vtkSlicerTablesLogic.h"
 
 // MRML includes
+#include <vtkMRMLMessageCollection.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLSelectionNode.h>
 #include <vtkMRMLTableNode.h>
@@ -57,8 +58,7 @@ qSlicerTablesReader::qSlicerTablesReader(QObject* _parent)
 }
 
 //-----------------------------------------------------------------------------
-qSlicerTablesReader
-::qSlicerTablesReader(vtkSlicerTablesLogic* logic, QObject* _parent)
+qSlicerTablesReader::qSlicerTablesReader(vtkSlicerTablesLogic* logic, QObject* _parent)
   : Superclass(_parent)
   , d_ptr(new qSlicerTablesReaderPrivate)
 {
@@ -76,36 +76,48 @@ void qSlicerTablesReader::setLogic(vtkSlicerTablesLogic* logic)
 }
 
 //-----------------------------------------------------------------------------
-vtkSlicerTablesLogic* qSlicerTablesReader::logic()const
+vtkSlicerTablesLogic* qSlicerTablesReader::logic() const
 {
   Q_D(const qSlicerTablesReader);
   return d->Logic.GetPointer();
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerTablesReader::description()const
+QString qSlicerTablesReader::description() const
 {
   return "Table";
 }
 
 //-----------------------------------------------------------------------------
-qSlicerIO::IOFileType qSlicerTablesReader::fileType()const
+qSlicerIO::IOFileType qSlicerTablesReader::fileType() const
 {
   return QString("TableFile");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerTablesReader::extensions()const
+QStringList qSlicerTablesReader::extensions() const
 {
-  return QStringList()
-    << "Table (*.tsv)"
-    << "Table (*.csv)"
-    << "Table (*.txt)"
-    << "Table (*.db)"
-    << "Table (*.db3)"
-    << "Table (*.sqlite)"
-    << "Table (*.sqlite3)"
-    ;
+  return QStringList() //
+         << "Table (*.tsv)"
+         << "Table (*.csv)"
+         << "Table (*.txt)"
+         << "Table (*.db)"
+         << "Table (*.db3)"
+         << "Table (*.sqlite)"
+         << "Table (*.sqlite3)";
+}
+
+//----------------------------------------------------------------------------
+double qSlicerTablesReader::canLoadFileConfidence(const QString& fileName) const
+{
+  double confidence = Superclass::canLoadFileConfidence(fileName);
+
+  // .txt file is more likely a simple text file than a table
+  if (confidence > 0 && fileName.toUpper().endsWith("TXT"))
+  {
+    confidence = 0.4;
+  }
+  return confidence;
 }
 
 //-----------------------------------------------------------------------------
@@ -115,67 +127,66 @@ bool qSlicerTablesReader::load(const IOProperties& properties)
   Q_ASSERT(properties.contains("fileName"));
   QString fileName = properties["fileName"].toString();
 
+  this->userMessages()->ClearMessages();
+
   QString name = QFileInfo(fileName).baseName();
   if (properties.contains("name"))
-    {
+  {
     name = properties["name"].toString();
-    }
+  }
   std::string uname = this->mrmlScene()->GetUniqueNameByString(name.toUtf8());
   std::string password;
 
   // Check if the file is sqlite
   std::string extension = vtkMRMLStorageNode::GetLowercaseExtensionFromFileName(fileName.toStdString());
-  if( extension.empty() )
-    {
-    qCritical("ReadData: no file extension specified: %s", qPrintable(fileName));
+  if (extension.empty())
+  {
+    this->userMessages()->AddMessage(vtkCommand::ErrorEvent, (tr("Table reading failed: no file extension specified: %1").arg(fileName)).toStdString());
     return false;
-    }
-  if (   !extension.compare(".db")
-      || !extension.compare(".db3")
-      || !extension.compare(".sqlite")
+  }
+  if (!extension.compare(".db")        //
+      || !extension.compare(".db3")    //
+      || !extension.compare(".sqlite") //
       || !extension.compare(".sqlite3"))
-    {
+  {
     uname = "";
     std::string dbname = std::string("sqlite://") + fileName.toStdString();
-    vtkSmartPointer<vtkSQLiteDatabase> database = vtkSmartPointer<vtkSQLiteDatabase>::Take(
-                   vtkSQLiteDatabase::SafeDownCast( vtkSQLiteDatabase::CreateFromURL(dbname.c_str())));
+    vtkSmartPointer<vtkSQLiteDatabase> database = vtkSmartPointer<vtkSQLiteDatabase>::Take(vtkSQLiteDatabase::SafeDownCast(vtkSQLiteDatabase::CreateFromURL(dbname.c_str())));
     if (!database->Open("", vtkSQLiteDatabase::USE_EXISTING))
-      {
+    {
       bool ok;
-      QString text = QInputDialog::getText(nullptr, tr("QInputDialog::getText()"),
-                                           tr("Database Password:"), QLineEdit::Normal,
-                                           "", &ok);
+      QString text = QInputDialog::getText(nullptr, tr("QInputDialog::getText()"), tr("Database Password:"), QLineEdit::Normal, "", &ok);
       if (ok && !text.isEmpty())
-        {
+      {
         password = text.toStdString();
-        }
       }
     }
+  }
 
   vtkMRMLTableNode* node = nullptr;
-  if (d->Logic!=nullptr)
-    {
-    node = d->Logic->AddTable(fileName.toUtf8(),uname.c_str(), true, password.c_str());
-    }
+  if (d->Logic != nullptr)
+  {
+    node = d->Logic->AddTable(fileName.toUtf8(), uname.c_str(), true, password.c_str(), this->userMessages());
+  }
   if (node)
-    {
+  {
     // Show table in viewers
     vtkSlicerApplicationLogic* appLogic = d->Logic->GetApplicationLogic();
     vtkMRMLSelectionNode* selectionNode = appLogic ? appLogic->GetSelectionNode() : nullptr;
     if (selectionNode)
-      {
-      selectionNode->SetActiveTableID(node->GetID());
-      }
-    if (appLogic)
-      {
-      appLogic->PropagateTableSelection();
-      }
-    this->setLoadedNodes(QStringList(QString(node->GetID())));
-    }
-  else
     {
-    qCritical("Failed to read table from %s", qPrintable(fileName));
-    this->setLoadedNodes(QStringList());
+      selectionNode->SetActiveTableID(node->GetID());
     }
+    if (appLogic)
+    {
+      appLogic->PropagateTableSelection();
+    }
+    this->setLoadedNodes(QStringList(QString(node->GetID())));
+  }
+  else
+  {
+    this->userMessages()->AddMessage(vtkCommand::ErrorEvent, (tr("Failed to read table from  '%1'").arg(fileName)).toStdString());
+    this->setLoadedNodes(QStringList());
+  }
   return node != nullptr;
 }

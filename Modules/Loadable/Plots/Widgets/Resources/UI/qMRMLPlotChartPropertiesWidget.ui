@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Plot Chart Properties</string>
   </property>
   <layout class="QFormLayout" name="formLayout">
    <property name="fieldGrowthPolicy">
@@ -45,7 +45,7 @@
       <string>Add/Remove plots data series to/from the current chart.</string>
      </property>
      <property name="nodeTypes">
-      <stringlist>
+      <stringlist notr="true">
        <string>vtkMRMLPlotSeriesNode</string>
       </stringlist>
      </property>
@@ -312,7 +312,7 @@
    <item row="2" column="0">
     <widget class="QLabel" name="legendVisibleLabel">
      <property name="text">
-      <string>Legend visible:</string>
+      <string>Legend visibility:</string>
      </property>
     </widget>
    </item>
@@ -326,7 +326,7 @@
    <item row="3" column="0">
     <widget class="QLabel" name="gridVisibleLabel">
      <property name="text">
-      <string>Grid visible:</string>
+      <string>Grid visibility:</string>
      </property>
     </widget>
    </item>

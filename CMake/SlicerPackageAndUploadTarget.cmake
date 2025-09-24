@@ -8,19 +8,22 @@
 #  (1) build the standard 'package' target,
 #  (2) extract the list of generated packages from its standard output,
 #  (3) append the list of generated package filepaths to a file named PACKAGES.txt,
-#  (4) upload the first package on midas.
+#  (4) upload the first package.
 #
 # The following variables are expected to be defined in the including scope:
 #  Slicer_SOURCE_DIR
 #  Slicer_BINARY_DIR
 #  Slicer_OS
 #  Slicer_ARCHITECTURE
-#  MIDAS_PACKAGE_URL
-#  MIDAS_PACKAGE_EMAIL
-#  MIDAS_PACKAGE_API_KEY
+#  Slicer_VERSION_FULL
 #
-# Optionally, these variable can also be set:
+# The following variables can either be defined in the including scope or
+# as environment variables:
+#
 #  CTEST_MODEL (default: Experimental)
+#  SLICER_PACKAGE_MANAGER_CLIENT_EXECUTABLE
+#  SLICER_PACKAGE_MANAGER_URL
+#  SLICER_PACKAGE_MANAGER_API_KEY
 #
 # Then, using  the 'SlicerMacroExtractRepositoryInfo' CMake module, the script
 # will also set the following variables:
@@ -69,19 +72,21 @@ endif()
 if(NOT PACKAGEUPLOAD)
 
   _sput_set_if_not_defined(CTEST_MODEL "Experimental")
-  _sput_set_if_not_defined(MIDAS_PACKAGE_URL "http://slicer.kitware.com/midas3")
-  _sput_set_if_not_defined(MIDAS_PACKAGE_EMAIL "MIDAS_PACKAGE_EMAIL-NOTDEFINED" OBFUSCATE)
-  _sput_set_if_not_defined(MIDAS_PACKAGE_API_KEY "MIDAS_PACKAGE_API_KEY-NOTDEFINED" OBFUSCATE)
+
+  _sput_set_if_not_defined(SLICER_PACKAGE_MANAGER_CLIENT_EXECUTABLE "SLICER_PACKAGE_MANAGER_CLIENT_EXECUTABLE-NOTDEFINED")
+  _sput_set_if_not_defined(SLICER_PACKAGE_MANAGER_URL "SLICER_PACKAGE_MANAGER_URL-NOTDEFINED")
+  _sput_set_if_not_defined(SLICER_PACKAGE_MANAGER_API_KEY "SLICER_PACKAGE_MANAGER_API_KEY-NOTDEFINED" OBFUSCATE)
 
   set(script_vars
     Slicer_CMAKE_DIR
     Slicer_BINARY_DIR
     Slicer_OS
     Slicer_ARCHITECTURE
+    Slicer_VERSION_FULL
+    SLICER_PACKAGE_MANAGER_CLIENT_EXECUTABLE
+    SLICER_PACKAGE_MANAGER_URL
+    SLICER_PACKAGE_MANAGER_API_KEY
     CTEST_MODEL
-    MIDAS_PACKAGE_URL
-    MIDAS_PACKAGE_EMAIL
-    MIDAS_PACKAGE_API_KEY
     )
 
   # Sanity checks
@@ -99,11 +104,6 @@ if(NOT PACKAGEUPLOAD)
   include(SlicerMacroExtractRepositoryInfo)
   SlicerMacroExtractRepositoryInfo(VAR_PREFIX Slicer SOURCE_DIR ${Slicer_SOURCE_DIR})
 
-  # Given a date formatted like "2019-01-15 22:08:54 -0500 (Tue, 15 Jan 2019)", only
-  # keep "2019-01-15 22:08:54".
-  string(REGEX REPLACE "^([0-9][0-9][0-9][0-9]\\-[0-9][0-9]\\-[0-9][0-9] [0-9][0-9]\\:[0-9][0-9]\\:[0-9][0-9]).*"
-    "\\1" Slicer_WC_LAST_CHANGED_DATE "${Slicer_WC_LAST_CHANGED_DATE}")
-
   set(script_arg_list)
   foreach(varname
     ${script_vars}
@@ -112,6 +112,7 @@ if(NOT PACKAGEUPLOAD)
     # Variables set by SlicerMacroExtractRepositoryInfo
     Slicer_REVISION
     Slicer_WC_LAST_CHANGED_DATE
+    Slicer_WC_URL
     )
     if(NOT DEFINED ${varname})
       message(FATAL_ERROR "Variable ${varname} is expected to be defined.")
@@ -120,7 +121,7 @@ if(NOT PACKAGEUPLOAD)
 set(${varname} \"${${varname}}\")")
   endforeach()
 
-  set(script_args_file ${CMAKE_CURRENT_BINARY_DIR}/midas_api_upload_package-command-args.cmake)
+  set(script_args_file ${CMAKE_CURRENT_BINARY_DIR}/packageupload-command-args.cmake)
   file(WRITE ${script_args_file} ${script_arg_list})
 
   set(_cpack_output_file ${Slicer_BINARY_DIR}/packageupload_cpack_output.txt)
@@ -129,7 +130,7 @@ set(${varname} \"${${varname}}\")")
     COMMAND ${CMAKE_COMMAND} -E echo "CPack log: ${_cpack_output_file}"
     COMMAND ${CMAKE_COMMAND}
       -DPACKAGEUPLOAD:BOOL=1
-      -DCONFIG:STRING=${CMAKE_CFG_INTDIR}
+      -DCONFIG:STRING=$<CONFIG>
       -DCPACK_OUTPUT_FILE:FILEPATH=${_cpack_output_file}
       -DSCRIPT_ARGS_FILE:FILEPATH=${script_args_file}
       -P ${CMAKE_CURRENT_LIST_FILE}
@@ -213,7 +214,7 @@ endforeach()
 
 #-----------------------------------------------------------------------------
 # The following code will read the list of created packages from PACKAGES.txt
-# file and upload the first one to midas.
+# file and upload the first one.
 
 # Current assumption: Exactly one Slicer package is expected. If this
 # ever changes. The following code would have to be updated.
@@ -230,37 +231,40 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
   )
 
-include(MIDASAPIUploadPackage)
-
-# Upload generated extension packages to midas
 set(package_uploaded 0)
 foreach(p ${package_list})
   if(package_uploaded)
     message(WARNING "Skipping additional package: ${p}")
   else()
-    get_filename_component(package_name "${p}" NAME)
-    message("Uploading [${package_name}] on [${MIDAS_PACKAGE_URL}]")
-    midas_api_upload_package(
-      SERVER_URL ${MIDAS_PACKAGE_URL}
-      SERVER_EMAIL ${MIDAS_PACKAGE_EMAIL}
-      SERVER_APIKEY ${MIDAS_PACKAGE_API_KEY}
-      SUBMISSION_TYPE ${CTEST_MODEL}
-      SOURCE_REVISION ${Slicer_REVISION}
-      SOURCE_CHECKOUTDATE ${Slicer_WC_LAST_CHANGED_DATE}
-      OPERATING_SYSTEM ${Slicer_OS}
-      ARCHITECTURE ${Slicer_ARCHITECTURE}
-      PACKAGE_FILEPATH ${p}
-      PACKAGE_TYPE "installer"
-      RESULT_VARNAME slicer_midas_upload_status
-      )
     set(package_uploaded 1)
-    if(NOT slicer_midas_upload_status STREQUAL "ok")
-      file(WRITE ${Slicer_BINARY_DIR}/PACKAGES.txt "")
-      message(FATAL_ERROR
-"Upload of [${package_name}] failed !
-Check that:
-(1) you have been granted permission to upload
-(2) your email and api key are correct")
+    get_filename_component(package_name "${p}" NAME)
+
+    message("Uploading [${package_name}] to [${SLICER_PACKAGE_MANAGER_URL}]")
+    get_filename_component(package_directory ${p} DIRECTORY)
+    set(error_file ${package_directory}/slicer_package_server_upload_errors.txt)
+    execute_process(COMMAND
+      ${CMAKE_COMMAND} -E env
+        LC_ALL=en_US.UTF-8
+        LANG=en_US.UTF-8
+      ${SLICER_PACKAGE_MANAGER_CLIENT_EXECUTABLE}
+        --api-url ${SLICER_PACKAGE_MANAGER_URL}/api/v1
+        --api-key ${SLICER_PACKAGE_MANAGER_API_KEY}
+          package upload Slicer ${p}
+            --repo_type git
+            --repo_url ${Slicer_WC_URL}
+            --os ${Slicer_OS}
+            --arch ${Slicer_ARCHITECTURE}
+            --name Slicer
+            --revision ${Slicer_REVISION}
+            --version ${Slicer_VERSION_FULL}
+            --pre_release
+      RESULT_VARIABLE slicer_package_manager_upload_status
+      ERROR_FILE ${error_file}
+      )
+    message(STATUS "slicer_package_manager_upload_status: ${slicer_package_manager_upload_status}")
+    if(NOT slicer_package_manager_upload_status EQUAL 0)
+      message(FATAL_ERROR "Failed to upload package ${package_name} using ${SLICER_PACKAGE_MANAGER_CLIENT_EXECUTABLE}.
+See ${error_file} for more details.")
     endif()
   endif()
 endforeach()

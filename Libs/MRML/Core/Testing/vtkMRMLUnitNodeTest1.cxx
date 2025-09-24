@@ -30,12 +30,7 @@
 #include <vector>
 
 const size_t NUMBER_OF_UNITS = 5;
-const char* UNITS[NUMBER_OF_UNITS][2] = {{"length", "m"},
-                                         {"length", "km"},
-                                         {"energy", "J"},
-                                         {"luminous_intensity", "cd"},
-                                         {"energy", "eV"}
-                                        };
+const char* UNITS[NUMBER_OF_UNITS][2] = { { "length", "m" }, { "length", "km" }, { "energy", "J" }, { "luminous_intensity", "cd" }, { "energy", "eV" } };
 
 //---------------------------------------------------------------------------
 vtkMRMLScene* CreatePopulatedScene();
@@ -43,7 +38,7 @@ bool TestScenesUnitNodeID(vtkMRMLScene* scene);
 bool TestUnitNodeAttribute(vtkMRMLScene* scene);
 
 //---------------------------------------------------------------------------
-int vtkMRMLUnitNodeTest1(int , char * [] )
+int vtkMRMLUnitNodeTest1(int, char*[])
 {
   vtkNew<vtkMRMLUnitNode> node1;
   EXERCISE_ALL_BASIC_MRML_METHODS(node1.GetPointer());
@@ -62,13 +57,13 @@ vtkMRMLScene* CreatePopulatedScene()
 {
   vtkMRMLScene* scene = vtkMRMLScene::New();
   for (size_t i = 0; i < NUMBER_OF_UNITS; ++i)
-    {
+  {
     vtkNew<vtkMRMLUnitNode> unit;
     unit->SetQuantity(UNITS[i][0]);
     unit->SetName(UNITS[i][1]);
 
     scene->AddNode(unit.GetPointer());
-    }
+  }
   return scene;
 }
 
@@ -81,22 +76,23 @@ bool TestScenesUnitNodeID(vtkMRMLScene* scene)
   scene->GetNodesByClass("vtkMRMLUnitNode", units);
 
   if (units.size() != NUMBER_OF_UNITS)
-    {
-    std::cerr<<"Did not find the right number of nodes in the scene!"<<std::endl;
+  {
+    std::cerr << "Did not find the right number of nodes in the scene!" << std::endl;
     return false;
-    }
+  }
 
   for (size_t i = 0; i < units.size(); ++i)
-    {
+  {
     std::string id = "vtkMRMLUnitNode";
     id += UNITS[i][1];
     if (id.compare(units[i]->GetID()) != 0)
-      {
-      std::cerr<<"Did not find the right ID !\n"
-        "expected: "<<id<<" got: "<<units[i]->GetID()<<std::endl;
+    {
+      std::cerr << "Did not find the right ID !\n"
+                   "expected: "
+                << id << " got: " << units[i]->GetID() << std::endl;
       return false;
-      }
     }
+  }
 
   return true;
 }
@@ -108,27 +104,27 @@ bool TestUnitNodeAttribute(vtkMRMLScene* scene)
   int testedNode = 3;
   vtkMRMLNode* unit = scene->GetNthNodeByClass(testedNode, "vtkMRMLUnitNode");
   if (!unit)
-    {
-    std::cerr<<"Did not find correct node in the scene!"<<std::endl;
+  {
+    std::cerr << "Did not find correct node in the scene!" << std::endl;
     return false;
-    }
+  }
 
   bool foundQuantityAttribute = false;
   std::vector<std::string> attributes = unit->GetAttributeNames();
   for (size_t i = 0; i < attributes.size(); ++i)
-    {
+  {
     if (attributes[i].compare("Quantity") == 0)
-      {
+    {
       foundQuantityAttribute = true;
       break;
-      }
     }
+  }
 
   if (!foundQuantityAttribute)
-    {
-    std::cerr<<"Did not find attribute Quantity in the node!"<<std::endl;
+  {
+    std::cerr << "Did not find attribute Quantity in the node!" << std::endl;
     return false;
-    }
+  }
 
   return foundQuantityAttribute;
 }

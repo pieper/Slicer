@@ -20,7 +20,6 @@
 // This class manages the logic associated with reading, saving,
 // and changing propertied of the volumes
 
-
 #ifndef __vtkSlicerTemplateKeyLogic_h
 #define __vtkSlicerTemplateKeyLogic_h
 
@@ -34,31 +33,27 @@
 
 #include "vtkSlicerTemplateKeyModuleLogicExport.h"
 
-
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_TEMPLATEKEY_MODULE_LOGIC_EXPORT vtkSlicerTemplateKeyLogic :
-  public vtkSlicerModuleLogic
+class VTK_SLICER_TEMPLATEKEY_MODULE_LOGIC_EXPORT vtkSlicerTemplateKeyLogic : public vtkSlicerModuleLogic
 {
 public:
-
-  static vtkSlicerTemplateKeyLogic *New();
+  static vtkSlicerTemplateKeyLogic* New();
   vtkTypeMacro(vtkSlicerTemplateKeyLogic, vtkSlicerModuleLogic);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkSlicerTemplateKeyLogic();
-  virtual ~vtkSlicerTemplateKeyLogic();
+  ~vtkSlicerTemplateKeyLogic() override;
 
-  virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
+  void SetMRMLSceneInternal(vtkMRMLScene* newScene) override;
   /// Register MRML Node classes to Scene. Gets called automatically when the MRMLScene is attached to this logic class.
-  virtual void RegisterNodes();
-  virtual void UpdateFromMRMLScene();
-  virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node);
-  virtual void OnMRMLSceneNodeRemoved(vtkMRMLNode* node);
-private:
+  void RegisterNodes() override;
+  void UpdateFromMRMLScene() override;
+  void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
+  void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
 
+private:
   vtkSlicerTemplateKeyLogic(const vtkSlicerTemplateKeyLogic&); // Not implemented
-  void operator=(const vtkSlicerTemplateKeyLogic&); // Not implemented
+  void operator=(const vtkSlicerTemplateKeyLogic&);            // Not implemented
 };
 
 #endif

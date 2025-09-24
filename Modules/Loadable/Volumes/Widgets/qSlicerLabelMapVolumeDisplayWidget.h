@@ -37,7 +37,6 @@ class vtkMRMLLabelMapVolumeDisplayNode;
 class vtkMRMLScalarVolumeNode;
 class qSlicerLabelMapVolumeDisplayWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_Volumes
 class Q_SLICER_QTMODULES_VOLUMES_WIDGETS_EXPORT qSlicerLabelMapVolumeDisplayWidget : public qSlicerWidget
 {
   Q_OBJECT
@@ -48,10 +47,10 @@ public:
   explicit qSlicerLabelMapVolumeDisplayWidget(QWidget* parent);
   ~qSlicerLabelMapVolumeDisplayWidget() override;
 
-  vtkMRMLScalarVolumeNode* volumeNode()const;
-  vtkMRMLLabelMapVolumeDisplayNode* volumeDisplayNode()const;
+  vtkMRMLScalarVolumeNode* volumeNode() const;
+  vtkMRMLLabelMapVolumeDisplayNode* volumeDisplayNode() const;
 
-  int sliceIntersectionThickness()const;
+  int sliceIntersectionThickness() const;
 
 public slots:
 

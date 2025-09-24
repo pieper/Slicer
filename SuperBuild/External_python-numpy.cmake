@@ -29,18 +29,27 @@ endif()
 if(NOT Slicer_USE_SYSTEM_${proj})
   set(requirements_file ${CMAKE_BINARY_DIR}/${proj}-requirements.txt)
   file(WRITE ${requirements_file} [===[
-  nose==1.3.7 --hash=sha256:9ff7c6cc443f8c51994b34a667bbcf45afd6d945be7477b52e97516fd17c53ac  # needed for NumPy unit tests
+  # [numpy]
   # Hashes correspond to the following packages:
-  # - numpy-1.19.1-cp36-cp36m-win_amd64.whl
-  # - numpy-1.19.1-cp36-cp36m-macosx_10_9_x86_64.whl
-  # - numpy-1.19.1-cp36-cp36m-manylinux1_x86_64.whl
-  # - numpy-1.19.1-cp36-cp36m-manylinux2010_x86_64.whl
-  # - numpy-1.19.1-cp36-cp36m-manylinux2014_aarch64.whl
-  numpy==1.19.1 --hash=sha256:082f8d4dd69b6b688f64f509b91d482362124986d98dc7dc5f5e9f9b9c3bb983 \
-                --hash=sha256:b1cca51512299841bf69add3b75361779962f9cee7d9ee3bb446d5982e925b69 \
-                --hash=sha256:cf1347450c0b7644ea142712619533553f02ef23f92f781312f6a3553d031fc7 \
-                --hash=sha256:3673c8b2b29077f1b7b3a848794f8e11f401ba0b71c49fbd26fb40b71788b132 \
-                --hash=sha256:56ef7f56470c24bb67fb43dae442e946a6ce172f97c69f8d067ff8550cf782ff
+  #  - numpy-2.0.2-cp312-cp312-macosx_10_9_x86_64.whl
+  #  - numpy-2.0.2-cp312-cp312-macosx_11_0_arm64.whl
+  #  - numpy-2.0.2-cp312-cp312-macosx_14_0_arm64.whl
+  #  - numpy-2.0.2-cp312-cp312-macosx_14_0_x86_64.whl
+  #  - numpy-2.0.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+  #  - numpy-2.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  #  - numpy-2.0.2-cp312-cp312-musllinux_1_1_x86_64.whl
+  #  - numpy-2.0.2-cp312-cp312-musllinux_1_2_aarch64.whl
+  #  - numpy-2.0.2-cp312-cp312-win_amd64.whl
+  numpy==2.0.2 --hash=sha256:df55d490dea7934f330006d0f81e8551ba6010a5bf035a249ef61a94f21c500b \
+               --hash=sha256:8df823f570d9adf0978347d1f926b2a867d5608f434a7cff7f7908c6570dcf5e \
+               --hash=sha256:9a92ae5c14811e390f3767053ff54eaee3bf84576d99a2456391401323f4ec2c \
+               --hash=sha256:a842d573724391493a97a62ebbb8e731f8a5dcc5d285dfc99141ca15a3302d0c \
+               --hash=sha256:c05e238064fc0610c840d1cf6a13bf63d7e391717d247f1bf0318172e759e692 \
+               --hash=sha256:0123ffdaa88fa4ab64835dcbde75dcdf89c453c922f18dced6e27c90d1d0ec5a \
+               --hash=sha256:96a55f64139912d61de9137f11bf39a55ec8faec288c75a54f93dfd39f7eb40c \
+               --hash=sha256:ec9852fb39354b5a45a80bdab5ac02dd02b15f44b3804e9f00c556bf24b4bded \
+               --hash=sha256:cfd41e13fdc257aa5778496b8caa5e856dc4896d4ccf01841daee1d96465467a
+  # [/numpy]
   ]===])
 
   ExternalProject_Add(${proj}
@@ -54,10 +63,6 @@ if(NOT Slicer_USE_SYSTEM_${proj})
     LOG_INSTALL 1
     DEPENDS
       ${${proj}_DEPENDENCIES}
-    )
-
-  ExternalProject_GenerateProjectDescription_Step(${proj}
-    VERSION ${_version}
     )
 
   #-----------------------------------------------------------------------------
@@ -99,4 +104,3 @@ if(NOT Slicer_USE_SYSTEM_${proj})
 else()
   ExternalProject_Add_Empty(${proj} DEPENDS ${${proj}_DEPENDENCIES})
 endif()
-

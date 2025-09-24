@@ -38,7 +38,7 @@
 # or 1 indicating whether to include or exclude "system" prerequisites. If
 # <recurse> is set to 1 all prerequisites will be found recursively, if set to
 # 0 only direct prerequisites are listed. <exepath> is the path to the top
-# level executable used for @executable_path replacment on the Mac. <dirs> is
+# level executable used for @executable_path replacement on the Mac. <dirs> is
 # a list of paths where libraries might be found: these paths are searched
 # first when a target without any path info is given. Then standard system
 # locations are also searched: PATH, Framework locations, /usr/lib...
@@ -52,7 +52,7 @@
 # prerequisites are listed. <exclude_system> must be 0 or 1 indicating whether
 # to include or exclude "system" prerequisites. With <verbose> set to 0 only
 # the full path names of the prerequisites are printed, set to 1 extra
-# informatin will be displayed.
+# information will be displayed.
 #
 #  LIST_PREREQUISITES_BY_GLOB(<glob_arg> <glob_exp>)
 # Print the prerequisites of shared library and executable files matching a
@@ -103,7 +103,7 @@
 #
 # If GP_RPATH_DIR variable is set then item matching '@rpath' are
 # resolved using the provided directory. Currently setting this variable
-# has an effect only on MacOSX when fixing up application bundle. The directory
+# has an effect only on macOS when fixing up application bundle. The directory
 # are also assumed to be located within the application bundle. It is
 # usually the directory passed to the 'rpath' linker option.
 #

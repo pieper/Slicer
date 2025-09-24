@@ -34,7 +34,7 @@ class Q_SLICER_BASE_QTGUI_EXPORT qSlicerCommandOptions : public qSlicerCoreComma
   Q_PROPERTY(bool noSplash READ noSplash CONSTANT)
   Q_PROPERTY(bool disableToolTips READ disableToolTips CONSTANT)
   Q_PROPERTY(bool noMainWindow READ noMainWindow CONSTANT)
-  Q_PROPERTY(bool showPythonInteractor READ showPythonInteractor CONSTANT)
+  Q_PROPERTY(bool showPythonConsole READ showPythonConsole CONSTANT)
   Q_PROPERTY(bool enableQtTesting READ enableQtTesting CONSTANT)
   Q_PROPERTY(bool exitAfterStartup READ exitAfterStartup CONSTANT)
 public:
@@ -42,21 +42,23 @@ public:
   qSlicerCommandOptions();
   ~qSlicerCommandOptions() override = default;
 
-  bool noSplash()const;
+  bool noSplash() const;
 
-  bool disableToolTips()const;
+  bool disableToolTips() const;
 
-  bool noMainWindow()const;
+  bool noMainWindow() const;
 
-  bool showPythonInteractor()const;
+  bool showPythonConsole() const;
 
-  bool enableQtTesting()const;
+  /// Deprecated, use showPythonConsole() instead.
+  bool showPythonInteractor() const;
 
-  bool exitAfterStartup()const;
+  bool enableQtTesting() const;
+
+  bool exitAfterStartup() const;
 
 protected:
   void addArguments() override;
-
 };
 
 #endif

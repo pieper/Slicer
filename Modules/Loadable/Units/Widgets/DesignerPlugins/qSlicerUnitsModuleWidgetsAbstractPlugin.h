@@ -18,21 +18,20 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerUnitModuleWidgetsAbstractPlugin_h
-#define __qSlicerUnitModuleWidgetsAbstractPlugin_h
+#ifndef qSlicerUnitsModuleWidgetsAbstractPlugin_h
+#define qSlicerUnitsModuleWidgetsAbstractPlugin_h
 
 #include <QtGlobal>
 #include <QtUiPlugin/QDesignerCustomWidgetInterface>
 
 #include "qSlicerUnitsModuleWidgetsPluginsExport.h"
 
-class Q_SLICER_MODULE_UNITS_WIDGETS_PLUGINS_EXPORT qSlicerUnitsModuleWidgetsAbstractPlugin
-  : public QDesignerCustomWidgetInterface
+class Q_SLICER_MODULE_UNITS_WIDGETS_PLUGINS_EXPORT qSlicerUnitsModuleWidgetsAbstractPlugin : public QDesignerCustomWidgetInterface
 {
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QDesignerCustomWidgetInterface")
   Q_INTERFACES(QDesignerCustomWidgetInterface);
-public:
 
+public:
   qSlicerUnitsModuleWidgetsAbstractPlugin();
   // Don't reimplement this method.
   QString group() const override;

@@ -30,10 +30,8 @@
 
 // Slicer includes
 #include "qSlicerCoreApplication.h"
-#include "qSlicerUtils.h"
 #include "qSlicerCorePythonManager.h"
 #include "qSlicerScriptedUtils_p.h"
-#include "vtkSlicerConfigure.h"
 
 // VTK includes
 #include <vtkPythonUtil.h>
@@ -45,14 +43,35 @@ qSlicerCorePythonManager::qSlicerCorePythonManager(QObject* _parent)
 {
   this->Factory = nullptr;
 
+  // https://docs.python.org/3/c-api/init_config.html#init-config
+  PyStatus status;
+  PyConfig config;
+  PyConfig_InitPythonConfig(&config);
+
+  config.parse_argv = 0;
+
   // If it applies, disable import of user site packages
   QString noUserSite = qgetenv("PYTHONNOUSERSITE");
-  Py_NoUserSiteDirectory = noUserSite.toInt();
+  config.user_site_directory = noUserSite.toInt(); // disable user site packages
 
-  // Import site module to ensure the 'site-packages' directory
-  // is added to the python path. (see site.addsitepackages function).
+  status = PyConfig_SetString(&config, &config.program_name, L"Slicer");
+  if (PyStatus_Exception(status))
+  {
+    PyConfig_Clear(&config);
+    Py_ExitStatusException(status);
+  }
+
+  status = Py_InitializeFromConfig(&config);
+  if (PyStatus_Exception(status))
+  {
+    PyConfig_Clear(&config);
+    Py_ExitStatusException(status);
+  }
+
+  PyConfig_Clear(&config);
+
   int flags = this->initializationFlags();
-  flags &= ~(PythonQt::IgnoreSiteModule); // Clear bit
+  flags |= PythonQt::PythonAlreadyInitialized; // Set bit
   this->setInitializationFlags(flags);
 }
 
@@ -60,10 +79,10 @@ qSlicerCorePythonManager::qSlicerCorePythonManager(QObject* _parent)
 qSlicerCorePythonManager::~qSlicerCorePythonManager()
 {
   if (this->Factory)
-    {
+  {
     delete this->Factory;
     this->Factory = nullptr;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -80,53 +99,57 @@ void qSlicerCorePythonManager::preInitialization()
   this->addWrapperFactory(this->Factory);
   qSlicerCoreApplication* app = qSlicerCoreApplication::application();
   if (app)
-    {
+  {
     // Add object to python interpreter context
     this->addObjectToPythonMain("_qSlicerCoreApplicationInstance", app);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerCorePythonManager::addVTKObjectToPythonMain(const QString& name, vtkObject * object)
+void qSlicerCorePythonManager::addVTKObjectToPythonMain(const QString& name, vtkObject* object)
 {
   // Split name using '.'
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QStringList moduleNameList = name.split('.', Qt::SkipEmptyParts);
+#else
   QStringList moduleNameList = name.split('.', QString::SkipEmptyParts);
+#endif
 
   // Remove the last part
   QString attributeName = moduleNameList.takeLast();
 
-  bool success = qSlicerScriptedUtils::setModuleAttribute(
-        moduleNameList.join("."),
-        attributeName,
-        vtkPythonUtil::GetObjectFromPointer(object));
+  bool success = qSlicerScriptedUtils::setModuleAttribute(moduleNameList.join("."), attributeName, vtkPythonUtil::GetObjectFromPointer(object));
   if (!success)
-    {
+  {
     qCritical() << "qSlicerCorePythonManager::addVTKObjectToPythonMain - "
-                   "Failed to add VTK object:" << name;
-    }
+                   "Failed to add VTK object:"
+                << name;
+  }
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerCorePythonManager::appendPythonPath(const QString& path)
 {
   // TODO Make sure PYTHONPATH is updated
-  this->executeString(QString("import sys; sys.path.append(%1); del sys").arg(qSlicerCorePythonManager::toPythonStringLiteral(path)));
+  this->executeString(QString("import sys, os\n"
+                              "___path = os.path.abspath(%1)\n"
+                              "if ___path not in sys.path:\n"
+                              "  sys.path.append(___path)\n"
+                              "del sys, os")
+                        .arg(qSlicerCorePythonManager::toPythonStringLiteral(path)));
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerCorePythonManager::appendPythonPaths(const QStringList& paths)
 {
-  foreach(const QString& path, paths)
-    {
+  for (const QString& path : paths)
+  {
     this->appendPythonPath(path);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 QString qSlicerCorePythonManager::toPythonStringLiteral(QString path)
 {
-  path = path.replace("\\", "\\\\");
-  path = path.replace("'", "\\'");
-  // since we enclose string in single quotes, double-quotes do not require escaping
-  return "'" + path + "'";
+  return ctkAbstractPythonManager::toPythonStringLiteral(path);
 }

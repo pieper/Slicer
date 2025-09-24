@@ -24,8 +24,7 @@
 #include "qMRMLVolumeWidget.h"
 class qMRMLWindowLevelWidgetPrivate;
 
-class QMRML_WIDGETS_EXPORT qMRMLWindowLevelWidget
-  : public qMRMLVolumeWidget
+class QMRML_WIDGETS_EXPORT qMRMLWindowLevelWidget : public qMRMLVolumeWidget
 {
   Q_OBJECT
 
@@ -34,6 +33,8 @@ class QMRML_WIDGETS_EXPORT qMRMLWindowLevelWidget
   Q_PROPERTY(double level READ level WRITE setLevel)
   Q_PROPERTY(double minimumValue READ minimumValue WRITE setMinimumValue)
   Q_PROPERTY(double maximumValue READ maximumValue WRITE setMaximumValue)
+  Q_PROPERTY(double minimumBound READ minimumBound WRITE setMinimumBound)
+  Q_PROPERTY(double maximumBound READ maximumBound WRITE setMaximumBound)
   Q_ENUMS(ControlMode)
 
 public:
@@ -46,7 +47,7 @@ public:
   {
     Auto = 0,
     Manual = 1,
-    ManualMinMax =2
+    ManualMinMax = 2
   };
 
   /// Set Auto/Manual mode
@@ -55,19 +56,27 @@ public:
 
   ///
   /// Get window
-  double window()const;
+  double window() const;
 
   ///
   /// Get level
-  double level()const;
+  double level() const;
 
   ///
   /// Get minimum of the range
-  double minimumValue()const;
+  double minimumValue() const;
 
   ///
   /// Get maximum of the range
-  double maximumValue()const;
+  double maximumValue() const;
+
+  ///
+  /// Get minimum of the range
+  double minimumBound() const;
+
+  ///
+  /// Get maximum of the range
+  double maximumBound() const;
 
 signals:
   ///
@@ -99,9 +108,16 @@ public slots:
   void setMinimumValue(double min);
   void setMaximumValue(double max);
 
+  void setMinimumBound(double min);
+  void setMaximumBound(double max);
+  void setMinMaxBounds(double min, double max);
+
 protected:
   /// Update the widget from volume display node properties.
   void updateWidgetFromMRMLDisplayNode() override;
+
+  /// Special initial updates that are done only when switching between volumes.
+  void updateWidgetFromMRMLVolumeNode() override;
 
 private:
   Q_DECLARE_PRIVATE(qMRMLWindowLevelWidget);

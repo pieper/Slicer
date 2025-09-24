@@ -49,6 +49,18 @@ if(NOT DEFINED SlicerExecutionModel_DIR AND NOT Slicer_USE_SYSTEM_${proj})
       )
   endif()
 
+  if(Slicer_USE_PYTHONQT)
+    list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
+      # Required by FindPython3 CMake module used by VTK
+      -DPython3_ROOT_DIR:PATH=${Python3_ROOT_DIR}
+      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR}
+      -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY}
+      -DPython3_LIBRARY_DEBUG:FILEPATH=${Python3_LIBRARY_DEBUG}
+      -DPython3_LIBRARY_RELEASE:FILEPATH=${Python3_LIBRARY_RELEASE}
+      -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
+      )
+  endif()
+
   if(Slicer_USE_TBB)
     list(APPEND EXTERNAL_PROJECT_ADDITIONAL_FORWARD_PATHS_BUILD
       ${TBB_BIN_DIR}
@@ -73,7 +85,7 @@ if(NOT DEFINED SlicerExecutionModel_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   ExternalProject_SetIfNotDefined(
     Slicer_${proj}_GIT_TAG
-    "f19d6e88a94ba8f31ddafcff4adf185fe90d7e72"
+    "91b921bd5977c3384916ba4b03705d87b26067f7"
     QUIET
     )
 

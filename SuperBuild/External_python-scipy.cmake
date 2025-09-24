@@ -29,13 +29,21 @@ endif()
 if(NOT Slicer_USE_SYSTEM_${proj})
   set(requirements_file ${CMAKE_BINARY_DIR}/${proj}-requirements.txt)
   file(WRITE ${requirements_file} [===[
+  # [scipy]
   # Hashes correspond to the following packages:
-  # - scipy-1.5.2-cp36-cp36m-win_amd64.whl
-  # - scipy-1.5.2-cp36-cp36m-macosx_10_9_x86_64.whl
-  # - scipy-1.5.2-cp36-cp36m-manylinux1_x86_64.whl
-  scipy==1.5.2 --hash=sha256:8e28e74b97fc8d6aa0454989db3b5d36fc27e69cef39a7ee5eaf8174ca1123cb \
-              --hash=sha256:cca9fce15109a36a0a9f9cfc64f870f1c140cb235ddf27fe0328e6afb44dfed0 \
-              --hash=sha256:07e52b316b40a4f001667d1ad4eb5f2318738de34597bd91537851365b6c61f1
+  #  - scipy-1.13.1-cp312-cp312-macosx_10_9_x86_64.whl
+  #  - scipy-1.13.1-cp312-cp312-macosx_12_0_arm64.whl
+  #  - scipy-1.13.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+  #  - scipy-1.13.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  #  - scipy-1.13.1-cp312-cp312-musllinux_1_1_x86_64.whl
+  #  - scipy-1.13.1-cp312-cp312-win_amd64.whl
+  scipy==1.13.1 --hash=sha256:5d72782f39716b2b3509cd7c33cdc08c96f2f4d2b06d51e52fb45a19ca0c86a1 \
+                --hash=sha256:017367484ce5498445aade74b1d5ab377acdc65e27095155e448c88497755a5d \
+                --hash=sha256:949ae67db5fa78a86e8fa644b9a6b07252f449dcf74247108c50e1d20d2b4627 \
+                --hash=sha256:de3ade0e53bc1f21358aa74ff4830235d716211d7d077e340c7349bc3542e884 \
+                --hash=sha256:2ac65fb503dad64218c228e2dc2d0a0193f7904747db43014645ae139c8fad16 \
+                --hash=sha256:cdd7dacfb95fea358916410ec61bbc20440f7860333aee6d882bb8046264e949
+  # [/scipy]
   ]===])
 
   ExternalProject_Add(${proj}
@@ -51,11 +59,6 @@ if(NOT Slicer_USE_SYSTEM_${proj})
       ${${proj}_DEPENDENCIES}
     )
 
-  ExternalProject_GenerateProjectDescription_Step(${proj}
-    VERSION ${_version}
-    )
-
 else()
   ExternalProject_Add_Empty(${proj} DEPENDS ${${proj}_DEPENDENCIES})
 endif()
-

@@ -45,6 +45,7 @@ public:
   QString ExtensionName;
   QString ArchiveName;
   QVariantMap Metadata;
+  bool InstallDependencies{ true };
 };
 
 /*
@@ -53,19 +54,17 @@ public:
 */
 
 //-----------------------------------------------------------------------------
-qSlicerExtensionDownloadTask::qSlicerExtensionDownloadTask(
-  QNetworkReply* reply, QObject* parent)
-  : QObject(parent), d_ptr(new qSlicerExtensionDownloadTaskPrivate)
+qSlicerExtensionDownloadTask::qSlicerExtensionDownloadTask(QNetworkReply* reply, QObject* parent)
+  : QObject(parent)
+  , d_ptr(new qSlicerExtensionDownloadTaskPrivate)
 {
   Q_D(qSlicerExtensionDownloadTask);
 
   reply->setParent(this);
 
-  connect(reply, SIGNAL(downloadProgress(qint64,qint64)),
-          this, SLOT(emitProgress(qint64,qint64)));
+  connect(reply, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(emitProgress(qint64, qint64)));
   connect(reply, SIGNAL(finished()), this, SLOT(emitFinished()));
-  connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),
-          this, SLOT(emitError(QNetworkReply::NetworkError)));
+  connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(emitError(QNetworkReply::NetworkError)));
 
   d->Reply = reply;
 }
@@ -86,13 +85,13 @@ void qSlicerExtensionDownloadTask::setMetadata(const QVariantMap& md)
   Q_D(qSlicerExtensionDownloadTask);
   d->Metadata = md;
   if (d->ExtensionName.isEmpty())
-    {
+  {
     d->ExtensionName = md.value("extensionname").toString();
-    }
+  }
   if (d->ArchiveName.isEmpty())
-    {
+  {
     d->ArchiveName = md.value("archivename").toString();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -146,4 +145,18 @@ void qSlicerExtensionDownloadTask::emitFinished()
 void qSlicerExtensionDownloadTask::emitError(QNetworkReply::NetworkError error)
 {
   emit this->error(this, error);
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerExtensionDownloadTask::installDependencies() const
+{
+  Q_D(const qSlicerExtensionDownloadTask);
+  return d->InstallDependencies;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerExtensionDownloadTask::setInstallDependencies(bool install)
+{
+  Q_D(qSlicerExtensionDownloadTask);
+  d->InstallDependencies = install;
 }

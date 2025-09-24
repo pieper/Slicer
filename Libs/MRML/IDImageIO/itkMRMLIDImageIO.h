@@ -11,7 +11,7 @@
 #define itkMRMLIDImageIO_h
 
 #ifdef _MSC_VER
-#pragma warning ( disable : 4786 )
+# pragma warning(disable : 4786)
 #endif
 
 #include <vtkVersion.h>
@@ -24,11 +24,12 @@ class vtkMRMLVolumeNode;
 class vtkMRMLDiffusionWeightedVolumeNode;
 class vtkMRMLDiffusionImageVolumeNode;
 class vtkImageData;
+class vtkMRMLNode;
 
 namespace itk
 {
 /** \class MRMLIDImageIO
- * \brief ImageIO object for reading and writing imaegs from a MRML scene
+ * \brief ImageIO object for reading and writing images from a MRML scene
  *
  * MRMLIDImageIO is an ImageIO object that allows you to
  * retrieve/store an image in a MRML node using a standard ITK
@@ -47,16 +48,16 @@ namespace itk
  *     <code>slicer:\<scene id\>#\<node id\></code>                    - local slicer
  *     <code>slicer://\<hostname\>/\<scene id\>#\<node id\></code>     - remote slicer
  *
- * This code was written on the Massachusettes Turnpike with extreme
+ * This code was written on the Massachusetts Turnpike with extreme
  * glare on the LCD.
  */
 class MRMLIDImageIO_EXPORT MRMLIDImageIO : public ImageIOBase
 {
 public:
   /** Standard class typedefs. */
-  typedef MRMLIDImageIO       Self;
-  typedef ImageIOBase         Superclass;
-  typedef SmartPointer<Self>  Pointer;
+  typedef MRMLIDImageIO Self;
+  typedef ImageIOBase Superclass;
+  typedef SmartPointer<Self> Pointer;
 
   /** Method for creation through the object factory. */
   itkNewMacro(Self);
@@ -67,10 +68,6 @@ public:
   /** Determine the file type. Returns true if this ImageIO can read the
    * file specified. */
   bool CanReadFile(const char*) override;
-
-  virtual bool CanUseOwnBuffer();
-  virtual void ReadUsingOwnBuffer();
-  virtual void * GetOwnBuffer();
 
   /** Set the spacing and dimension information for the set filename. */
   void ReadImageInformation() override;
@@ -98,28 +95,25 @@ protected:
   void PrintSelf(std::ostream& os, Indent indent) const override;
 
   /** Write the image information to the node and specified image */
-  virtual void WriteImageInformation(vtkMRMLVolumeNode *, vtkImageData*,
-                                     int *scalarType, int *numberOfScalarComponents);
+  virtual void WriteImageInformation(vtkMRMLVolumeNode*, vtkImageData*, int* scalarType, int* numberOfScalarComponents);
 
   /** Take information in a Slicer node and transfer it the
    *  MetaDataDictionary in ITK */
-  void SetDWDictionaryValues(MetaDataDictionary &dict,
-                             vtkMRMLDiffusionWeightedVolumeNode *dw);
+  void SetDWDictionaryValues(MetaDataDictionary& dict, vtkMRMLDiffusionWeightedVolumeNode* dw);
 
   /** Take information in a Slicer node and transfer it the
    *  MetaDataDictionary in ITK */
-  void SetDTDictionaryValues(MetaDataDictionary &dict,
-                             vtkMRMLDiffusionImageVolumeNode *di);
+  void SetDTDictionaryValues(MetaDataDictionary& dict, vtkMRMLDiffusionImageVolumeNode* di);
 
   /** Take information from the MetaDataDictionary that is needed to
    *  transfer this volume to a Slicer node */
-  void SetDWNodeValues(vtkMRMLDiffusionWeightedVolumeNode *dw,
-                       MetaDataDictionary &dict);
+  void SetDWNodeValues(vtkMRMLDiffusionWeightedVolumeNode* dw, MetaDataDictionary& dict);
 
   /** Take information from the MetaDataDictionary that is needed to
    *  transfer this volume to a Slicer node */
-  void SetDTNodeValues(vtkMRMLDiffusionImageVolumeNode *di,
-                       MetaDataDictionary &dict);
+  void SetDTNodeValues(vtkMRMLDiffusionImageVolumeNode* di, MetaDataDictionary& dict);
+
+  void RequestModified(vtkMRMLNode* modifiedObject);
 
 private:
   MRMLIDImageIO(const Self&) = delete;
@@ -132,9 +126,7 @@ private:
   std::string m_Authority;
   std::string m_SceneID;
   std::string m_NodeID;
-
 };
 
-
-} /// end namespace itk
-#endif /// itkMRMLIDImageIO_h
+} // namespace itk
+#endif

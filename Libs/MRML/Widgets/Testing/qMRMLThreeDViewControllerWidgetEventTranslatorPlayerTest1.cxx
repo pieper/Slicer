@@ -48,15 +48,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLThreeDViewControllerWidget* widget = reinterpret_cast<qMRMLThreeDViewControllerWidget*>(data);
 
   Q_UNUSED(widget);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLThreeDViewControllerWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLThreeDViewControllerWidgetEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -71,17 +71,14 @@ int qMRMLThreeDViewControllerWidgetEventTranslatorPlayerTest1(int argc, char * a
 
   // Test case 1
   qMRMLThreeDViewControllerWidget* widget = new qMRMLThreeDViewControllerWidget();
-  etpWidget.addTestCase(widget,
-                        xmlDirectory + "qMRMLThreeDViewControllerWidgetEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(widget, xmlDirectory + "qMRMLThreeDViewControllerWidgetEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

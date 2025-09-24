@@ -39,7 +39,6 @@ class vtkMRMLDiffusionTensorSliceDisplayNode;
 class vtkMRMLGlyphableVolumeSliceDisplayNode;
 class qSlicerDiffusionTensorVolumeDisplayWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_Volumes
 class Q_SLICER_QTMODULES_VOLUMES_WIDGETS_EXPORT qSlicerDiffusionTensorVolumeDisplayWidget : public qSlicerWidget
 {
   Q_OBJECT
@@ -50,9 +49,9 @@ public:
   explicit qSlicerDiffusionTensorVolumeDisplayWidget(QWidget* parent = nullptr);
   ~qSlicerDiffusionTensorVolumeDisplayWidget() override;
 
-  vtkMRMLDiffusionTensorVolumeNode* volumeNode()const;
-  vtkMRMLDiffusionTensorVolumeDisplayNode* volumeDisplayNode()const;
-  QList<vtkMRMLGlyphableVolumeSliceDisplayNode*> sliceDisplayNodes()const;
+  vtkMRMLDiffusionTensorVolumeNode* volumeNode() const;
+  vtkMRMLDiffusionTensorVolumeDisplayNode* volumeDisplayNode() const;
+  QList<vtkMRMLGlyphableVolumeSliceDisplayNode*> sliceDisplayNodes() const;
 public slots:
 
   /// Set the MRML node of interest

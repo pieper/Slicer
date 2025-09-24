@@ -35,6 +35,7 @@
 #  <var-prefix>_WC_REVISION_NAME - Name associated with <var-prefix>_WC_REVISION_HASH
 #  <var-prefix>_WC_URL - output of command `git config --get remote.origin.url'
 #  <var-prefix>_WC_ROOT - Same value as working copy URL
+#  <var-prefix>_WC_COMMIT_COUNT - number of commits in current branch
 #  <var-prefix>_WC_LAST_CHANGED_DATE - date of last commit
 #  <var-prefix>_WC_GITSVN - Set to false
 #
@@ -48,7 +49,6 @@
 #  <var-prefix>_WC_LAST_CHANGED_DATE - date of last commit
 #  <var-prefix>_WC_LAST_CHANGED_REV - revision of last commit
 #  <var-prefix>_WC_LAST_CHANGED_LOG - last log of base revision
-#  <var-prefix>_WC_COMMIT_COUNT - number of commits in current branch
 #
 # Example usage:
 #   find_package(Git)
@@ -70,7 +70,7 @@ if(WIN32)
   if(NOT CMAKE_GENERATOR MATCHES "MSYS")
     # Note: Due to a bug in 'git.cmd' preventing it from returning the exit code of 'git',
     #       we excluded it from the list of executables to search.
-    # See http://code.google.com/p/msysgit/issues/detail?id=428
+    # See https://code.google.com/p/msysgit/issues/detail?id=428
     # TODO Check if 'git' exists, get the associated version, if the corresponding version
     #      is known to have a working version of 'git.cmd', use it.
     set(git_names git eg.cmd eg)
@@ -119,7 +119,7 @@ if(GIT_EXECUTABLE)
        WORKING_DIRECTORY ${dir}
        OUTPUT_VARIABLE ${prefix}_show_output
        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    string(REGEX REPLACE "^([0-9][0-9][0-9][0-9]\\-[0-9][0-9]\\-[0-9][0-9]).*"
+    string(REGEX REPLACE "^([0-9][0-9][0-9][0-9]\\-[0-9][0-9]\\-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [-+][0-9][0-9][0-9][0-9]).*"
       "\\1" ${prefix}_WC_LAST_CHANGED_DATE "${${prefix}_show_output}")
 
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-list HEAD --count

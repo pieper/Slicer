@@ -1,12 +1,13 @@
 
 #include "ProbeVolumeWithModelCLP.h"
 
+// vtkTeem includes
+#include <vtkTeemNRRDReader.h>
+
 // VTK includes
 #include <vtkImageData.h>
 #include <vtkNew.h>
 #include <vtkPolyData.h>
-#include <vtkPolyDataReader.h>
-#include <vtkPolyDataWriter.h>
 #include <vtkProbeFilter.h>
 #include <vtkTransform.h>
 #include <vtkTransformFilter.h>
@@ -15,8 +16,6 @@
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLModelStorageNode.h"
 
-#include "vtkITKArchetypeImageSeriesScalarReader.h"
-
 #include <vtksys/SystemTools.hxx>
 
 int main(int argc, char* argv[])
@@ -24,19 +23,18 @@ int main(int argc, char* argv[])
   PARSE_ARGS;
 
   // Read the file
-  vtkNew<vtkITKArchetypeImageSeriesScalarReader> readerVol;
-  readerVol->SetArchetype(InputVolume.c_str());
-  readerVol->SetOutputScalarTypeToNative();
-  readerVol->SetDesiredCoordinateOrientationToNative();
-  readerVol->SetUseNativeOriginOn();
+  // Use vtkTeemNRRDReader because it supports both scalar and vector volumes.
+  vtkNew<vtkTeemNRRDReader> readerVol;
+  readerVol->SetFileName(InputVolume.c_str());
+  readerVol->SetDataArrayName(OutputArrayName);
   readerVol->Update();
   vtkImageData* volume = readerVol->GetOutput();
   int* extent = volume->GetExtent();
-  if (extent[0]>extent[1] || extent[2] > extent[3] || extent[4] > extent[5])
-    {
-    std::cerr << "Input image file is empty: " << InputModel << std::endl;
+  if (extent[0] > extent[1] || extent[2] > extent[3] || extent[4] > extent[5])
+  {
+    std::cerr << "Input image file is empty: " << InputVolume << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   std::cout << "Done reading the file " << InputVolume << endl;
 
   vtkNew<vtkImageChangeInformation> ici;
@@ -50,10 +48,10 @@ int main(int argc, char* argv[])
   vtkNew<vtkMRMLModelNode> modelNode;
   modelStorageNode->SetFileName(InputModel.c_str());
   if (!modelStorageNode->ReadData(modelNode))
-    {
+  {
     std::cerr << "Failed to read input model file " << InputModel << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Transform the model into the volume's IJK space
   vtkNew<vtkTransformFilter> modelTransformerRasToIjk;
@@ -76,10 +74,10 @@ int main(int argc, char* argv[])
   modelNode->SetAndObserveMesh(modelTransformerIjkToRas->GetOutput());
   modelStorageNode->SetFileName(OutputModel.c_str());
   if (!modelStorageNode->WriteData(modelNode))
-    {
+  {
     std::cerr << "Failed to write output model file " << OutputModel << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   return EXIT_SUCCESS;
 }

@@ -22,48 +22,51 @@
 #include <QEvent>
 #include <QStyle>
 
+// VTK includes
+#include <vtkSmartPointer.h>
+
+// MRML includes
+#include "vtkMRMLScene.h"
+
 // qMRML includes
 #include "qMRMLCollapsibleButton.h"
+
+// --------------------------------------------------------------------------
+class qMRMLCollapsibleButtonPrivate
+{
+public:
+  vtkSmartPointer<vtkMRMLScene> MRMLScene;
+};
 
 // --------------------------------------------------------------------------
 // qMRMLCollapsibleButton methods
 
 // --------------------------------------------------------------------------
 qMRMLCollapsibleButton::qMRMLCollapsibleButton(QWidget* parentWidget)
-  :Superclass(parentWidget)
+  : Superclass(parentWidget)
+  , d_ptr(new qMRMLCollapsibleButtonPrivate)
 {
-  this->setAutoFillBackground(true);
-  this->computePalette();
 }
 
-// --------------------------------------------------------------------------
-void qMRMLCollapsibleButton::changeEvent(QEvent* event)
+//-----------------------------------------------------------------------------
+qMRMLCollapsibleButton::~qMRMLCollapsibleButton() = default;
+
+//-----------------------------------------------------------------------------
+void qMRMLCollapsibleButton::setMRMLScene(vtkMRMLScene* scene)
 {
-  if (event->type() == QEvent::ParentChange)
-    {
-    this->computePalette();
-    }
-  this->Superclass::changeEvent(event);
+  Q_D(qMRMLCollapsibleButton);
+  if (scene == d->MRMLScene)
+  {
+    return;
+  }
+  d->MRMLScene = scene;
+
+  emit mrmlSceneChanged(scene);
 }
 
-void qMRMLCollapsibleButton::computePalette()
+//-----------------------------------------------------------------------------
+vtkMRMLScene* qMRMLCollapsibleButton::mrmlScene() const
 {
-  QColor backgroundColor =
-    this->style()->standardPalette().color(QPalette::Window);
-  QObject* ancestor = this;
-  while(ancestor->parent())
-    {
-    ancestor = ancestor->parent();
-    if (qobject_cast<qMRMLCollapsibleButton*>(ancestor)||
-        qobject_cast<ctkCollapsibleButton*>(ancestor))
-      {
-      backgroundColor = backgroundColor.darker(108);
-      backgroundColor = QColor::fromHsvF(backgroundColor.hueF(),
-                                         backgroundColor.saturationF()*1.2,
-                                         backgroundColor.valueF());
-      }
-    }
-  QPalette newPalette = this->palette();
-  newPalette.setColor(QPalette::Window, backgroundColor);
-  this->setPalette(newPalette);
+  Q_D(const qMRMLCollapsibleButton);
+  return d->MRMLScene;
 }

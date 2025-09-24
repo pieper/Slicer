@@ -32,7 +32,7 @@
 
 // STD includes
 
-int qSlicerModulePanelTest2(int argc, char * argv[] )
+int qSlicerModulePanelTest2(int argc, char* argv[])
 {
   QApplication::setDesktopSettingsAware(false);
   QApplication::setStyle(new qSlicerStyle);
@@ -48,78 +48,76 @@ int qSlicerModulePanelTest2(int argc, char * argv[] )
   QDockWidget dockWidget;
   qSlicerModulePanel* modulePanel = new qSlicerModulePanel(&dockWidget);
   dockWidget.setWidget(modulePanel);
-  //QHBoxLayout* hbox = new QHBoxLayout;
-  //hbox->addWidget(&modulePanel);
-  //dockWidget.setLayout(hbox);
+  // QHBoxLayout* hbox = new QHBoxLayout;
+  // hbox->addWidget(&modulePanel);
+  // dockWidget.setLayout(hbox);
 
   modulePanel->setModuleManager(app.moduleManager());
 
   modulePanel->setModule("EventBroker");
   if (modulePanel->currentModuleName() != "EventBroker")
-    {
-    std::cerr<< "qSlicerModulePanel::setModule() failed "
-             << qPrintable(modulePanel->currentModuleName()) << std::endl;
+  {
+    std::cerr << "qSlicerModulePanel::setModule() failed " << qPrintable(modulePanel->currentModuleName()) << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   dockWidget.show();
 
   // helpAndAcknowledgmentVisible property
   {
-    QWidget* helpCollapsibleButton =
-        modulePanel->findChild<QWidget*>("HelpCollapsibleButton");
+    QWidget* helpCollapsibleButton = modulePanel->findChild<QWidget*>("HelpCollapsibleButton");
     if (!helpCollapsibleButton)
-      {
+    {
       std::cerr << "Line " << __LINE__ << " - Couldn't find 'HelpCollapsibleButton' widget !\n" << std::endl;
       return EXIT_FAILURE;
-      }
+    }
 
     bool expected = false;
     modulePanel->setHelpAndAcknowledgmentVisible(expected);
     bool current = modulePanel->isHelpAndAcknowledgmentVisible();
     if (current != expected)
-      {
+    {
       std::cerr << "Line " << __LINE__ << " - Problem with helpAndAcknowledgmentVisible property !\n"
                 << " current:" << current << "\n"
                 << " expected:" << expected << std::endl;
       return EXIT_FAILURE;
-      }
+    }
 
     current = helpCollapsibleButton->isVisible();
     if (current != expected)
-      {
+    {
       std::cerr << "Line " << __LINE__ << " - Problem with HelpCollapsibleButton visibility!\n"
                 << " current:" << current << "\n"
                 << " expected:" << expected << std::endl;
       return EXIT_FAILURE;
-      }
+    }
 
     expected = true;
     modulePanel->setHelpAndAcknowledgmentVisible(expected);
     current = modulePanel->isHelpAndAcknowledgmentVisible();
     if (current != expected)
-      {
+    {
       std::cerr << "Line " << __LINE__ << " - Problem with helpAndAcknowledgmentVisible property !\n"
                 << " current:" << current << "\n"
                 << " expected:" << expected << std::endl;
       return EXIT_FAILURE;
-      }
+    }
 
     current = helpCollapsibleButton->isVisible();
     if (current != expected)
-      {
+    {
       std::cerr << "Line " << __LINE__ << " - Problem with HelpCollapsibleButton visibility!\n"
                 << " current:" << current << "\n"
                 << " expected:" << expected << std::endl;
       return EXIT_FAILURE;
-      }
+    }
   }
 
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
+    modulePanel->setModule("");
     QTimer::singleShot(100, qApp, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }
-

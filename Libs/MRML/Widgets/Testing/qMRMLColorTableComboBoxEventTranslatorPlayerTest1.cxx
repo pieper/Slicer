@@ -53,15 +53,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLColorTableComboBox* widget = reinterpret_cast<qMRMLColorTableComboBox*>(data);
 
   Q_UNUSED(widget);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLColorTableComboBoxEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLColorTableComboBoxEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -83,17 +83,14 @@ int qMRMLColorTableComboBoxEventTranslatorPlayerTest1(int argc, char * argv [] )
   widget->setNodeTypes(QStringList("vtkMRMLViewNode"));
   widget->setMRMLScene(sceneFactory.mrmlScene());
 
-  etpWidget.addTestCase(widget,
-                        xmlDirectory + "qMRMLColorTableComboBoxEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(widget, xmlDirectory + "qMRMLColorTableComboBoxEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

@@ -55,15 +55,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLVolumeThresholdWidget* widget = reinterpret_cast<qMRMLVolumeThresholdWidget*>(data);
 
   Q_UNUSED(widget);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLVolumeThresholdWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLVolumeThresholdWidgetEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -95,17 +95,14 @@ int qMRMLVolumeThresholdWidgetEventTranslatorPlayerTest1(int argc, char * argv [
   qMRMLVolumeThresholdWidget volumeThreshold;
   volumeThreshold.setMRMLVolumeNode(volumeNode);
 
-  etpWidget.addTestCase(&volumeThreshold,
-                        xmlDirectory + "qMRMLVolumeThresholdWidgetEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(&volumeThreshold, xmlDirectory + "qMRMLVolumeThresholdWidgetEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

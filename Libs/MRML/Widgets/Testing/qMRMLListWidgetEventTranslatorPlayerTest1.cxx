@@ -49,15 +49,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLListWidget* widget = reinterpret_cast<qMRMLListWidget*>(data);
 
   Q_UNUSED(widget);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLListWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLListWidgetEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -79,17 +79,14 @@ int qMRMLListWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
   sceneFactory.generateNode("vtkMRMLViewNode");
   sceneFactory.generateNode("vtkMRMLViewNode");
   widget->setMRMLScene(sceneFactory.mrmlScene());
-  etpWidget.addTestCase(widget,
-                        xmlDirectory + "qMRMLListWidgetEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(widget, xmlDirectory + "qMRMLListWidgetEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

@@ -28,7 +28,7 @@
 
 #include "vtkMRMLCoreTestingMacros.h"
 
-int vtkMRMLPlotSeriesNodeTest1(int , char * [] )
+int vtkMRMLPlotSeriesNodeTest1(int, char*[])
 {
   vtkNew<vtkMRMLScene> scene;
   vtkNew<vtkMRMLPlotSeriesNode> plotSeriesNode;
@@ -48,13 +48,13 @@ int vtkMRMLPlotSeriesNodeTest1(int , char * [] )
 
   // Fill in the table with some example values
   int numPoints = 69;
-  float inc = 7.5 / (numPoints-1);
+  float inc = 7.5 / (numPoints - 1);
   table->SetNumberOfRows(numPoints);
   for (int i = 0; i < numPoints; ++i)
-    {
+  {
     table->SetValue(i, 0, i * inc);
     table->SetValue(i, 1, cos(i * inc));
-    }
+  }
 
   // Create a MRMLTableNode
   vtkNew<vtkMRMLTableNode> tableNode;
@@ -68,7 +68,6 @@ int vtkMRMLPlotSeriesNodeTest1(int , char * [] )
 
   plotSeriesNode->SetXColumnName(arrX->GetName());
   plotSeriesNode->SetYColumnName(arrC->GetName());
-
 
   // Verify that Copy method creates a true independent copy
   vtkSmartPointer<vtkMRMLPlotSeriesNode> nodeCopy = vtkSmartPointer<vtkMRMLPlotSeriesNode>::New();

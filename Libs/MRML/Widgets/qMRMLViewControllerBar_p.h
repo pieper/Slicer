@@ -33,20 +33,28 @@
 //
 
 // Qt includes
+#include <QIcon>
 #include <QObject>
-class QLabel;
-class QToolButton;
-class QHBoxLayout;
-class QVBoxLayout;
-
-// CTK includes
-class ctkPopupWidget;
 
 // qMRML includes
 #include "qMRMLViewControllerBar.h"
 
+// MRML includes
+#include "vtkMRMLAbstractViewNode.h"
+#include "vtkMRMLLayoutNode.h"
+
+// VTK includes
+#include "vtkWeakPointer.h"
+
+class ctkPopupWidget;
+class QLabel;
+class QToolButton;
+class QHBoxLayout;
+class QVBoxLayout;
+class vtkMRMLLayoutNode;
+
 //-----------------------------------------------------------------------------
-class QMRML_WIDGETS_EXPORT qMRMLViewControllerBarPrivate: public QObject
+class QMRML_WIDGETS_EXPORT qMRMLViewControllerBarPrivate : public QObject
 {
   Q_OBJECT
   Q_DECLARE_PUBLIC(qMRMLViewControllerBar);
@@ -61,16 +69,24 @@ public:
 
   virtual void init();
   virtual void setColor(QColor color);
-  virtual QColor color()const;
+  virtual QColor color() const;
 
-  QToolButton*                     PinButton;
-  QLabel*                          ViewLabel;
-  ctkPopupWidget*                  PopupWidget;
-  QWidget*                         BarWidget;
-  QHBoxLayout*                     BarLayout;
-  QVBoxLayout*                     ControllerLayout;
-  qMRMLViewControllerBar::LayoutBehavior  LayoutBehavior;
-  QColor                           BarColor;
+  // Need to observe the view and layout nodes to update maximize/restore button state.
+  vtkWeakPointer<vtkMRMLAbstractViewNode> ViewNode;
+  vtkWeakPointer<vtkMRMLLayoutNode> LayoutNode;
+
+  QToolButton* PinButton{ nullptr };
+  QLabel* ViewLabel{ nullptr };
+  QToolButton* MaximizeViewButton{ nullptr };
+  ctkPopupWidget* PopupWidget{ nullptr };
+  QWidget* BarWidget{ nullptr };
+  QHBoxLayout* BarLayout{ nullptr };
+  QVBoxLayout* ControllerLayout{ nullptr };
+  qMRMLViewControllerBar::LayoutBehavior LayoutBehavior{ qMRMLViewControllerBar::Popup };
+  QColor BarColor;
+  QIcon ViewMaximizeIcon;
+  QIcon ViewRestoreIcon;
+  bool ShowMaximizeViewButton{ true };
 
   bool eventFilter(QObject* object, QEvent* event) override;
 

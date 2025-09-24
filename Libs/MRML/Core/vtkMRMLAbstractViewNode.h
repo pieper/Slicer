@@ -28,17 +28,17 @@
 #include "vtkMRMLNode.h"
 
 class vtkMRMLInteractionNode;
+class vtkMRMLLayoutNode;
 class vtkMRMLModelNode;
 class vtkStringArray;
 
 /// \brief Abstract MRML node to represent a view.
 /// The class holds the properties common to any view type (3D, slice, chart..)
 /// Views are not hidden from editors by default (HideFromEditor is 0)
-class VTK_MRML_EXPORT vtkMRMLAbstractViewNode
-  : public vtkMRMLNode
+class VTK_MRML_EXPORT vtkMRMLAbstractViewNode : public vtkMRMLNode
 {
 public:
-  vtkTypeMacro(vtkMRMLAbstractViewNode,vtkMRMLNode);
+  vtkTypeMacro(vtkMRMLAbstractViewNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   //--------------------------------------------------------------------------
@@ -46,7 +46,7 @@ public:
   //--------------------------------------------------------------------------
 
   /// Read node attributes from XML file
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
@@ -65,8 +65,8 @@ public:
   /// or numbers "1", "2"... to uniquely define the node.
   /// No name (i.e. "") by default.
   /// \sa SetSingletonTag(), SetViewLabel()
-  inline void SetLayoutName(const char *layoutName);
-  inline const char *GetLayoutName();
+  inline void SetLayoutName(const char* layoutName);
+  inline const char* GetLayoutName();
 
   /// An optional identifier to link groups of views. Views that have matching
   /// ViewGroup value are in the same group.
@@ -87,8 +87,8 @@ public:
   vtkGetStringMacro(LayoutLabel);
 
   /// Indicates whether or not the view is active
-  vtkGetMacro(Active, int );
-  vtkSetMacro(Active, int );
+  vtkGetMacro(Active, int);
+  vtkSetMacro(Active, int);
 
   /// \brief Indicates whether or not the view is visible.
   ///
@@ -122,7 +122,7 @@ public:
   vtkMRMLInteractionNode* GetInteractionNode();
   /// Set interaction node reference.
   /// \sa GetInteractionNode()
-  bool SetInteractionNodeID(const char *interactionNodeId);
+  bool SetInteractionNodeID(const char* interactionNodeId);
   /// Set interaction node reference.
   /// \sa GetInteractionNode()
   bool SetInteractionNode(vtkMRMLNode* node);
@@ -131,8 +131,8 @@ public:
   /// \sa GetVisibility()
   /// \sa IsViewVisibleInLayout()
   /// \sa vtkMRMLLayoutNode::SetViewArrangement()
-  virtual int IsMappedInLayout();
-  virtual void SetMappedInLayout(int value);
+  vtkSetMacro(MappedInLayout, bool);
+  virtual bool IsMappedInLayout();
 
   /// Get parent layout node.
   /// Default is no reference, meaning that the view is managed by the main layout.
@@ -140,7 +140,7 @@ public:
   vtkMRMLNode* GetParentLayoutNode();
   /// Set parent layout node reference
   /// \sa GetParentLayoutNode
-  bool SetAndObserveParentLayoutNodeID(const char *layoutNodeId);
+  bool SetAndObserveParentLayoutNodeID(const char* layoutNodeId);
   /// Set parent layout node reference
   /// \sa GetParentLayoutNode
   bool SetAndObserveParentLayoutNode(vtkMRMLNode* node);
@@ -167,18 +167,17 @@ public:
   vtkGetVector3Macro(BackgroundColor2, double);
   vtkSetVector3Macro(BackgroundColor2, double);
 
-
   /// Color for view header in layout as RGB
   /// Gray by default
   vtkSetVector3Macro(LayoutColor, double);
   vtkGetVector3Macro(LayoutColor, double);
 
-  static double* GetRedColor();
-  static double* GetYellowColor();
-  static double* GetGreenColor();
-  static double* GetCompareColor();
-  static double* GetGrayColor();
-  static double* GetThreeDViewBlueColor();
+  static double* GetRedColor() VTK_SIZEHINT(3);
+  static double* GetYellowColor() VTK_SIZEHINT(3);
+  static double* GetGreenColor() VTK_SIZEHINT(3);
+  static double* GetCompareColor() VTK_SIZEHINT(3);
+  static double* GetGrayColor() VTK_SIZEHINT(3);
+  static double* GetThreeDViewBlueColor() VTK_SIZEHINT(3);
 
   /// Tells if it is meaningful to display orientation marker in this view.
   /// It is set statically in each specific view node class and cannot be changed dynamically.
@@ -212,7 +211,7 @@ public:
   /// Enum to specify orientation marker types
   enum OrientationMarkerTypeType
   {
-    OrientationMarkerTypeNone=0,
+    OrientationMarkerTypeNone = 0,
     OrientationMarkerTypeCube,
     OrientationMarkerTypeHuman,
     OrientationMarkerTypeAxes,
@@ -221,7 +220,7 @@ public:
 
   enum OrientationMarkerSizeType
   {
-    OrientationMarkerSizeSmall=0,
+    OrientationMarkerSizeSmall = 0,
     OrientationMarkerSizeMedium,
     OrientationMarkerSizeLarge,
     OrientationMarkerSize_Last // insert valid types above this line
@@ -242,7 +241,7 @@ public:
   /// Enum to specify ruler types
   enum RulerTypeType
   {
-    RulerTypeNone=0,
+    RulerTypeNone = 0,
     RulerTypeThin,
     RulerTypeThick,
     RulerType_Last // insert valid types above this line
@@ -259,7 +258,7 @@ public:
   /// Enum to specify ruler colors
   enum RulerColorType
   {
-    RulerColorWhite=0,
+    RulerColorWhite = 0,
     RulerColorBlack,
     RulerColorYellow,
     RulerColor_Last // insert valid types above this line
@@ -274,8 +273,30 @@ public:
   const char* GetAxisLabel(int labelIndex);
   void SetAxisLabel(int labelIndex, const char* label);
 
+  /// Returns label for the specified direction. For example, (1,0,0) direction returns
+  /// the positive x axis label "R".
+  /// toleranceDeg specifies the tolerance when when determining if the direction
+  /// is parallel with an axis.
+  std::string GetDirectionLabel(double direction[3], bool positive = true, double toleranceDeg = 1.0);
+
   /// Total number of coordinate system axis labels
   static const int AxisLabelsCount;
+
+  /// Get maximized state of the view.
+  /// \param maximized is true if the view is temporarily maximized to fill the view layout.
+  /// \param canBeMaximized is true if the view is in a view layout (not a standalone widget).
+  /// \returns layout node that this view belongs to.
+  vtkMRMLLayoutNode* GetMaximizedState(bool& maximized, bool& canBeMaximized);
+
+  //@{
+  /// Get/set scaling factor of text and interactive elements in the viewer.
+  /// If the screen is physically larger then the user prefer a smaller screen scale factor.
+  /// When using a smaller screen or if the screen is farther or eyesight of the user is not perfect
+  /// then a larger screen scale factor may be preferable.
+  /// Setting of this value is still experimental and therefore the current value is not saved into the scene.
+  vtkGetMacro(ScreenScaleFactor, double);
+  vtkSetMacro(ScreenScaleFactor, double);
+  //@}
 
 protected:
   vtkMRMLAbstractViewNode();
@@ -286,21 +307,21 @@ protected:
 
   ///
   /// Views with the same ViewGroup value are in the same group.
-  int ViewGroup{0};
+  int ViewGroup{ 0 };
 
   ///
   /// Label to show for the view (shortcut for the name)
-  char* LayoutLabel{nullptr};
+  char* LayoutLabel{ nullptr };
 
   ///
   /// Indicates whether or not the View is visible.
   /// Invisible (0) by default.
-  int Visibility{1};
+  int Visibility{ 1 };
 
   ///
   /// Indicates whether or not the View is active.
   /// Inactive by default.
-  int Active{0};
+  int Active{ 0 };
 
   ///
   /// Background colors
@@ -314,35 +335,43 @@ protected:
   ///
   /// For views that supports orientation marker display (where OrientationMarkerEnabled=true)
   /// these parameters define how to display the orientation marker.
-  bool OrientationMarkerEnabled{false};
-  int OrientationMarkerType{OrientationMarkerTypeNone};
-  int OrientationMarkerSize{OrientationMarkerSizeMedium};
+  bool OrientationMarkerEnabled{ false };
+  int OrientationMarkerType{ OrientationMarkerTypeNone };
+  int OrientationMarkerSize{ OrientationMarkerSizeMedium };
 
   static const char* OrientationMarkerHumanModelReferenceRole;
 
   ///
   /// For views that supports ruler display (where RulerEnabled=true)
   /// these parameters define how to display the ruler.
-  bool RulerEnabled{false};
-  int RulerType{RulerTypeNone};
-  int RulerColor{RulerColorWhite};
+  bool RulerEnabled{ false };
+  int RulerType{ RulerTypeNone };
+  int RulerColor{ RulerColorWhite };
+
+  /// Default glyph scale used to be 3.0 (in Slicer-4.10 and earlier).
+  /// This display scale factor value produces similar appearance of markup points.
+  double ScreenScaleFactor{ 0.2 };
 
   ///
   /// Labels of coordinate system axes
   vtkSmartPointer<vtkStringArray> AxisLabels;
+
+  ///
+  /// Define if the view is displayed in the current layout.
+  bool MappedInLayout;
 
   static const char* ParentLayoutNodeReferenceRole;
   static const char* InteractionNodeReferenceRole;
 };
 
 //------------------------------------------------------------------------------
-void vtkMRMLAbstractViewNode::SetLayoutName(const char *layoutName)
+void vtkMRMLAbstractViewNode::SetLayoutName(const char* layoutName)
 {
   this->SetSingletonTag(layoutName);
 }
 
 //------------------------------------------------------------------------------
-const char *vtkMRMLAbstractViewNode::GetLayoutName()
+const char* vtkMRMLAbstractViewNode::GetLayoutName()
 {
   return this->GetSingletonTag();
 }

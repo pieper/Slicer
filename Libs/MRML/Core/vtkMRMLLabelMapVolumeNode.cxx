@@ -34,13 +34,16 @@
 vtkMRMLNodeNewMacro(vtkMRMLLabelMapVolumeNode);
 
 //----------------------------------------------------------------------------
-vtkMRMLLabelMapVolumeNode::vtkMRMLLabelMapVolumeNode() = default;
+vtkMRMLLabelMapVolumeNode::vtkMRMLLabelMapVolumeNode()
+{
+  this->TypeDisplayName = vtkMRMLTr("vtkMRMLLabelMapVolumeNode", "Label Map Volume");
+}
 
 //----------------------------------------------------------------------------
 vtkMRMLLabelMapVolumeNode::~vtkMRMLLabelMapVolumeNode() = default;
 
 //-----------------------------------------------------------
-void vtkMRMLLabelMapVolumeNode::CreateNoneNode(vtkMRMLScene *scene)
+void vtkMRMLLabelMapVolumeNode::CreateNoneNode(vtkMRMLScene* scene)
 {
   vtkNew<vtkImageData> id;
   id->SetDimensions(1, 1, 1);
@@ -57,18 +60,25 @@ void vtkMRMLLabelMapVolumeNode::CreateNoneNode(vtkMRMLScene *scene)
 //----------------------------------------------------------------------------
 void vtkMRMLLabelMapVolumeNode::CreateDefaultDisplayNodes()
 {
-  if (vtkMRMLLabelMapVolumeDisplayNode::SafeDownCast(this->GetDisplayNode())!=nullptr)
-    {
+  if (vtkMRMLLabelMapVolumeDisplayNode::SafeDownCast(this->GetDisplayNode()) != nullptr)
+  {
     // display node already exists
     return;
-    }
-  if (this->GetScene()==nullptr)
-    {
+  }
+  if (this->GetScene() == nullptr)
+  {
     vtkErrorMacro("vtkMRMLLabelMapVolumeNode::CreateDefaultDisplayNodes failed: scene is invalid");
     return;
-    }
-  vtkMRMLLabelMapVolumeDisplayNode* dispNode = vtkMRMLLabelMapVolumeDisplayNode::SafeDownCast(
-    this->GetScene()->AddNewNodeByClass("vtkMRMLLabelMapVolumeDisplayNode") );
+  }
+  vtkMRMLLabelMapVolumeDisplayNode* dispNode = vtkMRMLLabelMapVolumeDisplayNode::SafeDownCast(this->GetScene()->AddNewNodeByClass("vtkMRMLLabelMapVolumeDisplayNode"));
   dispNode->SetDefaultColorMap();
   this->SetAndObserveDisplayNodeID(dispNode->GetID());
+}
+
+//----------------------------------------------------------------------------
+int vtkMRMLLabelMapVolumeNode::GetResamplingInterpolationMode()
+{
+  // Labelmap volumes must be resampled using nearest neighbor method to avoid
+  // introducing new label values at boundaries.
+  return VTK_NEAREST_INTERPOLATION;
 }

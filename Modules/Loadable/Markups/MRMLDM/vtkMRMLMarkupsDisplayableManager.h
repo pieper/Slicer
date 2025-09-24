@@ -30,23 +30,21 @@
 // VTK includes
 #include <vtkSlicerMarkupsWidget.h>
 
-#include <set>
+// STD includes
+#include <map>
 
 class vtkMRMLMarkupsNode;
 class vtkSlicerViewerWidget;
 class vtkMRMLMarkupsDisplayNode;
 class vtkAbstractWidget;
 
-/// \ingroup Slicer_QtModules_Markups
-class  VTK_SLICER_MARKUPS_MODULE_MRMLDISPLAYABLEMANAGER_EXPORT vtkMRMLMarkupsDisplayableManager :
-    public vtkMRMLAbstractDisplayableManager
+class VTK_SLICER_MARKUPS_MODULE_MRMLDISPLAYABLEMANAGER_EXPORT vtkMRMLMarkupsDisplayableManager : public vtkMRMLAbstractDisplayableManager
 {
 public:
-
   // Allow the helper to call protected methods of displayable manager
   friend class vtkMRMLMarkupsDisplayableManagerHelper;
 
-  static vtkMRMLMarkupsDisplayableManager *New();
+  static vtkMRMLMarkupsDisplayableManager* New();
   vtkTypeMacro(vtkMRMLMarkupsDisplayableManager, vtkMRMLAbstractDisplayableManager);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -55,14 +53,14 @@ public:
   /// it's a 2d displayable manager
   virtual bool Is2DDisplayableManager();
   /// Get the sliceNode, if registered. This would mean it is a 2D SliceView displayableManager.
-  vtkMRMLSliceNode * GetMRMLSliceNode();
+  vtkMRMLSliceNode* GetMRMLSliceNode();
 
-  vtkMRMLMarkupsDisplayableManagerHelper *  GetHelper() { return this->Helper; };
+  vtkMRMLMarkupsDisplayableManagerHelper* GetHelper() { return this->Helper; };
 
-  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double &closestDistance2) override;
+  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& closestDistance2) override;
   bool ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData) override;
 
-  void SetHasFocus(bool hasFocus) override;
+  void SetHasFocus(bool hasFocus, vtkMRMLInteractionEventData* eventData) override;
   bool GetGrabFocus() override;
   bool GetInteractive() override;
   int GetMouseCursor() override;
@@ -79,20 +77,22 @@ public:
 
   /// Convert device coordinates (display) to XYZ coordinates (viewport).
   /// Parameter \a xyz is double[3]
-  /// \sa ConvertDeviceToXYZ(vtkRenderWindowInteractor *, vtkMRMLSliceNode *, double x, double y, double xyz[3])
+  /// \sa ConvertDeviceToXYZ(vtkRenderWindowInteractor*, vtkMRMLSliceNode*, double x, double y, double xyz[3])
   void ConvertDeviceToXYZ(double x, double y, double xyz[3]);
 
   /// Get the widget of a node.
-  vtkSlicerMarkupsWidget* GetWidget(vtkMRMLMarkupsDisplayNode * node);
+  vtkSlicerMarkupsWidget* GetWidget(vtkMRMLMarkupsDisplayNode* node);
+
+  /// Get the interaction widget of a node.
+  vtkSlicerMarkupsInteractionWidget* GetInteractionWidget(vtkMRMLMarkupsDisplayNode* node);
 
 protected:
-
   vtkMRMLMarkupsDisplayableManager();
   ~vtkMRMLMarkupsDisplayableManager() override;
 
-  vtkSlicerMarkupsWidget* FindClosestWidget(vtkMRMLInteractionEventData *callData, double &closestDistance2);
+  vtkMRMLAbstractWidget* FindClosestWidget(vtkMRMLInteractionEventData* callData, double& closestDistance2);
 
-  void ProcessMRMLNodesEvents(vtkObject *caller, unsigned long event, void *callData) override;
+  void ProcessMRMLNodesEvents(vtkObject* caller, unsigned long event, void* callData) override;
 
   /// Wrap the superclass render request in a check for batch processing
   virtual void RequestRender();
@@ -111,14 +111,20 @@ protected:
   void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
   void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
 
+  /// Initialize the displayable manager
+  void Create() override;
+
   /// Create a widget.
   vtkSlicerMarkupsWidget* CreateWidget(vtkMRMLMarkupsDisplayNode* node);
+
+  /// Create an interaction widget.
+  vtkSlicerMarkupsInteractionWidget* CreateInteractionWidget(vtkMRMLMarkupsDisplayNode* node);
 
   /// Called after the corresponding MRML View container was modified
   void OnMRMLDisplayableNodeModifiedEvent(vtkObject* caller) override;
 
-  /// Handler for specific SliceView actions, iterate over the widgets in the helper
-  virtual void OnMRMLSliceNodeModifiedEvent();
+  /// Update all widgets in response to view node modification
+  virtual void OnMRMLViewNodeModifiedEvent(vtkMRMLAbstractViewNode* viewNode);
 
   /// Observe the interaction node.
   void AddObserversToInteractionNode();
@@ -138,22 +144,16 @@ protected:
   /// \sa IsManageable(vtkMRMLNode*), IsCorrectDisplayableManager()
   virtual bool IsManageable(const char* nodeClassName);
 
-  /// Contains class names of markups nodes that this displayable manager can handle
-  std::set<std::string> Focus;
-
-  /// Respond to interactor style events
-  void OnInteractorStyleEvent(int eventid) override;
-
   /// Accessor for internal flag that disables interactor style event processing
   vtkGetMacro(DisableInteractorStyleEventsProcessing, int);
 
-  vtkMRMLMarkupsDisplayableManagerHelper * Helper;
+  vtkSmartPointer<vtkMRMLMarkupsDisplayableManagerHelper> Helper;
 
   double LastClickWorldCoordinates[4];
 
-  vtkMRMLMarkupsNode* CreateNewMarkupsNode(const std::string &markupsNodeClassName);
+  vtkWeakPointer<vtkMRMLAbstractWidget> LastActiveWidget;
 
-  vtkWeakPointer<vtkSlicerMarkupsWidget> LastActiveWidget;
+  vtkSmartPointer<vtkRenderer> InteractionRenderer;
 
 private:
   vtkMRMLMarkupsDisplayableManager(const vtkMRMLMarkupsDisplayableManager&) = delete;
@@ -161,7 +161,9 @@ private:
 
   int DisableInteractorStyleEventsProcessing;
 
-  vtkMRMLSliceNode * SliceNode;
+  // by default, this displayableManager handles a 2d view, so the SliceNode
+  // must be set when it's assigned to a viewer
+  vtkWeakPointer<vtkMRMLSliceNode> SliceNode;
 };
 
 #endif

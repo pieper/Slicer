@@ -23,28 +23,30 @@ class vtkMRMLVolumeNode;
 
 /// \brief MRML node for representing a volume storage.
 ///
-/// vtkMRMLVolumeArchetypeStorageNode nodes describe the archetybe based volume storage
+/// vtkMRMLVolumeArchetypeStorageNode nodes describe the archetype based volume storage
 /// node that allows to read/write volume data from/to file using generic ITK mechanism.
 class VTK_MRML_EXPORT vtkMRMLVolumeArchetypeStorageNode : public vtkMRMLStorageNode
 {
 public:
-  static vtkMRMLVolumeArchetypeStorageNode *New();
-  vtkTypeMacro(vtkMRMLVolumeArchetypeStorageNode,vtkMRMLStorageNode);
+  static vtkMRMLVolumeArchetypeStorageNode* New();
+  vtkTypeMacro(vtkMRMLVolumeArchetypeStorageNode, vtkMRMLStorageNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
 
   ///
   /// Read node attributes from XML file
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   ///
   /// Do a temp write to update the file list in this storage node with all
   /// file names that are written when write out the ref node
-  /// If move is 1, return the directory that contains the written files and
+  /// If move is true, return the directory that contains the written files and
   /// only the written files, for use in a move instead of a double
-  /// write. Otherwise return an empty string.
-  std::string UpdateFileList(vtkMRMLNode *refNode, int move = 0);
+  /// write.
+  /// If move is false then the temporary directory is removed
+  /// and an empty string is returned.
+  std::string UpdateFileList(vtkMRMLNode* refNode, bool move = false);
 
   ///
   /// Write this node's information to a MRML file in XML format.
@@ -52,11 +54,11 @@ public:
 
   ///
   /// Copy the node's attributes to this object
-  void Copy(vtkMRMLNode *node) override;
+  void Copy(vtkMRMLNode* node) override;
 
   ///
   /// Get node XML tag name (like Storage, Model)
-  const char* GetNodeTagName() override {return "VolumeArchetypeStorage";}
+  const char* GetNodeTagName() override { return "VolumeArchetypeStorage"; }
 
   ///
   /// Center image on read
@@ -72,6 +74,22 @@ public:
   /// Whether to use orientation from file
   vtkSetMacro(UseOrientationFromFile, int);
   vtkGetMacro(UseOrientationFromFile, int);
+
+  //@{
+  /// Force right-handed IJK coordinate system when reading an image from file.
+  /// If enabled and the file stored on disk uses left-handed IJK coordinate system,
+  /// then the reader will flip the K axis direction and update the image origin
+  /// to make the IJK coordinate system of the loaded image right-handed.
+  /// Enabled by default, as certain processing algorithms assume this right-handed IJK.
+  vtkSetMacro(ForceRightHandedIJKCoordinateSystem, bool);
+  vtkGetMacro(ForceRightHandedIJKCoordinateSystem, bool);
+  vtkBooleanMacro(ForceRightHandedIJKCoordinateSystem, bool);
+  //@}
+
+  /// Convert voxel vector type enum from vtkITK type to MRML type
+  static int ConvertVoxelVectorTypeVTKITKToMRML(int vtkitkType);
+  /// Convert voxel vector type enum from MRML type to vtkITK type
+  static int ConvertVoxelVectorTypeMRMLToVTKITK(int mrmlType);
 
   /// Return true if the reference node is supported by the storage node
   bool CanReadInReferenceNode(vtkMRMLNode* refNode) override;
@@ -99,18 +117,18 @@ protected:
   /// Initialize all the supported write file types
   void InitializeSupportedWriteFileTypes() override;
 
-  vtkITKArchetypeImageSeriesReader* InstantiateVectorVolumeReader(const std::string &fullName);
+  vtkITKArchetypeImageSeriesReader* InstantiateVectorVolumeReader(const std::string& fullName);
 
   /// Read data and set it in the referenced node
-  int ReadDataInternal(vtkMRMLNode *refNode) override;
+  int ReadDataInternal(vtkMRMLNode* refNode) override;
 
   /// Write data from a referenced node
-  int WriteDataInternal(vtkMRMLNode *refNode) override;
+  int WriteDataInternal(vtkMRMLNode* refNode) override;
 
   int CenterImage;
   int SingleFile;
   int UseOrientationFromFile;
-
+  bool ForceRightHandedIJKCoordinateSystem;
 };
 
 #endif

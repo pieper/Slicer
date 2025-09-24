@@ -31,16 +31,22 @@
 #include <QList>
 #include <QVector3D>
 
+// VTK includes
+#include "vtkWeakPointer.h"
+
 class qSlicerSegmentEditorAbstractEffectPrivate;
 
 class vtkActor2D;
 class vtkMRMLInteractionNode;
+class vtkMRMLNode;
 class vtkMRMLScene;
 class vtkMRMLSegmentEditorNode;
 class vtkMRMLAbstractViewNode;
 class vtkMRMLSegmentationNode;
+class vtkMRMLSliceNode;
 class vtkMRMLTransformNode;
 class vtkSegment;
+class vtkSegmentEditorLogic;
 class vtkRenderer;
 class vtkRenderWindow;
 class vtkRenderWindowInteractor;
@@ -53,18 +59,22 @@ class QFormLayout;
 class QFrame;
 class QLayout;
 
-/// \ingroup SlicerRt_QtModules_Segmentations
 /// \brief Abstract class for segment editor effects
 class Q_SLICER_SEGMENTATIONS_EFFECTS_EXPORT qSlicerSegmentEditorAbstractEffect : public QObject
 {
 public:
   Q_OBJECT
+  Q_ENUMS(ConfirmationResult)
   Q_ENUMS(ModificationMode)
 
   /// This property stores the name of the effect
   /// Cannot be empty.
   /// \sa name(), \sa setName()
   Q_PROPERTY(QString name READ name WRITE setName)
+
+  /// This property stores the title of the effect
+  /// \sa title(), \sa setTitle()
+  Q_PROPERTY(QString title READ title WRITE setTitle)
 
   /// This property stores the flag indicating whether effect operates on individual segments (true)
   /// or the whole segmentation (false).
@@ -91,22 +101,28 @@ public:
   qSlicerSegmentEditorAbstractEffect(QObject* parent = nullptr);
   ~qSlicerSegmentEditorAbstractEffect() override;
 
-// API: Methods that are to be reimplemented in the effect subclasses
+  // API: Methods that are to be reimplemented in the effect subclasses
 public:
-
   enum ModificationMode
-    {
+  {
     ModificationModeSet,
     ModificationModeAdd,
     ModificationModeRemove,
     ModificationModeRemoveAll
-    };
+  };
+
+  enum ConfirmationResult
+  {
+    NotConfirmed,
+    ConfirmedWithoutDialog,
+    ConfirmedWithDialog,
+  };
 
   /// Get icon for effect to be displayed in segment editor
   virtual QIcon icon() { return QIcon(); };
 
   /// Get help text for effect to be displayed in the help box
-  Q_INVOKABLE virtual const QString helpText()const { return QString(); };
+  Q_INVOKABLE virtual const QString helpText() const { return QString(); };
 
   /// Clone editor effect. Override to return a new instance of the effect sub-class
   virtual qSlicerSegmentEditorAbstractEffect* clone() = 0;
@@ -123,15 +139,25 @@ public:
   Q_INVOKABLE virtual bool active();
 
   Q_INVOKABLE virtual void modifySelectedSegmentByLabelmap(vtkOrientedImageData* modifierLabelmap,
-    ModificationMode modificationMode, const int modificationExtent[6],bool bypassMasking = false);
+                                                           ModificationMode modificationMode,
+                                                           const int modificationExtent[6],
+                                                           bool bypassMasking = false);
+  Q_INVOKABLE virtual void modifySelectedSegmentByLabelmap(vtkOrientedImageData* modifierLabelmap, ModificationMode modificationMode, bool bypassMasking = false);
   Q_INVOKABLE virtual void modifySelectedSegmentByLabelmap(vtkOrientedImageData* modifierLabelmap,
-    ModificationMode modificationMode, bool bypassMasking = false);
-  Q_INVOKABLE virtual void modifySelectedSegmentByLabelmap(vtkOrientedImageData* modifierLabelmap,
-    ModificationMode modificationMode, QList<int> extent, bool bypassMasking = false);
-  Q_INVOKABLE virtual void modifySegmentByLabelmap(vtkMRMLSegmentationNode* segmentationNode, const char* segmentID,
-    vtkOrientedImageData* modifierLabelmap, ModificationMode modificationMode, bool bypassMasking = false);
-  Q_INVOKABLE virtual void modifySegmentByLabelmap(vtkMRMLSegmentationNode* segmentationNode, const char* segmentID,
-    vtkOrientedImageData* modifierLabelmap, ModificationMode modificationMode, const int modificationExtent[6], bool bypassMasking = false);
+                                                           ModificationMode modificationMode,
+                                                           QList<int> extent,
+                                                           bool bypassMasking = false);
+  Q_INVOKABLE virtual void modifySegmentByLabelmap(vtkMRMLSegmentationNode* segmentationNode,
+                                                   const char* segmentID,
+                                                   vtkOrientedImageData* modifierLabelmap,
+                                                   ModificationMode modificationMode,
+                                                   bool bypassMasking = false);
+  Q_INVOKABLE virtual void modifySegmentByLabelmap(vtkMRMLSegmentationNode* segmentationNode,
+                                                   const char* segmentID,
+                                                   vtkOrientedImageData* modifierLabelmap,
+                                                   ModificationMode modificationMode,
+                                                   const int modificationExtent[6],
+                                                   bool bypassMasking = false);
 
   /// Apply mask image on an input image.
   /// This method is kept here for backward compatibility only and will be removed in the future.
@@ -140,7 +166,7 @@ public:
 
   /// Create options frame widgets, make connections, and add them to the main options frame using \sa addOptionsWidget
   /// NOTE: Base class implementation needs to be called BEFORE the effect-specific implementation
-  virtual void setupOptionsFrame() { };
+  virtual void setupOptionsFrame() {};
 
   /// Create a cursor customized for the given effect, potentially for each view
   virtual QCursor createCursor(qMRMLWidget* viewWidget);
@@ -151,14 +177,23 @@ public:
   /// \param viewWidget Widget of the Slicer layout view. Can be \sa qMRMLSliceWidget or \sa qMRMLThreeDWidget
   /// \return return true to abort the event (prevent other views to receive the event)
   virtual bool processInteractionEvents(vtkRenderWindowInteractor* callerInteractor, unsigned long eid, qMRMLWidget* viewWidget)
-    { Q_UNUSED(callerInteractor); Q_UNUSED(eid); Q_UNUSED(viewWidget); return false; };
+  {
+    Q_UNUSED(callerInteractor);
+    Q_UNUSED(eid);
+    Q_UNUSED(viewWidget);
+    return false;
+  };
 
   /// Callback function invoked when view node is modified
   /// \param callerViewNode View node that was observed to catch the event. Can be either \sa vtkMRMLSliceNode or \sa vtkMRMLViewNode
   /// \param eid Event identifier
   /// \param viewWidget Widget of the Slicer layout view. Can be \sa qMRMLSliceWidget or \sa qMRMLThreeDWidget
   virtual void processViewNodeEvents(vtkMRMLAbstractViewNode* callerViewNode, unsigned long eid, qMRMLWidget* viewWidget)
-    { Q_UNUSED(callerViewNode); Q_UNUSED(eid); Q_UNUSED(viewWidget); };
+  {
+    Q_UNUSED(callerViewNode);
+    Q_UNUSED(eid);
+    Q_UNUSED(viewWidget);
+  };
 
   /// Set default parameters in the parameter MRML node
   /// NOTE: Base class implementation needs to be called with the effect-specific implementation
@@ -166,15 +201,25 @@ public:
 
   /// Simple mechanism to let the effects know that reference geometry has changed
   /// NOTE: Base class implementation needs to be called with the effect-specific implementation.
-  virtual void referenceGeometryChanged() { };
-  /// Simple mechanism to let the effects know that master volume has changed
+  virtual void referenceGeometryChanged() {};
+  /// Simple mechanism to let the effects know that source volume has changed
   /// NOTE: Base class implementation needs to be called with the effect-specific implementation
-  virtual void masterVolumeNodeChanged() { };
+  virtual void sourceVolumeNodeChanged() {};
+  /// Deprecated. Override sourceVolumeNodeChanged() method instead.
+  virtual void masterVolumeNodeChanged() {};
   /// Simple mechanism to let the effects know that the layout has changed
-  virtual void layoutChanged() { };
+  virtual void layoutChanged() {};
   /// Let the effect know that the interaction node is modified.
   /// Default behavior is to deactivate the effect if not in view mode.
   virtual void interactionNodeModified(vtkMRMLInteractionNode* interactionNode);
+  /// Clean up resources, event observers, and Qt signal/slot connections before deletion.
+  ///
+  /// This ensures proper object destruction, as active signal/slot connections
+  /// can prevent the object from being deleted. Subclasses should override this
+  /// method to handle additional cleanup as needed.
+  ///
+  /// For more details, see: https://github.com/Slicer/Slicer/issues/7392
+  Q_INVOKABLE virtual void cleanup() {};
 
 public slots:
   /// Update user interface from parameter set node
@@ -185,7 +230,7 @@ public slots:
   /// NOTE: Base class implementation needs to be called with the effect-specific implementation
   virtual void updateMRMLFromGUI() = 0;
 
-// Get/set methods
+  // Get/set methods
 public:
   /// Get segment editor parameter set node
   Q_INVOKABLE vtkMRMLSegmentEditorNode* parameterSetNode();
@@ -224,23 +269,31 @@ public:
   Q_INVOKABLE QWidget* addLabeledOptionsWidget(QString label, QWidget* newOptionsWidget);
   Q_INVOKABLE QWidget* addLabeledOptionsWidget(QString label, QLayout* newOptionsWidget);
 
-  /// Get name of effect
-  virtual QString name()const;
-  /// Set the name of the effect
+  /// Get name of effect.
+  /// This name is used by various modules for accessing an effect.
+  /// This string is not displayed on the user interface and must not be translated.
+  virtual QString name() const;
+  /// Set the name of the effect.
   /// NOTE: name must be defined in constructor in C++ effects, this can only be used in python scripted ones
   virtual void setName(QString name);
 
+  /// Get title of effect.
+  /// This string is displayed on the application GUI and it is translated.
+  /// Returns the effect's name when the title is empty.
+  virtual QString title() const;
+  /// Set the title of the effect
+  virtual void setTitle(QString title);
+
   /// Get flag indicating whether effect operates on segments (true) or the whole segmentation (false).
-  virtual bool perSegment()const;
+  virtual bool perSegment() const;
   /// Set flag indicating whether effect operates on segments (true) or the whole segmentation (false).
   /// NOTE: name must be defined in constructor in C++ effects, this can only be used in python scripted ones
   virtual void setPerSegment(bool perSegment);
 
   /// If this property is set to true then this effect is enabled only when the segmentation has segment(s) in it.
-  virtual bool requireSegments()const;
+  virtual bool requireSegments() const;
   /// If this property is set to true then this effect is enabled only when the segmentation has segment(s) in it.
   virtual void setRequireSegments(bool requireSegments);
-
 
   /// Turn off cursor and save cursor to restore later
   Q_INVOKABLE void cursorOff(qMRMLWidget* viewWidget);
@@ -253,24 +306,30 @@ public:
 
   /// Connect callback signals. Callbacks are called by the editor effect to request operations from the editor widget.
   /// \param selectEffectSlot called from the active effect to initiate switching to another effect (or de-select).
-  /// \param updateVolumeSlot called to request update of a volume (modifierLabelmap, alignedMasterVolume, maskLabelmap).
+  /// \param updateVolumeSlot called to request update of a volume (modifierLabelmap, alignedSourceVolume, maskLabelmap).
   /// \param saveStateForUndoSlot called to request saving of segmentation state for undo operation
   void setCallbackSlots(QObject* receiver, const char* selectEffectSlot, const char* updateVolumeSlot, const char* saveStateForUndoSlot);
 
   /// Called by the editor widget.
-  void setVolumes(vtkOrientedImageData* alignedMasterVolume, vtkOrientedImageData* modifierLabelmap,
-    vtkOrientedImageData* maskLabelmap, vtkOrientedImageData* selectedSegmentLabelmap, vtkOrientedImageData* referenceGeometryImage);
+  void setVolumes(vtkOrientedImageData* alignedSourceVolume,
+                  vtkOrientedImageData* modifierLabelmap,
+                  vtkOrientedImageData* maskLabelmap,
+                  vtkOrientedImageData* selectedSegmentLabelmap,
+                  vtkOrientedImageData* referenceGeometryImage);
 
-// Effect parameter functions
+  // Effect parameter functions
 public:
-  /// Get effect or common parameter from effect parameter set node
+  /// Get effect-specific or common string type parameter from effect parameter set node.
   Q_INVOKABLE QString parameter(QString name);
 
-  /// Convenience function to get integer parameter
+  /// Get effect-specific or common integer type parameter from effect parameter set node.
   Q_INVOKABLE int integerParameter(QString name);
 
-  /// Convenience function to get double parameter
+  /// Get effect-specific or common double type parameter from effect parameter set node.
   Q_INVOKABLE double doubleParameter(QString name);
+
+  /// Get effect-specific or common node reference type parameter from effect parameter set node.
+  Q_INVOKABLE vtkMRMLNode* nodeReference(QString name);
 
   /// Set effect parameter in effect parameter set node. This function is called by both convenience functions.
   /// \param name Parameter name string
@@ -316,13 +375,27 @@ public:
   /// \sa setCommonParameter
   Q_INVOKABLE void setCommonParameterDefault(QString name, double value);
 
-// Utility functions
+  /// Convenience function to set node reference parameter
+  /// \param name Parameter name string
+  /// \param value Parameter node reference
+  Q_INVOKABLE void setNodeReference(QString name, vtkMRMLNode* node);
+  /// Convenience function to set node reference common parameter \sa setCommonParameter
+  Q_INVOKABLE void setCommonNodeReference(QString name, vtkMRMLNode* node);
+
+  // Utility functions
 public:
   /// Returns true if the effect-specific parameter is already defined.
   Q_INVOKABLE bool parameterDefined(QString name);
 
   /// Returns true if the common parameter is already defined.
   Q_INVOKABLE bool commonParameterDefined(QString name);
+
+  /// If current segment is not visible then asks the user to confirm
+  /// that the operation is intended to be performed on the current segment.
+  /// Returns NotConfirmed (0) if operation should not proceed with the current segment.
+  /// Returns ConfirmedWithoutDialog if operation should proceed with the current segment and dialog was not displayed.
+  /// Returns ConfirmedWithDialog if operation should proceed with the current segment and dialog was displayed.
+  Q_INVOKABLE int confirmCurrentSegmentVisible();
 
   Q_INVOKABLE vtkOrientedImageData* modifierLabelmap();
 
@@ -342,8 +415,11 @@ public:
   bool showEffectCursorInSliceView();
   bool showEffectCursorInThreeDView();
 
-  /// Get image data of master volume aligned with the modifier labelmap.
+  /// Get image data of source volume aligned with the modifier labelmap.
   /// \return Pointer to the image data
+  Q_INVOKABLE vtkOrientedImageData* sourceVolumeImageData();
+
+  /// Deprecated. Use sourceVolumeImageData method instead.
   Q_INVOKABLE vtkOrientedImageData* masterVolumeImageData();
 
   /// Signal to the editor that current state has to be saved (for allowing reverting
@@ -392,24 +468,32 @@ public:
 
   Q_INVOKABLE bool segmentationDisplayableInView(vtkMRMLAbstractViewNode* viewNode);
 
+  void setSegmentEditorLogic(vtkSegmentEditorLogic* segmentEditorLogic);
+
 protected:
-  /// Name of the effect
+  static vtkMRMLSliceNode* sliceNode(qMRMLSliceWidget* viewWidget);
+
   QString m_Name;
-  bool m_Active{false};
+  bool m_Active{ false };
+  QString m_Title;
 
   /// Flag indicating whether effect operates on individual segments (true) or the whole segmentation (false).
   /// If the selected effect works on whole segmentation, selection of the segments does not trigger creation
   /// of modifier labelmap, but it is set to empty in the parameter set node.
   /// True by default.
-  bool m_PerSegment{true};
+  bool m_PerSegment{ true };
 
-  bool m_RequireSegments{true};
+  bool m_RequireSegments{ true };
 
-  bool m_ShowEffectCursorInSliceView{true};
-  bool m_ShowEffectCursorInThreeDView{false};
+  bool m_ShowEffectCursorInSliceView{ true };
+  bool m_ShowEffectCursorInThreeDView{ false };
 
-  double m_FillValue{1.0};
-  double m_EraseValue{0.0};
+  double m_FillValue{ 1.0 };
+  double m_EraseValue{ 0.0 };
+
+  /// No confirmation will be displayed for editing this segment.
+  /// This is needed to ensure that editing of a hidden segment is only asked once.
+  vtkWeakPointer<vtkSegment> m_AlreadyConfirmedSegmentVisible;
 
 protected:
   QScopedPointer<qSlicerSegmentEditorAbstractEffectPrivate> d_ptr;

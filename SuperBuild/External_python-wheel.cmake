@@ -26,7 +26,9 @@ endif()
 if(NOT Slicer_USE_SYSTEM_${proj})
   set(requirements_file ${CMAKE_BINARY_DIR}/${proj}-requirements.txt)
   file(WRITE ${requirements_file} [===[
-  wheel==0.34.2 --hash=sha256:df277cb51e61359aba502208d680f90c0493adec6f0e848af94948778aed386e
+  # [wheel]
+  wheel==0.45.1 --hash=sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248
+  # [/wheel]
   ]===])
 
   ExternalProject_Add(${proj}
@@ -40,10 +42,6 @@ if(NOT Slicer_USE_SYSTEM_${proj})
     LOG_INSTALL 1
     DEPENDS
       ${${proj}_DEPENDENCIES}
-    )
-
-  ExternalProject_GenerateProjectDescription_Step(${proj}
-    VERSION ${_version}
     )
 
 else()

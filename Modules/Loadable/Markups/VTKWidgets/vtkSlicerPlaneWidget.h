@@ -14,7 +14,7 @@
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
   and was supported through CANARIE's Research Software Program, Cancer
-  Care Ontario, OpenAnatomy, and Brigham and Women’s Hospital through NIH grant R01MH112748.
+  Care Ontario, OpenAnatomy, and Brigham and Women's Hospital through NIH grant R01MH112748.
 
 ==============================================================================*/
 
@@ -24,7 +24,7 @@
  *
  * The vtkSlicerPlaneWidget is used to create a plane widget with a set of 3 points.
  *
-*/
+ */
 
 #ifndef vtkSlicerPlaneWidget_h
 #define vtkSlicerPlaneWidget_h
@@ -40,39 +40,55 @@ class VTK_SLICER_MARKUPS_MODULE_VTKWIDGETS_EXPORT vtkSlicerPlaneWidget : public 
 {
 public:
   /// Instantiate this class.
-  static vtkSlicerPlaneWidget *New();
+  static vtkSlicerPlaneWidget* New();
 
   /// Standard methods for a VTK class.
-  vtkTypeMacro(vtkSlicerPlaneWidget,vtkSlicerMarkupsWidget);
+  vtkTypeMacro(vtkSlicerPlaneWidget, vtkSlicerMarkupsWidget);
+
+  /// Create instance of the markups widget
+  vtkSlicerMarkupsWidgetCreateInstanceMacro(vtkSlicerPlaneWidget);
 
   /// Widget states
   enum
   {
-    WidgetStateDefine = WidgetStateUser + 50, // click in empty area will place a new point
-    WidgetStateTranslatePlane, // translating the plane
+    WidgetStateTranslatePlane = WidgetStateMarkups_Last, // translating the plane
+    WidgetStateSymmetricScale,                           // Scaling the plane without moving the center
+    WidgetStateMarkupsPlane_Last
   };
 
   /// Widget events
   enum
   {
-    WidgetEventControlPointPlace = WidgetEventUser + 50,
+    WidgetEventControlPointPlace = WidgetEventMarkups_Last,
+    WidgetEventControlPointPlacePlaneNormal,
     WidgetEventPlaneMoveStart,
     WidgetEventPlaneMoveEnd,
+    WidgetEventSymmetricScaleStart,
+    WidgetEventSymmetricScaleEnd,
+    WidgetEventMarkupsPlane_Last
   };
 
   /// Create the default widget representation and initializes the widget and representation.
   void CreateDefaultRepresentation(vtkMRMLMarkupsDisplayNode* markupsDisplayNode, vtkMRMLAbstractViewNode* viewNode, vtkRenderer* renderer) override;
 
-protected:
-  vtkSlicerPlaneWidget();
-  ~vtkSlicerPlaneWidget() override;
+  bool PlacePoint(vtkMRMLInteractionEventData* eventData) override;
+  virtual bool PlacePlaneNormal(vtkMRMLInteractionEventData* eventData);
 
   bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& distance2) override;
   bool ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData) override;
+  bool ProcessUpdatePlaneFromViewNormal(vtkMRMLInteractionEventData* event);
   bool ProcessPlaneMoveStart(vtkMRMLInteractionEventData* event);
   bool ProcessPlaneMoveEnd(vtkMRMLInteractionEventData* event);
   bool ProcessMouseMove(vtkMRMLInteractionEventData* eventData) override;
   bool ProcessPlaneTranslate(vtkMRMLInteractionEventData* event);
+  bool ProcessWidgetSymmetricScaleStart(vtkMRMLInteractionEventData* eventData);
+  bool ProcessPlaneSymmetricScale(vtkMRMLInteractionEventData* event);
+  bool ProcessEndMouseDrag(vtkMRMLInteractionEventData* eventData) override;
+  bool ProcessWidgetStopPlace(vtkMRMLInteractionEventData* eventData) override;
+
+protected:
+  vtkSlicerPlaneWidget();
+  ~vtkSlicerPlaneWidget() override;
 
 private:
   vtkSlicerPlaneWidget(const vtkSlicerPlaneWidget&) = delete;

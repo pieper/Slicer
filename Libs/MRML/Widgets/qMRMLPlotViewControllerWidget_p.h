@@ -40,7 +40,6 @@
 #include <vtkWeakPointer.h>
 
 class QAction;
-class qMRMLSceneViewMenu;
 class vtkMRMLPlotViewNode;
 class vtkMRMLPlotChartNode;
 class QString;
@@ -61,12 +60,10 @@ public:
 
   void init() override;
 
-  vtkWeakPointer<vtkMRMLPlotChartNode>   PlotChartNode;
-  vtkWeakPointer<vtkMRMLPlotViewNode>    PlotViewNode;
-  qMRMLPlotView*                         PlotView;
+  vtkWeakPointer<vtkMRMLPlotChartNode> PlotChartNode;
+  qMRMLPlotView* PlotView;
 
-  QString                                PlotViewLabel;
-  QToolButton*                           FitToWindowToolButton;
+  QToolButton* FitToWindowToolButton;
 
   vtkMRMLPlotChartNode* GetPlotChartNodeFromView();
 
@@ -87,14 +84,13 @@ public slots:
   /// Changes type of all associated plots.
   void onPlotTypeChanged(int);
 
-  /// Called after interactino mode is changed by using the qComboBox.
+  /// Called after interaction mode is changed by using the qComboBox.
   void onInteractionModeChanged(int);
 
 protected:
   void setupPopupUi() override;
 
 public:
-
 };
 
 #endif

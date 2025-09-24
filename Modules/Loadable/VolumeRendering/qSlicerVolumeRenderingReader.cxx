@@ -41,7 +41,7 @@
 //-----------------------------------------------------------------------------
 class qSlicerVolumeRenderingReaderPrivate
 {
-  public:
+public:
   vtkSmartPointer<vtkSlicerVolumeRenderingLogic> VolumeRenderingLogic;
 };
 
@@ -71,30 +71,28 @@ void qSlicerVolumeRenderingReader::setVolumeRenderingLogic(vtkSlicerVolumeRender
 }
 
 //-----------------------------------------------------------------------------
-vtkSlicerVolumeRenderingLogic* qSlicerVolumeRenderingReader::volumeRenderingLogic()const
+vtkSlicerVolumeRenderingLogic* qSlicerVolumeRenderingReader::volumeRenderingLogic() const
 {
   Q_D(const qSlicerVolumeRenderingReader);
   return d->VolumeRenderingLogic.GetPointer();
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerVolumeRenderingReader::description()const
+QString qSlicerVolumeRenderingReader::description() const
 {
-  return "Transfer Function";
+  return tr("Transfer Function");
 }
 
 //-----------------------------------------------------------------------------
-qSlicerIO::IOFileType qSlicerVolumeRenderingReader::fileType()const
+qSlicerIO::IOFileType qSlicerVolumeRenderingReader::fileType() const
 {
   return QString("TransferFunctionFile");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerVolumeRenderingReader::extensions()const
+QStringList qSlicerVolumeRenderingReader::extensions() const
 {
-  // pic files are bio-rad images (see itkBioRadImageIO)
-  return QStringList()
-    << "Transfer Function (*.vp)";
+  return QStringList() << tr("Transfer Function") + " (*.vp)" << tr("Volume Property") + " (*.vp.json)";
 }
 
 //-----------------------------------------------------------------------------
@@ -104,16 +102,22 @@ bool qSlicerVolumeRenderingReader::load(const IOProperties& properties)
   Q_ASSERT(properties.contains("fileName"));
   QString fileName = properties["fileName"].toString();
   if (d->VolumeRenderingLogic.GetPointer() == nullptr)
-    {
+  {
     return false;
-    }
-  vtkMRMLVolumePropertyNode* node =
-    d->VolumeRenderingLogic->AddVolumePropertyFromFile(fileName.toUtf8());
+  }
+
+  vtkNew<vtkCollection> volumePropertyNodes;
+  bool success = d->VolumeRenderingLogic->AddVolumePropertiesFromFile(fileName.toUtf8(), volumePropertyNodes);
+
   QStringList loadedNodes;
-  if (node)
+  for (int i = 0; i < volumePropertyNodes->GetNumberOfItems(); ++i)
+  {
+    vtkMRMLVolumePropertyNode* node = vtkMRMLVolumePropertyNode::SafeDownCast(volumePropertyNodes->GetItemAsObject(i));
+    if (node)
     {
-    loadedNodes << QString(node->GetID());
+      loadedNodes << QString(node->GetID());
     }
+  }
   this->setLoadedNodes(loadedNodes);
-  return node != nullptr;
+  return success;
 }

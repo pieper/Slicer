@@ -32,8 +32,6 @@ class vtkSegmentation;
 class vtkStringArray;
 class vtkVector3d;
 
-
-/// \ingroup Segmentations
 /// \brief MRML node for representing segmentation display attributes.
 ///
 /// vtkMRMLSegmentationDisplayNode nodes describe how volume is displayed.
@@ -45,43 +43,66 @@ public:
 
   /// Display properties per segment
   struct SegmentDisplayProperties
-    {
+  {
     /// Override segment color
     /// By default it's invalid (-1,-1,-1), and only valid if different than color stored in segment. Its purpose is to enable showing per-view colors
     double OverrideColor[3];
     /// Visibility
-    bool Visible{true}; // Turns visibility on/off in general. Useful for allowing the user to show/hide a segment without changing any detailed visibility options.
-    bool Visible3D{true};
-    bool Visible2DFill{true}; // This one is used for labelmap volume related operations (color table, merged labelmap)
-    bool Visible2DOutline{true};
+    bool Visible{ true }; // Turns visibility on/off in general. Useful for allowing the user to show/hide a segment without changing any detailed visibility options.
+    bool Visible3D{ true };
+    bool Visible2DFill{ true }; // This one is used for labelmap volume related operations (color table, merged labelmap)
+    bool Visible2DOutline{ true };
     /// Opacity
-    double Opacity3D{1.0};
-    double Opacity2DFill{1.0}; // This one is used for labelmap volume related operations (color table, merged labelmap)
-    double Opacity2DOutline{1.0};
+    double Opacity3D{ 1.0 };
+    double Opacity2DFill{ 1.0 }; // This one is used for labelmap volume related operations (color table, merged labelmap)
+    double Opacity2DOutline{ 1.0 };
+    /// Pickable by interactions flag. If true, then the point under the mouse on the segment surfaces in the 3D views is computed, otherwise skipped.
+    bool Pickable{ true };
 
     // Initialize with default values
     SegmentDisplayProperties()
-      {
+    {
       OverrideColor[0] = SEGMENT_COLOR_NO_OVERRIDE;
       OverrideColor[1] = SEGMENT_COLOR_NO_OVERRIDE;
       OverrideColor[2] = SEGMENT_COLOR_NO_OVERRIDE;
-      }
+    }
 
     // Automatically generated operator= and copy constructor work
     // correctly for these members, so there is no need to define them.
-    };
+
+    bool operator==(const SegmentDisplayProperties& rhs) const
+    {
+      // color comparison
+      for (int i = 0; i < 3; ++i)
+      {
+        if (fabs(OverrideColor[i] - rhs.OverrideColor[i]) > VTK_DBL_EPSILON)
+        {
+          return false;
+        }
+      }
+      return                                        //
+        Visible == rhs.Visible                      //
+        && Visible3D == rhs.Visible3D               //
+        && Visible2DFill == rhs.Visible2DFill       //
+        && Visible2DOutline == rhs.Visible2DOutline //
+        && Opacity3D == rhs.Opacity3D               //
+        && Opacity2DFill == rhs.Opacity2DFill       //
+        && Opacity2DOutline == rhs.Opacity2DOutline //
+        && Pickable == rhs.Pickable;
+    }
+  };
 
   typedef std::map<std::string, SegmentDisplayProperties> SegmentDisplayPropertiesMap;
 
 public:
-  static vtkMRMLSegmentationDisplayNode *New();
-  vtkTypeMacro(vtkMRMLSegmentationDisplayNode,vtkMRMLDisplayNode);
+  static vtkMRMLSegmentationDisplayNode* New();
+  vtkTypeMacro(vtkMRMLSegmentationDisplayNode, vtkMRMLDisplayNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
 
   /// Set node attributes from name/value pairs
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
@@ -129,10 +150,10 @@ public:
   /// \param properties Display properties of the segment are copied into this object. If display properties
   /// are not defined for this segment explicitly then a warning is logged and default display properties are used.
   /// \return True if display properties are specified for the segment.
-  bool GetSegmentDisplayProperties(std::string segmentID, SegmentDisplayProperties &properties);
+  bool GetSegmentDisplayProperties(std::string segmentID, SegmentDisplayProperties& properties);
 
   /// Set segment display properties.
-  void SetSegmentDisplayProperties(std::string segmentID, SegmentDisplayProperties &properties);
+  void SetSegmentDisplayProperties(std::string segmentID, SegmentDisplayProperties& properties);
 
   /// Set segment display properties to default.
   void SetSegmentDisplayPropertiesToDefault(const std::string& segmentId);
@@ -154,27 +175,34 @@ public:
   /// \param colorNumber Index of the color in generic anatomy color table that is returned.
   ///                    Default value is 0, meaning that \sa NumberOfGeneratedColors is used.
   ///                    A value of -1 means that a random color is generated.
-  void GenerateSegmentColor(double color[3], int colorNumber=0);
+  void GenerateSegmentColor(double color[3], int colorNumber = 0);
   /// Python compatibility function for \sa GenerateSegmentColor.
   /// The color with index \sa NumberOfGeneratedColors from generic anatomy color table is returned.
-  void GenerateSegmentColor(double &r, double &g, double &b);
+  void GenerateSegmentColor(double& r, double& g, double& b);
+
+  //@{
+  /// Get/Set color table node ID that is used for generating default colors for new segments.
+  /// If not specified then "vtkMRMLColorTableNodeFileGenericAnatomyColors.txt" is used.
+  void SetSegmentColorGeneratorSourceColorNodeID(const char* colorNodeID);
+  const char* GetSegmentColorGeneratorSourceColorNodeID();
+  //@}
 
   /// Collect representation names that are stored as poly data
-  void GetPolyDataRepresentationNames(std::set<std::string> &representationNames);
+  void GetPolyDataRepresentationNames(std::set<std::string>& representationNames);
 
   /// Decide which poly data representation to use for 3D display.
   /// If preferred representation exists \sa PreferredDisplayRepresentationName3D, then return that.
-  /// Otherwise if master representation is a poly data then return master representation type.
+  /// Otherwise if source representation is a poly data then return source representation type.
   /// Otherwise return first poly data representation if any.
   /// Otherwise return empty string meaning there is no poly data representation to display.
   std::string GetDisplayRepresentationName3D();
 
   /// Decide which representation to use for 2D display.
   /// If preferred representation exists \sa PreferredDisplayRepresentationName2D, then return that.
-  /// Otherwise return master representation.
+  /// Otherwise return source representation.
   std::string GetDisplayRepresentationName2D();
 
-// Convenience and python compatibility functions
+  // Convenience and python compatibility functions
 public:
   /// Get segment color by segment ID. Convenience function for python compatibility.
   /// \return Segment color not overridden, otherwise the override color
@@ -182,7 +210,7 @@ public:
   /// Get segment color by segment ID. If overridden then the override color is returned
   bool GetSegmentColor(std::string segmentID, double* color);
   /// Get segment color by segment ID. If overridden then the override color is returned
-  bool GetSegmentColor(std::string segmentID, double &r, double &g, double &b);
+  bool GetSegmentColor(std::string segmentID, double& r, double& g, double& b);
 
   /// Get segment override color by segment ID. Convenience function for python compatibility.
   /// \return Override color if segment found and color overridden, otherwise the invalid override color (-1,-1,-1)
@@ -251,20 +279,65 @@ public:
   void SetSegmentOpacity(std::string segmentID, double opacity);
   void SetAllSegmentsOpacity(double opacity, bool changeVisibleSegmentsOnly = false);
 
+  /// Get segment pickability by segment ID. Convenience function for python compatibility.
+  /// \return Segment 2D pickability if segment found, otherwise false
+  bool GetSegmentPickable(std::string segmentID);
+  /// Set segment 2D pickability by segment ID. Convenience function for python compatibility.
+  void SetSegmentPickable(std::string segmentID, bool pickable);
+  void SetAllSegmentsPickable(bool pickable, bool changeVisibleSegmentsOnly = false);
+
   /// Get all visible segment IDs.
   void GetVisibleSegmentIDs(vtkStringArray* segmentIDs);
 
   /// Get all visible segment IDs.
   void GetVisibleSegmentIDs(std::vector<std::string>& segmentIDs);
 
+  /// Get all visible segment IDs.
+  std::vector<std::string> GetVisibleSegmentIDs();
+
+  //@{
+  /// Get/set flag to remove unused display properties when updating segment list.
+  /// When enabled, prevents unused display properties from accumulating in the display node.
+  /// By default it is enabled.
+  /// For use-cases such as replaying a segmentation sequence that has different segments at different time points
+  /// this flag should be disabled to ensure that display properties of all segments are preserved.
+  vtkGetMacro(RemoveUnusedDisplayProperties, bool);
+  vtkSetMacro(RemoveUnusedDisplayProperties, bool);
+  vtkBooleanMacro(RemoveUnusedDisplayProperties, bool);
+  //@}
+
+  //@{
+  /// Get/set flag to cap clipped surface.
+  /// When enabled, the clipped surface will be capped.
+  vtkGetMacro(ClippingCapSurface, bool);
+  vtkSetMacro(ClippingCapSurface, bool);
+  vtkBooleanMacro(ClippingCapSurface, bool);
+  //@}
+
+  //@{
+  /// Get/set opacity of the clipping cap.
+  vtkGetMacro(ClippingCapOpacity, double);
+  vtkSetMacro(ClippingCapOpacity, double);
+  //@}
+
+  //@{
+  /// Get/set flag to show outline of the clipping region.
+  /// When enabled, the outline of the clipping region will be shown.
+  vtkGetMacro(ClippingOutline, bool);
+  vtkSetMacro(ClippingOutline, bool);
+  vtkBooleanMacro(ClippingOutline, bool);
+
 protected:
   /// Convenience function for getting all segment IDs.
   void GetSegmentIDs(std::vector<std::string>& segmentIDs, bool visibleSegmentsOnly);
 
+  //@{
   /// Update list of segment display properties.
   /// Remove entries for missing segments (if removeUnusedDisplayProperties is enabled)
   /// and add missing entries for existing segments.
-  void UpdateSegmentList(bool removeUnusedDisplayProperties = true);
+  void UpdateSegmentList();
+  void UpdateSegmentList(bool removeUnusedDisplayProperties);
+  //@}
 
 protected:
   vtkMRMLSegmentationDisplayNode();
@@ -276,13 +349,13 @@ protected:
 
 protected:
   /// Name of representation that is displayed in 2D views as outline or filled area
-  /// if exists. If does not exist, then master representation is displayed.
-  char* PreferredDisplayRepresentationName2D{nullptr};
+  /// if exists. If does not exist, then source representation is displayed.
+  char* PreferredDisplayRepresentationName2D{ nullptr };
 
   /// Name of representation that is displayed as poly data in the 3D view.
-  /// If does not exist, then master representation is displayed if poly data,
+  /// If does not exist, then source representation is displayed if poly data,
   /// otherwise the first poly data representation if any.
-  char* PreferredDisplayRepresentationName3D{nullptr};
+  char* PreferredDisplayRepresentationName3D{ nullptr };
 
   /// List of segment display properties for all segments in associated segmentation.
   /// Maps segment identifier string (segment name by default) to properties.
@@ -290,27 +363,33 @@ protected:
 
   /// Number of segments ever added to the segmentation belonging to this display node.
   /// Used to generate new color for new segments, taken into account removed segments too.
-  unsigned int NumberOfGeneratedColors{0};
+  unsigned int NumberOfGeneratedColors{ 0 };
 
   /// For checking if cached segment list in SegmentationDisplayProperties has to be updated
-  vtkMTimeType SegmentListUpdateTime{0};
-  vtkSegmentation* SegmentListUpdateSource{nullptr};
+  vtkMTimeType SegmentListUpdateTime{ 0 };
+  vtkSegmentation* SegmentListUpdateSource{ nullptr };
 
   /// 2D fill visibility for the whole segmentation.
   /// In order for the fill to be visible, \sa Visibility, Visibility2D, and Visibility2DFill
   /// need to be all enabled.
-  bool Visibility2DFill{true};
+  bool Visibility2DFill{ true };
   /// 2D outline visibility for the whole segmentation.
   /// In order for the outline to be visible, \sa Visibility, Visibility2D, and Visibility2DOutline
   /// need to be all enabled.
-  bool Visibility2DOutline{true};
+  bool Visibility2DOutline{ true };
 
   /// 3D opacity for the whole segmentation
-  double Opacity3D{1.0};
+  double Opacity3D{ 1.0 };
   /// 2D fill opacity for the whole segmentation
-  double Opacity2DFill{0.5};
+  double Opacity2DFill{ 0.5 };
   /// 2D outline opacity for the whole segmentation
-  double Opacity2DOutline{1.0};
+  double Opacity2DOutline{ 1.0 };
+
+  bool RemoveUnusedDisplayProperties{ true };
+
+  bool ClippingCapSurface{ false };
+  double ClippingCapOpacity{ 1.0 };
+  bool ClippingOutline{ false };
 };
 
 #endif

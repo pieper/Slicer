@@ -35,7 +35,6 @@ typedef _object PyObject;
 #endif
 class qSlicerSegmentEditorScriptedLabelEffectPrivate;
 
-/// \ingroup SlicerRt_QtModules_Segmentations
 /// \brief Scripted abstract effect for implementing label effects in python
 ///
 /// This class provides an interface to label effects implemented in python.
@@ -45,8 +44,7 @@ class qSlicerSegmentEditorScriptedLabelEffectPrivate;
 ///   and register effect by creating this class and setting python source to implemented
 ///   effect subclass. One example is the DrawEffect.
 ///
-class Q_SLICER_SEGMENTATIONS_EFFECTS_EXPORT qSlicerSegmentEditorScriptedLabelEffect
-  : public qSlicerSegmentEditorAbstractLabelEffect
+class Q_SLICER_SEGMENTATIONS_EFFECTS_EXPORT qSlicerSegmentEditorScriptedLabelEffect : public qSlicerSegmentEditorAbstractLabelEffect
 {
   Q_OBJECT
 
@@ -55,11 +53,11 @@ public:
   qSlicerSegmentEditorScriptedLabelEffect(QObject* parent = nullptr);
   ~qSlicerSegmentEditorScriptedLabelEffect() override;
 
-  Q_INVOKABLE QString pythonSource()const;
+  Q_INVOKABLE QString pythonSource() const;
 
   /// Set python source for the implemented effect
-  /// \param newPythonSource Python file path
-  Q_INVOKABLE bool setPythonSource(const QString newPythonSource);
+  /// \param filePath Python file path
+  Q_INVOKABLE bool setPythonSource(const QString filePath);
 
   /// Convenience method allowing to retrieve the associated scripted instance
   Q_INVOKABLE PyObject* self() const;
@@ -71,13 +69,13 @@ public:
   /// Set flag indicating whether effect operates on segments (true) or the whole segmentation (false).
   void setPerSegment(bool perSegment) override;
 
-// API: Methods that are to be reimplemented in the effect subclasses
+  // API: Methods that are to be reimplemented in the effect subclasses
 public:
   /// Get icon for effect to be displayed in segment editor
   QIcon icon() override;
 
   /// Get help text for effect to be displayed in the help box
-  const QString helpText()const override;
+  const QString helpText() const override;
 
   /// Clone editor effect. Override to return a new instance of the effect sub-class
   qSlicerSegmentEditorAbstractEffect* clone() override;
@@ -111,7 +109,9 @@ public:
 
   /// Simple mechanism to let the effects know that reference geometry change has changed
   void referenceGeometryChanged() override;
-  /// Simple mechanism to let the effects know that master volume has changed
+  /// Simple mechanism to let the effects know that source volume has changed
+  void sourceVolumeNodeChanged() override;
+  /// Deprecated. Use sourceVolumeNodeChanged() method instead.
   void masterVolumeNodeChanged() override;
   /// Simple mechanism to let the effects know that the layout has changed
   void layoutChanged() override;

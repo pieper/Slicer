@@ -41,9 +41,8 @@ class Q_SLICER_BASE_QTCLI_EXPORT qSlicerCLIModule : public qSlicerAbstractModule
 {
   Q_OBJECT
 public:
-
   typedef qSlicerAbstractModule Superclass;
-  qSlicerCLIModule(QWidget *parent=nullptr);
+  qSlicerCLIModule(QWidget* parent = nullptr);
   ~qSlicerCLIModule() override;
 
   ///
@@ -64,7 +63,7 @@ public:
   QString tempDirectory() const;
 
   /// Set module entry point. Typically "slicer:0x012345" for loadable CLI
-  /// or "/home/user/work/Slicer-Superbuild/../mycliexec" for executable CLI
+  /// or "/home/user/work/Slicer-SuperBuild/../my-cli-exec" for executable CLI
   void setEntryPoint(const QString& entryPoint);
   QString entryPoint() const;
 
@@ -87,18 +86,21 @@ public:
   QStringList contributors() const override;
 
   /// Specify editable node types
-  QStringList associatedNodeTypes()const override;
+  QStringList associatedNodeTypes() const override;
 
   QImage logo() const override;
   void setLogo(const ModuleLogo& logo);
 
   /// Convert a ModuleLogo into a QIcon
-  /// \todo: Find a better place for this util function
+  /// \todo: Find a better place for this helper function
   static QImage moduleLogoToImage(const ModuleLogo& logo);
 
   /// Return the module description object used to store
   /// the module properties.
   ModuleDescription& moduleDescription();
+
+  /// Translate string from source language to current application language
+  QString translate(const std::string& sourceText) const;
 
 protected:
   ///
@@ -106,7 +108,7 @@ protected:
 
   ///
   /// Create and return the widget representation associated to this module
-  qSlicerAbstractModuleRepresentation * createWidgetRepresentation() override;
+  qSlicerAbstractModuleRepresentation* createWidgetRepresentation() override;
 
   ///
   /// Create and return the logic associated to this module

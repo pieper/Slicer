@@ -4,6 +4,9 @@ set(MODULE_NAME DICOMPlugins)
 
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
+  DICOMEnhancedUSVolumePlugin.py
+  DICOMGeAbusPlugin.py
+  DICOMImageSequencePlugin.py
   DICOMScalarVolumePlugin.py
   DICOMVolumeSequencePlugin.py
   DICOMSlicerDataBundlePlugin.py

@@ -1,5 +1,5 @@
 // Copied from dtiprocess
-// available there: http://www.nitrc.org/projects/dtiprocess/
+// available there: https://www.nitrc.org/projects/dtiprocess/
 /*=========================================================================
 
   Program:   NeuroLib (DTI command line tools)
@@ -9,7 +9,7 @@
   Author:    Casey Goodlett (gcasey@sci.utah.edu)
 
   Copyright (c)  Casey Goodlett. All rights reserved.
-  See NeuroLibCopyright.txt or http://www.ia.unc.edu/dev/Copyright.htm for details.
+  See NeuroLibCopyright.txt or https://www.ia.unc.edu/dev/Copyright.htm for details.
 
      This software is distributed WITHOUT ANY WARRANTY; without even
      the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -27,25 +27,22 @@ DeformationImageType::Pointer readDeformationField(std::string warpfile, Deforma
   typedef itk::ImageFileReader<DeformationImageType> DeformationImageReader;
 
   DeformationImageReader::Pointer defreader = DeformationImageReader::New();
-  defreader->SetFileName(warpfile.c_str() );
+  defreader->SetFileName(warpfile.c_str());
 
-  if( dft == HField )
-    {
+  if (dft == HField)
+  {
 
     typedef itk::HFieldToDeformationFieldImageFilter<DeformationImageType> DeformationConvertType;
     DeformationConvertType::Pointer defconv = DeformationConvertType::New();
-    defconv->SetInput(defreader->GetOutput() );
-//  defconv->SetSpacing(timg->GetSpacing());
+    defconv->SetInput(defreader->GetOutput());
+    //  defconv->SetSpacing(timg->GetSpacing());
     defconv->Update();
     return defconv->GetOutput();
-
-    }
+  }
   else
-    {
+  {
 
     defreader->Update();
     return defreader->GetOutput();
-
-    }
-
+  }
 }

@@ -40,16 +40,18 @@
 #include <QAction>
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_SubjectHierarchy_Widgets
-class qSlicerSubjectHierarchyCloneNodePluginPrivate: public QObject
+class qSlicerSubjectHierarchyCloneNodePluginPrivate : public QObject
 {
   Q_DECLARE_PUBLIC(qSlicerSubjectHierarchyCloneNodePlugin);
+
 protected:
   qSlicerSubjectHierarchyCloneNodePlugin* const q_ptr;
+
 public:
   qSlicerSubjectHierarchyCloneNodePluginPrivate(qSlicerSubjectHierarchyCloneNodePlugin& object);
   ~qSlicerSubjectHierarchyCloneNodePluginPrivate() override;
   void init();
+
 public:
   QAction* CloneItemAction;
 };
@@ -59,7 +61,7 @@ public:
 
 //-----------------------------------------------------------------------------
 qSlicerSubjectHierarchyCloneNodePluginPrivate::qSlicerSubjectHierarchyCloneNodePluginPrivate(qSlicerSubjectHierarchyCloneNodePlugin& object)
-: q_ptr(&object)
+  : q_ptr(&object)
 {
   this->CloneItemAction = nullptr;
 }
@@ -69,8 +71,12 @@ void qSlicerSubjectHierarchyCloneNodePluginPrivate::init()
 {
   Q_Q(qSlicerSubjectHierarchyCloneNodePlugin);
 
-  this->CloneItemAction = new QAction("Clone",q);
-  this->CloneItemAction->setToolTip("Clone this item and its data node if any along with display and storage options");
+  this->CloneItemAction = new QAction(qSlicerSubjectHierarchyCloneNodePlugin::tr("Clone"), q);
+  this->CloneItemAction->setToolTip(qSlicerSubjectHierarchyCloneNodePlugin::tr("Clone this item and its data node if any along with display and storage options"));
+  qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(this->CloneItemAction,                              //
+                                                           qSlicerSubjectHierarchyAbstractPlugin::SectionNode, //
+                                                           0,                                                  // "Rename" action's index
+                                                           1.0);                                               // put it right after
   QObject::connect(this->CloneItemAction, SIGNAL(triggered()), q, SLOT(cloneCurrentItem()));
 }
 
@@ -82,8 +88,8 @@ qSlicerSubjectHierarchyCloneNodePluginPrivate::~qSlicerSubjectHierarchyCloneNode
 
 //-----------------------------------------------------------------------------
 qSlicerSubjectHierarchyCloneNodePlugin::qSlicerSubjectHierarchyCloneNodePlugin(QObject* parent)
- : Superclass(parent)
- , d_ptr( new qSlicerSubjectHierarchyCloneNodePluginPrivate(*this) )
+  : Superclass(parent)
+  , d_ptr(new qSlicerSubjectHierarchyCloneNodePluginPrivate(*this))
 {
   this->m_Name = QString("CloneNode");
 
@@ -95,7 +101,7 @@ qSlicerSubjectHierarchyCloneNodePlugin::qSlicerSubjectHierarchyCloneNodePlugin(Q
 qSlicerSubjectHierarchyCloneNodePlugin::~qSlicerSubjectHierarchyCloneNodePlugin() = default;
 
 //---------------------------------------------------------------------------
-QList<QAction*> qSlicerSubjectHierarchyCloneNodePlugin::itemContextMenuActions()const
+QList<QAction*> qSlicerSubjectHierarchyCloneNodePlugin::itemContextMenuActions() const
 {
   Q_D(const qSlicerSubjectHierarchyCloneNodePlugin);
 
@@ -111,16 +117,23 @@ void qSlicerSubjectHierarchyCloneNodePlugin::showContextMenuActionsForItem(vtkId
 
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
 
   if (!itemID || itemID == shNode->GetSceneItemID())
-    {
+  {
     // There are no scene actions in this plugin
     return;
-    }
+  }
+
+  vtkIdType parentItemID = shNode->GetItemParent(itemID);
+  if (parentItemID && shNode->IsItemVirtualBranchParent(parentItemID))
+  {
+    // This generic plugin does not know how to clone virtual branch items
+    return;
+  }
 
   // Show clone node for every non-scene items
   d->CloneItemAction->setVisible(true);
@@ -132,23 +145,22 @@ void qSlicerSubjectHierarchyCloneNodePlugin::cloneCurrentItem()
   // Get currently selected node and scene
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
   vtkIdType currentItemID = qSlicerSubjectHierarchyPluginHandler::instance()->currentItem();
   if (!currentItemID)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid current subject hierarchy item!";
     return;
-    }
+  }
 
   vtkIdType clonedItemID = vtkSlicerSubjectHierarchyModuleLogic::CloneSubjectHierarchyItem(shNode, currentItemID);
   if (!clonedItemID)
-    {
-    qCritical() << Q_FUNC_INFO << ": Failed to clone subject hierarchy item (ID:"
-        << currentItemID << ", name:" << shNode->GetItemName(currentItemID).c_str() << ")";
-    }
+  {
+    qCritical() << Q_FUNC_INFO << ": Failed to clone subject hierarchy item (ID:" << currentItemID << ", name:" << shNode->GetItemName(currentItemID).c_str() << ")";
+  }
 
   // Trigger update
   emit requestInvalidateFilter();

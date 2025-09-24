@@ -40,28 +40,35 @@ foreach(property IN LISTS application_properties)
   set(Slicer_MAIN_PROJECT_${property} "${${Slicer_MAIN_PROJECT}_${property}}")
 endforeach()
 
+if(NOT DEFINED Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME OR Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME STREQUAL "")
+  set(Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME "${Slicer_MAIN_PROJECT_APPLICATION_NAME}")
+endif()
+
 #-----------------------------------------------------------------------------
 # Terminal support
 #-----------------------------------------------------------------------------
 if(WIN32)
-  option(Slicer_BUILD_WIN32_CONSOLE "Build ${PROJECT_NAME} executable as a console app on windows (allows debug output)" ON)
+  option(Slicer_BUILD_WIN32_CONSOLE "Build ${PROJECT_NAME} executable as a console app on windows (allows capturing console output)" ON)
+  option(Slicer_BUILD_WIN32_CONSOLE_LAUNCHER "Build ${PROJECT_NAME} launcher executable as a console app on windows (displays console at application start)" ON)
 else()
   set(Slicer_BUILD_WIN32_CONSOLE OFF)
+  set(Slicer_BUILD_WIN32_CONSOLE_LAUNCHER OFF)
 endif()
 mark_as_superbuild(Slicer_BUILD_WIN32_CONSOLE:BOOL)
+mark_as_superbuild(Slicer_BUILD_WIN32_CONSOLE_LAUNCHER:BOOL)
 
 #-----------------------------------------------------------------------------
 # Organization name
 #-----------------------------------------------------------------------------
 if(NOT DEFINED Slicer_ORGANIZATION_DOMAIN)
-  set(Slicer_ORGANIZATION_DOMAIN "www.na-mic.org" CACHE STRING "Organization domain")
+  set(Slicer_ORGANIZATION_DOMAIN "slicer.org" CACHE STRING "Organization domain associated with Qt settings")
   mark_as_advanced(Slicer_ORGANIZATION_DOMAIN)
 endif()
 mark_as_superbuild(Slicer_ORGANIZATION_DOMAIN)
 message(STATUS "Configuring ${Slicer_MAIN_PROJECT_APPLICATION_NAME} organization domain [${Slicer_ORGANIZATION_DOMAIN}]")
 
 if(NOT DEFINED Slicer_ORGANIZATION_NAME)
-  set(Slicer_ORGANIZATION_NAME "NA-MIC" CACHE STRING "Organization name")
+  set(Slicer_ORGANIZATION_NAME "slicer.org" CACHE STRING "Organization name associated with Qt settings")
   mark_as_advanced(Slicer_ORGANIZATION_NAME)
 endif()
 mark_as_superbuild(Slicer_ORGANIZATION_NAME)
@@ -104,16 +111,27 @@ mark_as_superbuild(Slicer_DISCLAIMER_AT_STARTUP)
 message(STATUS "Configuring ${Slicer_MAIN_PROJECT_APPLICATION_NAME} text of disclaimer at startup [${Slicer_DISCLAIMER_AT_STARTUP}]")
 
 #-----------------------------------------------------------------------------
-# Set Slicer_MAIN_PROJECT_SOURCE_DIR and <Slicer_MAIN_PROJECT_APPLICATION_NAME>_SOURCE_DIR
+# Set Slicer_MAIN_PROJECT_SOURCE_DIR
 #-----------------------------------------------------------------------------
 # Propagate source directory to support building Slicer-based application
 # that (1) includes Slicer as an external project or (2) add Slicer source
 # tree using 'add_subdirectory()'.
 # Source directory it then used in 'SlicerConfigureVersionHeaderTarget' module.
-if(NOT DEFINED ${Slicer_MAIN_PROJECT_APPLICATION_NAME}_SOURCE_DIR)
-  set(${Slicer_MAIN_PROJECT_APPLICATION_NAME}_SOURCE_DIR ${CMAKE_SOURCE_DIR})
+if(NOT DEFINED Slicer_MAIN_PROJECT_SOURCE_DIR)
+  set(Slicer_MAIN_PROJECT_SOURCE_DIR ${CMAKE_SOURCE_DIR})
 endif()
-mark_as_superbuild(${Slicer_MAIN_PROJECT_APPLICATION_NAME}_SOURCE_DIR)
+mark_as_superbuild(Slicer_MAIN_PROJECT_SOURCE_DIR)
+
+#-----------------------------------------------------------------------------
+# Set application bundle identifier for macOS
+#-----------------------------------------------------------------------------
+if(APPLE)
+  if(NOT DEFINED Slicer_MACOSX_BUNDLE_GUI_IDENTIFIER)
+    set(Slicer_MACOSX_BUNDLE_GUI_IDENTIFIER "org.slicer.slicer")
+  endif()
+  mark_as_superbuild(Slicer_MACOSX_BUNDLE_GUI_IDENTIFIER)
+  message(STATUS "Configuring ${Slicer_MAIN_PROJECT_APPLICATION_NAME} application bundle identifier [${Slicer_MACOSX_BUNDLE_GUI_IDENTIFIER}]")
+endif()
 
 #-----------------------------------------------------------------------------
 # Set default installation folder and admin account requirement for Windows
@@ -153,3 +171,59 @@ if(WIN32)
   message(STATUS "Configuring ${Slicer_MAIN_PROJECT_APPLICATION_NAME} install root [${Slicer_CPACK_NSIS_INSTALL_ROOT}]")
 
 endif()
+
+#-----------------------------------------------------------------------------
+# Installer branding
+#-----------------------------------------------------------------------------
+if(WIN32)
+
+  # Set the following variables:
+  # - Slicer_CPACK_NSIS_INSTALLER_HEADER_FILE
+  # - Slicer_CPACK_NSIS_INSTALLER_WELCOME_FILE
+  # - Slicer_CPACK_NSIS_INSTALLER_UNWELCOME_FILE
+
+  set(Slicer_CPACK_NSIS_INSTALLER_HEADER_FILE_DEFAULT "${Slicer_APPLICATIONS_DIR}/${Slicer_MAIN_PROJECT}/Resources/Installer/Header.bmp")
+  set(Slicer_CPACK_NSIS_INSTALLER_WELCOME_FILE_DEFAULT "${Slicer_APPLICATIONS_DIR}/${Slicer_MAIN_PROJECT}/Resources/Installer/WelcomeFinishPage.bmp")
+  set(Slicer_CPACK_NSIS_INSTALLER_UNWELCOME_FILE_DEFAULT "${Slicer_CPACK_NSIS_INSTALLER_WELCOME_FILE_DEFAULT}")
+
+  foreach(_page IN ITEMS
+      HEADER
+      WELCOME
+      UNWELCOME
+    )
+    set(_varname "Slicer_CPACK_NSIS_INSTALLER_${_page}_FILE")
+    if(NOT DEFINED ${_varname})
+      set(${_varname} ${${_varname}_DEFAULT} CACHE FILEPATH "NSIS installer ${_page} page")
+      mark_as_advanced(${_varname})
+    endif()
+    mark_as_superbuild(${_varname}:FILEPATH)
+    set(_filepath "${${_varname}}")
+    message(STATUS "Configuring ${Slicer_MAIN_PROJECT_APPLICATION_NAME} NSIS installer ${_page} page [${_filepath}]")
+    if(NOT EXISTS "${_filepath}")
+      message(FATAL_ERROR "Variable ${_varname} is set to a nonexistent filepath [${_filepath}]")
+    endif()
+  endforeach()
+endif()
+
+#-----------------------------------------------------------------------------
+# Set Slicer_STORE_SETTINGS_IN_APPLICATION_HOME_DIR
+#-----------------------------------------------------------------------------
+#
+# If Slicer_STORE_SETTINGS_IN_APPLICATION_HOME_DIR is enabled (default) then revision-specific
+# settings (such as Slicer-12345.ini) and extensions are stored in application
+# home directory, within (OrganizationName) subdirectory.
+# Non-revision-specific settings (such as Slicer.ini) is still stored in
+# the user profile directory and shared between all installed applications,
+# unless a setting file is found in the application home (in which case settings
+# are stored in this local file, making the installation fully self-contained).
+#
+# If Slicer_STORE_SETTINGS_IN_APPLICATION_HOME_DIR is disabled then all settings and extensions
+# are always written in the the user profile, which is useful if application
+# home directory is read-only.
+#
+# Since Python packages are always installed in the application home directory,
+# it is recommended to install the application in a writeable directory and
+# enable Slicer_STORE_SETTINGS_IN_APPLICATION_HOME_DIR.
+#
+option(Slicer_STORE_SETTINGS_IN_APPLICATION_HOME_DIR "Store all settings in the application home directory (makes the application portable)" ON)
+mark_as_superbuild(Slicer_STORE_SETTINGS_IN_APPLICATION_HOME_DIR:BOOL)

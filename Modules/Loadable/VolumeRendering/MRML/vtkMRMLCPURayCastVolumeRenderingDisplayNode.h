@@ -24,22 +24,20 @@
 // Volume Rendering includes
 #include "vtkMRMLVolumeRenderingDisplayNode.h"
 
-/// \ingroup Slicer_QtModules_VolumeRendering
 /// \name vtkMRMLCPURayCastCPURayCastVolumeRenderingDisplayNode
 /// \brief MRML node for storing information for CPU Raycast Volume Rendering
-class VTK_SLICER_VOLUMERENDERING_MODULE_MRML_EXPORT vtkMRMLCPURayCastVolumeRenderingDisplayNode
-  : public vtkMRMLVolumeRenderingDisplayNode
+class VTK_SLICER_VOLUMERENDERING_MODULE_MRML_EXPORT vtkMRMLCPURayCastVolumeRenderingDisplayNode : public vtkMRMLVolumeRenderingDisplayNode
 {
 public:
-  static vtkMRMLCPURayCastVolumeRenderingDisplayNode *New();
-  vtkTypeMacro(vtkMRMLCPURayCastVolumeRenderingDisplayNode,vtkMRMLVolumeRenderingDisplayNode);
+  static vtkMRMLCPURayCastVolumeRenderingDisplayNode* New();
+  vtkTypeMacro(vtkMRMLCPURayCastVolumeRenderingDisplayNode, vtkMRMLVolumeRenderingDisplayNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
 
   // Description:
   // Set node attributes
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   // Description:
   // Write this node's information to a MRML file in XML format.
@@ -51,7 +49,7 @@ public:
 
   // Description:
   // Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "CPURayCastVolumeRendering";}
+  const char* GetNodeTagName() override { return "CPURayCastVolumeRendering"; }
 
 protected:
   vtkMRMLCPURayCastVolumeRenderingDisplayNode();
@@ -61,4 +59,3 @@ protected:
 };
 
 #endif
-

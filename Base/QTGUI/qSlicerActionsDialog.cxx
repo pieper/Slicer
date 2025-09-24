@@ -24,19 +24,19 @@
 #include <QGridLayout>
 #include <QtGlobal>
 #ifdef Slicer_BUILD_WEBENGINE_SUPPORT
-#include <QWebEngineView>
+# include <QWebEngineView>
 #endif
 
 // Slicer includes
 #include "qSlicerActionsDialog.h"
 #include "qSlicerCoreApplication.h"
 #include "ui_qSlicerActionsDialog.h"
-#include "vtkSlicerVersionConfigure.h"
 
 //-----------------------------------------------------------------------------
-class qSlicerActionsDialogPrivate: public Ui_qSlicerActionsDialog
+class qSlicerActionsDialogPrivate : public Ui_qSlicerActionsDialog
 {
   Q_DECLARE_PUBLIC(qSlicerActionsDialog);
+
 protected:
   qSlicerActionsDialog* const q_ptr;
 
@@ -47,7 +47,6 @@ public:
 #ifdef Slicer_BUILD_WEBENGINE_SUPPORT
   QWebEngineView* WebView;
 #endif
-
 };
 
 // --------------------------------------------------------------------------
@@ -69,16 +68,9 @@ void qSlicerActionsDialogPrivate::init()
   this->WebView = new QWebEngineView();
   this->WebView->setObjectName("WebView");
   this->gridLayout->addWidget(this->WebView, 0, 0);
-  QString wikiVersion = "Nightly";
   qSlicerCoreApplication* app = qSlicerCoreApplication::application();
-  if (app && app->releaseType() == "Stable")
-    {
-    wikiVersion = QString("%1.%2").arg(app->majorVersion()).arg(app->minorVersion());
-    }
-  QString shortcutsUrl =
-    QString("http://wiki.slicer.org/slicerWiki/index.php/Documentation/%1/").arg(wikiVersion);
-  shortcutsUrl += "SlicerApplication/MouseandKeyboardShortcuts";
-  this->WebView->setUrl( shortcutsUrl );
+  QString shortcutsUrl = QString(qSlicerActionsDialog::tr("%1/user_guide/user_interface.html#mouse-keyboard-shortcuts")).arg(app->documentationBaseUrl());
+  this->WebView->setUrl(shortcutsUrl);
 #else
   this->tabWidget->setTabEnabled(this->tabWidget->indexOf(this->WikiTab), false);
 #endif
@@ -104,8 +96,7 @@ void qSlicerActionsDialog::addAction(QAction* action, const QString& group)
 }
 
 //------------------------------------------------------------------------------
-void qSlicerActionsDialog::addActions(const QList<QAction*>& actions,
-                                      const QString& group)
+void qSlicerActionsDialog::addActions(const QList<QAction*>& actions, const QString& group)
 {
   Q_D(qSlicerActionsDialog);
   d->ActionsWidget->addActions(actions, group);

@@ -29,6 +29,7 @@ vtkMRMLNodeNewMacro(vtkMRMLViewNode);
 vtkMRMLViewNode::vtkMRMLViewNode()
 {
   this->BoxVisible = 1;
+  this->GetDefaultBoxColor(this->BoxColor);
   this->AxisLabelsVisible = 1;
   this->AxisLabelsCameraDependent = 1;
   this->FiducialsVisible = 1;
@@ -56,8 +57,9 @@ vtkMRMLViewNode::vtkMRMLViewNode()
   this->OrientationMarkerEnabled = true;
   this->RulerEnabled = true;
   this->GPUMemorySize = 0; // Means application default
+  this->AutoReleaseGraphicsResources = false;
   this->ExpectedFPS = 8.;
-  this->VolumeRenderingQuality = vtkMRMLViewNode::Adaptive;
+  this->VolumeRenderingQuality = vtkMRMLViewNode::Normal;
   this->RaycastTechnique = vtkMRMLViewNode::Composite;
   this->VolumeRenderingSurfaceSmoothing = false;
   this->VolumeRenderingOversamplingFactor = 2.0;
@@ -85,6 +87,7 @@ void vtkMRMLViewNode::WriteXML(ostream& of, int nIndent)
   vtkMRMLWriteXMLFloatMacro(fieldOfView, FieldOfView);
   vtkMRMLWriteXMLFloatMacro(letterSize, LetterSize);
   vtkMRMLWriteXMLBooleanMacro(boxVisible, BoxVisible);
+  vtkMRMLWriteXMLVectorMacro(boxColor, BoxColor, double, 3);
   vtkMRMLWriteXMLBooleanMacro(fiducialsVisible, FiducialsVisible);
   vtkMRMLWriteXMLBooleanMacro(fiducialLabelsVisible, FiducialLabelsVisible);
   vtkMRMLWriteXMLBooleanMacro(axisLabelsVisible, AxisLabelsVisible);
@@ -101,12 +104,18 @@ void vtkMRMLViewNode::WriteXML(ostream& of, int nIndent)
   vtkMRMLWriteXMLEnumMacro(renderMode, RenderMode);
   vtkMRMLWriteXMLIntMacro(useDepthPeeling, UseDepthPeeling);
   vtkMRMLWriteXMLIntMacro(gpuMemorySize, GPUMemorySize);
+  vtkMRMLWriteXMLBooleanMacro(autoReleaseGraphicsResources, AutoReleaseGraphicsResources);
   vtkMRMLWriteXMLFloatMacro(expectedFPS, ExpectedFPS);
   vtkMRMLWriteXMLEnumMacro(volumeRenderingQuality, VolumeRenderingQuality);
   vtkMRMLWriteXMLEnumMacro(raycastTechnique, RaycastTechnique);
   vtkMRMLWriteXMLIntMacro(volumeRenderingSurfaceSmoothing, VolumeRenderingSurfaceSmoothing);
   vtkMRMLWriteXMLFloatMacro(volumeRenderingOversamplingFactor, VolumeRenderingOversamplingFactor);
   vtkMRMLWriteXMLIntMacro(linkedControl, LinkedControl);
+  vtkMRMLWriteXMLBooleanMacro(shadowsVisibility, ShadowsVisibility);
+  vtkMRMLWriteXMLFloatMacro(ambientShadowsSizeScale, AmbientShadowsSizeScale);
+  vtkMRMLWriteXMLFloatMacro(ambientShadowsVolumeOpacityThreshold, AmbientShadowsVolumeOpacityThreshold);
+  vtkMRMLWriteXMLFloatMacro(ambientShadowsIntensityScale, AmbientShadowsIntensityScale);
+  vtkMRMLWriteXMLFloatMacro(ambientShadowsIntensityShift, AmbientShadowsIntensityShift);
   vtkMRMLWriteXMLEndMacro();
 }
 
@@ -121,6 +130,7 @@ void vtkMRMLViewNode::ReadXMLAttributes(const char** atts)
   vtkMRMLReadXMLFloatMacro(fieldOfView, FieldOfView);
   vtkMRMLReadXMLFloatMacro(letterSize, LetterSize);
   vtkMRMLReadXMLBooleanMacro(boxVisible, BoxVisible);
+  vtkMRMLReadXMLVectorMacro(boxColor, BoxColor, double, 3);
   vtkMRMLReadXMLBooleanMacro(fiducialsVisible, FiducialsVisible);
   vtkMRMLReadXMLBooleanMacro(fiducialLabelsVisible, FiducialLabelsVisible);
   vtkMRMLReadXMLBooleanMacro(axisLabelsVisible, AxisLabelsVisible);
@@ -137,11 +147,17 @@ void vtkMRMLViewNode::ReadXMLAttributes(const char** atts)
   vtkMRMLReadXMLEnumMacro(renderMode, RenderMode);
   vtkMRMLReadXMLIntMacro(useDepthPeeling, UseDepthPeeling);
   vtkMRMLReadXMLIntMacro(gpuMemorySize, GPUMemorySize);
+  vtkMRMLReadXMLBooleanMacro(autoReleaseGraphicsResources, AutoReleaseGraphicsResources);
   vtkMRMLReadXMLFloatMacro(expectedFPS, ExpectedFPS);
   vtkMRMLReadXMLEnumMacro(volumeRenderingQuality, VolumeRenderingQuality);
   vtkMRMLReadXMLEnumMacro(raycastTechnique, RaycastTechnique);
   vtkMRMLReadXMLIntMacro(volumeRenderingSurfaceSmoothing, VolumeRenderingSurfaceSmoothing);
   vtkMRMLReadXMLFloatMacro(volumeRenderingOversamplingFactor, VolumeRenderingOversamplingFactor);
+  vtkMRMLReadXMLBooleanMacro(shadowsVisibility, ShadowsVisibility);
+  vtkMRMLReadXMLFloatMacro(ambientShadowsSizeScale, AmbientShadowsSizeScale);
+  vtkMRMLReadXMLFloatMacro(ambientShadowsVolumeOpacityThreshold, AmbientShadowsVolumeOpacityThreshold);
+  vtkMRMLReadXMLFloatMacro(ambientShadowsIntensityScale, AmbientShadowsIntensityScale);
+  vtkMRMLReadXMLFloatMacro(ambientShadowsIntensityShift, AmbientShadowsIntensityShift);
   vtkMRMLReadXMLIntMacro(linkedControl, LinkedControl);
   vtkMRMLReadXMLEndMacro();
 
@@ -149,7 +165,7 @@ void vtkMRMLViewNode::ReadXMLAttributes(const char** atts)
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy/*=true*/)
+void vtkMRMLViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy /*=true*/)
 {
   MRMLNodeModifyBlocker blocker(this);
   Superclass::CopyContent(anode, deepCopy);
@@ -158,6 +174,7 @@ void vtkMRMLViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy/*=true*/)
   vtkMRMLCopyFloatMacro(FieldOfView);
   vtkMRMLCopyFloatMacro(LetterSize);
   vtkMRMLCopyBooleanMacro(BoxVisible);
+  vtkMRMLCopyVectorMacro(BoxColor, double, 3);
   vtkMRMLCopyBooleanMacro(FiducialsVisible);
   vtkMRMLCopyBooleanMacro(FiducialLabelsVisible);
   vtkMRMLCopyBooleanMacro(AxisLabelsVisible);
@@ -174,11 +191,17 @@ void vtkMRMLViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy/*=true*/)
   vtkMRMLCopyEnumMacro(RenderMode);
   vtkMRMLCopyIntMacro(UseDepthPeeling);
   vtkMRMLCopyIntMacro(GPUMemorySize);
+  vtkMRMLCopyBooleanMacro(AutoReleaseGraphicsResources);
   vtkMRMLCopyFloatMacro(ExpectedFPS);
   vtkMRMLCopyIntMacro(VolumeRenderingQuality);
   vtkMRMLCopyIntMacro(RaycastTechnique);
   vtkMRMLCopyIntMacro(VolumeRenderingSurfaceSmoothing);
   vtkMRMLCopyFloatMacro(VolumeRenderingOversamplingFactor);
+  vtkMRMLCopyBooleanMacro(ShadowsVisibility);
+  vtkMRMLCopyFloatMacro(AmbientShadowsSizeScale);
+  vtkMRMLCopyFloatMacro(AmbientShadowsVolumeOpacityThreshold);
+  vtkMRMLCopyFloatMacro(AmbientShadowsIntensityScale);
+  vtkMRMLCopyFloatMacro(AmbientShadowsIntensityShift);
   vtkMRMLCopyIntMacro(LinkedControl);
   vtkMRMLCopyEndMacro();
 }
@@ -186,12 +209,13 @@ void vtkMRMLViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy/*=true*/)
 //----------------------------------------------------------------------------
 void vtkMRMLViewNode::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 
   vtkMRMLPrintBeginMacro(os, indent);
   vtkMRMLPrintFloatMacro(FieldOfView);
   vtkMRMLPrintFloatMacro(LetterSize);
   vtkMRMLPrintBooleanMacro(BoxVisible);
+  vtkMRMLPrintVectorMacro(BoxColor, double, 3);
   vtkMRMLPrintBooleanMacro(FiducialsVisible);
   vtkMRMLPrintBooleanMacro(FiducialLabelsVisible);
   vtkMRMLPrintBooleanMacro(AxisLabelsVisible);
@@ -208,12 +232,18 @@ void vtkMRMLViewNode::PrintSelf(ostream& os, vtkIndent indent)
   vtkMRMLPrintEnumMacro(RenderMode);
   vtkMRMLPrintIntMacro(UseDepthPeeling);
   vtkMRMLPrintIntMacro(GPUMemorySize);
+  vtkMRMLPrintBooleanMacro(AutoReleaseGraphicsResources);
   vtkMRMLPrintFloatMacro(ExpectedFPS);
   vtkMRMLPrintIntMacro(VolumeRenderingQuality);
   vtkMRMLPrintIntMacro(RaycastTechnique);
   vtkMRMLPrintIntMacro(VolumeRenderingSurfaceSmoothing);
   vtkMRMLPrintFloatMacro(VolumeRenderingOversamplingFactor);
   vtkMRMLPrintIntMacro(Interacting);
+  vtkMRMLPrintBooleanMacro(ShadowsVisibility);
+  vtkMRMLPrintFloatMacro(AmbientShadowsSizeScale);
+  vtkMRMLPrintFloatMacro(AmbientShadowsVolumeOpacityThreshold);
+  vtkMRMLPrintFloatMacro(AmbientShadowsIntensityScale);
+  vtkMRMLPrintFloatMacro(AmbientShadowsIntensityShift);
   vtkMRMLPrintIntMacro(LinkedControl);
   vtkMRMLPrintEndMacro();
 }
@@ -221,52 +251,56 @@ void vtkMRMLViewNode::PrintSelf(ostream& os, vtkIndent indent)
 //------------------------------------------------------------------------------
 double* vtkMRMLViewNode::defaultBackgroundColor()
 {
-  //static double backgroundColor[3] = {0.70196, 0.70196, 0.90588};
-  static double backgroundColor[3] = {0.7568627450980392,
-                                      0.7647058823529412,
-                                      0.9098039215686275};
+  // static double backgroundColor[3] = {0.70196, 0.70196, 0.90588};
+  static double backgroundColor[3] = { 0.7568627450980392, 0.7647058823529412, 0.9098039215686275 };
   return backgroundColor;
 }
 
 //------------------------------------------------------------------------------
 double* vtkMRMLViewNode::defaultBackgroundColor2()
 {
-  static double backgroundColor2[3] = {0.4549019607843137,
-                                       0.4705882352941176,
-                                       0.7450980392156863};
+  static double backgroundColor2[3] = { 0.4549019607843137, 0.4705882352941176, 0.7450980392156863 };
   return backgroundColor2;
+}
+
+//------------------------------------------------------------------------------
+void vtkMRMLViewNode::GetDefaultBoxColor(double color[3])
+{
+  color[0] = 1.0;
+  color[1] = 0.0;
+  color[2] = 1.0;
 }
 
 //---------------------------------------------------------------------------
 const char* vtkMRMLViewNode::GetAnimationModeAsString(int id)
 {
   switch (id)
-    {
+  {
     case Off: return "Off";
     case Spin: return "Spin";
     case Rock: return "Rock";
     default:
       // invalid id
       return "";
-    }
+  }
 }
 
 //-----------------------------------------------------------
 int vtkMRMLViewNode::GetAnimationModeFromString(const char* name)
 {
   if (name == nullptr)
-    {
+  {
     // invalid name
     return -1;
-    }
+  }
   for (int ii = 0; ii < AnimationMode_Last; ii++)
-    {
+  {
     if (strcmp(name, GetAnimationModeAsString(ii)) == 0)
-      {
+    {
       // found a matching name
       return ii;
-      }
     }
+  }
   // unknown name
   return -1;
 }
@@ -275,31 +309,31 @@ int vtkMRMLViewNode::GetAnimationModeFromString(const char* name)
 const char* vtkMRMLViewNode::GetViewAxisModeAsString(int id)
 {
   switch (id)
-    {
+  {
     case LookFrom: return "LookFrom";
     case RotateAround: return "RotateAround";
     default:
       // invalid id
       return "";
-    }
+  }
 }
 
 //-----------------------------------------------------------
 int vtkMRMLViewNode::GetViewAxisModeFromString(const char* name)
 {
   if (name == nullptr)
-    {
+  {
     // invalid name
     return -1;
-    }
+  }
   for (int ii = 0; ii < ViewAxisMode_Last; ii++)
-    {
+  {
     if (strcmp(name, GetViewAxisModeAsString(ii)) == 0)
-      {
+    {
       // found a matching name
       return ii;
-      }
     }
+  }
   // unknown name
   return -1;
 }
@@ -308,7 +342,7 @@ int vtkMRMLViewNode::GetViewAxisModeFromString(const char* name)
 const char* vtkMRMLViewNode::GetSpinDirectionAsString(int id)
 {
   switch (id)
-    {
+  {
     case PitchUp: return "PitchUp";
     case PitchDown: return "PitchDown";
     case RollLeft: return "RollLeft";
@@ -318,25 +352,25 @@ const char* vtkMRMLViewNode::GetSpinDirectionAsString(int id)
     default:
       // invalid id
       return "";
-    }
+  }
 }
 
 //-----------------------------------------------------------
 int vtkMRMLViewNode::GetSpinDirectionFromString(const char* name)
 {
   if (name == nullptr)
-    {
+  {
     // invalid name
     return -1;
-    }
+  }
   for (int ii = 0; ii < SpinDirection_Last; ii++)
-    {
+  {
     if (strcmp(name, GetSpinDirectionAsString(ii)) == 0)
-      {
+    {
       // found a matching name
       return ii;
-      }
     }
+  }
   // unknown name
   return -1;
 }
@@ -345,7 +379,7 @@ int vtkMRMLViewNode::GetSpinDirectionFromString(const char* name)
 const char* vtkMRMLViewNode::GetStereoTypeAsString(int id)
 {
   switch (id)
-    {
+  {
     case NoStereo: return "NoStereo";
     case RedBlue: return "RedBlue";
     case Anaglyph: return "Anaglyph";
@@ -357,25 +391,25 @@ const char* vtkMRMLViewNode::GetStereoTypeAsString(int id)
     default:
       // invalid id
       return "";
-    }
+  }
 }
 
 //-----------------------------------------------------------
 int vtkMRMLViewNode::GetStereoTypeFromString(const char* name)
 {
   if (name == nullptr)
-    {
+  {
     // invalid name
     return -1;
-    }
+  }
   for (int ii = 0; ii < StereoType_Last; ii++)
-    {
+  {
     if (strcmp(name, GetStereoTypeAsString(ii)) == 0)
-      {
+    {
       // found a matching name
       return ii;
-      }
     }
+  }
   // unknown name
   return -1;
 }
@@ -384,31 +418,31 @@ int vtkMRMLViewNode::GetStereoTypeFromString(const char* name)
 const char* vtkMRMLViewNode::GetRenderModeAsString(int id)
 {
   switch (id)
-    {
+  {
     case Perspective: return "Perspective";
     case Orthographic: return "Orthographic";
     default:
       // invalid id
       return "";
-    }
+  }
 }
 
 //-----------------------------------------------------------
 int vtkMRMLViewNode::GetRenderModeFromString(const char* name)
 {
   if (name == nullptr)
-    {
+  {
     // invalid name
     return -1;
-    }
+  }
   for (int ii = 0; ii < RenderMode_Last; ii++)
-    {
+  {
     if (strcmp(name, GetRenderModeAsString(ii)) == 0)
-      {
+    {
       // found a matching name
       return ii;
-      }
     }
+  }
   // unknown name
   return -1;
 }
@@ -417,32 +451,32 @@ int vtkMRMLViewNode::GetRenderModeFromString(const char* name)
 const char* vtkMRMLViewNode::GetVolumeRenderingQualityAsString(int id)
 {
   switch (id)
-    {
+  {
     case Adaptive: return "Adaptive";
     case Normal: return "Normal";
     case Maximum: return "Maximum";
     default:
       // invalid id
       return "";
-    }
+  }
 }
 
 //-----------------------------------------------------------
 int vtkMRMLViewNode::GetVolumeRenderingQualityFromString(const char* name)
 {
   if (name == nullptr)
-    {
+  {
     // invalid name
     return -1;
-    }
+  }
   for (int ii = 0; ii < VolumeRenderingQuality_Last; ii++)
-    {
+  {
     if (strcmp(name, GetVolumeRenderingQualityAsString(ii)) == 0)
-      {
+    {
       // found a matching name
       return ii;
-      }
     }
+  }
   // unknown name
   return -1;
 }
@@ -451,7 +485,7 @@ int vtkMRMLViewNode::GetVolumeRenderingQualityFromString(const char* name)
 const char* vtkMRMLViewNode::GetRaycastTechniqueAsString(int id)
 {
   switch (id)
-    {
+  {
     case Composite: return "Composite";
     case CompositeEdgeColoring: return "CompositeEdgeColoring";
     case MaximumIntensityProjection: return "MaximumIntensityProjection";
@@ -461,25 +495,25 @@ const char* vtkMRMLViewNode::GetRaycastTechniqueAsString(int id)
     default:
       // invalid id
       return "";
-    }
+  }
 }
 
 //-----------------------------------------------------------
 int vtkMRMLViewNode::GetRaycastTechniqueFromString(const char* name)
 {
   if (name == nullptr)
-    {
+  {
     // invalid name
     return -1;
-    }
+  }
   for (int ii = 0; ii < RaycastTechnique_Last; ii++)
-    {
+  {
     if (strcmp(name, GetRaycastTechniqueAsString(ii)) == 0)
-      {
+    {
       // found a matching name
       return ii;
-      }
     }
+  }
   // unknown name
   return -1;
 }

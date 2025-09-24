@@ -55,13 +55,13 @@
 #include <cassert>
 
 //---------------------------------------------------------------------------
-vtkStandardNewMacro(vtkMRMLScalarBarDisplayableManager );
+vtkStandardNewMacro(vtkMRMLScalarBarDisplayableManager);
 
 //---------------------------------------------------------------------------
 class vtkMRMLScalarBarDisplayableManager::vtkInternal
 {
 public:
-  vtkInternal(vtkMRMLScalarBarDisplayableManager * external);
+  vtkInternal(vtkMRMLScalarBarDisplayableManager* external);
   ~vtkInternal();
 
   vtkObserverManager* GetMRMLNodesObserverManager();
@@ -74,18 +74,16 @@ public:
   // Build the crosshair representation
   void BuildScalarBar();
 
-  vtkMRMLScalarBarDisplayableManager*        External;
+  vtkMRMLScalarBarDisplayableManager* External;
 
   vtkSmartPointer<vtkMRMLWindowLevelWidget> WindowLevelWidget;
 };
-
 
 //---------------------------------------------------------------------------
 // vtkInternal methods
 
 //---------------------------------------------------------------------------
-vtkMRMLScalarBarDisplayableManager::vtkInternal
-::vtkInternal(vtkMRMLScalarBarDisplayableManager * external)
+vtkMRMLScalarBarDisplayableManager::vtkInternal::vtkInternal(vtkMRMLScalarBarDisplayableManager* external)
 {
   this->External = external;
   this->WindowLevelWidget = vtkSmartPointer<vtkMRMLWindowLevelWidget>::New();
@@ -112,8 +110,7 @@ void vtkMRMLScalarBarDisplayableManager::vtkInternal::Modified()
 }
 
 //---------------------------------------------------------------------------
-vtkMRMLSliceNode* vtkMRMLScalarBarDisplayableManager::vtkInternal
-::GetSliceNode()
+vtkMRMLSliceNode* vtkMRMLScalarBarDisplayableManager::vtkInternal::GetSliceNode()
 {
   return this->External->GetMRMLSliceNode();
 }
@@ -122,18 +119,18 @@ vtkMRMLSliceNode* vtkMRMLScalarBarDisplayableManager::vtkInternal
 void vtkMRMLScalarBarDisplayableManager::vtkInternal::UpdateSliceNode()
 {
   if (this->External->GetMRMLScene() == nullptr)
-    {
+  {
     this->WindowLevelWidget->SetSliceNode(nullptr);
     return;
-    }
+  }
 
   if (!this->WindowLevelWidget->GetRenderer())
-    {
-    vtkMRMLApplicationLogic *mrmlAppLogic = this->External->GetMRMLApplicationLogic();
+  {
+    vtkMRMLApplicationLogic* mrmlAppLogic = this->External->GetMRMLApplicationLogic();
     this->WindowLevelWidget->SetMRMLApplicationLogic(mrmlAppLogic);
     this->WindowLevelWidget->CreateDefaultRepresentation();
     this->WindowLevelWidget->SetRenderer(this->External->GetRenderer());
-    }
+  }
   this->WindowLevelWidget->SetSliceNode(this->GetSliceNode());
 }
 
@@ -181,30 +178,22 @@ void vtkMRMLScalarBarDisplayableManager::Create()
 void vtkMRMLScalarBarDisplayableManager::AdditionalInitializeStep()
 {
   // Build the initial crosshair representation
-  //this->Internal->BuildScalarBar();
+  // this->Internal->BuildScalarBar();
 }
 
 //---------------------------------------------------------------------------
-void vtkMRMLScalarBarDisplayableManager::OnMRMLSliceNodeModifiedEvent()
-{
-}
+void vtkMRMLScalarBarDisplayableManager::OnMRMLSliceNodeModifiedEvent() {}
 
 //---------------------------------------------------------------------------
-bool vtkMRMLScalarBarDisplayableManager::CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double &closestDistance2)
+bool vtkMRMLScalarBarDisplayableManager::CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& closestDistance2)
 {
   int eventid = eventData->GetType();
   if (eventid == vtkCommand::LeaveEvent)
-    {
+  {
     this->Internal->WindowLevelWidget->Leave(eventData);
-    }
+  }
 
-  // Find/create active widget
-  if (this->GetInteractionNode()->GetCurrentInteractionMode() == vtkMRMLInteractionNode::AdjustWindowLevel)
-    {
-    return this->Internal->WindowLevelWidget->CanProcessInteractionEvent(eventData, closestDistance2);
-    }
-
-  return false;
+  return this->Internal->WindowLevelWidget->CanProcessInteractionEvent(eventData, closestDistance2);
 }
 
 //---------------------------------------------------------------------------
@@ -212,10 +201,10 @@ bool vtkMRMLScalarBarDisplayableManager::ProcessInteractionEvent(vtkMRMLInteract
 {
   bool processed = this->Internal->WindowLevelWidget->ProcessInteractionEvent(eventData);
   if (this->Internal->WindowLevelWidget->GetNeedToRender())
-    {
+  {
     this->RequestRender();
     this->Internal->WindowLevelWidget->NeedToRenderOff();
-    }
+  }
   return processed;
 }
 
@@ -241,4 +230,10 @@ void vtkMRMLScalarBarDisplayableManager::SetAdjustBackgroundWindowLevelEnabled(b
 bool vtkMRMLScalarBarDisplayableManager::GetAdjustBackgroundWindowLevelEnabled()
 {
   return this->Internal->WindowLevelWidget->GetBackgroundVolumeEditable();
+}
+
+//---------------------------------------------------------------------------
+vtkMRMLWindowLevelWidget* vtkMRMLScalarBarDisplayableManager::GetWindowLevelWidget()
+{
+  return this->Internal->WindowLevelWidget;
 }

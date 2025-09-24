@@ -5,6 +5,7 @@
 #include "vtkMRMLAbstractLayoutNode.h"
 
 class vtkXMLDataElement;
+class vtkMRMLAbstractViewNode;
 
 /// \brief Node that describes the view layout of the application.
 ///
@@ -13,8 +14,8 @@ class vtkXMLDataElement;
 class VTK_MRML_EXPORT vtkMRMLLayoutNode : public vtkMRMLAbstractLayoutNode
 {
 public:
-  static vtkMRMLLayoutNode *New();
-  vtkTypeMacro(vtkMRMLLayoutNode,vtkMRMLAbstractLayoutNode);
+  static vtkMRMLLayoutNode* New();
+  vtkTypeMacro(vtkMRMLLayoutNode, vtkMRMLAbstractLayoutNode);
   vtkMRMLNode* CreateNodeInstance() override;
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -23,13 +24,16 @@ public:
   //--------------------------------------------------------------------------
 
   /// Set node attributes
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
 
   /// Copy the node's attributes to this object
-  void Copy(vtkMRMLNode *node) override;
+  void CopyContent(vtkMRMLNode* node, bool deepCopy = true) override;
+
+  /// \brief Reimplemented to reset maximized view node.
+  void Reset(vtkMRMLNode* defaultNode) override;
 
   /// Get/Set for Current layout
   vtkGetMacro(ViewArrangement, int);
@@ -68,44 +72,45 @@ public:
   vtkGetMacro(SecondaryPanelSize, int);
   vtkSetMacro(SecondaryPanelSize, int);
 
-  /// Set/Get the size of the last selected module
+  /// Set/Get the name of the last selected module
+  /// Note: this is property is no longer used and may be removed in the future.
   vtkGetStringMacro(SelectedModule);
   vtkSetStringMacro(SelectedModule);
 
+  /// Set/Get the N-th view that are temporarily shown maximized.
+  /// Only one view can be maximized in each viewport.
+  vtkMRMLAbstractViewNode* GetMaximizedViewNode(int maximizedViewNodeIndex);
+  int GetNumberOfMaximizedViewNodes();
+  void AddMaximizedViewNode(vtkMRMLAbstractViewNode* maximizedViewNode);
+  void RemoveMaximizedViewNode(vtkMRMLAbstractViewNode* maximizedViewNode);
+  void RemoveAllMaximizedViewNodes();
+  bool IsMaximizedViewNode(vtkMRMLAbstractViewNode* viewNode);
+
   /// Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "Layout";}
+  const char* GetNodeTagName() override { return "Layout"; }
 
   enum SlicerLayout
-    {
+  {
     SlicerLayoutInitialView = 0,
     SlicerLayoutDefaultView = 1,
     SlicerLayoutConventionalView = 2,
     SlicerLayoutFourUpView = 3,
     SlicerLayoutOneUp3DView = 4,
-    SlicerLayoutOneUpSliceView = 5, // XXX Slicer 4.5 - Remove this value. Here only for backward compatibility.
     SlicerLayoutOneUpRedSliceView = 6,
     SlicerLayoutOneUpYellowSliceView = 7,
     SlicerLayoutOneUpGreenSliceView = 8,
     SlicerLayoutTabbed3DView = 9,
     SlicerLayoutTabbedSliceView = 10,
-    SlicerLayoutLightboxView = 11, // XXX Slicer 4.5 - Remove this value. Here only for backward compatibility.
     SlicerLayoutCompareView = 12,
-    SlicerLayoutSideBySideLightboxView = 13, // XXX Slicer 4.5 - Remove this value. Here only for backward compatibility.
     SlicerLayoutNone = 14,
     SlicerLayoutDual3DView = 15,
     SlicerLayoutConventionalWidescreenView = 16,
     SlicerLayoutCompareWidescreenView = 17,
-    SlicerLayoutSingleLightboxView = 18, // XXX Slicer 4.5 - Remove this value. Here only for backward compatibility.
     SlicerLayoutTriple3DEndoscopyView = 19, // Up to here, all layouts are Slicer 3 compatible
-    SlicerLayout3DPlusLightboxView = 20, // XXX Slicer 4.5 - Remove this value. Here only for backward compatibility.
     SlicerLayoutThreeOverThreeView = 21,
     SlicerLayoutFourOverFourView = 22,
     SlicerLayoutCompareGridView = 23,
-    SlicerLayoutConventionalQuantitativeView = 24,
-    SlicerLayoutFourUpQuantitativeView = 25,
-    SlicerLayoutOneUpQuantitativeView = 26,
     SlicerLayoutTwoOverTwoView = 27,
-    SlicerLayoutThreeOverThreeQuantitativeView = 28,
     SlicerLayoutSideBySideView = 29,
     SlicerLayoutFourByThreeSliceView = 30,
     SlicerLayoutFourByTwoSliceView = 31,
@@ -119,12 +124,13 @@ public:
     SlicerLayoutOneUpPlotView = 39,
     SlicerLayoutThreeOverThreePlotView = 40,
     SlicerLayoutDicomBrowserView = 41,
+    SlicerLayoutDualMonitorFourUpView = 42,
     SlicerLayoutFinalView, // special value, must be placed after the last standard view (used for iterating through all the views)
 
     SlicerLayoutMaximizedView = 98,
     SlicerLayoutCustomView = 99,
     SlicerLayoutUserView = 100
-    };
+  };
 
   /// Adds a layout description with integer identifier
   /// "layout". Returns false without making any modifications if the
@@ -134,7 +140,11 @@ public:
   /// Modifies a layout description for integer identifier
   /// "layout". Returns false without making any modifications if the
   /// integer identifier "layout" has NOT already been added.
+  /// If layoutDescription is empty then the layout is removed.
   bool SetLayoutDescription(int layout, const char* layoutDescription);
+
+  /// Get list of all specified layout indices
+  std::vector<int> GetLayoutIndices();
 
   /// Query whether a layout exists with a specified integer identifier
   bool IsLayoutDescription(int layout);
@@ -142,6 +152,10 @@ public:
   /// Get the layout description associated with a specified integer
   /// identifier. The empty string is returned if the layout does not exist.
   std::string GetLayoutDescription(int layout);
+
+  /// Copy all layout descriptions from the specified layout node.
+  /// All the previous layout descriptions are replaced.
+  void CopyLayoutDescriptions(vtkMRMLLayoutNode* source);
 
   // Get the layout description currently displayed. Used
   // internally. This is XML description corresponding to the ivar
@@ -177,14 +191,14 @@ protected:
   int NumberOfCompareViewLightboxRows;
   int NumberOfCompareViewLightboxColumns;
 
-  char *SelectedModule;
+  char* SelectedModule;
 
   int MainPanelSize;
   int SecondaryPanelSize;
 
   std::map<int, std::string> Layouts;
-  char*                      CurrentLayoutDescription;
-  vtkXMLDataElement*         LayoutRootElement;
+  char* CurrentLayoutDescription;
+  vtkXMLDataElement* LayoutRootElement;
 };
 
 #endif

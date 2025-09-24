@@ -26,9 +26,11 @@
 // CTK includes
 #include <ctkPimpl.h>
 
+// qMRMLWidgets includes
+#include <qMRMLWidget.h>
+
 // Plots Widgets includes
 #include "qSlicerPlotsModuleWidgetsExport.h"
-#include "ui_qMRMLPlotSeriesPropertiesWidget.h"
 
 class qMRMLPlotSeriesPropertiesWidgetPrivate;
 class vtkMRMLNode;
@@ -48,7 +50,7 @@ public:
   ~qMRMLPlotSeriesPropertiesWidget() override;
 
   /// Get \a PlotViewNode
-  vtkMRMLPlotSeriesNode* mrmlPlotSeriesNode()const;
+  vtkMRMLPlotSeriesNode* mrmlPlotSeriesNode() const;
 
 public slots:
 

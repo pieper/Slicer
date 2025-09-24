@@ -25,6 +25,7 @@
 
 // MRML includes
 #include <vtkMRMLNode.h>
+#include <vtkMRMLSegmentationNode.h>
 
 // Segmentations includes
 #include "vtkSlicerSegmentationsModuleMRMLExport.h"
@@ -33,12 +34,10 @@
 
 class vtkMRMLScene;
 class vtkMRMLScalarVolumeNode;
-class vtkMRMLSegmentationNode;
 
-/// \ingroup Segmentations
 /// \brief Parameter set node for the segment editor widget
 ///
-/// Stores parameters for a segment editor widget (selected segmentation, segment, master volume),
+/// Stores parameters for a segment editor widget (selected segmentation, segment, source volume),
 /// and all the editor effects. The effect parameters are stored as attributes with names
 /// EffectName.ParameterName. If a parameter is changed, the node Modified event is not emitted,
 /// but the custom EffectParameterModified event that triggers update of the effect options widget only.
@@ -47,47 +46,27 @@ class VTK_SLICER_SEGMENTATIONS_MODULE_MRML_EXPORT vtkMRMLSegmentEditorNode : pub
 {
 public:
   enum
-    {
+  {
     /// Fired when an effect parameter is modified. As this node handles not only the effect parameters,
     /// but also the segment editor state, a full Modified event is an overkill, because it would trigger
     /// editor widget UI update, instead of simple update of the effect option widgets only.
     EffectParameterModified = 62200
-    };
-
-  /// These enums are kept here only for backward compatibility and will be removed in the future.
-  /// Use vtkMRMLSegmentationNode EditAllowed... enums instead.
-  enum
-    {
-    /// Modification is allowed everywhere.
-    PaintAllowedEverywhere=0,
-    /// Modification is allowed inside all segments.
-    PaintAllowedInsideAllSegments,
-    /// Modification is allowed inside all visible segments.
-    PaintAllowedInsideVisibleSegments,
-    /// Modification is allowed outside all segments.
-    PaintAllowedOutsideAllSegments,
-    /// Modification is allowed outside all visible segments.
-    PaintAllowedOutsideVisibleSegments,
-    /// Modification is allowed only over the area covered by segment specified in MaskSegmentID.
-    PaintAllowedInsideSingleSegment,
-    // Insert valid types above this line
-    PaintAllowed_Last
-    };
+  };
 
   enum
-    {
+  {
     /// Areas added to selected segment will be removed from all other segments. (no overlap)
-    OverwriteAllSegments=0,
+    OverwriteAllSegments = 0,
     /// Areas added to selected segment will be removed from all visible segments. (no overlap with visible, overlap possible with hidden)
     OverwriteVisibleSegments,
-    /// Areas added to selected segment will be removed from all other segments. (overlap with all other segments)
+    /// Areas added to selected segment will not be removed from any segments. (overlap with all other segments)
     OverwriteNone,
     // Insert valid types above this line
     Overwrite_Last
-    };
+  };
 
 public:
-  static vtkMRMLSegmentEditorNode *New();
+  static vtkMRMLSegmentEditorNode* New();
   vtkTypeMacro(vtkMRMLSegmentEditorNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -95,30 +74,33 @@ public:
   vtkMRMLNode* CreateNodeInstance() override;
 
   /// Set node attributes from name/value pairs
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
 
   /// Copy the node's attributes to this object
-  void Copy(vtkMRMLNode *node) override;
+  void Copy(vtkMRMLNode* node) override;
 
   /// Get unique node XML tag name (like Volume, Model)
   const char* GetNodeTagName() override { return "SegmentEditor"; }
 
-  //@{ 
+  //@{
   /// Convert between constants IDs to/from string
   static int ConvertOverwriteModeFromString(const char* modeStr);
   static const char* ConvertOverwriteModeToString(int mode);
-  static const char* ConvertMaskModeToString(int mode);
-  static int ConvertMaskModeFromString(const char* modeStr);
   //@}
 
 public:
+  //@{
+  /// Get/set source volume node.
+  /// Source volume node is used when editing requires an underlying image.
+  vtkMRMLScalarVolumeNode* GetSourceVolumeNode();
+  void SetAndObserveSourceVolumeNode(vtkMRMLScalarVolumeNode* node);
+  //@}
 
   //@{
-  /// Get/set master volume node.
-  /// Master volume node is used when editing requires an underlying image.
+  /// Deprecated. Use GetSourceVolumeNode/SetAndObserveSourceVolumeNode methods instead.
   vtkMRMLScalarVolumeNode* GetMasterVolumeNode();
   void SetAndObserveMasterVolumeNode(vtkMRMLScalarVolumeNode* node);
   //@}
@@ -144,35 +126,78 @@ public:
 
   //@{
   /// Defines which areas in the segmentation are editable.
-  /// Uses PaintAllowed_... constants.
-  /// \sa PaintAllowedEverywhere, PaintAllowedInsideAllSegments, PaintAllowedInsideVisibleSegments,  
-  /// PaintAllowedOutsideAllSegments, PaintAllowedOutsideVisibleSegments, PaintAllowedInsideSingleSegment
+  /// Uses vtkMRMLSegmentationNode::EditAllowed_... constants.
+  /// \sa vtkMRMLSegmentationNode::EditAllowedEverywhere, vtkMRMLSegmentationNode::EditAllowedInsideAllSegments,
+  /// vtkMRMLSegmentationNode::EditAllowedInsideVisibleSegments, vtkMRMLSegmentationNode::EditAllowedOutsideAllSegments,
+  /// vtkMRMLSegmentationNode::EditAllowedOutsideVisibleSegments, vtkMRMLSegmentationNode::EditAllowedInsideSingleSegment
   vtkSetMacro(MaskMode, int);
   vtkGetMacro(MaskMode, int);
   //@}
 
-  //@{ 
+  //@{
   /// Get/set mask segment ID.
-  /// Painting is only allowed within the area of the mask segment if mask mode is PaintAllowedInsideSingleSegment.
-  /// \sa PaintAllowedInsideSingleSegment, SetMaskMode
+  /// Painting is only allowed within the area of the mask segment if mask mode is EditAllowedInsideSingleSegment.
+  /// \sa vtkMRMLSegmentationNode::EditAllowedInsideSingleSegment, SetMaskMode
   vtkGetStringMacro(MaskSegmentID);
   vtkSetStringMacro(MaskSegmentID);
   //@}
 
-  //@{ 
-  /// Restrict editable area to regions where master volume intensity is in the specified range.
-  vtkBooleanMacro(MasterVolumeIntensityMask, bool);
-  vtkGetMacro(MasterVolumeIntensityMask, bool);
-  vtkSetMacro(MasterVolumeIntensityMask, bool);
+  //@{
+  /// Restrict editable area to regions where source volume intensity is in the specified range.
+  vtkBooleanMacro(SourceVolumeIntensityMask, bool);
+  vtkGetMacro(SourceVolumeIntensityMask, bool);
+  vtkSetMacro(SourceVolumeIntensityMask, bool);
   //@}
 
-  //@{ 
-  /// Get/set master volume intensity range for masking.
-  /// If MasterVolumeIntensityMask is enabled then only those areas are editable where
-  /// master volume voxels are in this intensity range.
-  /// \sa SetMasterVolumeIntensityMask()
-  vtkSetVector2Macro(MasterVolumeIntensityMaskRange, double);
-  vtkGetVector2Macro(MasterVolumeIntensityMaskRange, double);
+  //@{
+  /// Deprecated. Use Get/SetSourceVolumeIntensityMask method instead.
+  virtual void MasterVolumeIntensityMaskOn() { this->SourceVolumeIntensityMaskOn(); }
+  virtual void MasterVolumeIntensityMaskOff() { this->SourceVolumeIntensityMaskOff(); }
+  virtual void SetMasterVolumeIntensityMask(bool enable) { this->SetSourceVolumeIntensityMask(enable); }
+  virtual bool GetMasterVolumeIntensityMask() { return this->GetSourceVolumeIntensityMask(); }
+  //@}
+
+  //@{
+  /// Get/set source volume intensity range for masking.
+  /// If SourceVolumeIntensityMask is enabled then only those areas are editable where
+  /// source volume voxels are in this intensity range.
+  /// \sa SetSourceVolumeIntensityMask()
+  vtkSetVector2Macro(SourceVolumeIntensityMaskRange, double);
+  vtkGetVector2Macro(SourceVolumeIntensityMaskRange, double);
+  //@}
+
+  //@{
+  /// Deprecated. Use Get/SetSourceVolumeIntensityMaskRange method instead.
+  virtual void SetMasterVolumeIntensityMaskRange(double _arg1, double _arg2)
+  {
+    vtkWarningMacro("vtkMRMLSegmentEditorNode::SetMasterVolumeIntensityMaskRange() method is deprecated, use SetSourceVolumeIntensityMaskRange method instead");
+    this->SetSourceVolumeIntensityMaskRange(_arg1, _arg2);
+  }
+  void SetMasterVolumeIntensityMaskRange(const double _arg[2])
+  {
+    vtkWarningMacro("vtkMRMLSegmentEditorNode::SetMasterVolumeIntensityMaskRange() method is deprecated, use SetSourceVolumeIntensityMaskRange method instead");
+    this->SetSourceVolumeIntensityMaskRange(_arg);
+  }
+
+  virtual double* GetMasterVolumeIntensityMaskRange() VTK_SIZEHINT(2)
+  {
+    vtkWarningMacro("vtkMRMLSegmentEditorNode::GetMasterVolumeIntensityMaskRange() method is deprecated, use GetSourceVolumeIntensityMaskRange method instead");
+    return this->GetSourceVolumeIntensityMaskRange();
+  }
+
+  VTK_WRAPEXCLUDE
+  virtual void GetMasterVolumeIntensityMaskRange(double& _arg1, double& _arg2)
+  {
+    vtkWarningMacro("vtkMRMLSegmentEditorNode::GetMasterVolumeIntensityMaskRange() method is deprecated, use GetSourceVolumeIntensityMaskRange method instead");
+    this->GetSourceVolumeIntensityMaskRange(_arg1, _arg2);
+  }
+
+  VTK_WRAPEXCLUDE
+  virtual void GetMasterVolumeIntensityMaskRange(double _arg[2])
+  {
+    vtkWarningMacro("vtkMRMLSegmentEditorNode::GetMasterVolumeIntensityMaskRange() method is deprecated, use GetSourceVolumeIntensityMaskRange method instead");
+    this->GetSourceVolumeIntensityMaskRange(_arg);
+  }
   //@}
 
   //@{
@@ -189,18 +214,18 @@ protected:
   void operator=(const vtkMRMLSegmentEditorNode&);
 
   /// Selected segment ID
-  char* SelectedSegmentID{nullptr};
+  char* SelectedSegmentID{ nullptr };
 
   /// Active effect name
-  char* ActiveEffectName{nullptr};
+  char* ActiveEffectName{ nullptr };
 
-  int MaskMode{PaintAllowedEverywhere};
-  char* MaskSegmentID{nullptr};
+  int MaskMode{ vtkMRMLSegmentationNode::EditAllowedEverywhere };
+  char* MaskSegmentID{ nullptr };
 
-  int OverwriteMode{OverwriteAllSegments};
+  int OverwriteMode{ OverwriteAllSegments };
 
-  bool MasterVolumeIntensityMask{false};
-  double MasterVolumeIntensityMaskRange[2];
+  bool SourceVolumeIntensityMask{ false };
+  double SourceVolumeIntensityMaskRange[2];
 };
 
-#endif // __vtkMRMLSegmentEditorNode_h
+#endif

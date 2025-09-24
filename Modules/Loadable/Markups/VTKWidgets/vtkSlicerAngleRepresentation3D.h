@@ -25,7 +25,7 @@
  * for details.
  * @sa
  * vtkSlicerMarkupsWidgetRepresentation3D vtkMRMLAbstractWidget
-*/
+ */
 
 #ifndef vtkSlicerAngleRepresentation3D_h
 #define vtkSlicerAngleRepresentation3D_h
@@ -45,52 +45,52 @@ class VTK_SLICER_MARKUPS_MODULE_VTKWIDGETS_EXPORT vtkSlicerAngleRepresentation3D
 {
 public:
   /// Instantiate this class.
-  static vtkSlicerAngleRepresentation3D *New();
+  static vtkSlicerAngleRepresentation3D* New();
 
   /// Standard methods for instances of this class.
-  vtkTypeMacro(vtkSlicerAngleRepresentation3D,vtkSlicerMarkupsWidgetRepresentation3D);
+  vtkTypeMacro(vtkSlicerAngleRepresentation3D, vtkSlicerMarkupsWidgetRepresentation3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Subclasses of vtkMRMLAbstractWidgetRepresentation must implement these methods. These
   /// are the methods that the widget and its representation use to
   /// communicate with each other.
-  void UpdateFromMRML(vtkMRMLNode* caller, unsigned long event, void *callData=nullptr) override;
+  void UpdateFromMRMLInternal(vtkMRMLNode* caller, unsigned long event, void* callData = nullptr) override;
 
   /// Methods to make this class behave as a vtkProp.
-  void GetActors(vtkPropCollection *) override;
-  void ReleaseGraphicsResources(vtkWindow *) override;
-  int RenderOverlay(vtkViewport *viewport) override;
-  int RenderOpaqueGeometry(vtkViewport *viewport) override;
-  int RenderTranslucentPolygonalGeometry(vtkViewport *viewport) override;
+  void GetActors(vtkPropCollection*) override;
+  void ReleaseGraphicsResources(vtkWindow*) override;
+  int RenderOverlay(vtkViewport* viewport) override;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
 
   /// Return the bounds of the representation
-  double *GetBounds() override;
+  double* GetBounds() VTK_SIZEHINT(6) override;
 
   bool GetTransformationReferencePoint(double referencePointWorld[3]) override;
 
-  void CanInteract(vtkMRMLInteractionEventData* interactionEventData,
-    int &foundComponentType, int &foundComponentIndex, double &closestDistance2) override;
+  void CanInteract(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2) override;
 
 protected:
   vtkSlicerAngleRepresentation3D();
   ~vtkSlicerAngleRepresentation3D() override;
 
-  vtkSmartPointer<vtkPolyData>                Line;
-  vtkSmartPointer<vtkPolyDataMapper>    LineMapper;
-  vtkSmartPointer<vtkActor>             LineActor;
+  vtkSmartPointer<vtkPolyData> Line;
+  vtkSmartPointer<vtkArcSource> Arc;
+  vtkSmartPointer<vtkTubeFilter> TubeFilter;
+  vtkSmartPointer<vtkTubeFilter> ArcTubeFilter;
 
-  vtkSmartPointer<vtkArcSource>               Arc;
-  vtkSmartPointer<vtkPolyDataMapper>    ArcMapper;
-  vtkSmartPointer<vtkActor>             ArcActor;
+  vtkSmartPointer<vtkPolyDataMapper> LineMapper;
+  vtkSmartPointer<vtkPolyDataMapper> ArcMapper;
+  vtkSmartPointer<vtkPolyDataMapper> LineOccludedMapper;
+  vtkSmartPointer<vtkPolyDataMapper> ArcOccludedMapper;
 
-  vtkSmartPointer<vtkTubeFilter>              TubeFilter;
-  vtkSmartPointer<vtkTubeFilter>              ArcTubeFilter;
+  vtkSmartPointer<vtkActor> LineActor;
+  vtkSmartPointer<vtkActor> ArcActor;
+  vtkSmartPointer<vtkActor> LineOccludedActor;
+  vtkSmartPointer<vtkActor> ArcOccludedActor;
 
   void BuildArc();
-
-  // Update visibility of interaction handles for representation
-  void UpdateInteractionPipeline() override;
 
 private:
   vtkSlicerAngleRepresentation3D(const vtkSlicerAngleRepresentation3D&) = delete;

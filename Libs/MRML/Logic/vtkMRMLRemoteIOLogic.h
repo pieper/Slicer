@@ -34,24 +34,28 @@ class VTK_MRML_LOGIC_EXPORT vtkMRMLRemoteIOLogic : public vtkMRMLAbstractLogic
 {
 public:
   /// The Usual vtk class functions
-  static vtkMRMLRemoteIOLogic *New();
-  vtkTypeMacro(vtkMRMLRemoteIOLogic,vtkMRMLAbstractLogic);
+  static vtkMRMLRemoteIOLogic* New();
+  vtkTypeMacro(vtkMRMLRemoteIOLogic, vtkMRMLAbstractLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   void AddDataIOToScene();
   void RemoveDataIOFromScene();
 
   ///
-  /// Accessors for the comonents of the remote IO infrascucture
+  /// Accessors for the components of the remote IO infrastructure
   /// Note that the internal instances are created in the constructor
   /// and used when calling AddDataIOToScene
   /// and RemoveDataIOFromScene
   /// The Get methods can be used elsewhere, but the set methods
-  /// should only be used for debuggin
-  vtkGetObjectMacro (CacheManager, vtkCacheManager);
+  /// should only be used for debugging
+  vtkGetObjectMacro(CacheManager, vtkCacheManager);
   virtual void SetCacheManager(vtkCacheManager*);
-  vtkGetObjectMacro (DataIOManager, vtkDataIOManager);
+  vtkGetObjectMacro(DataIOManager, vtkDataIOManager);
   virtual void SetDataIOManager(vtkDataIOManager*);
+
+  /// CA Certificates path for https protocol.
+  vtkSetStringMacro(CaCertificatesPath);
+  vtkGetStringMacro(CaCertificatesPath);
 
 protected:
   vtkMRMLRemoteIOLogic();
@@ -60,8 +64,9 @@ protected:
   vtkMRMLRemoteIOLogic(const vtkMRMLRemoteIOLogic&);
   void operator=(const vtkMRMLRemoteIOLogic&);
 
-  vtkCacheManager *          CacheManager;
-  vtkDataIOManager *         DataIOManager;
+  vtkCacheManager* CacheManager{ nullptr };
+  vtkDataIOManager* DataIOManager{ nullptr };
+  char* CaCertificatesPath{ nullptr };
 };
 
 #endif

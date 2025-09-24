@@ -30,16 +30,13 @@ class vtkMRMLNode;
 class vtkMRMLSequenceNode;
 class vtkMRMLSequenceBrowserNode;
 
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_SEQUENCES_EXPORT qSlicerSequencesModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_SEQUENCES_EXPORT qSlicerSequencesModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerSequencesModuleWidget(QWidget *parent=0);
+  qSlicerSequencesModuleWidget(QWidget* parent = 0);
   ~qSlicerSequencesModuleWidget() override;
 
   /// Set up the GUI from mrml when entering
@@ -55,17 +52,11 @@ public:
 public slots:
 
   void setActiveSequenceNode(vtkMRMLSequenceNode* newActiveSequenceNode);
+
+protected slots:
+
   void onSequenceNodeSelectionChanged();
-  void onSequenceNodeModified();
-
-  void onIndexNameEdited();
-  void onIndexUnitEdited();
-  void onIndexTypeEdited(QString indexTypeString);
-
-  void onDataNodeEdited( int row, int column );
-
-  void onAddDataNodeButtonClicked();
-  void onRemoveDataNodeButtonClicked();
+  void onCurrentTabChanged();
 
   /// Respond to the scene events
   void onNodeAddedEvent(vtkObject* scene, vtkObject* node);
@@ -84,8 +75,6 @@ protected:
   QScopedPointer<qSlicerSequencesModuleWidgetPrivate> d_ptr;
 
   void setup() override;
-
-  void setEnableWidgets(bool enable);
 
 public slots:
   void setMRMLScene(vtkMRMLScene* scene) override;
@@ -113,9 +102,6 @@ protected slots:
   void synchronizedSequenceNodeSaveChangesStateChanged(int aState);
 
   void onProxyNodeChanged(vtkMRMLNode* newProxyNode);
-
-  void updateSequenceItemWidgetFromMRML();
-  void updateCandidateNodesWidgetFromMRML(bool forceUpdate = false);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerSequencesModuleWidget);

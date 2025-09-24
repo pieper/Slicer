@@ -64,6 +64,7 @@ function(SlicerReadApplicationProperties)
 
   set(properties
     APPLICATION_NAME
+    APPLICATION_DISPLAY_NAME
 
     VERSION_MAJOR
     VERSION_MINOR
@@ -93,4 +94,3 @@ function(SlicerReadApplicationProperties)
     set(${MY_PROPERTIES_VAR} ${properties} PARENT_SCOPE)
   endif()
 endfunction()
-

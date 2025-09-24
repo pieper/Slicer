@@ -8,7 +8,7 @@
 #
 
 #
-# When manually building extension on MacOSX, in addition to the usual configure
+# When manually building extension on macOS, in addition to the usual configure
 # option (CMAKE_BUILD_TYPE, ...), the developer is also expected to
 # configure it passing the variables:
 #   CMAKE_OSX_ARCHITECTURES
@@ -52,7 +52,7 @@
 #  ConfigurePrerequisites    | Slicer_USE_CONFIGUREPREREQUISITES
 # --------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 
 foreach(component NoExtensionSupport ConfigurePrerequisites)
   string(TOUPPER ${component} _COMPONENT)
@@ -83,11 +83,13 @@ endif()
 # --------------------------------------------------------------------------
 set(Slicer_CMAKE_DIR "@Slicer_CMAKE_DIR@")
 set(Slicer_EXTENSIONS_CMAKE_DIR "@Slicer_EXTENSIONS_CMAKE_DIR@")
+set(vtkAddon_CMAKE_DIR "@vtkAddon_CMAKE_DIR@")
 
 # Update CMAKE_MODULE_PATH
 set(CMAKE_MODULE_PATH
   ${Slicer_CMAKE_DIR}
   ${Slicer_EXTENSIONS_CMAKE_DIR}
+  ${vtkAddon_CMAKE_DIR}
   ${CMAKE_MODULE_PATH}
   )
 
@@ -118,11 +120,16 @@ set(Slicer_USE_SCIPY "@Slicer_USE_SCIPY@")
 set(Slicer_USE_PYTHONQT "@Slicer_USE_PYTHONQT@")
 set(Slicer_USE_QtTesting "@Slicer_USE_QtTesting@")
 set(Slicer_USE_SimpleITK "@Slicer_USE_SimpleITK@")
+set(Slicer_USE_TBB "@Slicer_USE_TBB@")
 set(Slicer_BUILD_BRAINSTOOLS "@Slicer_BUILD_BRAINSTOOLS@")
-set(Slicer_BUILD_CLI_SUPPORT "@Slicer_BUILD_CLI_SUPPORT@")
+# CLI support is always enabled and cannot be disabled.
+# This variable is retained only for backward compatibility with dependent projects (e.g., Slicer extensions).
+# For more details, see: https://github.com/Slicer/Slicer/issues/8477
+set(Slicer_BUILD_CLI_SUPPORT ON)
 set(Slicer_BUILD_DICOM_SUPPORT "@Slicer_BUILD_DICOM_SUPPORT@")
 set(Slicer_BUILD_DIFFUSION_SUPPORT "@Slicer_BUILD_DIFFUSION_SUPPORT@")
 set(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT "@Slicer_BUILD_EXTENSIONMANAGER_SUPPORT@")
+set(Slicer_BUILD_APPLICATIONUPDATE_SUPPORT "@Slicer_BUILD_APPLICATIONUPDATE_SUPPORT@")
 set(Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT "@Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT@")
 set(Slicer_BUILD_TESTING "@BUILD_TESTING@")
 set(Slicer_BUILD_WEBENGINE_SUPPORT "@Slicer_BUILD_WEBENGINE_SUPPORT@")
@@ -137,7 +144,6 @@ set(Slicer_LAUNCH_COMMAND "@Slicer_LAUNCH_COMMAND_CONFIG@")
 set(SEM_LAUNCH_COMMAND "@Slicer_LAUNCH_COMMAND_CONFIG@")
 
 # VCS commands
-set(Subversion_SVN_EXECUTABLE "@Subversion_SVN_EXECUTABLE@" CACHE FILEPATH "subversion command line client")
 set(GIT_EXECUTABLE "@GIT_EXECUTABLE@"  CACHE FILEPATH "Git command line client")
 
 # Slicer working copy Revision, URL and Root
@@ -164,10 +170,14 @@ set(Slicer_ARCHITECTURE "@Slicer_ARCHITECTURE@")
 # Slicer main application
 set(Slicer_MAIN_PROJECT "@Slicer_MAIN_PROJECT@")
 set(Slicer_MAIN_PROJECT_APPLICATION_NAME "@Slicer_MAIN_PROJECT_APPLICATION_NAME@")
+set(Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME "@Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME@")
 
 # License and Readme file
 set(Slicer_LICENSE_FILE "@Slicer_LICENSE_FILE_CONFIG@")
 set(Slicer_README_FILE "@Slicer_README_FILE_CONFIG@")
+
+# Path to qrcc.py script used in slicerFunctionAddPythonQtResources  CMake function
+set(Slicer_QRCC_SCRIPT "@Slicer_QRCC_SCRIPT@")
 
 # Test templates directory
 set(Slicer_CXX_MODULE_TEST_TEMPLATES_DIR "@Slicer_CXX_MODULE_TEST_TEMPLATES_DIR_CONFIG@")
@@ -179,7 +189,8 @@ set(Slicer_EXTENSION_GENERATE_CONFIG "@Slicer_EXTENSION_GENERATE_CONFIG@")
 # Path to extension CPack script
 set(Slicer_EXTENSION_CPACK "@Slicer_EXTENSION_CPACK_CONFIG@")
 set(Slicer_EXTENSION_CPACK_BUNDLE_FIXUP "@Slicer_EXTENSION_CPACK_BUNDLE_FIXUP_CONFIG@")
-set(Slicer_EXTENSIONS_DIRNAME "@Slicer_EXTENSIONS_DIRNAME@")
+set(Slicer_EXTENSIONS_DIRBASENAME "@Slicer_EXTENSIONS_DIRBASENAME@")
+set(Slicer_EXTENSIONS_DIRNAME "${Slicer_EXTENSIONS_DIRBASENAME}-${Slicer_REVISION}") # Deprecated - Remove in Slicer 5.5
 
 # Whether Slicer was built with modules and CLI support.
 set(Slicer_BUILD_CLI "@Slicer_BUILD_CLI@")
@@ -214,6 +225,7 @@ set(Slicer_Libs_VTK_WRAPPED_LIBRARIES "@Slicer_Libs_VTK_WRAPPED_LIBRARIES@")
 
 # Slicer VTK version
 set(Slicer_VTK_VERSION_MAJOR "@Slicer_VTK_VERSION_MAJOR@")
+set(Slicer_VTK_VERSION_MINOR "@Slicer_VTK_VERSION_MINOR@")
 
 # Slicer include directories for module
 @Slicer_INCLUDE_MODULE_DIRS_CONFIG@
@@ -226,6 +238,9 @@ set(Slicer_VTK_VERSION_MAJOR "@Slicer_VTK_VERSION_MAJOR@")
 
 # Slicer include directories for module Widget
 @Slicer_INCLUDE_MODULE_WIDGET_DIRS_CONFIG@
+
+# See vtkAddon/CMake/vtkMacroKitPythonWrap.cmake
+set(Slicer_VTK_WRAP_HIERARCHY_DIR "@Slicer_VTK_WRAP_HIERARCHY_DIR@")
 
 # Slicer VTK wrap hierarchy files
 @Slicer_WRAP_HIERARCHY_FILES_CONFIG@
@@ -316,6 +331,13 @@ set(Slicer_THIRDPARTY_BIN_DIR "@Slicer_THIRDPARTY_BIN_DIR@")
 set(Slicer_THIRDPARTY_LIB_DIR "@Slicer_THIRDPARTY_LIB_DIR@")
 set(Slicer_THIRDPARTY_SHARE_DIR  "@Slicer_THIRDPARTY_SHARE_DIR@")
 
+# Slicer Python version
+set(Slicer_REQUIRED_PYTHON_VERSION "@Slicer_REQUIRED_PYTHON_VERSION@")
+set(Slicer_REQUIRED_PYTHON_VERSION_MAJOR "@Slicer_REQUIRED_PYTHON_VERSION_MAJOR@")
+set(Slicer_REQUIRED_PYTHON_VERSION_MINOR "@Slicer_REQUIRED_PYTHON_VERSION_MINOR@")
+set(Slicer_REQUIRED_PYTHON_VERSION_PATCH "@Slicer_REQUIRED_PYTHON_VERSION_PATCH@")
+set(Slicer_REQUIRED_PYTHON_VERSION_DOT "@Slicer_REQUIRED_PYTHON_VERSION_DOT@")
+
 # Python stdlib and site-package sub-directories
 set(PYTHON_STDLIB_SUBDIR "@PYTHON_STDLIB_SUBDIR@")
 set(PYTHON_SITE_PACKAGES_SUBDIR "@PYTHON_SITE_PACKAGES_SUBDIR@")
@@ -383,7 +405,7 @@ set(Slicer_ExternalData_URL_TEMPLATES "@Slicer_ExternalData_URL_TEMPLATES@")
 # built as shared library, it's important to make sure that the project including
 # SlicerConfig.cmake (this file) is built against the same set of external projects if it applies.
 #
-# Let's consider the example of a project dependending on both VTK and Slicer. With the help of
+# Let's consider the example of a project depending on both VTK and Slicer. With the help of
 # the macro 'slicer_config_set_ep', the build system will check that the path of the already
 # defined VTK_DIR matches the VTK_DIR used to build Slicer.
 #
@@ -478,7 +500,7 @@ if(NOT ${Slicer_SKIP_CMAKE_SIZEOF_VOID_P_CHECK})
       "\tCMAKE_SIZEOF_VOID_P:${CMAKE_SIZEOF_VOID_P}\n"
       "Reconfigure '${CMAKE_PROJECT_NAME}' project using a compatible Generator.\n"
       "Generator used to configure Slicer was: ${Slicer_CMAKE_GENERATOR}\n"
-      "See http://www.cmake.org/cmake/help/v2.8.11/cmake.html#opt:-Ggenerator-name")
+      "See https://www.cmake.org/cmake/help/v2.8.11/cmake.html#opt:-Ggenerator-name")
   endif()
 endif()
 

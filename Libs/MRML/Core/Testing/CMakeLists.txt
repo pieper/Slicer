@@ -26,14 +26,12 @@ create_test_sourcelist(Tests ${KIT}CxxTests.cxx
   vtkMRMLDisplayableHierarchyNodeTest2.cxx
   vtkMRMLDisplayableHierarchyNodeTest3.cxx
   vtkMRMLDisplayableNodeTest1.cxx
-  vtkMRMLDoubleArrayNodeTest1.cxx
-  vtkMRMLFiducialListNodeTest1.cxx
-  vtkMRMLFiducialListStorageNodeTest1.cxx
   vtkMRMLGlyphableVolumeDisplayNodeTest1.cxx
   vtkMRMLGlyphableVolumeSliceDisplayNodeTest1.cxx
   vtkMRMLGridTransformNodeTest1.cxx
   vtkMRMLHierarchyNodeTest1.cxx
   vtkMRMLHierarchyNodeTest3.cxx
+  vtkMRMLI18NTest1.cxx
   vtkMRMLInteractionNodeTest1.cxx
   vtkMRMLLabelMapVolumeDisplayNodeTest1.cxx
   vtkMRMLLayoutNodeTest1.cxx
@@ -67,13 +65,6 @@ create_test_sourcelist(Tests ${KIT}CxxTests.cxx
   vtkMRMLSceneTest1.cxx
   vtkMRMLSceneTest2.cxx
   vtkMRMLSceneDefaultNodeTest.cxx
-  # Disabled scene view tests for now - they will be fixed in upcoming commit
-  # vtkMRMLSceneViewNodeImportSceneTest.cxx
-  # vtkMRMLSceneViewNodeEventsTest.cxx
-  # vtkMRMLSceneViewNodeRestoreSceneTest.cxx
-  # vtkMRMLSceneViewNodeStoreSceneTest.cxx
-  vtkMRMLSceneViewNodeTest1.cxx
-  vtkMRMLSceneViewStorageNodeTest1.cxx
   vtkMRMLScriptedModuleNodeTest1.cxx
   vtkMRMLSegmentationStorageNodeTest1.cxx
   vtkMRMLSelectionNodeTest1.cxx
@@ -83,6 +74,7 @@ create_test_sourcelist(Tests ${KIT}CxxTests.cxx
   vtkMRMLStorableNodeTest1.cxx
   vtkMRMLStorageNodeTest1.cxx
   vtkMRMLStreamingVolumeNodeTest1.cxx
+  vtkMRMLSubjectHierarchyNodeTest1.cxx
   vtkMRMLTableNodeTest1.cxx
   vtkMRMLTableStorageNodeTest1.cxx
   vtkMRMLTableSQLiteStorageNodeTest.cxx
@@ -101,6 +93,7 @@ create_test_sourcelist(Tests ${KIT}CxxTests.cxx
   vtkMRMLVectorVolumeNodeTest1.cxx
   vtkMRMLViewNodeTest1.cxx
   vtkMRMLVolumeArchetypeStorageNodeTest1.cxx
+  vtkMRMLVolumeSequenceStorageNodeTest1.cxx
   vtkMRMLVolumeDisplayNodeTest1.cxx
   vtkMRMLVolumeHeaderlessStorageNodeTest1.cxx
   vtkMRMLVolumeNodeEventsTest.cxx
@@ -130,8 +123,8 @@ simple_test( vtkMRMLBSplineTransformNodeTest1 )
 simple_test( vtkMRMLCameraNodeTest1 )
 simple_test( vtkMRMLClipModelsNodeTest1 )
 simple_test( vtkMRMLColorNodeTest1 )
-simple_test( vtkMRMLColorTableNodeTest1 ${TEMP})
-simple_test( vtkMRMLColorTableStorageNodeTest1 )
+simple_test( vtkMRMLColorTableNodeTest1 ${TEMP} ${CMAKE_CURRENT_SOURCE_DIR}/TestData)
+simple_test( vtkMRMLColorTableStorageNodeTest1 ${CMAKE_CURRENT_SOURCE_DIR}/NonLinearTransformScene.mrml)
 simple_test( vtkMRMLCoreTestingUtilitiesTest )
 simple_test( vtkMRMLCrosshairNodeTest1 )
 simple_test( vtkMRMLdGEMRICProceduralColorNodeTest1 )
@@ -144,9 +137,6 @@ simple_test( vtkMRMLDiffusionWeightedVolumeDisplayNodeTest1 )
 simple_test( vtkMRMLDiffusionWeightedVolumeNodeTest1 )
 simple_test( vtkMRMLDisplayableNodeTest1 )
 simple_test( vtkMRMLDisplayNodeTest1 )
-simple_test( vtkMRMLDoubleArrayNodeTest1 ${TEMP} ${DATAPATH})
-simple_test( vtkMRMLFiducialListNodeTest1 )
-simple_test( vtkMRMLFiducialListStorageNodeTest1 )
 simple_test( vtkMRMLGlyphableVolumeDisplayNodeTest1 )
 simple_test( vtkMRMLGlyphableVolumeSliceDisplayNodeTest1 )
 simple_test( vtkMRMLGridTransformNodeTest1 )
@@ -187,17 +177,11 @@ simple_test( vtkMRMLSceneImportIDModelHierarchyParentIDConflictTest )
 simple_test( vtkMRMLSceneIDTest )
 simple_test( vtkMRMLSceneTest1 )
 simple_test( vtkMRMLSceneDefaultNodeTest )
-# Disabled scene view tests for now - they will be fixed in upcoming commit
-# simple_test( vtkMRMLSceneViewNodeImportSceneTest )
-# simple_test( vtkMRMLSceneViewNodeEventsTest )
-# simple_test( vtkMRMLSceneViewNodeRestoreSceneTest )
-# simple_test( vtkMRMLSceneViewNodeStoreSceneTest )
-simple_test( vtkMRMLSceneViewNodeTest1 )
-simple_test( vtkMRMLSceneViewStorageNodeTest1 )
 simple_test( vtkMRMLSegmentationStorageNodeTest1
   DATA{${INPUT}/ITKSnapSegmentation.nii.gz}
   DATA{${INPUT}/OldSlicerSegmentation.seg.nrrd}
   DATA{${INPUT}/SlicerSegmentation.seg.nrrd}
+  ${TEMP}
   )
 simple_test( vtkMRMLSelectionNodeTest1 )
 simple_test( vtkMRMLSliceCompositeNodeTest1 )
@@ -217,12 +201,23 @@ simple_test( vtkMRMLTransformableNodeOnNodeReferenceAddTest )
 simple_test( vtkMRMLTransformableNodeTest1 )
 simple_test( vtkMRMLTransformDisplayNodeTest1 )
 simple_test( vtkMRMLTransformNodeTest1 )
-simple_test( vtkMRMLTransformStorageNodeTest1 )
+simple_test( vtkMRMLTransformStorageNodeTest1 ${TEMP})
 simple_test( vtkMRMLUnitNodeTest1 )
 simple_test( vtkMRMLVectorVolumeDisplayNodeTest1 )
 simple_test( vtkMRMLVectorVolumeNodeTest1 )
 simple_test( vtkMRMLViewNodeTest1 )
-simple_test( vtkMRMLVolumeArchetypeStorageNodeTest1 )
+simple_test( vtkMRMLVolumeArchetypeStorageNodeTest1  ${TEMP})
+simple_test( vtkMRMLVolumeSequenceStorageNodeTest1
+  ${TEMP}
+  DATA{${INPUT}/Volumes-DomainList.seq.nrrd}
+  DATA{${INPUT}/Volumes-ColorDomainList.seq.nrrd}
+  DATA{${INPUT}/Volumes-ListDomain-NonStandard.seq.nrrd}
+  DATA{${INPUT}/Volumes-VectorDomain-NonStandard.seq.nrrd}
+  DATA{${INPUT}/Volumes-CharVectorDomain-NonStandard.seq.nrrd}
+  DATA{${INPUT}/Volumes-DomainListColor-NonStandard.seq.nrrd}
+  DATA{${INPUT}/Transforms-VectorDomainList.seq.nrrd}
+  DATA{${INPUT}/Volumes-ListDomainListColor-Unsupported.seq.nrrd}
+)
 simple_test( vtkMRMLVolumeDisplayNodeTest1 )
 simple_test( vtkMRMLVolumeHeaderlessStorageNodeTest1 )
 simple_test( vtkMRMLVolumeNodeEventsTest )
@@ -237,7 +232,7 @@ simple_test( vtkThinPlateSplineTransformTest1 )
 function(SIMPLE_TEST_WITH_SCENE TESTNAME SCENEFILENAME)
   # Extract list of external files to download. Note that the ${_externalfiles} variable
   # is only specified to trigger download of data files used in the scene, the arguments
-  # are NOT explcitly used in ${KIT}CxxTests test executable.
+  # are NOT explicitly used in ${KIT}CxxTests test executable.
   string(REPLACE "|" ";" scenefilename_and_externalfiles ${SCENEFILENAME})
   list(GET scenefilename_and_externalfiles 0 SCENEFILENAME)
   list(LENGTH scenefilename_and_externalfiles _length)

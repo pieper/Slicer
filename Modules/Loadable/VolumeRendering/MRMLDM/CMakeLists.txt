@@ -13,6 +13,7 @@ set(${KIT}_INCLUDE_DIRECTORIES
 
 set(displayable_manager_SRCS
   vtkMRMLVolumeRenderingDisplayableManager.cxx
+  vtkMRMLVolumeRenderingWindowLevelWidget.cxx
   )
 
 SlicerConfigureDisplayableManagerObjectFactory(
@@ -29,12 +30,11 @@ set(${KIT}_SRCS
   )
 
 set(${KIT}_VTK_LIBRARIES
-  vtkRenderingVolume
-  vtkRenderingVolume${VTK_RENDERING_BACKEND}
+  VTK::RenderingVolume
+  VTK::RenderingVolumeOpenGL2
   )
 
 set(${KIT}_TARGET_LIBRARIES
-  vtkSlicerAnnotationsModuleMRML
   vtkSlicer${MODULE_NAME}ModuleLogic
   vtkSlicer${MODULE_NAME}ModuleMRML
   ${MRML_LIBRARIES}

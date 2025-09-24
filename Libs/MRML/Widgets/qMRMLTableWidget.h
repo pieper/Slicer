@@ -28,7 +28,7 @@
 class QResizeEvent;
 
 // qMRMLWidget includes
-#include "qMRMLWidget.h"
+#include "qMRMLAbstractViewWidget.h"
 class qMRMLTableViewControllerWidget;
 class qMRMLTableView;
 class qMRMLTableWidgetPrivate;
@@ -37,47 +37,41 @@ class qMRMLTableWidgetPrivate;
 class vtkMRMLTableViewNode;
 class vtkMRMLScene;
 
-/// \brief qMRMLTableWidget is the toplevel table widget that can be
+/// \brief qMRMLTableWidget is the top-level table widget that can be
 /// packed in a layout.
 ///
 /// qMRMLTableWidget provides tabling capabilities with a display
 /// canvas for the table and a controller widget to control the
 /// content and properties of the table.
-class QMRML_WIDGETS_EXPORT qMRMLTableWidget : public qMRMLWidget
+class QMRML_WIDGETS_EXPORT qMRMLTableWidget : public qMRMLAbstractViewWidget
 {
   Q_OBJECT
 public:
   /// Superclass typedef
-  typedef qMRMLWidget Superclass;
+  typedef qMRMLAbstractViewWidget Superclass;
 
   /// Constructors
   explicit qMRMLTableWidget(QWidget* parent = nullptr);
   ~qMRMLTableWidget() override;
 
-  /// Get the tabl node observed by view.
-  vtkMRMLTableViewNode* mrmlTableViewNode()const;
+  /// Get the table node observed by view.
+  Q_INVOKABLE vtkMRMLTableViewNode* mrmlTableViewNode() const;
+  Q_INVOKABLE vtkMRMLAbstractViewNode* mrmlAbstractViewNode() const override;
 
   /// Get a reference to the underlying Table View
-  /// Becareful if you change the TableView, you might
+  /// Be careful if you change the TableView, you might
   /// unsynchronize the view from the nodes/logics.
-  Q_INVOKABLE qMRMLTableView* tableView()const;
+  Q_INVOKABLE qMRMLTableView* tableView() const;
+  Q_INVOKABLE QWidget* viewWidget() const override;
 
   /// Get table view controller widget
-  Q_INVOKABLE qMRMLTableViewControllerWidget* tableController()const;
-
-  /// Get the view label for the table.
-  /// \sa qMRMLTableControllerWidget::tableViewLabel()
-  /// \sa setTableViewLabel()
-  QString viewLabel()const;
-
-  /// Set the view label for the table.
-  /// \sa qMRMLTableControllerWidget::tableViewLabel()
-  /// \sa tableViewLabel()
-  void setViewLabel(const QString& newTableViewLabel);
+  Q_INVOKABLE qMRMLTableViewControllerWidget* tableController() const;
+  Q_INVOKABLE qMRMLViewControllerBar* controllerWidget() const override;
 
 public slots:
   /// Set the current \a viewNode to observe
   void setMRMLTableViewNode(vtkMRMLTableViewNode* newTableViewNode);
+  void setMRMLAbstractViewNode(vtkMRMLAbstractViewNode* newTableViewNode) override;
 
 protected:
   QScopedPointer<qMRMLTableWidgetPrivate> d_ptr;

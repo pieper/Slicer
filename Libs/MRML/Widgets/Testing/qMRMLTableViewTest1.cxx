@@ -43,7 +43,7 @@
 #include <vtkTable.h>
 #include "qMRMLWidget.h"
 
-int qMRMLTableViewTest1( int argc, char * argv [] )
+int qMRMLTableViewTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -51,23 +51,23 @@ int qMRMLTableViewTest1( int argc, char * argv [] )
 
   // Create a table with some points in it...
   vtkNew<vtkTable> table;
-  vtkNew<vtkDoubleArray> arrX;
-  arrX->SetName("X Axis");
-  table->AddColumn(arrX.GetPointer());
-  vtkNew<vtkDoubleArray> arrY;
-  arrY->SetName("Y Axis");
-  table->AddColumn(arrY.GetPointer());
+  vtkNew<vtkDoubleArray> arrayX;
+  arrayX->SetName("X Axis");
+  table->AddColumn(arrayX.GetPointer());
+  vtkNew<vtkDoubleArray> arrayY;
+  arrayY->SetName("Y Axis");
+  table->AddColumn(arrayY.GetPointer());
   vtkNew<vtkDoubleArray> arrSum;
   arrSum->SetName("Sum");
   table->AddColumn(arrSum.GetPointer());
   int numPoints = 15;
   table->SetNumberOfRows(numPoints);
   for (int i = 0; i < numPoints; ++i)
-    {
-    table->SetValue(i, 0, i*0.5-10 );
-    table->SetValue(i, 1, i*1.2+12);
-    table->SetValue(i, 2, table->GetValue(i,0).ToDouble()+table->GetValue(i,1).ToDouble());
-    }
+  {
+    table->SetValue(i, 0, i * 0.5 - 10);
+    table->SetValue(i, 1, i * 1.2 + 12);
+    table->SetValue(i, 2, table->GetValue(i, 0).ToDouble() + table->GetValue(i, 1).ToDouble());
+  }
 
   vtkNew<vtkMRMLTableNode> tableNode;
   tableNode->SetAndObserveTable(table.GetPointer());
@@ -95,9 +95,9 @@ int qMRMLTableViewTest1( int argc, char * argv [] )
   parentWidget.raise();
 
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }

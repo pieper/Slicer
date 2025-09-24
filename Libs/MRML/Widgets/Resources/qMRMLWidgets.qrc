@@ -37,8 +37,11 @@
         <file>Icons/LayoutFourByTwoSliceView.png</file>
         <file>Icons/LayoutFiveByTwoSliceView.png</file>
         <file>Icons/LayoutThreeByThreeSliceView.png</file>
+        <file>Icons/LayoutDualMonitorFourUpView.png</file>
         <file>Icons/OrientationMarker.png</file>
         <file>Icons/Ruler.png</file>
+        <file>Icons/SliceIntersections.png</file>
+        <file>Icons/SliceIntersections.svg</file>
         <file>Icons/SliceMoreOptions.png</file>
         <file>Icons/SliceViewerBG.png</file>
         <file>Icons/SliceViewerFG.png</file>
@@ -82,6 +85,7 @@
         <file>Icons/ViewPitch.png</file>
         <file>Icons/ViewRock.png</file>
         <file>Icons/ViewRoll.png</file>
+        <file>Icons/ViewShadows.svg</file>
         <file>Icons/ViewSpin.png</file>
         <file>Icons/ViewStereo.png</file>
         <file>Icons/ViewYaw.png</file>
@@ -95,6 +99,8 @@
         <file>Icons/YellowSpaceNegative.png</file>
         <file>Icons/GreenSpacePositive.png</file>
         <file>Icons/GreenSpaceNegative.png</file>
+        <file>Icons/GreySpacePositive.png</file>
+        <file>Icons/GreySpaceNegative.png</file>
         <file>Icons/column_add.png</file>
         <file>Icons/column_delete.png</file>
         <file>Icons/column_header_lock.png</file>
@@ -156,5 +162,8 @@
         <file>Icons/LayoutThreeOverThreeQuantitativeView.png</file>
         <file>Icons/LayoutConvetionalQuantitativeView.png</file>
         <file>Icons/LayoutFourUpQuantitativeTableView.png</file>
+        <file>Icons/ViewMaximize.png</file>
+        <file>Icons/ViewRestore.png</file>
+        <file>Icons/SlabReconstruction.png</file>
     </qresource>
 </RCC>

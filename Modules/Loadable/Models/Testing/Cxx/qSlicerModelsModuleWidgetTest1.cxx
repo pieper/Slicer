@@ -28,6 +28,12 @@
 // Slicer includes
 #include <qSlicerAbstractModuleRepresentation.h>
 #include <qSlicerApplication.h>
+#include <qSlicerSubjectHierarchyAbstractPlugin.h>
+#include <qSlicerSubjectHierarchyPluginLogic.h>
+#include <qSlicerSubjectHierarchyPluginHandler.h>
+#include <vtkSlicerColorLogic.h>
+#include <vtkSlicerSubjectHierarchyModuleLogic.h>
+#include <vtkSlicerTerminologiesModuleLogic.h>
 
 // Volumes includes
 #include "qSlicerModelsModule.h"
@@ -43,54 +49,82 @@
 #include "qMRMLWidget.h"
 
 //-----------------------------------------------------------------------------
-int qSlicerModelsModuleWidgetTest1( int argc, char * argv[] )
+int qSlicerModelsModuleWidgetTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   qSlicerApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
 
   if (argc < 2)
-    {
-    std::cerr << "Usage: qSlicerModelsModuleWidgetTest1 sceneFilePath [-I]"
-              << std::endl;
+  {
+    std::cerr << "Usage: qSlicerModelsModuleWidgetTest1 sceneFilePath [-I]" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
-  qSlicerModelsModule module;
-  module.initialize(nullptr);
-
+  vtkSlicerApplicationLogic* appLogic = app.applicationLogic();
   vtkNew<vtkMRMLScene> scene;
 
-  vtkNew<vtkSlicerModelsLogic> modelsLogic;
-  modelsLogic->SetMRMLScene(scene.GetPointer());
+  // Add Color logic (used by Models logic)
+  vtkNew<vtkSlicerColorLogic> colorLogic;
+  colorLogic->SetMRMLScene(scene.GetPointer());
+  colorLogic->SetMRMLApplicationLogic(appLogic);
+  appLogic->SetModuleLogic("Colors", colorLogic);
 
+  // Set up Models module
+  qSlicerModelsModule module;
+  // Set path just to avoid a runtime warning at module initialization
+  module.setPath(app.slicerHome() + '/' + app.slicerSharePath() + "/qt-loadable-modules/Models");
+  module.setMRMLScene(scene.GetPointer());
+  module.initialize(appLogic);
+  vtkSlicerModelsLogic* modelsLogic = vtkSlicerModelsLogic::SafeDownCast(module.logic());
+
+  // Set up Terminologies logic (needed for subject hierarchy tree view color/terminology selector)
+  vtkNew<vtkSlicerTerminologiesModuleLogic> terminologiesLogic;
+  QString terminologiesSharePath = app.slicerHome() + '/' + app.slicerSharePath() + "/qt-loadable-modules/Terminologies";
+  terminologiesLogic->SetModuleShareDirectory(terminologiesSharePath.toStdString());
+  terminologiesLogic->SetMRMLScene(scene.GetPointer());
+  terminologiesLogic->SetMRMLApplicationLogic(appLogic);
+  appLogic->SetModuleLogic("Terminologies", terminologiesLogic);
+
+  // Set up Subject Hierarchy logic (needed for the subject hierarchy tree view)
+  vtkNew<vtkSlicerSubjectHierarchyModuleLogic> shModuleLogic;
+  shModuleLogic->SetMRMLScene(scene);
+  QScopedPointer<qSlicerSubjectHierarchyPluginLogic> pluginLogic(new qSlicerSubjectHierarchyPluginLogic());
+  pluginLogic->setMRMLScene(scene);
+  qSlicerSubjectHierarchyPluginHandler::instance()->setPluginLogic(pluginLogic.data());
+  qSlicerSubjectHierarchyPluginHandler::instance()->setMRMLScene(scene);
+
+  // Add a model node
   vtkMRMLModelNode* modelNode = modelsLogic->AddModel(argv[1]);
   if (!modelNode)
-    {
+  {
     std::cerr << "Bad model file:" << argv[1] << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
-  module.setMRMLScene(scene.GetPointer());
+  // Create a few folders
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+  vtkIdType folderA = shNode->CreateFolderItem(shNode->GetSceneItemID(), "Folder A");
+  vtkIdType folderB = shNode->CreateFolderItem(shNode->GetSceneItemID(), "Folder B");
+  vtkIdType folderC = shNode->CreateFolderItem(shNode->GetSceneItemID(), "Folder C");
+  shNode->SetItemParent(folderC, folderB);
 
-  vtkNew<vtkMRMLModelHierarchyNode> hierarchyNode;
-  scene->AddNode(hierarchyNode.GetPointer());
-
-  vtkNew<vtkMRMLModelHierarchyNode> hierarchyNode2;
-  scene->AddNode(hierarchyNode2.GetPointer());
-
-  vtkNew<vtkMRMLModelHierarchyNode> hierarchyNode3;
-  scene->AddNode(hierarchyNode3.GetPointer());
-
-  hierarchyNode3->SetParentNodeID(hierarchyNode2->GetID());
-
+  // Add more model nodes
   vtkMRMLModelNode* modelNode2 = modelsLogic->AddModel(argv[1]);
-  hierarchyNode3->SetAssociatedNodeID(modelNode2->GetID());
+  shNode->SetItemParent(shNode->GetItemByDataNode(modelNode2), folderC);
+
+  // Show module GUI
   dynamic_cast<QWidget*>(module.widgetRepresentation())->show();
 
+  // Add some more model nodes
+  modelsLogic->AddModel(argv[1]);
+  shNode->SetItemParent(shNode->GetItemByDataNode(modelNode2), folderA);
+
+  modelsLogic->AddModel(argv[1]);
+
   if (argc < 3 || QString(argv[2]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
   return app.exec();
 }

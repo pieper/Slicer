@@ -2,6 +2,9 @@
 set(APPLICATION_NAME
   Slicer
   )
+set(APPLICATION_DISPLAY_NAME
+  "3D Slicer"
+  )
 
 set(VERSION_MAJOR
   ${Slicer_VERSION_MAJOR}
@@ -17,7 +20,7 @@ set(DESCRIPTION_SUMMARY
   "Medical Visualization and Processing Environment for Research"
   )
 set(DESCRIPTION_FILE
-  ${Slicer_SOURCE_DIR}/README.txt
+  ${Slicer_SOURCE_DIR}/README.md
   )
 
 set(LAUNCHER_SPLASHSCREEN_FILE

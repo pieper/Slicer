@@ -32,6 +32,7 @@
 #include "qMRMLSegmentEditorWidgetPlugin.h"
 #include "qMRMLSegmentationDisplayNodeWidgetPlugin.h"
 #include "qMRMLSegmentationFileExportWidgetPlugin.h"
+#include "qMRMLSegmentationShow3DButtonPlugin.h"
 
 // \class Group the plugins in one library
 class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_PLUGINS_EXPORT qSlicerSegmentationsModuleWidgetsPlugin
@@ -44,17 +45,13 @@ class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_PLUGINS_EXPORT qSlicerSegmentationsM
 
 public:
   QList<QDesignerCustomWidgetInterface*> customWidgets() const override
-    {
-    QList<QDesignerCustomWidgetInterface *> plugins;
-    plugins << new qMRMLSegmentsTableViewPlugin
-      << new qMRMLSegmentationRepresentationsListViewPlugin
-      << new qMRMLSegmentationConversionParametersWidgetPlugin
-      << new qMRMLSegmentSelectorWidgetPlugin
-      << new qMRMLSegmentEditorWidgetPlugin
-      << new qMRMLSegmentationDisplayNodeWidgetPlugin
-      << new qMRMLSegmentationFileExportWidgetPlugin;
+  {
+    QList<QDesignerCustomWidgetInterface*> plugins;
+    plugins << new qMRMLSegmentsTableViewPlugin << new qMRMLSegmentationRepresentationsListViewPlugin << new qMRMLSegmentationConversionParametersWidgetPlugin
+            << new qMRMLSegmentSelectorWidgetPlugin << new qMRMLSegmentEditorWidgetPlugin << new qMRMLSegmentationDisplayNodeWidgetPlugin
+            << new qMRMLSegmentationFileExportWidgetPlugin << new qMRMLSegmentationShow3DButtonPlugin;
     return plugins;
-    }
+  }
 };
 
 #endif

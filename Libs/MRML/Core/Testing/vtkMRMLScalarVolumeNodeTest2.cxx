@@ -29,7 +29,7 @@
 #include <vtkImageData.h>
 #include <vtkNew.h>
 
-int vtkMRMLScalarVolumeNodeTest2(int , char * [] )
+int vtkMRMLScalarVolumeNodeTest2(int, char*[])
 {
   vtkNew<vtkImageData> imageData;
   imageData->SetDimensions(256, 256, 1);
@@ -38,16 +38,16 @@ int vtkMRMLScalarVolumeNodeTest2(int , char * [] )
   // Fill every entry of the image data with "0"
   int* dims = imageData->GetDimensions();
   for (int z = 0; z < dims[2]; z++)
-    {
+  {
     for (int y = 0; y < dims[1]; y++)
-      {
+    {
       for (int x = 0; x < dims[0]; x++)
-        {
-        vtkTypeUInt16* pixel = static_cast<vtkTypeUInt16*>(imageData->GetScalarPointer(x,y,z));
+      {
+        vtkTypeUInt16* pixel = static_cast<vtkTypeUInt16*>(imageData->GetScalarPointer(x, y, z));
         pixel[0] = 0;
-        }
       }
     }
+  }
 
   vtkNew<vtkMRMLScene> scene;
 

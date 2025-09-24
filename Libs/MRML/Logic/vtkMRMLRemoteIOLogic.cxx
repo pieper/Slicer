@@ -44,21 +44,20 @@ vtkMRMLRemoteIOLogic::vtkMRMLRemoteIOLogic()
 vtkMRMLRemoteIOLogic::~vtkMRMLRemoteIOLogic()
 {
   if (this->DataIOManager)
-    {
+  {
     this->DataIOManager->SetCacheManager(nullptr);
     this->SetDataIOManager(nullptr);
-    }
+  }
   if (this->CacheManager)
-    {
+  {
     this->SetCacheManager(nullptr);
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLRemoteIOLogic::PrintSelf(ostream& os, vtkIndent indent)
 {
   Superclass::PrintSelf(os, indent);
-
 }
 
 //-----------------------------------------------------------------------------
@@ -73,32 +72,33 @@ void vtkMRMLRemoteIOLogic::AddDataIOToScene()
   /// this method on a independent scene with separate remote io logic and data
   /// io manager logic
   if (!this->GetMRMLScene())
-    {
+  {
     vtkErrorMacro("Cannot add DataIOHandlers -- scene not set");
     return;
-    }
+  }
 
   // hook our cache and dataIO managers into the MRML scene
   this->CacheManager->SetMRMLScene(this->GetMRMLScene());
   this->GetMRMLScene()->SetCacheManager(this->CacheManager);
   this->GetMRMLScene()->SetDataIOManager(this->DataIOManager);
 
-  vtkCollection *uriHandlerCollection = vtkCollection::New();
+  vtkCollection* uriHandlerCollection = vtkCollection::New();
   // add some new handlers
-  this->GetMRMLScene()->SetURIHandlerCollection( uriHandlerCollection );
+  this->GetMRMLScene()->SetURIHandlerCollection(uriHandlerCollection);
   uriHandlerCollection->Delete();
 
 #if !defined(REMOTEIO_DEBUG)
   // register all existing uri handlers (add to collection)
-  vtkHTTPHandler *httpHandler = vtkHTTPHandler::New();
-  httpHandler->SetPrefix ( "http://" );
-  httpHandler->SetName ( "HTTPHandler");
+  vtkHTTPHandler* httpHandler = vtkHTTPHandler::New();
+  httpHandler->SetPrefix("http://");
+  httpHandler->SetName("HTTPHandler");
+  httpHandler->SetCaCertificatesPath(this->GetCaCertificatesPath());
   this->GetMRMLScene()->AddURIHandler(httpHandler);
   httpHandler->Delete();
 
-  //add something to hold user tags
-  vtkTagTable *userTagTable = vtkTagTable::New();
-  this->GetMRMLScene()->SetUserTagTable( userTagTable );
+  // add something to hold user tags
+  vtkTagTable* userTagTable = vtkTagTable::New();
+  this->GetMRMLScene()->SetUserTagTable(userTagTable);
   userTagTable->Delete();
 #endif
 }
@@ -106,10 +106,9 @@ void vtkMRMLRemoteIOLogic::AddDataIOToScene()
 void vtkMRMLRemoteIOLogic::RemoveDataIOFromScene()
 {
   if (!this->GetMRMLScene())
-    {
+  {
     vtkErrorMacro("Cannot remove DataIOHandlers -- scene not set");
-    }
+  }
   this->GetMRMLScene()->SetURIHandlerCollection(nullptr);
-  this->GetMRMLScene()->SetUserTagTable( nullptr );
+  this->GetMRMLScene()->SetUserTagTable(nullptr);
 }
-

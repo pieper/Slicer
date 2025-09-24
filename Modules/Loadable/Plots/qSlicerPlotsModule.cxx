@@ -33,7 +33,6 @@
 #include "qSlicerSubjectHierarchyPlotsPlugin.h"
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_ExtensionTemplate
 class qSlicerPlotsModulePrivate
 {
 public:
@@ -60,29 +59,28 @@ qSlicerPlotsModule::qSlicerPlotsModule(QObject* _parent)
 qSlicerPlotsModule::~qSlicerPlotsModule() = default;
 
 //-----------------------------------------------------------------------------
-QIcon qSlicerPlotsModule::icon()const
+QIcon qSlicerPlotsModule::icon() const
 {
   return QIcon(":/Icons/Plots.png");
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerPlotsModule::helpText()const
+QString qSlicerPlotsModule::helpText() const
 {
-  QString help =
-    "The Plots module allows editing properties of plots.<br>"
-    "For more information see the <a href=\"%1/Documentation/%2.%3/Developers/Plots\">oneline documentation</a>.<br>";
-  return help.arg(this->slicerWikiUrl()).arg(Slicer_VERSION_MAJOR).arg(Slicer_VERSION_MINOR);
+  QString help = tr("The Plots module allows editing properties of plots.") + QLatin1String("<br>");
+  help += this->defaultDocumentationLink();
+  return help;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerPlotsModule::acknowledgementText()const
+QString qSlicerPlotsModule::acknowledgementText() const
 {
-  return "This module was originally developed by Davide Punzo, Kapteyn Astronomical Institute,"
-    "and was supported through the European Research Council grant nr. 291531.";
+  return tr("This module was originally developed by Davide Punzo, Kapteyn Astronomical Institute,"
+            " and was supported through the European Research Council grant nr. 291531.");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerPlotsModule::contributors()const
+QStringList qSlicerPlotsModule::contributors() const
 {
   QStringList moduleContributors;
   moduleContributors << "Davide Punzo (Kapteyn Astronomical Institute)";
@@ -93,7 +91,7 @@ QStringList qSlicerPlotsModule::contributors()const
 //-----------------------------------------------------------------------------
 QStringList qSlicerPlotsModule::categories() const
 {
-  return QStringList() << "Informatics";
+  return QStringList() << qSlicerAbstractCoreModule::tr("Informatics");
 }
 
 //-----------------------------------------------------------------------------
@@ -115,9 +113,8 @@ void qSlicerPlotsModule::setup()
   qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(shPlugin);
 }
 
-
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation * qSlicerPlotsModule::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation* qSlicerPlotsModule::createWidgetRepresentation()
 {
   return new qSlicerPlotsModuleWidget;
 }

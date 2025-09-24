@@ -21,18 +21,18 @@ class vtkMRMLDiffusionTensorVolumeDisplayNode;
 
 /// \brief MRML node for representing diffusion weighted MRI volume.
 ///
-/// Diffusion Weigthed Volume nodes describe data sets that encode diffusion weigthed
+/// Diffusion Weighted Volume nodes describe data sets that encode diffusion weighted
 /// images. These images are the basis for computing the diffusion tensor.
-/// The node is a container for the necessary information to interpert DW images:
+/// The node is a container for the necessary information to interpret DW images:
 /// 1. Gradient information.
 /// 2. B value for each gradient.
 /// 3. Measurement frame that relates the coordinate system where the gradients are given
 ///  to RAS.
 class VTK_MRML_EXPORT vtkMRMLDiffusionTensorVolumeNode : public vtkMRMLDiffusionImageVolumeNode
 {
-  public:
-  static vtkMRMLDiffusionTensorVolumeNode *New();
-  vtkTypeMacro(vtkMRMLDiffusionTensorVolumeNode,vtkMRMLDiffusionImageVolumeNode);
+public:
+  static vtkMRMLDiffusionTensorVolumeNode* New();
+  vtkTypeMacro(vtkMRMLDiffusionTensorVolumeNode, vtkMRMLDiffusionImageVolumeNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
@@ -45,7 +45,7 @@ class VTK_MRML_EXPORT vtkMRMLDiffusionTensorVolumeNode : public vtkMRMLDiffusion
   vtkMRMLCopyContentDefaultMacro(vtkMRMLDiffusionTensorVolumeNode);
 
   /// Associated volume display MRML node
-  virtual void SetAndObserveDisplayNodeID(const char *DisplayNodeID);
+  virtual void SetAndObserveDisplayNodeID(const char* DisplayNodeID);
 
   /// Associated display MRML node
   virtual vtkMRMLDiffusionTensorVolumeDisplayNode* GetDiffusionTensorVolumeDisplayNode();
@@ -62,7 +62,6 @@ protected:
 
   vtkMRMLDiffusionTensorVolumeNode(const vtkMRMLDiffusionTensorVolumeNode&);
   void operator=(const vtkMRMLDiffusionTensorVolumeNode&);
-
 };
 
 #endif

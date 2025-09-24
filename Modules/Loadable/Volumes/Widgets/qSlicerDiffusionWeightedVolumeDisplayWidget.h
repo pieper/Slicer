@@ -39,7 +39,6 @@ class vtkMRMLDiffusionWeightedSliceDisplayNode;
 class vtkMRMLGlyphableVolumeSliceDisplayNode;
 class qSlicerDiffusionWeightedVolumeDisplayWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_Volumes
 class Q_SLICER_QTMODULES_VOLUMES_WIDGETS_EXPORT qSlicerDiffusionWeightedVolumeDisplayWidget : public qSlicerWidget
 {
   Q_OBJECT
@@ -50,9 +49,9 @@ public:
   explicit qSlicerDiffusionWeightedVolumeDisplayWidget(QWidget* parent = nullptr);
   ~qSlicerDiffusionWeightedVolumeDisplayWidget() override;
 
-  vtkMRMLDiffusionWeightedVolumeNode* volumeNode()const;
-  vtkMRMLDiffusionWeightedVolumeDisplayNode* volumeDisplayNode()const;
-  QList<vtkMRMLGlyphableVolumeSliceDisplayNode*> sliceDisplayNodes()const;
+  vtkMRMLDiffusionWeightedVolumeNode* volumeNode() const;
+  vtkMRMLDiffusionWeightedVolumeDisplayNode* volumeDisplayNode() const;
+  QList<vtkMRMLGlyphableVolumeSliceDisplayNode*> sliceDisplayNodes() const;
 public slots:
 
   /// Set the MRML node of interest

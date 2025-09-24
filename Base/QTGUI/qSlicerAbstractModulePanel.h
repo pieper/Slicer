@@ -28,11 +28,11 @@ class qSlicerAbstractCoreModule;
 class qSlicerAbstractModulePanelPrivate;
 class qSlicerModuleManager;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerAbstractModulePanel: public qSlicerWidget
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerAbstractModulePanel : public qSlicerWidget
 {
   Q_OBJECT
 public:
-  qSlicerAbstractModulePanel(QWidget* parent = nullptr, Qt::WindowFlags f = nullptr);
+  qSlicerAbstractModulePanel(QWidget* parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
   ~qSlicerAbstractModulePanel() override;
 
   void addModule(const QString& moduleName);
@@ -40,11 +40,11 @@ public:
   virtual void removeAllModules() = 0;
 
   Q_INVOKABLE void setModuleManager(qSlicerModuleManager* moduleManager);
-  Q_INVOKABLE qSlicerModuleManager* moduleManager()const;
+  Q_INVOKABLE qSlicerModuleManager* moduleManager() const;
 
 signals:
   void moduleAdded(const QString& moduleName);
-  //void moduleAboutToBeRemoved(const QString& moduleName);
+  // void moduleAboutToBeRemoved(const QString& moduleName);
   void moduleRemoved(const QString& moduleName);
 
 protected:

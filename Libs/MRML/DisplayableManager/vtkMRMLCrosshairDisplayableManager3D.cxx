@@ -45,13 +45,13 @@
 #include <cassert>
 
 //---------------------------------------------------------------------------
-vtkStandardNewMacro(vtkMRMLCrosshairDisplayableManager3D );
+vtkStandardNewMacro(vtkMRMLCrosshairDisplayableManager3D);
 
 //---------------------------------------------------------------------------
 class vtkMRMLCrosshairDisplayableManager3D::vtkInternal
 {
 public:
-  vtkInternal(vtkMRMLCrosshairDisplayableManager3D * external);
+  vtkInternal(vtkMRMLCrosshairDisplayableManager3D* external);
   ~vtkInternal();
 
   vtkObserverManager* GetMRMLNodesObserverManager();
@@ -73,14 +73,14 @@ public:
   int CrosshairMode;
   int CrosshairThickness;
   double CrosshairPosition[3];
+  float CrosshairColor[3];
 };
 
 //---------------------------------------------------------------------------
 // vtkInternal methods
 
 //---------------------------------------------------------------------------
-vtkMRMLCrosshairDisplayableManager3D::vtkInternal
-::vtkInternal(vtkMRMLCrosshairDisplayableManager3D * external)
+vtkMRMLCrosshairDisplayableManager3D::vtkInternal::vtkInternal(vtkMRMLCrosshairDisplayableManager3D* external)
 {
   this->External = external;
   this->CrosshairMode = -1;
@@ -88,11 +88,14 @@ vtkMRMLCrosshairDisplayableManager3D::vtkInternal
   this->CrosshairPosition[0] = 0.0;
   this->CrosshairPosition[1] = 0.0;
   this->CrosshairPosition[2] = 0.0;
+  this->CrosshairColor[0] = 1.0f;
+  this->CrosshairColor[1] = 0.8f;
+  this->CrosshairColor[2] = 0.1f;
 
   this->CrosshairRepresentation = vtkSmartPointer<vtkPointHandleRepresentation3D>::New();
   this->CrosshairRepresentation->SetPlaceFactor(2.5);
   this->CrosshairRepresentation->SetHandleSize(30);
-  this->CrosshairRepresentation->GetProperty()->SetColor(1.0, 0.8, 0.1);
+  this->CrosshairRepresentation->GetProperty()->SetColor(this->CrosshairColor[0], this->CrosshairColor[1], this->CrosshairColor[2]);
 
   this->CrosshairWidget = vtkSmartPointer<vtkHandleWidget>::New();
   this->CrosshairWidget->SetRepresentation(this->CrosshairRepresentation);
@@ -119,13 +122,12 @@ void vtkMRMLCrosshairDisplayableManager3D::vtkInternal::Modified()
 }
 
 //---------------------------------------------------------------------------
-void vtkMRMLCrosshairDisplayableManager3D::vtkInternal
-::SetCrosshairNode(vtkMRMLCrosshairNode* crosshairNode)
+void vtkMRMLCrosshairDisplayableManager3D::vtkInternal::SetCrosshairNode(vtkMRMLCrosshairNode* crosshairNode)
 {
   if (this->CrosshairNode == crosshairNode)
-    {
+  {
     return;
-    }
+  }
   vtkSetAndObserveMRMLNodeMacro(this->CrosshairNode, crosshairNode);
   this->BuildCrosshair();
 }
@@ -135,49 +137,49 @@ void vtkMRMLCrosshairDisplayableManager3D::vtkInternal::BuildCrosshair()
 {
   vtkRenderWindowInteractor* interactor = this->External->GetInteractor();
   if (!this->CrosshairNode.GetPointer() || !interactor)
-    {
+  {
     this->CrosshairWidget->SetInteractor(nullptr);
     return;
-    }
+  }
 
   this->CrosshairMode = this->CrosshairNode->GetCrosshairMode();
   if (this->CrosshairNode->GetCrosshairMode() == vtkMRMLCrosshairNode::NoCrosshair)
-    {
+  {
     this->CrosshairWidget->EnabledOff();
     return;
-    }
+  }
   this->CrosshairWidget->SetInteractor(interactor);
   this->CrosshairWidget->EnabledOn();
 
-  int *screenSize = interactor->GetRenderWindow()->GetScreenSize();
+  const int* screenSize = interactor->GetRenderWindow()->GetScreenSize();
 
   // Handle size is defined a percentage of screen size to accommodate high-DPI screens
   double handleSizeInScreenSizePercent = 5;
-  if (this->CrosshairNode->GetCrosshairMode() == vtkMRMLCrosshairNode::ShowSmallBasic
-    || this->CrosshairNode->GetCrosshairMode() == vtkMRMLCrosshairNode::ShowSmallIntersection)
-    {
+  if (this->CrosshairNode->GetCrosshairMode() == vtkMRMLCrosshairNode::ShowSmallBasic //
+      || this->CrosshairNode->GetCrosshairMode() == vtkMRMLCrosshairNode::ShowSmallIntersection)
+  {
     handleSizeInScreenSizePercent = 2.5;
-    }
-  double handleSizeInPixels = double(screenSize[1])*(0.01*handleSizeInScreenSizePercent);
+  }
+  double handleSizeInPixels = double(screenSize[1]) * (0.01 * handleSizeInScreenSizePercent);
   this->CrosshairRepresentation->SetHandleSize(handleSizeInPixels);
 
   // Line Width
   // Base width is 1 on a full HD display.
   double baseWidth = 1 + int(screenSize[1] / 1000);
   switch (this->CrosshairNode->GetCrosshairThickness())
-    {
-    case vtkMRMLCrosshairNode::Medium:
-      this->CrosshairRepresentation->GetProperty()->SetLineWidth(baseWidth * 2);
-      break;
-    case vtkMRMLCrosshairNode::Thick:
-      this->CrosshairRepresentation->GetProperty()->SetLineWidth(baseWidth * 3);
-      break;
+  {
+    case vtkMRMLCrosshairNode::Medium: this->CrosshairRepresentation->GetProperty()->SetLineWidth(baseWidth * 2); break;
+    case vtkMRMLCrosshairNode::Thick: this->CrosshairRepresentation->GetProperty()->SetLineWidth(baseWidth * 3); break;
     case vtkMRMLCrosshairNode::Fine:
-    default:
-      this->CrosshairRepresentation->GetProperty()->SetLineWidth(baseWidth);
-      break;
-    }
+    default: this->CrosshairRepresentation->GetProperty()->SetLineWidth(baseWidth); break;
+  }
   this->CrosshairThickness = this->CrosshairNode->GetCrosshairThickness();
+
+  auto color = this->CrosshairNode->GetCrosshairColor();
+  this->CrosshairRepresentation->GetProperty()->SetColor(color[0], color[1], color[2]);
+  this->CrosshairColor[0] = color[0];
+  this->CrosshairColor[1] = color[1];
+  this->CrosshairColor[2] = color[2];
 }
 
 //---------------------------------------------------------------------------
@@ -226,36 +228,39 @@ void vtkMRMLCrosshairDisplayableManager3D::UnobserveMRMLScene()
 void vtkMRMLCrosshairDisplayableManager3D::OnMRMLNodeModified(vtkMRMLNode* node)
 {
   if (!vtkMRMLCrosshairNode::SafeDownCast(node))
-    {
+  {
     return;
-    }
+  }
 
   // update the properties and style of the crosshair
-  if (this->Internal->CrosshairMode != this->Internal->CrosshairNode->GetCrosshairMode()
-    || (this->Internal->CrosshairMode != vtkMRMLCrosshairNode::NoCrosshair
-      && this->Internal->CrosshairThickness != this->Internal->CrosshairNode->GetCrosshairThickness()))
-    {
+  if (this->Internal->CrosshairMode != this->Internal->CrosshairNode->GetCrosshairMode()            //
+      || this->Internal->CrosshairColor[0] != this->Internal->CrosshairNode->GetCrosshairColor()[0] //
+      || this->Internal->CrosshairColor[1] != this->Internal->CrosshairNode->GetCrosshairColor()[1] //
+      || this->Internal->CrosshairColor[2] != this->Internal->CrosshairNode->GetCrosshairColor()[2] //
+      || (this->Internal->CrosshairMode != vtkMRMLCrosshairNode::NoCrosshair                        //
+          && this->Internal->CrosshairThickness != this->Internal->CrosshairNode->GetCrosshairThickness()))
+  {
     this->Internal->BuildCrosshair();
     this->RequestRender();
-    }
+  }
 
   // update the position of the actor
-  double *ras = this->Internal->CrosshairNode->GetCrosshairRAS();
-  double *lastRas = this->Internal->CrosshairPosition;
+  double* ras = this->Internal->CrosshairNode->GetCrosshairRAS();
+  double* lastRas = this->Internal->CrosshairPosition;
   double eps = 1.0e-12;
-  if (fabs(lastRas[0] - ras[0]) > eps
-    || fabs(lastRas[1] - ras[1]) > eps
-    || fabs(lastRas[2] - ras[2]) > eps)
-    {
+  if (fabs(lastRas[0] - ras[0]) > eps    //
+      || fabs(lastRas[1] - ras[1]) > eps //
+      || fabs(lastRas[2] - ras[2]) > eps)
+  {
     this->Internal->CrosshairRepresentation->SetWorldPosition(ras);
     lastRas[0] = ras[0];
     lastRas[1] = ras[1];
     lastRas[2] = ras[2];
     if (this->Internal->CrosshairMode != vtkMRMLCrosshairNode::NoCrosshair)
-      {
+    {
       this->RequestRender();
-      }
     }
+  }
 }
 
 //---------------------------------------------------------------------------

@@ -5,7 +5,13 @@ set(${KIT}Testing_ITK_COMPONENTS
   ITKCommon
   )
 find_package(ITK 4.6 COMPONENTS ${${KIT}Testing_ITK_COMPONENTS} REQUIRED)
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 list(APPEND ITK_LIBRARIES ITKFactoryRegistration)
 list(APPEND ITK_INCLUDE_DIRS
   ${ITKFactoryRegistration_INCLUDE_DIRS}
@@ -27,14 +33,10 @@ set(TEST_SOURCES
   qMRMLCheckableNodeComboBoxTest.cxx
   qMRMLCheckableNodeComboBoxTest1.cxx
   qMRMLClipNodeWidgetTest1.cxx
-  qMRMLColorListViewTest1.cxx
+  qMRMLCollapsibleButtonTest.cxx
   qMRMLColorModelTest.cxx
   qMRMLColorModelTest1.cxx
-  qMRMLColorPickerWidgetTest1.cxx
-  qMRMLColorPickerWidgetTest2.cxx
-  qMRMLColorPickerWidgetTest3.cxx
   qMRMLColorTableComboBoxTest1.cxx
-  qMRMLColorTableViewTest1.cxx
   qMRMLDisplayNodeViewComboBoxTest.cxx
   qMRMLDisplayNodeWidgetTest1.cxx
   qMRMLLayoutManagerTest1.cxx
@@ -76,6 +78,7 @@ set(TEST_SOURCES
   qMRMLSceneTransformModelTest2.cxx
   qMRMLSceneDisplayableModelTest1.cxx
   qMRMLSceneDisplayableModelTest2.cxx
+  qMRMLSegmentSelectorWidgetTest1.cxx
   qMRMLSliceControllerWidgetTest.cxx
   qMRMLSliceWidgetTest1.cxx
   qMRMLSliceWidgetTest2.cxx
@@ -91,7 +94,7 @@ set(TEST_SOURCES
   qMRMLVolumeThresholdWidgetTest2.cxx
   qMRMLWidgetsExportTest1.cxx
   qMRMLWindowLevelWidgetTest1.cxx
-  EXTRA_INCLUDE qMRMLWidgetCxxTests.h 
+  EXTRA_INCLUDE qMRMLWidgetCxxTests.h
   )
 
 if(Slicer_USE_QtTesting)
@@ -99,10 +102,7 @@ if(Slicer_USE_QtTesting)
     qMRMLCheckableNodeComboBoxEventTranslatorPlayerTest1.cxx
     qMRMLClipNodeWidgetEventTranslatorPlayerTest1.cxx
     qMRMLCollapsibleButtonEventTranslatorPlayerTest1.cxx
-    qMRMLColorListViewEventTranslatorPlayerTest1.cxx
-    qMRMLColorPickerWidgetEventTranslatorPlayerTest1.cxx
     qMRMLColorTableComboBoxEventTranslatorPlayerTest1.cxx
-    qMRMLColorTableViewEventTranslatorPlayerTest1.cxx
     qMRMLDisplayNodeWidgetEventTranslatorPlayerTest1.cxx
     qMRMLLabelComboBoxEventTranslatorPlayerTest1.cxx
     qMRMLLinearTransformSliderEventTranslatorPlayerTest1.cxx
@@ -137,6 +137,7 @@ set(Tests_UtilityFiles
 
 set(KIT_TEST_GENERATE_MOC_SRCS
   qMRMLCheckableNodeComboBoxTest.cxx
+  qMRMLCollapsibleButtonTest.cxx
   qMRMLColorModelTest.cxx
   qMRMLDisplayNodeViewComboBoxTest.cxx
   qMRMLLabelComboBoxTest.cxx
@@ -165,7 +166,7 @@ set(INPUT ${MRMLCore_SOURCE_DIR}/Testing/TestData)
 function(SCENE_TEST TESTNAME SCENEFILENAME)
   # Extract list of external files to download. Note that the ${_externalfiles} variable
   # is only specified to trigger download of data files used in the scene, the arguments
-  # are NOT explcitly used in ${KIT}CxxTests test executable.
+  # are NOT explicitly used in ${KIT}CxxTests test executable.
   string(REPLACE "|" ";" scenefilename_and_externalfiles ${SCENEFILENAME})
   list(GET scenefilename_and_externalfiles 0 SCENEFILENAME)
   list(LENGTH scenefilename_and_externalfiles _length)
@@ -188,14 +189,10 @@ endfunction()
 simple_test( qMRMLCheckableNodeComboBoxTest )
 simple_test( qMRMLCheckableNodeComboBoxTest1 )
 simple_test( qMRMLClipNodeWidgetTest1 )
-simple_test( qMRMLColorListViewTest1 )
+simple_test( qMRMLCollapsibleButtonTest)
 simple_test( qMRMLColorModelTest )
 simple_test( qMRMLColorModelTest1 )
-simple_test( qMRMLColorPickerWidgetTest1 )
-simple_test( qMRMLColorPickerWidgetTest2 )
-simple_test( qMRMLColorPickerWidgetTest3 )
 simple_test( qMRMLColorTableComboBoxTest1 )
-simple_test( qMRMLColorTableViewTest1 )
 simple_test( qMRMLDisplayNodeViewComboBoxTest )
 simple_test( qMRMLDisplayNodeWidgetTest1 )
 simple_test( qMRMLLayoutManagerTest1 )
@@ -244,7 +241,7 @@ simple_test( qMRMLTransformSlidersTest1 )
 simple_test( qMRMLThreeDViewTest1 )
 simple_test( qMRMLThreeDWidgetTest1 )
 SCENE_TEST(  qMRMLTreeViewTest1 vol_and_cube.mrml|DATA{${INPUT}/fixed.nrrd,cube.vtk} )
-SCENE_TEST(  qMRMLUtf8Test1 cube-utf8.mrml|DATA{${INPUT}/fixed.nrrd )
+SCENE_TEST(  qMRMLUtf8Test1 cube-utf8.mrml|DATA{${INPUT}/fixed.nrrd} )
 simple_test( qMRMLUtilsTest1 )
 simple_test( qMRMLVolumeInfoWidgetTest1 )
 SCENE_TEST( qMRMLVolumeThresholdWidgetTest1 vol_and_cube.mrml|DATA{${INPUT}/fixed.nrrd,cube.vtk})
@@ -259,7 +256,7 @@ if(Slicer_USE_QtTesting)
 
       # Extract list of external files to download. Note that the ${_externalfiles} variable
       # is only specified to trigger download of data files used in the scene, the arguments
-      # are NOT explcitly used in ${KIT}CxxTests test executable.
+      # are NOT explicitly used in ${KIT}CxxTests test executable.
       string(REPLACE "|" ";" scenefilename_and_externalfiles ${SCENEFILENAME})
       list(GET scenefilename_and_externalfiles 0 SCENEFILENAME)
       list(LENGTH scenefilename_and_externalfiles _length)
@@ -285,10 +282,7 @@ if(Slicer_USE_QtTesting)
   QtTesting_TEST(qMRMLCheckableNodeComboBoxEventTranslatorPlayerTest1)
   QtTesting_TEST(qMRMLClipNodeWidgetEventTranslatorPlayerTest1)
   QtTesting_TEST(qMRMLCollapsibleButtonEventTranslatorPlayerTest1)
-  QtTesting_TEST(qMRMLColorListViewEventTranslatorPlayerTest1)
-  QtTesting_TEST(qMRMLColorPickerWidgetEventTranslatorPlayerTest1)
   QtTesting_TEST(qMRMLColorTableComboBoxEventTranslatorPlayerTest1)
-  QtTesting_TEST(qMRMLColorTableViewEventTranslatorPlayerTest1)
   QtTesting_TEST(qMRMLDisplayNodeWidgetEventTranslatorPlayerTest1)
   QtTesting_TEST(qMRMLLabelComboBoxEventTranslatorPlayerTest1)
   QtTesting_TEST(qMRMLLinearTransformSliderEventTranslatorPlayerTest1)

@@ -31,16 +31,14 @@ class qMRMLThreeDViewControllerWidgetPrivate;
 class qMRMLThreeDView;
 
 // MRML includes
-class vtkMRMLViewNode;
 
 // MRMLLogic includes
 class vtkMRMLViewLogic;
+class vtkMRMLViewNode;
 
 // VTK includes
-class vtkCollection;
 
-class QMRML_WIDGETS_EXPORT qMRMLThreeDViewControllerWidget
-  : public qMRMLViewControllerBar
+class QMRML_WIDGETS_EXPORT qMRMLThreeDViewControllerWidget : public qMRMLViewControllerBar
 {
   Q_OBJECT
   QVTK_OBJECT
@@ -52,41 +50,31 @@ public:
   explicit qMRMLThreeDViewControllerWidget(QWidget* parent = nullptr);
   ~qMRMLThreeDViewControllerWidget() override;
 
-  /// Set the label for the 3D view (abbreviation for the view
-  /// name)
-  void setViewLabel(const QString& newViewLabel);
-
-  /// Get the label for the view (abbreviation for the view name)
-  QString viewLabel()const;
-
-  /// Set the color for the view
-  void setViewColor(const QColor& newViewColor);
-
-  /// Get the color for the view
-  QColor viewColor()const;
-
   void setQuadBufferStereoSupportEnabled(bool value);
 
   /// Get ViewLogic
-  vtkMRMLViewLogic* viewLogic()const;
+  vtkMRMLViewLogic* viewLogic() const;
 
   /// Set \a newViewLogic
   /// Use if two instances of the controller need to observe the same logic.
   void setViewLogic(vtkMRMLViewLogic* newViewLogic);
 
-  /// TODO:
-  /// Ideally the view logics should be retrieved by the viewLogic
-  /// until then, we manually set them.
-  void setViewLogics(vtkCollection* logics);
+  /// Set the label for the table view (abbreviation for the view name)
+  void setViewLabel(const QString& newViewLabel);
+
+  /// Get the label for the view (abbreviation for the view name)
+  QString viewLabel() const;
+
+  /// Get 3D view node associated with this ThreeDViewController.
+  Q_INVOKABLE vtkMRMLViewNode* mrmlThreeDViewNode() const;
 
 public slots:
 
   void setMRMLScene(vtkMRMLScene* newScene) override;
 
   void setThreeDView(qMRMLThreeDView* threeDView);
-  void setMRMLViewNode(vtkMRMLViewNode* viewNode);
 
-  /// Link/Unlink the view controls and the cameras across all viewes
+  /// Link/Unlink the view controls and the cameras across all views
   void setViewLink(bool linked);
 
   void setOrthographicModeEnabled(bool enabled);
@@ -122,8 +110,10 @@ public slots:
   void setWhiteBackground();
 
   /// If the second color is not set, the first color is used.
-  void setBackgroundColor(const QColor& color,
-                          QColor color2 = QColor());
+  void setBackgroundColor(const QColor& color, QColor color2 = QColor());
+
+  /// Utility function to change color of the box
+  void setBoxColor(const QColor& color);
 
   void setStereoType(int newStereoType);
   void setOrientationMarkerType(int type);
@@ -131,9 +121,22 @@ public slots:
   void setRulerType(int type);
   void setRulerColor(int color);
 
+  void setShadowsVisibility(bool visibility);
+  void setAmbientShadowsSizeScale(double value);
+  void setAmbientShadowsVolumeOpacityThresholdPercent(double opacityPercent);
+  void setAmbientShadowsIntensityScale(double value);
+  void setAmbientShadowsIntensityShift(double value);
+
+  /// Reset ambient shadows settings to default values
+  void resetAmbientShadows();
+
 protected slots:
-  void updateWidgetFromMRMLView();
+  void updateWidgetFromMRMLViewLogic();
+  void updateWidgetFromMRMLView() override;
   void updateViewFromMRMLCamera();
+
+protected:
+  void setMRMLViewNode(vtkMRMLAbstractViewNode* viewNode) override;
 
 private:
   Q_DECLARE_PRIVATE(qMRMLThreeDViewControllerWidget);

@@ -24,8 +24,6 @@
 // Slicer includes
 #include "qSlicerLoadableModule.h"
 
-#include "vtkSlicerConfigure.h" // For Slicer_HAVE_QT5
-
 #include "qSlicerSequencesModuleExport.h"
 
 class qMRMLSequenceBrowserToolBar;
@@ -33,19 +31,13 @@ class vtkMRMLScene;
 class vtkMRMLSequenceBrowserNode;
 class vtkObject;
 
-
 class qSlicerSequencesModulePrivate;
 
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_SEQUENCES_EXPORT
-qSlicerSequencesModule
-  : public qSlicerLoadableModule
+class Q_SLICER_QTMODULES_SEQUENCES_EXPORT qSlicerSequencesModule : public qSlicerLoadableModule
 {
   Q_OBJECT
   QVTK_OBJECT;
-#ifdef Slicer_HAVE_QT5
   Q_PLUGIN_METADATA(IID "org.slicer.modules.loadable.qSlicerLoadableModule/1.0");
-#endif
   Q_INTERFACES(qSlicerLoadableModule);
 
   /// Visibility of the sequence browser toolbar
@@ -53,24 +45,23 @@ qSlicerSequencesModule
   Q_PROPERTY(bool autoShowToolBar READ autoShowToolBar WRITE setAutoShowToolBar)
 
 public:
-
   typedef qSlicerLoadableModule Superclass;
-  explicit qSlicerSequencesModule(QObject *parent=0);
+  explicit qSlicerSequencesModule(QObject* parent = 0);
   ~qSlicerSequencesModule() override;
 
-  qSlicerGetTitleMacro(QTMODULE_TITLE);
+  qSlicerGetTitleMacro(tr("Sequences"));
 
-  QString helpText()const override;
-  QString acknowledgementText()const override;
-  QStringList contributors()const override;
+  QString helpText() const override;
+  QString acknowledgementText() const override;
+  QStringList contributors() const override;
 
-  QIcon icon()const override;
+  QIcon icon() const override;
 
-  QStringList categories()const override;
+  QStringList categories() const override;
   QStringList dependencies() const override;
 
   /// Specify editable node types
-  QStringList associatedNodeTypes()const override;
+  QStringList associatedNodeTypes() const override;
 
   /// Indicates that sequence browser toolbar should be showed when a new sequence is loaded.
   /// Adding a new sequence browser node to the scene does not show the toolbar automatically
@@ -84,12 +75,11 @@ public:
   Q_INVOKABLE static bool showSequenceBrowser(vtkMRMLSequenceBrowserNode* browserNode);
 
 protected:
-
   /// Initialize the module. Register the volumes reader/writer
   void setup() override;
 
   /// Create and return the widget representation associated to this module
-  qSlicerAbstractModuleRepresentation * createWidgetRepresentation() override;
+  qSlicerAbstractModuleRepresentation* createWidgetRepresentation() override;
 
   /// Create and return the logic associated to this module
   vtkMRMLAbstractLogic* createLogic() override;
@@ -111,7 +101,6 @@ protected:
 private:
   Q_DECLARE_PRIVATE(qSlicerSequencesModule);
   Q_DISABLE_COPY(qSlicerSequencesModule);
-
 };
 
 #endif

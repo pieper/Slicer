@@ -44,7 +44,7 @@ qMRMLSortFilterHierarchyProxyModelPrivate::qMRMLSortFilterHierarchyProxyModelPri
 // qMRMLSortFilterHierarchyProxyModel
 
 //------------------------------------------------------------------------------
-qMRMLSortFilterHierarchyProxyModel::qMRMLSortFilterHierarchyProxyModel(QObject *vparent)
+qMRMLSortFilterHierarchyProxyModel::qMRMLSortFilterHierarchyProxyModel(QObject* vparent)
   : qMRMLSortFilterProxyModel(vparent)
   , d_ptr(new qMRMLSortFilterHierarchyProxyModelPrivate)
 {
@@ -54,26 +54,25 @@ qMRMLSortFilterHierarchyProxyModel::qMRMLSortFilterHierarchyProxyModel(QObject *
 qMRMLSortFilterHierarchyProxyModel::~qMRMLSortFilterHierarchyProxyModel() = default;
 
 //------------------------------------------------------------------------------
-qMRMLSortFilterProxyModel::AcceptType qMRMLSortFilterHierarchyProxyModel
-::filterAcceptsNode(vtkMRMLNode* node)const
+qMRMLSortFilterProxyModel::AcceptType qMRMLSortFilterHierarchyProxyModel::filterAcceptsNode(vtkMRMLNode* node) const
 {
-  //Q_D(const qMRMLSortFilterHierarchyProxyModel);
+  // Q_D(const qMRMLSortFilterHierarchyProxyModel);
   AcceptType res = this->Superclass::filterAcceptsNode(node);
   if (res == Accept || res == AcceptButPotentiallyRejectable)
-    {
+  {
     return res;
-    }
+  }
   vtkMRMLHierarchyNode* hNode = vtkMRMLHierarchyNode::SafeDownCast(node);
   if (!hNode)
-    {
+  {
     return res;
-    }
+  }
   // Don't show vtkMRMLHierarchyNode if they are tied to a vtkMRMLModelNode
   // The only vtkMRMLHierarchyNode to display are the ones who reference other
   // vtkMRMLHierarchyNode (tree parent) or empty (tree parent to be)
   if (hNode->GetAssociatedNode())
-    {
+  {
     return RejectButPotentiallyAcceptable;
-    }
+  }
   return res;
 }

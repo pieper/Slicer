@@ -28,17 +28,15 @@
 #include "vtkMRMLViewNode.h"
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_VolumeRendering
-class qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate
-  : public Ui_qSlicerCPURayCastVolumeRenderingPropertiesWidget
+class qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate : public Ui_qSlicerCPURayCastVolumeRenderingPropertiesWidget
 {
   Q_DECLARE_PUBLIC(qSlicerCPURayCastVolumeRenderingPropertiesWidget);
+
 protected:
   qSlicerCPURayCastVolumeRenderingPropertiesWidget* const q_ptr;
 
 public:
-  qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate(
-    qSlicerCPURayCastVolumeRenderingPropertiesWidget& object);
+  qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate(qSlicerCPURayCastVolumeRenderingPropertiesWidget& object);
   virtual ~qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate();
 
   virtual void setupUi(qSlicerCPURayCastVolumeRenderingPropertiesWidget*);
@@ -46,63 +44,50 @@ public:
 };
 
 // --------------------------------------------------------------------------
-qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate
-::qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate(
-  qSlicerCPURayCastVolumeRenderingPropertiesWidget& object)
+qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate::qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate(qSlicerCPURayCastVolumeRenderingPropertiesWidget& object)
   : q_ptr(&object)
 {
 }
 
 // --------------------------------------------------------------------------
-qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate::
-~qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate() = default;
+qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate::~qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate() = default;
 
 // --------------------------------------------------------------------------
-void qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate
-::setupUi(qSlicerCPURayCastVolumeRenderingPropertiesWidget* widget)
+void qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate::setupUi(qSlicerCPURayCastVolumeRenderingPropertiesWidget* widget)
 {
   this->Ui_qSlicerCPURayCastVolumeRenderingPropertiesWidget::setupUi(widget);
   this->populateRenderingTechniqueComboBox();
-  QObject::connect(this->RenderingTechniqueComboBox, SIGNAL(currentIndexChanged(int)),
-                   widget, SLOT(setRenderingTechnique(int)));
+  QObject::connect(this->RenderingTechniqueComboBox, SIGNAL(currentIndexChanged(int)), widget, SLOT(setRenderingTechnique(int)));
 }
 
 // --------------------------------------------------------------------------
-void qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate
-::populateRenderingTechniqueComboBox()
+void qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate::populateRenderingTechniqueComboBox()
 {
   this->RenderingTechniqueComboBox->clear();
-  this->RenderingTechniqueComboBox->addItem(
-    "Composite With Shading", vtkMRMLViewNode::Composite);
-  this->RenderingTechniqueComboBox->addItem(
-    "Maximum Intensity Projection", vtkMRMLViewNode::MaximumIntensityProjection);
-  this->RenderingTechniqueComboBox->addItem(
-    "Minimum Intensity Projection", vtkMRMLViewNode::MinimumIntensityProjection);
+  this->RenderingTechniqueComboBox->addItem(qSlicerCPURayCastVolumeRenderingPropertiesWidget::tr("Composite With Shading"), vtkMRMLViewNode::Composite);
+  this->RenderingTechniqueComboBox->addItem(qSlicerCPURayCastVolumeRenderingPropertiesWidget::tr("Maximum Intensity Projection"), vtkMRMLViewNode::MaximumIntensityProjection);
+  this->RenderingTechniqueComboBox->addItem(qSlicerCPURayCastVolumeRenderingPropertiesWidget::tr("Minimum Intensity Projection"), vtkMRMLViewNode::MinimumIntensityProjection);
 }
 
 //-----------------------------------------------------------------------------
 // qSlicerCPURayCastVolumeRenderingPropertiesWidget methods
 
 //-----------------------------------------------------------------------------
-qSlicerCPURayCastVolumeRenderingPropertiesWidget
-::qSlicerCPURayCastVolumeRenderingPropertiesWidget(QWidget* parentWidget)
-  : Superclass( parentWidget )
-  , d_ptr( new qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate(*this) )
+qSlicerCPURayCastVolumeRenderingPropertiesWidget::qSlicerCPURayCastVolumeRenderingPropertiesWidget(QWidget* parentWidget)
+  : Superclass(parentWidget)
+  , d_ptr(new qSlicerCPURayCastVolumeRenderingPropertiesWidgetPrivate(*this))
 {
   Q_D(qSlicerCPURayCastVolumeRenderingPropertiesWidget);
   d->setupUi(this);
 }
 
 //-----------------------------------------------------------------------------
-qSlicerCPURayCastVolumeRenderingPropertiesWidget
-::~qSlicerCPURayCastVolumeRenderingPropertiesWidget() = default;
+qSlicerCPURayCastVolumeRenderingPropertiesWidget ::~qSlicerCPURayCastVolumeRenderingPropertiesWidget() = default;
 
 //-----------------------------------------------------------------------------
-vtkMRMLCPURayCastVolumeRenderingDisplayNode* qSlicerCPURayCastVolumeRenderingPropertiesWidget
-::mrmlCPURayCastDisplayNode()
+vtkMRMLCPURayCastVolumeRenderingDisplayNode* qSlicerCPURayCastVolumeRenderingPropertiesWidget::mrmlCPURayCastDisplayNode()
 {
-  return vtkMRMLCPURayCastVolumeRenderingDisplayNode::SafeDownCast(
-    this->mrmlVolumeRenderingDisplayNode());
+  return vtkMRMLCPURayCastVolumeRenderingDisplayNode::SafeDownCast(this->mrmlVolumeRenderingDisplayNode());
 }
 
 //-----------------------------------------------------------------------------
@@ -110,21 +95,21 @@ void qSlicerCPURayCastVolumeRenderingPropertiesWidget::updateWidgetFromMRML()
 {
   Q_D(qSlicerCPURayCastVolumeRenderingPropertiesWidget);
   if (!this->mrmlCPURayCastDisplayNode())
-    {
+  {
     return;
-    }
+  }
   vtkMRMLViewNode* firstViewNode = this->mrmlCPURayCastDisplayNode()->GetFirstViewNode();
   if (!firstViewNode)
-    {
+  {
     return;
-    }
+  }
 
   int technique = firstViewNode->GetRaycastTechnique();
   int index = d->RenderingTechniqueComboBox->findData(QVariant(technique));
   if (index == -1)
-    {
+  {
     index = 0;
-    }
+  }
   d->RenderingTechniqueComboBox->setCurrentIndex(index);
 }
 
@@ -132,22 +117,21 @@ void qSlicerCPURayCastVolumeRenderingPropertiesWidget::updateWidgetFromMRML()
 void qSlicerCPURayCastVolumeRenderingPropertiesWidget::setRenderingTechnique(int index)
 {
   Q_D(qSlicerCPURayCastVolumeRenderingPropertiesWidget);
-  vtkMRMLCPURayCastVolumeRenderingDisplayNode* displayNode =
-    this->mrmlCPURayCastDisplayNode();
+  vtkMRMLCPURayCastVolumeRenderingDisplayNode* displayNode = this->mrmlCPURayCastDisplayNode();
   if (!displayNode)
-    {
+  {
     return;
-    }
+  }
   int technique = d->RenderingTechniqueComboBox->itemData(index).toInt();
 
   std::vector<vtkMRMLNode*> viewNodes;
   displayNode->GetScene()->GetNodesByClass("vtkMRMLViewNode", viewNodes);
-  for (std::vector<vtkMRMLNode*>::iterator it=viewNodes.begin(); it!=viewNodes.end(); ++it)
-    {
+  for (std::vector<vtkMRMLNode*>::iterator it = viewNodes.begin(); it != viewNodes.end(); ++it)
+  {
     vtkMRMLViewNode* viewNode = vtkMRMLViewNode::SafeDownCast(*it);
     if (displayNode->IsDisplayableInView(viewNode->GetID()))
-      {
+    {
       viewNode->SetRaycastTechnique(technique);
-      }
     }
+  }
 }

@@ -34,6 +34,8 @@
 #include "qSlicerObject.h"
 
 class qSlicerIOOptions;
+class qSlicerIOPrivate;
+class vtkMRMLMessageCollection;
 
 /// Base class for qSlicerFileReader and qSlicerFileWriter
 class Q_SLICER_BASE_QTCORE_EXPORT qSlicerIO
@@ -47,22 +49,29 @@ public:
   explicit qSlicerIO(QObject* parent = nullptr);
   ~qSlicerIO() override;
 
-  typedef QString     IOFileType;
+  typedef QString IOFileType;
   typedef QVariantMap IOProperties;
 
   /// Unique name of the reader/writer
-  virtual QString description()const = 0;
+  Q_INVOKABLE virtual QString description() const = 0;
 
   /// Multiple readers can share the same file type
-  virtual IOFileType fileType()const = 0;
+  Q_INVOKABLE virtual qSlicerIO::IOFileType fileType() const = 0;
 
   /// Returns a list of options for the reader. qSlicerIOOptions can be
   /// derived and have a UI associated to it (i.e. qSlicerIOOptionsWidget).
   /// Warning: you are responsible for freeing the memory of the returned
   /// options
-  virtual qSlicerIOOptions* options()const;
+  Q_INVOKABLE virtual qSlicerIOOptions* options() const;
+
+  /// Additional warning or error messages occurred during IO operation.
+  Q_INVOKABLE vtkMRMLMessageCollection* userMessages() const;
+
+protected:
+  QScopedPointer<qSlicerIOPrivate> d_ptr;
 
 private:
+  Q_DECLARE_PRIVATE(qSlicerIO);
   Q_DISABLE_COPY(qSlicerIO);
 };
 

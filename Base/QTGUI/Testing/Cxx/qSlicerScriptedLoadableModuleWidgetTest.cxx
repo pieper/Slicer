@@ -32,12 +32,11 @@
 
 #include <PythonQt.h>
 // ----------------------------------------------------------------------------
-class qSlicerScriptedLoadableModuleWidgetTester: public QObject
+class qSlicerScriptedLoadableModuleWidgetTester : public QObject
 {
   Q_OBJECT
 
 private:
-
   QString preparePythonSource(const QString& scriptName);
 
   qSlicerPythonManager PythonManager;
@@ -61,7 +60,6 @@ private slots:
 
   void testNodeEdit();
   void testNodeEdit_data();
-
 };
 
 // ----------------------------------------------------------------------------
@@ -75,14 +73,14 @@ QString qSlicerScriptedLoadableModuleWidgetTester::preparePythonSource(const QSt
 bool qSlicerScriptedLoadableModuleWidgetTester::resetTmp()
 {
   if (this->TemporaryDirName.isEmpty())
-    {
+  {
     return false;
-    }
+  }
   QDir tmp = QDir::temp();
   ctk::removeDirRecursively(tmp.filePath(this->TemporaryDirName));
   tmp.mkdir(this->TemporaryDirName);
   tmp.cd(this->TemporaryDirName);
-  this->Tmp = tmp;
+  this->Tmp.setPath(tmp.path());
   return this->Tmp.exists();
 }
 
@@ -93,18 +91,17 @@ void qSlicerScriptedLoadableModuleWidgetTester::initTestCase()
 
   QVERIFY(QDir::temp().exists());
 
-  this->TemporaryDirName =
-      QString("qSlicerScriptedLoadableModuleWidgetTester.%1").arg(QTime::currentTime().toString("hhmmsszzz"));
+  this->TemporaryDirName = QString("qSlicerScriptedLoadableModuleWidgetTester.%1").arg(QTime::currentTime().toString("hhmmsszzz"));
 }
 
 // ----------------------------------------------------------------------------
 void qSlicerScriptedLoadableModuleWidgetTester::cleanupTestCase()
 {
   if (this->Tmp != QDir::current() && this->Tmp.exists())
-    {
+  {
     ctk::removeDirRecursively(this->Tmp.absolutePath());
-    this->Tmp = QDir();
-    }
+    this->Tmp.setPath(QString());
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -185,12 +182,12 @@ void qSlicerScriptedLoadableModuleWidgetTester::testNodeEdit()
   node->SetName("Some");
 
   QVERIFY(w.nodeEditable(nullptr) == 0.3);
-  QVERIFY(w.property("editableNodeName").toString() == QString(""));
+  QVERIFY(w.property("editableNodeName").toString() == QString());
   QVERIFY(w.nodeEditable(node.GetPointer()) == 0.7);
   QVERIFY(w.property("editableNodeName").toString() == QString("Some"));
 
   QVERIFY(w.setEditedNode(nullptr) == false);
-  QVERIFY(w.property("editedNodeName").toString() == QString(""));
+  QVERIFY(w.property("editedNodeName").toString() == QString());
   QVERIFY(w.setEditedNode(node.GetPointer(), "someRole", "someContext") == true);
   QVERIFY(w.property("editedNodeName").toString() == QString("Some"));
   QVERIFY(w.property("editedNodeRole").toString() == QString("someRole"));

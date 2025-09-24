@@ -23,7 +23,6 @@
 // This class manages the logic associated with reading, saving,
 // and changing propertied of the volumes
 
-
 #ifndef __vtkSlicerReformatLogic_h
 #define __vtkSlicerReformatLogic_h
 
@@ -37,15 +36,12 @@
 
 #include "vtkSlicerReformatModuleLogicExport.h"
 
-
-/// \ingroup Slicer_QtModules_TransformsReformatWidget
-class VTK_SLICER_REFORMAT_MODULE_LOGIC_EXPORT
-vtkSlicerReformatLogic : public vtkSlicerModuleLogic
+class VTK_SLICER_REFORMAT_MODULE_LOGIC_EXPORT vtkSlicerReformatLogic : public vtkSlicerModuleLogic
 {
 public:
-  static vtkSlicerReformatLogic *New();
+  static vtkSlicerReformatLogic* New();
   typedef vtkSlicerReformatLogic Self;
-  vtkTypeMacro(vtkSlicerReformatLogic,vtkSlicerModuleLogic);
+  vtkTypeMacro(vtkSlicerReformatLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Set the world coordinate origin position
@@ -62,15 +58,18 @@ public:
   /// Compute the center from a bounds
   static void GetCenterFromBounds(double bounds[6], double center[3]);
 
+  /// Rotate slice along an axis (0 = horizontal, 1 = vertical, 2 = slice normal)
+  /// Flip: axisIndex = 0 (vertical) or 1 (horizontal), rotationAngleDeg = 180.
+  /// In-plane rotation: axisIndex = 2, rotationAngleDeg > 0 for clockwise.
+  static void RotateSlice(vtkMRMLSliceNode* node, int axisIndex, double rotationAngleDeg);
+
 protected:
   vtkSlicerReformatLogic();
   ~vtkSlicerReformatLogic() override;
 
 private:
-
   vtkSlicerReformatLogic(const vtkSlicerReformatLogic&) = delete;
   void operator=(const vtkSlicerReformatLogic&) = delete;
 };
 
 #endif
-

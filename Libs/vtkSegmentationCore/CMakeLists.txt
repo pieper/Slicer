@@ -1,8 +1,11 @@
 project(vtkSegmentationCore)
 
 #-----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 #-----------------------------------------------------------------------------
+
+option(${PROJECT_NAME}_USE_UUID "Use UUIDs for generating segment IDs. Requires gdcm library." ON)
+mark_as_advanced(${PROJECT_NAME}_USE_UUID)
 
 # --------------------------------------------------------------------------
 # Configure headers
@@ -20,7 +23,7 @@ if(NOT DEFINED ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
   set(${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT ON)
 endif()
 if(NOT ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
-  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|txx)")
+  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|hxx)")
   install(
     FILES ${headers} ${CMAKE_CURRENT_BINARY_DIR}/${configure_header_file}
     DESTINATION include/${PROJECT_NAME} COMPONENT Development)
@@ -39,6 +42,10 @@ set(vtkSegmentationCore_SRCS
   vtkSegment.h
   vtkSegmentation.cxx
   vtkSegmentation.h
+  vtkSegmentationConversionParameters.cxx
+  vtkSegmentationConversionParameters.h
+  vtkSegmentationConversionPath.cxx
+  vtkSegmentationConversionPath.h
   vtkSegmentationConverter.cxx
   vtkSegmentationConverter.h
   vtkSegmentationConverterFactory.cxx
@@ -93,6 +100,14 @@ set(vtkSegmentationCore_INCLUDE_DIRS
 set(vtkSegmentationCore_LIBS
   ${VTK_LIBRARIES}
   )
+
+if (${PROJECT_NAME}_USE_UUID)
+  # In order to use UUIDs for segment IDs, we need to link against the gdcmMSFF library
+  # for gdcm::UIDGenerator.
+  list(APPEND vtkSegmentationCore_LIBS
+    gdcmMSFF
+    )
+endif()
 
 include_directories( ${vtkSegmentationCore_INCLUDE_DIRS} )
 add_library(${PROJECT_NAME} ${vtkSegmentationCore_SRCS})
@@ -149,12 +164,6 @@ if(VTK_WRAP_PYTHON AND BUILD_SHARED_LIBS)
   set(Slicer_Wrapped_LIBRARIES
     )
 
-  foreach(library ${PROJECT_NAME})
-    if(TARGET ${library}PythonD)
-      list(APPEND Slicer_Wrapped_LIBRARIES ${library}PythonD)
-    endif()
-  endforeach()
-
   include(vtkMacroKitPythonWrap)
 
   vtkMacroKitPythonWrap(
@@ -165,11 +174,10 @@ if(VTK_WRAP_PYTHON AND BUILD_SHARED_LIBS)
     )
 
   # Export target
-  export(TARGETS ${PROJECT_NAME}Python ${PROJECT_NAME}PythonD APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
+  export(TARGETS ${PROJECT_NAME}Python APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
   # Folder
   if(NOT "${${PROJECT_NAME}_FOLDER}" STREQUAL "")
     set_target_properties(${PROJECT_NAME}Python PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
-    set_target_properties(${PROJECT_NAME}PythonD PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     if(TARGET ${PROJECT_NAME}Hierarchy)
       set_target_properties(${PROJECT_NAME}Hierarchy PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     endif()
@@ -188,4 +196,3 @@ endif()
 # --------------------------------------------------------------------------
 set(${PROJECT_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
   CACHE INTERNAL "${PROJECT_NAME} include dirs" FORCE)
-

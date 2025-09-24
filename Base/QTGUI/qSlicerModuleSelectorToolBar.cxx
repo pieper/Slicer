@@ -21,9 +21,12 @@
 // Qt includes
 #include <QCompleter>
 #include <QDebug>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMainWindow>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPushButton>
 #include <QStyleOptionButton>
 #include <QToolButton>
@@ -44,14 +47,16 @@
 class qSlicerModuleSelectorToolBarPrivate
 {
   Q_DECLARE_PUBLIC(qSlicerModuleSelectorToolBar);
+
 protected:
   qSlicerModuleSelectorToolBar* const q_ptr;
+
 public:
   qSlicerModuleSelectorToolBarPrivate(qSlicerModuleSelectorToolBar& object);
   void init();
 
   void insertActionOnTop(QAction* action, QMenu* menu);
-  QAction* lastSelectedAction()const;
+  QAction* lastSelectedAction() const;
 
   qSlicerModuleFinderDialog* ModuleFinder;
 #ifdef Q_OS_WIN32
@@ -59,6 +64,7 @@ public:
 #endif
   qSlicerModulesMenu* ModulesMenu;
 
+  // clang-format off
   QToolButton*      ModuleFinderButton;
   ctkMenuComboBox*  ModulesComboBox;
   QMenu*            HistoryMenu;
@@ -67,8 +73,8 @@ public:
   QMenu*            PreviousHistoryMenu;
   QToolButton*      NextButton;
   QMenu*            NextHistoryMenu;
+  // clang-format on
 };
-
 
 //---------------------------------------------------------------------------
 qSlicerModuleSelectorToolBarPrivate::qSlicerModuleSelectorToolBarPrivate(qSlicerModuleSelectorToolBar& object)
@@ -102,31 +108,45 @@ void qSlicerModuleSelectorToolBarPrivate::init()
   this->NormalModuleFinderFlags = this->ModuleFinder->windowFlags();
 #endif
 
+  QMainWindow* mainWindow = qSlicerApplication::application()->mainWindow();
+
   // Module finder
   this->ModuleFinderButton = new QToolButton(q);
   const QIcon searchIcon = QIcon::fromTheme("edit-find", QPixmap(":/Icons/Search.png"));
-  this->ModuleFinderButton->setIcon(searchIcon);
-  this->ModuleFinderButton->setText(qSlicerModuleSelectorToolBar::tr("Find"));
-  this->ModuleFinderButton->setToolTip(qSlicerModuleSelectorToolBar::tr("Find module"));
-  QObject::connect(this->ModuleFinderButton, SIGNAL(clicked(bool)),
-    q, SLOT(showModuleFinder()));
+  QAction* ViewFindModuleAction = new QAction(searchIcon, qSlicerModuleSelectorToolBar::tr("Module Finder"), mainWindow);
+  ViewFindModuleAction->setObjectName("ViewFindModuleAction");
+  ViewFindModuleAction->setToolTip(qSlicerModuleSelectorToolBar::tr("Find module"));
+  ViewFindModuleAction->setShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_F));
+  QObject::connect(ViewFindModuleAction, SIGNAL(triggered()), q, SLOT(showModuleFinder()));
+  for (QMenu* const toolBarMenu : mainWindow->findChildren<QMenu*>())
+  {
+    if (toolBarMenu->objectName() == QString("ViewMenu"))
+    {
+      for (QAction* const action : toolBarMenu->actions())
+      {
+        if (action->objectName() == QString("ViewExtensionsManagerAction"))
+        {
+          toolBarMenu->insertAction(action, ViewFindModuleAction);
+          break;
+        }
+      }
+      break;
+    }
+  }
+  this->ModuleFinderButton->setDefaultAction(ViewFindModuleAction);
   q->addWidget(this->ModuleFinderButton);
-  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)),
-    this->ModuleFinderButton, SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
-  this->ModuleFinderButton->setShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_F));
+  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this->ModuleFinderButton, SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
 
   // Modules comboBox
   this->ModulesComboBox = new ctkMenuComboBox(q);
   this->ModulesComboBox->setToolTip(qSlicerModuleSelectorToolBar::tr("Select a module from the module list"));
   this->ModulesComboBox->setMinimumContentsLength(20);
   q->addWidget(this->ModulesComboBox);
-  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)),
-                   this->ModulesComboBox,SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
+  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this->ModulesComboBox, SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
 
   // Modules menu
   this->ModulesMenu = new qSlicerModulesMenu(qSlicerModuleSelectorToolBar::tr("Modules"), this->ModulesComboBox);
-  QObject::connect(this->ModulesMenu, SIGNAL(currentModuleChanged(QString)),
-                   q, SLOT(onModuleSelected(QString)));
+  QObject::connect(this->ModulesMenu, SIGNAL(currentModuleChanged(QString)), q, SLOT(onModuleSelected(QString)));
   this->ModulesComboBox->setMenu(this->ModulesMenu);
   this->ModulesComboBox->setSearchIconVisible(false); // we use the module finder instead;
 
@@ -139,42 +159,50 @@ void qSlicerModuleSelectorToolBarPrivate::init()
   this->HistoryButton->setMenu(this->HistoryMenu);
   this->HistoryButton->setPopupMode(QToolButton::InstantPopup);
   q->addWidget(this->HistoryButton);
-  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)),
-                   this->HistoryButton,SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
+  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this->HistoryButton, SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
 
   // Previous button
   this->PreviousHistoryMenu = new QMenu(qSlicerModuleSelectorToolBar::tr("Modules Previous History"), q);
   this->PreviousButton = new QToolButton(q);
-  this->PreviousButton->setIcon(previousIcon);
-  this->PreviousButton->setText(qSlicerModuleSelectorToolBar::tr("Previous"));
-  this->PreviousButton->setToolTip(qSlicerModuleSelectorToolBar::tr("Previous modules"));
   this->PreviousButton->setMenu(this->PreviousHistoryMenu);
   // selectPreviousModule is called only if the toolbutton is clicked not if an
   // action in the history is triggered
-  QObject::connect(this->PreviousButton, SIGNAL(clicked(bool)),
-                   q, SLOT(selectPreviousModule()));
   q->addWidget(this->PreviousButton);
-  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)),
-                   this->PreviousButton,SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
-  this->PreviousButton->setEnabled(this->PreviousHistoryMenu->actions().size() > 0);
-  this->PreviousButton->setShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_Left));
+  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this->PreviousButton, SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
+  bool canGoBack = this->PreviousHistoryMenu->actions().size() > 0;
+  this->PreviousButton->setEnabled(canGoBack);
+  QAction* previousModuleAction = new QAction(previousIcon, qSlicerModuleSelectorToolBar::tr("Previous module"), mainWindow);
+  previousModuleAction->setEnabled(canGoBack);
+  previousModuleAction->setText(qSlicerModuleSelectorToolBar::tr("Previous"));
+  previousModuleAction->setToolTip(qSlicerModuleSelectorToolBar::tr("Switch to previously used module"));
+  previousModuleAction->setObjectName("PreviousModuleAction");
+  previousModuleAction->setShortcuts({ QKeySequence(Qt::ControlModifier + Qt::Key_Left), QKeySequence::Back });
+  previousModuleAction->setShortcutContext(Qt::ApplicationShortcut);
+  this->PreviousButton->setDefaultAction(previousModuleAction);
+  QObject::connect(previousModuleAction, &QAction::triggered, q, &qSlicerModuleSelectorToolBar::selectPreviousModule);
 
   // Next button
   this->NextHistoryMenu = new QMenu(qSlicerModuleSelectorToolBar::tr("Modules Next History"), q);
   this->NextButton = new QToolButton(q);
-  this->NextButton->setIcon(nextIcon);
-  this->NextButton->setText(qSlicerModuleSelectorToolBar::tr("Next"));
-  this->NextButton->setToolTip(qSlicerModuleSelectorToolBar::tr("Next modules"));
   this->NextButton->setMenu(this->NextHistoryMenu);
   // selectNextModule is called only if the toolbutton is clicked not if an
   // action in the history is triggered
-  QObject::connect(this->NextButton, SIGNAL(clicked(bool)),
-                   q, SLOT(selectNextModule()));
   q->addWidget(this->NextButton);
-  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)),
-                   this->NextButton,SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
-  this->NextButton->setEnabled(this->NextHistoryMenu->actions().size() > 0);
-  this->NextButton->setShortcut(QKeySequence(Qt::ControlModifier + Qt::Key_Right));
+  QObject::connect(q, SIGNAL(toolButtonStyleChanged(Qt::ToolButtonStyle)), this->NextButton, SLOT(setToolButtonStyle(Qt::ToolButtonStyle)));
+  bool canGoNext = this->NextHistoryMenu->actions().size() > 0;
+  this->NextButton->setEnabled(canGoNext);
+  QAction* nextModuleAction = new QAction(nextIcon, qSlicerModuleSelectorToolBar::tr("Next module"), mainWindow);
+  nextModuleAction->setEnabled(canGoNext);
+  nextModuleAction->setText(qSlicerModuleSelectorToolBar::tr("Next"));
+  nextModuleAction->setToolTip(qSlicerModuleSelectorToolBar::tr("Switch to next used module"));
+  nextModuleAction->setObjectName("NextModuleIcon");
+  nextModuleAction->setShortcuts({ QKeySequence(Qt::ControlModifier + Qt::Key_Right), QKeySequence::Forward });
+  nextModuleAction->setShortcutContext(Qt::ApplicationShortcut);
+  this->NextButton->setDefaultAction(nextModuleAction);
+  QObject::connect(nextModuleAction, &QAction::triggered, q, &qSlicerModuleSelectorToolBar::selectNextModule);
+
+  // Install event filter to handle mouse back/forward buttons globally
+  qApp->installEventFilter(q);
 }
 
 //---------------------------------------------------------------------------
@@ -185,21 +213,20 @@ void qSlicerModuleSelectorToolBarPrivate::insertActionOnTop(QAction* action, QMe
   menu->insertAction(before, action);
   QList<QAction*> actions = menu->actions();
   for (int i = 8; i < actions.size(); ++i)
-    {
+  {
     menu->removeAction(actions[i]);
-    }
+  }
 }
 
 //---------------------------------------------------------------------------
-QAction* qSlicerModuleSelectorToolBarPrivate::lastSelectedAction()const
+QAction* qSlicerModuleSelectorToolBarPrivate::lastSelectedAction() const
 {
   QList<QAction*> actions = this->HistoryMenu->actions();
   return actions.size() ? actions[0] : 0;
 }
 
 //---------------------------------------------------------------------------
-qSlicerModuleSelectorToolBar::qSlicerModuleSelectorToolBar(const QString& title,
-                                                           QWidget* parentWidget)
+qSlicerModuleSelectorToolBar::qSlicerModuleSelectorToolBar(const QString& title, QWidget* parentWidget)
   : Superclass(title, parentWidget)
   , d_ptr(new qSlicerModuleSelectorToolBarPrivate(*this))
 {
@@ -220,7 +247,7 @@ qSlicerModuleSelectorToolBar::qSlicerModuleSelectorToolBar(QWidget* parentWidget
 qSlicerModuleSelectorToolBar::~qSlicerModuleSelectorToolBar() = default;
 
 //---------------------------------------------------------------------------
-qSlicerModulesMenu* qSlicerModuleSelectorToolBar::modulesMenu()const
+qSlicerModulesMenu* qSlicerModuleSelectorToolBar::modulesMenu() const
 {
   Q_D(const qSlicerModuleSelectorToolBar);
   return d->ModulesMenu;
@@ -234,7 +261,7 @@ ctkMenuComboBox* qSlicerModuleSelectorToolBar::modulesMenuComboBox() const
 }
 
 //---------------------------------------------------------------------------
-QString qSlicerModuleSelectorToolBar::selectedModule()const
+QString qSlicerModuleSelectorToolBar::selectedModule() const
 {
   Q_D(const qSlicerModuleSelectorToolBar);
   return d->ModulesMenu->currentModule();
@@ -246,32 +273,27 @@ void qSlicerModuleSelectorToolBar::setModuleManager(qSlicerModuleManager* module
   Q_D(qSlicerModuleSelectorToolBar);
 
   if (d->ModulesMenu->moduleManager())
-    {
-    QObject::disconnect(d->ModulesMenu->moduleManager(),
-                        SIGNAL(moduleAboutToBeUnloaded(QString)),
-                        this, SLOT(moduleRemoved(QString)));
-    }
+  {
+    QObject::disconnect(d->ModulesMenu->moduleManager(), SIGNAL(moduleAboutToBeUnloaded(QString)), this, SLOT(moduleRemoved(QString)));
+  }
   d->ModulesMenu->setModuleManager(moduleManager);
   d->ModuleFinder->setFactoryManager(moduleManager->factoryManager());
 
   if (moduleManager)
-    {
-    QObject::connect(moduleManager,
-                     SIGNAL(moduleAboutToBeUnloaded(QString)),
-                     this, SLOT(moduleRemoved(QString)));
-    }
+  {
+    QObject::connect(moduleManager, SIGNAL(moduleAboutToBeUnloaded(QString)), this, SLOT(moduleRemoved(QString)));
+  }
 }
 
 //---------------------------------------------------------------------------
 void qSlicerModuleSelectorToolBar::moduleRemoved(const QString& moduleName)
 {
   Q_D(qSlicerModuleSelectorToolBar);
-  qSlicerAbstractModule* module = qobject_cast<qSlicerAbstractModule*>(
-    d->ModulesMenu->moduleManager()->module(moduleName));
+  qSlicerAbstractModule* module = qobject_cast<qSlicerAbstractModule*>(d->ModulesMenu->moduleManager()->module(moduleName));
   if (!module)
-    {
+  {
     return;
-    }
+  }
   QAction* moduleAction = module->action();
   // removing a module consists in retrieving the unique action of the module
   // and removing it from all the possible menus
@@ -301,32 +323,32 @@ void qSlicerModuleSelectorToolBar::actionSelected(QAction* action)
   Q_D(qSlicerModuleSelectorToolBar);
   QAction* lastAction = d->lastSelectedAction();
   if (action == lastAction)
-    {
+  {
     return;
-    }
+  }
   QList<QAction*> previousActions = d->PreviousHistoryMenu->actions();
   QList<QAction*> nextActions = d->NextHistoryMenu->actions();
   // Remove the activated module from the prev/next list
   // to make sure that one module can appear only once
   int actionIndexInPreviousMenu = previousActions.indexOf(action);
   int actionIndexInNextMenu = nextActions.indexOf(action);
-  if ( actionIndexInNextMenu >= 0)
-    {
+  if (actionIndexInNextMenu >= 0)
+  {
     nextActions.removeAt(actionIndexInNextMenu);
-    }
-  else if ( actionIndexInPreviousMenu >= 0)
-    {
+  }
+  else if (actionIndexInPreviousMenu >= 0)
+  {
     previousActions.removeAt(actionIndexInPreviousMenu);
-    }
+  }
   // Add the last active module to the previous list if it's not there already
   // (it's already there if the prev/next button was used for module switching)
   if (lastAction)
+  {
+    if (nextActions.indexOf(lastAction) < 0 && previousActions.indexOf(lastAction) < 0)
     {
-    if (nextActions.indexOf(lastAction)<0 && previousActions.indexOf(lastAction)<0)
-      {
       previousActions.push_front(lastAction);
-      }
     }
+  }
   // don't keep more than X history
   previousActions = previousActions.mid(0, 8);
   nextActions = nextActions.mid(0, 8);
@@ -336,19 +358,23 @@ void qSlicerModuleSelectorToolBar::actionSelected(QAction* action)
   d->NextHistoryMenu->clear();
   d->NextHistoryMenu->addActions(nextActions);
 
-  d->PreviousButton->setEnabled(d->PreviousHistoryMenu->actions().size());
-  d->NextButton->setEnabled(d->NextHistoryMenu->actions().size());
+  bool canGoBack = d->PreviousHistoryMenu->actions().size() > 0;
+  d->PreviousButton->setEnabled(canGoBack);
+  d->PreviousButton->defaultAction()->setEnabled(canGoBack);
+  bool canGoNext = d->NextHistoryMenu->actions().size() > 0;
+  d->NextButton->setEnabled(canGoNext);
+  d->NextButton->defaultAction()->setEnabled(canGoNext);
 
   if (action)
-    {
+  {
     d->insertActionOnTop(action, d->HistoryMenu);
-    }
+  }
   if (action == nullptr)
-    {
+  {
     // Because the NoModuleAction is not observed by ctkMenuComboBox, the
     // toolbar shall clear the text of the current action manually.
     d->ModulesComboBox->clearActiveAction();
-    }
+  }
   emit moduleSelected(action ? action->data().toString() : QString());
 }
 
@@ -362,9 +388,9 @@ void qSlicerModuleSelectorToolBar::showModuleFinder()
   d->ModuleFinder->setFocusToModuleTitleFilter();
   int result = d->ModuleFinder->exec();
   if (result == QMessageBox::Accepted && !d->ModuleFinder->currentModuleName().isEmpty())
-    {
+  {
     this->selectModule(d->ModuleFinder->currentModuleName());
-    }
+  }
 #ifdef Q_OS_WIN32
   // On Windows, dialog boxes that are just hidden but not deleted appear in
   // taskbar preview (hover over the application icon in the taskbar, wait for the
@@ -390,20 +416,20 @@ void qSlicerModuleSelectorToolBar::selectNextModule()
   QList<QAction*> actions = d->NextHistoryMenu->actions();
   QAction* nextAction = actions.size() ? actions.first() : 0;
   if (nextAction)
-    {
+  {
     // Add last active module to the previous list
     // (to prevent default placement in actionSelected() )
     QAction* lastAction = d->lastSelectedAction();
     if (lastAction)
-      {
+    {
       QList<QAction*> previousActions = d->PreviousHistoryMenu->actions();
       previousActions.push_front(lastAction);
       d->PreviousHistoryMenu->clear();
       d->PreviousHistoryMenu->addActions(previousActions);
-      }
+    }
     // triggering the action will eventually call actionSelected()
     nextAction->trigger();
-    }
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -416,18 +442,38 @@ void qSlicerModuleSelectorToolBar::selectPreviousModule()
   QList<QAction*> actions = d->PreviousHistoryMenu->actions();
   QAction* previousAction = actions.size() ? actions.first() : 0;
   if (previousAction)
-    {
+  {
     // Add last active module to the next list
     // (to prevent default placement in actionSelected() )
     QAction* lastAction = d->lastSelectedAction();
     if (lastAction)
-      {
+    {
       QList<QAction*> nextActions = d->NextHistoryMenu->actions();
       nextActions.push_front(lastAction);
       d->NextHistoryMenu->clear();
       d->NextHistoryMenu->addActions(nextActions);
-      }
+    }
     // triggering the action will eventually call actionSelected()
     previousAction->trigger();
+  }
+}
+
+//---------------------------------------------------------------------------
+bool qSlicerModuleSelectorToolBar::eventFilter(QObject* obj, QEvent* event)
+{
+  if (event->type() == QEvent::MouseButtonRelease)
+  {
+    QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+    if (mouseEvent->button() == Qt::BackButton)
+    {
+      this->selectPreviousModule();
+      return true;
     }
+    else if (mouseEvent->button() == Qt::ForwardButton)
+    {
+      this->selectNextModule();
+      return true;
+    }
+  }
+  return this->QObject::eventFilter(obj, event);
 }

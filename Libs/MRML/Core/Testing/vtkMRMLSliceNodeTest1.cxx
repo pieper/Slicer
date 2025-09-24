@@ -19,9 +19,8 @@
 #include <vtkMatrix4x4.h>
 #include <vtkStringArray.h>
 
-
 //----------------------------------------------------------------------------
-void AddSliceOrientationPresets(vtkMRMLSliceNode *sliceNode);
+void AddSliceOrientationPresets(vtkMRMLSliceNode* sliceNode);
 
 //----------------------------------------------------------------------------
 int AddSliceOrientationPresetTest();
@@ -32,9 +31,12 @@ int GetSliceOrientationPresetTest();
 int GetSliceOrientationPresetNameTest();
 int SetOrientationTest();
 int InitializeDefaultMatrixTest();
+int SlabReconstructionEnabledTest();
+int SlabReconstructionTypeTest();
+int SlabReconstructionThicknessTest();
 
 //----------------------------------------------------------------------------
-int vtkMRMLSliceNodeTest1(int , char * [] )
+int vtkMRMLSliceNodeTest1(int, char*[])
 {
   vtkNew<vtkMRMLSliceNode> node1;
 
@@ -48,6 +50,9 @@ int vtkMRMLSliceNodeTest1(int , char * [] )
   CHECK_EXIT_SUCCESS(GetSliceOrientationPresetNameTest());
   CHECK_EXIT_SUCCESS(SetOrientationTest());
   CHECK_EXIT_SUCCESS(InitializeDefaultMatrixTest());
+  CHECK_EXIT_SUCCESS(SlabReconstructionEnabledTest());
+  CHECK_EXIT_SUCCESS(SlabReconstructionTypeTest());
+  CHECK_EXIT_SUCCESS(SlabReconstructionThicknessTest());
 
   return EXIT_SUCCESS;
 }
@@ -57,38 +62,37 @@ void AddSliceOrientationPresets(vtkMRMLSliceNode* sliceNode)
 {
   {
     vtkNew<vtkMatrix3x3> preset;
-    vtkMRMLSliceNode::InitializeAxialMatrix(preset.GetPointer());
+    vtkMRMLSliceNode::GetAxialSliceToRASMatrix(preset.GetPointer());
 
     sliceNode->AddSliceOrientationPreset("Axial", preset.GetPointer());
   }
 
   {
     vtkNew<vtkMatrix3x3> preset;
-    vtkMRMLSliceNode::InitializeSagittalMatrix(preset.GetPointer());
+    vtkMRMLSliceNode::GetSagittalSliceToRASMatrix(preset.GetPointer());
 
     sliceNode->AddSliceOrientationPreset("Sagittal", preset.GetPointer());
   }
 
   {
     vtkNew<vtkMatrix3x3> preset;
-    vtkMRMLSliceNode::InitializeCoronalMatrix(preset.GetPointer());
+    vtkMRMLSliceNode::GetCoronalSliceToRASMatrix(preset.GetPointer());
 
     sliceNode->AddSliceOrientationPreset("Coronal", preset.GetPointer());
   }
 }
 
 //----------------------------------------------------------------------------
-int CheckOrientationPresetNames(vtkMRMLSliceNode* sliceNode,
-                                std::vector<std::string> names)
+int CheckOrientationPresetNames(vtkMRMLSliceNode* sliceNode, std::vector<std::string> names)
 {
   vtkNew<vtkStringArray> orientationPresetNames;
   sliceNode->GetSliceOrientationPresetNames(orientationPresetNames.GetPointer());
 
   CHECK_INT(orientationPresetNames->GetNumberOfValues(), static_cast<int>(names.size()));
   for (int idx = 0; idx < static_cast<int>(names.size()); ++idx)
-    {
+  {
     CHECK_STD_STRING(orientationPresetNames->GetValue(idx), names.at(idx));
-    }
+  }
   return EXIT_SUCCESS;
 }
 
@@ -110,8 +114,7 @@ int AddSliceOrientationPresetTest()
   expectedOrientationNames.emplace_back("Sagittal");
   expectedOrientationNames.emplace_back("Coronal");
 
-  CHECK_INT(CheckOrientationPresetNames(sliceNode.GetPointer(),
-                                        expectedOrientationNames), EXIT_SUCCESS);
+  CHECK_INT(CheckOrientationPresetNames(sliceNode.GetPointer(), expectedOrientationNames), EXIT_SUCCESS);
 
   return EXIT_SUCCESS;
 }
@@ -121,15 +124,15 @@ namespace
 //----------------------------------------------------------------------------
 void InitializeMatrix(vtkMatrix3x3* matrix, double value)
 {
-  for(int ii = 0; ii < 3; ++ii)
+  for (int ii = 0; ii < 3; ++ii)
+  {
+    for (int jj = 0; jj < 3; ++jj)
     {
-    for(int jj = 0; jj < 3; ++jj)
-      {
       matrix->SetElement(ii, jj, value);
-      }
     }
+  }
 }
-}
+} // namespace
 
 //----------------------------------------------------------------------------
 int RemoveSliceOrientationPresetTest()
@@ -266,24 +269,19 @@ int GetSliceOrientationPresetTest()
 
   {
     TESTING_OUTPUT_ASSERT_ERRORS_BEGIN();
-    vtkMatrix3x3 * current =
-        sliceNode->GetSliceOrientationPreset("");
+    vtkMatrix3x3* current = sliceNode->GetSliceOrientationPreset("");
     TESTING_OUTPUT_ASSERT_ERRORS_END();
     CHECK_NULL(current);
   }
 
   {
-    vtkMatrix3x3 * current =
-        sliceNode->GetSliceOrientationPreset("ones");
-    CHECK_BOOL(vtkAddonMathUtilities::MatrixAreEqual(
-                 current, expectedOnes.GetPointer()), true);
+    vtkMatrix3x3* current = sliceNode->GetSliceOrientationPreset("ones");
+    CHECK_BOOL(vtkAddonMathUtilities::MatrixAreEqual(current, expectedOnes.GetPointer()), true);
   }
 
   {
-    vtkMatrix3x3 * current =
-        sliceNode->GetSliceOrientationPreset("twos");
-    CHECK_BOOL(vtkAddonMathUtilities::MatrixAreEqual(
-                 current, expectedTwos.GetPointer()), true);
+    vtkMatrix3x3* current = sliceNode->GetSliceOrientationPreset("twos");
+    CHECK_BOOL(vtkAddonMathUtilities::MatrixAreEqual(current, expectedTwos.GetPointer()), true);
   }
 
   return EXIT_SUCCESS;
@@ -295,22 +293,19 @@ int GetSliceOrientationPresetNameTest()
   vtkNew<vtkMRMLSliceNode> sliceNode;
 
   vtkNew<vtkMatrix3x3> originalPreset;
-  vtkMRMLSliceNode::InitializeAxialMatrix(originalPreset.GetPointer());
+  vtkMRMLSliceNode::GetAxialSliceToRASMatrix(originalPreset.GetPointer());
 
   vtkNew<vtkMatrix3x3> preset;
-  vtkMRMLSliceNode::InitializeAxialMatrix(preset.GetPointer());
+  vtkMRMLSliceNode::GetAxialSliceToRASMatrix(preset.GetPointer());
   sliceNode->AddSliceOrientationPreset("Axial", preset.GetPointer());
 
+  originalPreset->SetElement(1, 1, 1.0 + 1e-4);
 
-  originalPreset->SetElement(1, 1,  1.0 + 1e-4);
+  CHECK_STD_STRING(sliceNode->GetSliceOrientationPresetName(originalPreset.GetPointer()), std::string("Axial"));
 
-  CHECK_STD_STRING(sliceNode->GetSliceOrientationPresetName(
-                   originalPreset.GetPointer()), std::string("Axial"));
+  originalPreset->SetElement(1, 1, 1.0 + 1e-2);
 
-  originalPreset->SetElement(1, 1,  1.0 + 1e-2);
-
-  CHECK_STD_STRING(sliceNode->GetSliceOrientationPresetName(
-                   originalPreset.GetPointer()), std::string(""));
+  CHECK_STD_STRING(sliceNode->GetSliceOrientationPresetName(originalPreset.GetPointer()), std::string(""));
 
   return EXIT_SUCCESS;
 }
@@ -413,16 +408,100 @@ int SetOrientationTest()
 int InitializeDefaultMatrixTest()
 {
   vtkNew<vtkMatrix3x3> axial;
-  vtkMRMLSliceNode::InitializeAxialMatrix(axial.GetPointer());
+  vtkMRMLSliceNode::GetAxialSliceToRASMatrix(axial.GetPointer());
   CHECK_NOT_NULL(axial.GetPointer());
 
   vtkNew<vtkMatrix3x3> coronal;
-  vtkMRMLSliceNode::InitializeCoronalMatrix(coronal.GetPointer());
+  vtkMRMLSliceNode::GetCoronalSliceToRASMatrix(coronal.GetPointer());
   CHECK_NOT_NULL(coronal.GetPointer());
 
   vtkNew<vtkMatrix3x3> sagittal;
-  vtkMRMLSliceNode::InitializeSagittalMatrix(sagittal.GetPointer());
+  vtkMRMLSliceNode::GetSagittalSliceToRASMatrix(sagittal.GetPointer());
   CHECK_NOT_NULL(sagittal.GetPointer());
+
+  return EXIT_SUCCESS;
+}
+
+//----------------------------------------------------------------------------
+int SlabReconstructionEnabledTest()
+{
+  vtkNew<vtkMRMLSliceNode> sliceNode;
+
+  CHECK_BOOL(sliceNode->GetSlabReconstructionEnabled(), false);
+
+  // Set using set macro
+  {
+    sliceNode->SetSlabReconstructionEnabled(true);
+    CHECK_BOOL(sliceNode->GetSlabReconstructionEnabled(), true);
+  }
+
+  // Set using on/off macro
+  {
+    sliceNode->SlabReconstructionEnabledOn();
+    CHECK_BOOL(sliceNode->GetSlabReconstructionEnabled(), true);
+    sliceNode->SlabReconstructionEnabledOff();
+    CHECK_BOOL(sliceNode->GetSlabReconstructionEnabled(), false);
+  }
+
+  return EXIT_SUCCESS;
+}
+
+//----------------------------------------------------------------------------
+int SlabReconstructionTypeTest()
+{
+  vtkNew<vtkMRMLSliceNode> sliceNode;
+
+  CHECK_INT(sliceNode->GetSlabReconstructionType(), VTK_IMAGE_SLAB_MAX);
+
+  // Set to min
+  {
+    sliceNode->SetSlabReconstructionType(VTK_IMAGE_SLAB_MIN);
+    CHECK_INT(sliceNode->GetSlabReconstructionType(), VTK_IMAGE_SLAB_MIN);
+  }
+
+  // Set to mean
+  {
+    sliceNode->SetSlabReconstructionType(VTK_IMAGE_SLAB_MEAN);
+    CHECK_INT(sliceNode->GetSlabReconstructionType(), VTK_IMAGE_SLAB_MEAN);
+  }
+
+  // Set to sum
+  {
+    sliceNode->SetSlabReconstructionType(VTK_IMAGE_SLAB_SUM);
+    CHECK_INT(sliceNode->GetSlabReconstructionType(), VTK_IMAGE_SLAB_SUM);
+  }
+
+  // Check GetSlabReconstructionTypeAsString
+  {
+    CHECK_STRING(sliceNode->GetSlabReconstructionTypeAsString(VTK_IMAGE_SLAB_MAX), "Max");
+    CHECK_STRING(sliceNode->GetSlabReconstructionTypeAsString(VTK_IMAGE_SLAB_MIN), "Min");
+    CHECK_STRING(sliceNode->GetSlabReconstructionTypeAsString(VTK_IMAGE_SLAB_MEAN), "Mean");
+    CHECK_STRING(sliceNode->GetSlabReconstructionTypeAsString(VTK_IMAGE_SLAB_SUM), "Sum");
+  }
+
+  // Check GetSlabReconstructionTypeFromString
+  {
+    CHECK_INT(sliceNode->GetSlabReconstructionTypeFromString("Max"), VTK_IMAGE_SLAB_MAX);
+    CHECK_INT(sliceNode->GetSlabReconstructionTypeFromString("Min"), VTK_IMAGE_SLAB_MIN);
+    CHECK_INT(sliceNode->GetSlabReconstructionTypeFromString("Mean"), VTK_IMAGE_SLAB_MEAN);
+    CHECK_INT(sliceNode->GetSlabReconstructionTypeFromString("Sum"), VTK_IMAGE_SLAB_SUM);
+  }
+
+  return EXIT_SUCCESS;
+}
+
+//----------------------------------------------------------------------------
+int SlabReconstructionThicknessTest()
+{
+  vtkNew<vtkMRMLSliceNode> sliceNode;
+
+  CHECK_DOUBLE(sliceNode->GetSlabReconstructionThickness(), 1.);
+
+  // Set using set macro
+  {
+    sliceNode->SetSlabReconstructionThickness(99.5);
+    CHECK_DOUBLE(sliceNode->GetSlabReconstructionThickness(), 99.5);
+  }
 
   return EXIT_SUCCESS;
 }

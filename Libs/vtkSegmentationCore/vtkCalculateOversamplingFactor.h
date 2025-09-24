@@ -36,12 +36,11 @@
 
 class vtkPiecewiseFunction;
 
-/// \ingroup SegmentationCore
 /// \brief Calculate oversampling factor based on model properties using fuzzy logics
 class vtkSegmentationCore_EXPORT vtkCalculateOversamplingFactor : public vtkObject
 {
 public:
-  static vtkCalculateOversamplingFactor *New();
+  static vtkCalculateOversamplingFactor* New();
   vtkTypeMacro(vtkCalculateOversamplingFactor, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -128,8 +127,7 @@ protected:
 private:
   vtkCalculateOversamplingFactor(const vtkCalculateOversamplingFactor&) = delete;
   void operator=(const vtkCalculateOversamplingFactor&) = delete;
-  //ETX
+  // ETX
 };
 
 #endif
-

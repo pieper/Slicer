@@ -29,25 +29,25 @@
 // CTK includes
 #include <ctkPopupWidget.h>
 
+// VTK includes
+#include <vtkCommand.h>
+
 // qMRML includes
 #include "qMRMLViewControllerBar_p.h"
+
+// MRML includes
+#include "vtkMRMLLayoutNode.h"
+#include "vtkMRMLAbstractViewNode.h"
+#include "vtkMRMLScene.h"
 
 //--------------------------------------------------------------------------
 // qMRMLViewControllerBarPrivate methods
 
 //---------------------------------------------------------------------------
-qMRMLViewControllerBarPrivate::qMRMLViewControllerBarPrivate(
-  qMRMLViewControllerBar& object)
+qMRMLViewControllerBarPrivate::qMRMLViewControllerBarPrivate(qMRMLViewControllerBar& object)
   : QObject(nullptr)
   , q_ptr(&object)
 {
-  this->PinButton = nullptr;
-  this->ViewLabel = nullptr;
-  this->PopupWidget = nullptr;
-  this->BarLayout = nullptr;
-  this->BarWidget = nullptr;
-  this->ControllerLayout = nullptr;
-  this->LayoutBehavior = qMRMLViewControllerBar::Popup;
 }
 
 //---------------------------------------------------------------------------
@@ -102,22 +102,36 @@ void qMRMLViewControllerBarPrivate::init()
   this->PinButton->setObjectName("PinButton");
   this->PinButton->setCheckable(true);
   this->PinButton->setAutoRaise(true);
-  this->PinButton->setFixedSize(15, 15);
   QIcon pushPinIcon;
   pushPinIcon.addFile(":/Icons/PushPinIn.png", QSize(), QIcon::Normal, QIcon::On);
   pushPinIcon.addFile(":/Icons/PushPinOut.png", QSize(), QIcon::Normal, QIcon::Off);
   this->PinButton->setIcon(pushPinIcon);
-  QObject::connect(this->PinButton, SIGNAL(toggled(bool)),
-                   this->PopupWidget, SLOT(pinPopup(bool)));
+  QObject::connect(this->PinButton, SIGNAL(toggled(bool)), this->PopupWidget, SLOT(pinPopup(bool)));
   this->PinButton->installEventFilter(this);
   this->BarLayout->addWidget(this->PinButton);
 
   this->ViewLabel = new QLabel(q);
   this->ViewLabel->setObjectName("ViewLabel");
   this->ViewLabel->setAlignment(Qt::AlignHCenter | Qt::AlignCenter);
+  // Slice controller background color is independent from the color palette, therefore the color of text and controls are hardcoded to black
+  this->ViewLabel->setStyleSheet("color: black; background-color: transparent;");
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  this->ViewLabel->setMinimumWidth(this->ViewLabel->fontMetrics().horizontalAdvance("XX"));
+#else
   this->ViewLabel->setMinimumWidth(this->ViewLabel->fontMetrics().width("XX"));
-  this->ViewLabel->setAutoFillBackground(true);
+#endif
   this->BarLayout->addWidget(this->ViewLabel);
+
+  this->ViewMaximizeIcon = QIcon(":Icons/ViewMaximize.png");
+  this->ViewRestoreIcon = QIcon(":Icons/ViewRestore.png");
+
+  this->MaximizeViewButton = new QToolButton(q);
+  this->MaximizeViewButton->setObjectName("MaximizeViewButton");
+  this->MaximizeViewButton->setToolTip(tr("Maximize/restore view"));
+  this->MaximizeViewButton->setAutoRaise(true);
+  this->MaximizeViewButton->setIcon(this->ViewMaximizeIcon);
+  this->BarLayout->addWidget(this->MaximizeViewButton);
+  QObject::connect(this->MaximizeViewButton, SIGNAL(clicked()), q, SLOT(maximizeView()));
 
   this->BarLayout->addSpacing(5);
 
@@ -139,34 +153,34 @@ void qMRMLViewControllerBarPrivate::setupPopupUi()
 bool qMRMLViewControllerBarPrivate::eventFilter(QObject* object, QEvent* event)
 {
   if (object == this->PinButton && event->type() == QEvent::Enter)
-    {
+  {
     if (this->LayoutBehavior == qMRMLViewControllerBar::Popup)
-      {
+    {
       this->PopupWidget->showPopup();
-      }
     }
+  }
   return this->QObject::eventFilter(object, event);
 }
 
 //---------------------------------------------------------------------------
 void qMRMLViewControllerBarPrivate::setColor(QColor barColor)
 {
-  //Q_Q(qMRMLViewControllerBar);
+  // Q_Q(qMRMLViewControllerBar);
   this->BarColor = barColor;
 
   QPalette palette = this->BarWidget->palette();
-  QLinearGradient gradient(QPointF(0.,0.), QPointF(0.,1.));
+  QLinearGradient gradient(QPointF(0., 0.), QPointF(0., 1.));
   gradient.setCoordinateMode(QGradient::StretchToDeviceMode);
   // Light gradient
-  //gradient.setColorAt(0., barColor.lighter(102));
-  //gradient.setColorAt(0.1, barColor);
-  //gradient.setColorAt(0.8, barColor.darker(102));
-  //gradient.setColorAt(1., barColor.darker(108));
+  // gradient.setColorAt(0., barColor.lighter(102));
+  // gradient.setColorAt(0.1, barColor);
+  // gradient.setColorAt(0.8, barColor.darker(102));
+  // gradient.setColorAt(1., barColor.darker(108));
   // Glass effect
-  //gradient.setColorAt(0., barColor.lighter(120));
-  //gradient.setColorAt(0.498, barColor.darker(118));
-  //gradient.setColorAt(0.5, barColor.darker(145));
-  //gradient.setColorAt(1., barColor.darker(165));
+  // gradient.setColorAt(0., barColor.lighter(120));
+  // gradient.setColorAt(0.498, barColor.darker(118));
+  // gradient.setColorAt(0.5, barColor.darker(145));
+  // gradient.setColorAt(1., barColor.darker(165));
   // Dialog effect
   int hue = barColor.hue();
   int sat = barColor.saturation();
@@ -181,13 +195,10 @@ void qMRMLViewControllerBarPrivate::setColor(QColor barColor)
   palette.setBrush(QPalette::Window, gradient);
   palette.setBrush(QPalette::Text, Qt::black);
   this->BarWidget->setPalette(palette);
-
-  QPalette labelPalette(barColor.lighter(130));
-  this->ViewLabel->setPalette(labelPalette);
 }
 
 //---------------------------------------------------------------------------
-QColor qMRMLViewControllerBarPrivate::color()const
+QColor qMRMLViewControllerBarPrivate::color() const
 {
   return this->BarColor;
 }
@@ -215,7 +226,6 @@ qMRMLViewControllerBar::qMRMLViewControllerBar(qMRMLViewControllerBarPrivate* pi
 // --------------------------------------------------------------------------
 qMRMLViewControllerBar::~qMRMLViewControllerBar() = default;
 
-
 // --------------------------------------------------------------------------
 void qMRMLViewControllerBar::setLayoutBehavior(LayoutBehavior behavior)
 {
@@ -224,28 +234,28 @@ void qMRMLViewControllerBar::setLayoutBehavior(LayoutBehavior behavior)
   d->LayoutBehavior = behavior;
 
   if (d->PopupWidget)
-    {
+  {
     if (behavior == qMRMLViewControllerBar::Popup)
-      {
+    {
       d->PopupWidget->setAutoShow(false);
       d->PopupWidget->setAutoHide(true);
       d->ControllerLayout->removeWidget(d->PopupWidget);
       d->PopupWidget->setActive(true);
       d->PopupWidget->setWindowFlags(d->PopupWidget->windowFlags() | Qt::ToolTip);
       d->PinButton->show();
-      }
+    }
     else
-      {
+    {
       d->PopupWidget->setAutoShow(false);
       d->PopupWidget->setAutoHide(false);
       d->ControllerLayout->addWidget(d->PopupWidget);
       d->PinButton->hide();
-      //d->PinButton->setDown(1);
+      // d->PinButton->setDown(1);
       d->PopupWidget->setActive(false);
       d->PopupWidget->setWindowFlags(d->PopupWidget->windowFlags() & ~Qt::ToolTip);
       d->PopupWidget->pinPopup(true);
-      }
     }
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -276,4 +286,94 @@ QLabel* qMRMLViewControllerBar::viewLabel()
 {
   Q_D(qMRMLViewControllerBar);
   return d->ViewLabel;
+}
+
+// --------------------------------------------------------------------------
+void qMRMLViewControllerBar::maximizeView()
+{
+  Q_D(qMRMLViewControllerBar);
+  if (!this->mrmlViewNode())
+  {
+    qCritical() << Q_FUNC_INFO << ": Invalid view node.";
+    return;
+  }
+
+  bool isMaximized = false;
+  bool canBeMaximized = false;
+  vtkMRMLLayoutNode* layoutNode = this->mrmlViewNode()->GetMaximizedState(isMaximized, canBeMaximized);
+  if (!layoutNode || !canBeMaximized)
+  {
+    return;
+  }
+
+  if (isMaximized)
+  {
+    layoutNode->RemoveMaximizedViewNode(this->mrmlViewNode());
+  }
+  else
+  {
+    layoutNode->AddMaximizedViewNode(this->mrmlViewNode());
+  }
+}
+
+//---------------------------------------------------------------------------
+void qMRMLViewControllerBar::setMRMLViewNode(vtkMRMLAbstractViewNode* viewNode)
+{
+  Q_D(qMRMLViewControllerBar);
+  this->qvtkReconnect(d->ViewNode, viewNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRMLView()));
+  d->ViewNode = viewNode;
+  this->updateWidgetFromMRMLView();
+}
+
+//---------------------------------------------------------------------------
+vtkMRMLAbstractViewNode* qMRMLViewControllerBar::mrmlViewNode() const
+{
+  Q_D(const qMRMLViewControllerBar);
+  return d->ViewNode;
+}
+
+//---------------------------------------------------------------------------
+void qMRMLViewControllerBar::updateWidgetFromMRMLView()
+{
+  Q_D(qMRMLViewControllerBar);
+
+  // The view node gets modified whenever it is added/remoeved from the layout
+  // therefore we can update the maximize button status here (there is no need
+  // to observe the layout).
+  bool isMaximized = false;
+  bool canBeMaximized = false;
+  if (d->ViewNode)
+  {
+    d->ViewNode->GetMaximizedState(isMaximized, canBeMaximized);
+  }
+
+  d->MaximizeViewButton->setVisible(canBeMaximized && d->ShowMaximizeViewButton);
+  if (canBeMaximized && d->ShowMaximizeViewButton)
+  {
+    if (isMaximized)
+    {
+      d->MaximizeViewButton->setToolTip(tr("Restore view layout"));
+      d->MaximizeViewButton->setIcon(d->ViewRestoreIcon);
+    }
+    else
+    {
+      d->MaximizeViewButton->setToolTip(tr("Maximize view"));
+      d->MaximizeViewButton->setIcon(d->ViewMaximizeIcon);
+    }
+  }
+}
+
+//-----------------------------------------------------------------------------
+bool qMRMLViewControllerBar::showMaximizeViewButton() const
+{
+  Q_D(const qMRMLViewControllerBar);
+  return d->ShowMaximizeViewButton;
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLViewControllerBar::setShowMaximizeViewButton(bool show)
+{
+  Q_D(qMRMLViewControllerBar);
+  d->ShowMaximizeViewButton = show;
+  this->updateWidgetFromMRMLView();
 }

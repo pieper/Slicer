@@ -27,7 +27,7 @@ class qSlicerAbstractModulePanelPrivate
 {
 public:
   qSlicerAbstractModulePanelPrivate() = default;
-  qSlicerModuleManager* ModuleManager{nullptr};
+  qSlicerModuleManager* ModuleManager{ nullptr };
 };
 
 //---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ void qSlicerAbstractModulePanel::setModuleManager(qSlicerModuleManager* moduleMa
 }
 
 //---------------------------------------------------------------------------
-qSlicerModuleManager* qSlicerAbstractModulePanel::moduleManager()const
+qSlicerModuleManager* qSlicerAbstractModulePanel::moduleManager() const
 {
   Q_D(const qSlicerAbstractModulePanel);
   return d->ModuleManager;
@@ -58,9 +58,9 @@ qSlicerModuleManager* qSlicerAbstractModulePanel::moduleManager()const
 void qSlicerAbstractModulePanel::addModule(const QString& moduleName)
 {
   if (!this->moduleManager())
-    {
+  {
     return;
-    }
+  }
   qSlicerAbstractCoreModule* module = this->moduleManager()->module(moduleName);
   Q_ASSERT(module);
   this->addModule(module);
@@ -70,9 +70,9 @@ void qSlicerAbstractModulePanel::addModule(const QString& moduleName)
 void qSlicerAbstractModulePanel::removeModule(const QString& moduleName)
 {
   if (!this->moduleManager())
-    {
+  {
     return;
-    }
+  }
   qSlicerAbstractCoreModule* module = this->moduleManager()->module(moduleName);
   Q_ASSERT(module);
   this->removeModule(module);

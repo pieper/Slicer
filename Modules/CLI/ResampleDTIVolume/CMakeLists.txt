@@ -29,7 +29,13 @@ set(${PROJECT_NAME}_ITK_COMPONENTS
   ${ModuleDescriptionParser_ITK_COMPONENTS}
   )
 find_package(ITK 4.6 COMPONENTS ${${PROJECT_NAME}_ITK_COMPONENTS} REQUIRED)
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 include(${ITK_USE_FILE})
 
 
@@ -41,7 +47,7 @@ SEMMacroBuildCLI(
     dtiprocessFiles/deformationfieldio.h
     dtiprocessFiles/deformationfieldio.cxx
     dtiprocessFiles/itkHFieldToDeformationFieldImageFilter.h
-    dtiprocessFiles/itkHFieldToDeformationFieldImageFilter.txx
+    dtiprocessFiles/itkHFieldToDeformationFieldImageFilter.hxx
   TARGET_LIBRARIES ModuleDescriptionParser ${ITK_LIBRARIES}
   INCLUDE_DIRECTORIES
     ${SlicerBaseCLI_SOURCE_DIR} ${SlicerBaseCLI_BINARY_DIR}

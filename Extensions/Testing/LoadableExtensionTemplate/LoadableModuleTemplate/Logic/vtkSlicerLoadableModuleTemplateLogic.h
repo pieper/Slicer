@@ -20,7 +20,6 @@
 // This class manages the logic associated with reading, saving,
 // and changing propertied of the volumes
 
-
 #ifndef __vtkSlicerLoadableModuleTemplateLogic_h
 #define __vtkSlicerLoadableModuleTemplateLogic_h
 
@@ -34,31 +33,27 @@
 
 #include "vtkSlicerLoadableModuleTemplateModuleLogicExport.h"
 
-
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_LOADABLEMODULETEMPLATE_MODULE_LOGIC_EXPORT vtkSlicerLoadableModuleTemplateLogic :
-  public vtkSlicerModuleLogic
+class VTK_SLICER_LOADABLEMODULETEMPLATE_MODULE_LOGIC_EXPORT vtkSlicerLoadableModuleTemplateLogic : public vtkSlicerModuleLogic
 {
 public:
-
-  static vtkSlicerLoadableModuleTemplateLogic *New();
+  static vtkSlicerLoadableModuleTemplateLogic* New();
   vtkTypeMacro(vtkSlicerLoadableModuleTemplateLogic, vtkSlicerModuleLogic);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkSlicerLoadableModuleTemplateLogic();
-  virtual ~vtkSlicerLoadableModuleTemplateLogic();
+  ~vtkSlicerLoadableModuleTemplateLogic() override;
 
-  virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
+  void SetMRMLSceneInternal(vtkMRMLScene* newScene) override;
   /// Register MRML Node classes to Scene. Gets called automatically when the MRMLScene is attached to this logic class.
-  virtual void RegisterNodes();
-  virtual void UpdateFromMRMLScene();
-  virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node);
-  virtual void OnMRMLSceneNodeRemoved(vtkMRMLNode* node);
-private:
+  void RegisterNodes() override;
+  void UpdateFromMRMLScene() override;
+  void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
+  void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
 
+private:
   vtkSlicerLoadableModuleTemplateLogic(const vtkSlicerLoadableModuleTemplateLogic&); // Not implemented
-  void operator=(const vtkSlicerLoadableModuleTemplateLogic&); // Not implemented
+  void operator=(const vtkSlicerLoadableModuleTemplateLogic&);                       // Not implemented
 };
 
 #endif

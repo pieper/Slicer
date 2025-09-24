@@ -28,9 +28,12 @@ if(Slicer_USE_PYTHONQT AND NOT Slicer_USE_SYSTEM_python)
 endif()
 
 if(NOT Slicer_USE_SYSTEM_QT)
+  include(${Slicer_CMAKE_DIR}/SlicerBlockInstallQtTools.cmake)
+
   set(SlicerBlockInstallQtPlugins_subdirectories
     audio
     imageformats
+    printsupport
     sqldrivers
     )
     if(Slicer_BUILD_WEBENGINE_SUPPORT)
@@ -84,11 +87,11 @@ if(Slicer_BUILD_QT_DESIGNER_PLUGINS)
     # Launcher settings specific to build tree
     APPLICATION_EXECUTABLE ${build_designer_executable}
     DESTINATION_DIR ${CMAKE_BINARY_DIR}/${Slicer_BIN_DIR}
-    ADDITIONAL_SETTINGS_FILEPATH_BUILD "${Slicer_BINARY_DIR}/${Slicer_BINARY_INNER_SUBDIR}/SlicerLauncherSettings.ini"
+    ADDITIONAL_SETTINGS_FILEPATH_BUILD "${Slicer_BINARY_DIR}/${Slicer_MAIN_PROJECT_APPLICATION_NAME}LauncherSettings.ini"
     # Launcher settings specific to install tree
     APPLICATION_INSTALL_EXECUTABLE_NAME "${installed_designer_executable}"
     APPLICATION_INSTALL_SUBDIR "${installed_designer_subdir}"
-    ADDITIONAL_SETTINGS_FILEPATH_INSTALLED "<APPLAUNCHER_SETTINGS_DIR>/SlicerLauncherSettings.ini"
+    ADDITIONAL_SETTINGS_FILEPATH_INSTALLED "<APPLAUNCHER_SETTINGS_DIR>/${Slicer_MAIN_PROJECT_APPLICATION_NAME}LauncherSettings.ini"
     )
   # Install designer launcher settings
   install(
@@ -163,18 +166,14 @@ if(NOT APPLE)
 else()
 
   #------------------------------------------------------------------------------
-  # macOS specific configuration used by the "fix-up" script
+  # macOS specific configuration used by the "fixup" script
   #------------------------------------------------------------------------------
-  set(CMAKE_INSTALL_NAME_TOOL "" CACHE FILEPATH "" FORCE)
-
   if(Slicer_USE_PYTHONQT)
     include(${Slicer_CMAKE_DIR}/SlicerBlockInstallExternalPythonModules.cmake)
   endif()
 
   # Calling find_package will ensure the *_LIBRARY_DIRS expected by the fixup script are set.
-  if(Slicer_BUILD_CLI_SUPPORT)
-    find_package(SlicerExecutionModel REQUIRED)
-  endif()
+  find_package(SlicerExecutionModel REQUIRED)
   set(VTK_LIBRARY_DIRS "${VTK_DIR}/lib")
 
   # Get Qt root directory
@@ -183,12 +182,73 @@ else()
   set(qt_root_dir "${_dir}/..")
 
   #------------------------------------------------------------------------------
+  # <ExtensionName>_FIXUP_BUNDLE_CANDIDATES_PATTERNS
+  #------------------------------------------------------------------------------
+
+  #
+  # Extensions can define this variable in their CMakeLists.txt to specify
+  # additional glob patterns used by the "fixup" script to locate libraries
+  # that should be processed (e.g., to update rpaths or install names).
+  #
+  # The variable must be set as a CACHE entry to be visible during packaging.
+  # Each pattern should be relative to the extension’s install prefix.
+  #
+
+  set(dollar "$")
+  set(ext_dir "${dollar}{CMAKE_INSTALL_PREFIX}")
+
+  set(EXTENSION_FIXUP_BUNDLE_CANDIDATES_PATTERNS)
+
+  foreach(project ${Slicer_BUNDLED_EXTENSION_NAMES})
+    if(DEFINED ${project}_FIXUP_BUNDLE_CANDIDATES_PATTERNS)
+      foreach(candidates_pattern IN LISTS ${project}_FIXUP_BUNDLE_CANDIDATES_PATTERNS)
+        message(STATUS "[${project}] Using fixup candidates pattern [${candidates_pattern}]")
+        set(candidates_pattern "${ext_dir}/${candidates_pattern}")
+        list(APPEND EXTENSION_FIXUP_BUNDLE_CANDIDATES_PATTERNS ${candidates_pattern})
+      endforeach()
+    endif()
+  endforeach()
+
+  #------------------------------------------------------------------------------
+  # <ExtensionName>_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES
+  #------------------------------------------------------------------------------
+
+  #
+  # Extensions can define this variable in their CMakeLists.txt to override
+  # how the `install_name_tool` sets the install name (`id`) and resolves
+  # references (`@rpath`) for libraries or executables.
+  #
+  # The value should be a list of entries in the format:
+  #
+  #   "<regex>|<relative_path>"
+  #
+  # - <regex>: A regular expression used to match a given library or executable path.
+  # - <relative_path>: The relative destination path under the bundle, used both
+  #   to compute the relocated path and to define the corresponding `@rpath` entry.
+  #
+  # The relocation behavior is context-aware: it takes into account whether the
+  # fixup is happening as part of the application or extension packaging process.
+  #
+  # This variable must be set as a CACHE entry to be picked up during packaging.
+
+  set(EXTENSION_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES)
+
+  foreach(project ${Slicer_BUNDLED_EXTENSION_NAMES})
+    if(DEFINED ${project}_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES)
+      foreach(embedded_path_override IN LISTS ${project}_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES)
+        message(STATUS "[${project}] Using fixup embedded path override [${embedded_path_override}]")
+        list(APPEND EXTENSION_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES ${embedded_path_override})
+      endforeach()
+    endif()
+  endforeach()
+
+  #------------------------------------------------------------------------------
   # <ExtensionName>_FIXUP_BUNDLE_LIBRARY_DIRECTORIES
   #------------------------------------------------------------------------------
 
   #
   # Setting this variable in the CMakeLists.txt of an extension allows to update
-  # the list of directories used by the "fix-up" script to look up libraries
+  # the list of directories used by the "fixup" script to look up libraries
   # that should be copied into the Slicer package when the extension is bundled.
   #
   # To ensure the extension can be bundled, the variable should be set as a CACHE
@@ -204,13 +264,14 @@ else()
             OR lib_path MATCHES "^(/System/Library|/usr/lib)")
           continue()
         endif()
+        message(STATUS "[${project}] Using fixup library directory [${lib_path}]")
         list(APPEND EXTENSION_BUNDLE_FIXUP_LIBRARY_DIRECTORIES ${lib_path})
       endforeach()
     endif()
   endforeach()
 
   #------------------------------------------------------------------------------
-  # Configure "fix-up" script
+  # Configure "fixup" script
   #------------------------------------------------------------------------------
   set(fixup_path @rpath)
   set(slicer_cpack_bundle_fixup_directory ${Slicer_BINARY_DIR}/CMake/SlicerCPackBundleFixup)
@@ -325,8 +386,12 @@ slicer_cpack_set("CPACK_PACKAGE_VERSION")
 
 set(CPACK_SYSTEM_NAME "${Slicer_OS}-${Slicer_ARCHITECTURE}")
 
-set(Slicer_CPACK_PACKAGE_INSTALL_DIRECTORY "${${app_name}_CPACK_PACKAGE_NAME} ${CPACK_PACKAGE_VERSION}")
+set(Slicer_CPACK_PACKAGE_INSTALL_DIRECTORY "${Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME} ${CPACK_PACKAGE_VERSION}")
 slicer_cpack_set("CPACK_PACKAGE_INSTALL_DIRECTORY")
+
+#
+# The following global properties are defined in Applications/<main_application_name>/slicer-application-properties.cmake
+#
 
 get_property(${app_name}_CPACK_PACKAGE_DESCRIPTION_FILE GLOBAL PROPERTY ${app_name}_DESCRIPTION_FILE)
 slicer_cpack_set("CPACK_PACKAGE_DESCRIPTION_FILE")
@@ -347,14 +412,29 @@ endif()
 # -------------------------------------------------------------------------
 if(CPACK_GENERATOR STREQUAL "NSIS")
 
-  set(Slicer_CPACK_NSIS_INSTALL_SUBDIRECTORY "")
+  # Conditionally set the variable so that a different value
+  # can be passed to the inner build (usually done by a custom
+  # application).
+  if(NOT DEFINED Slicer_CPACK_NSIS_INSTALL_SUBDIRECTORY)
+    set(Slicer_CPACK_NSIS_INSTALL_SUBDIRECTORY "")
+  endif()
   slicer_cpack_set("CPACK_NSIS_INSTALL_SUBDIRECTORY")
 
   set(_nsis_install_root "${Slicer_CPACK_NSIS_INSTALL_ROOT}")
 
   # Use ManifestDPIAware to improve appearance of installer
-  string(APPEND CPACK_NSIS_DEFINES "\n  ;Use ManifestDPIAware to improve appearance of installer")
-  string(APPEND CPACK_NSIS_DEFINES "\n  ManifestDPIAware true\n")
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.18")
+    set(CPACK_NSIS_MANIFEST_DPI_AWARE True)
+  elseif()
+    string(APPEND CPACK_NSIS_DEFINES "\n  ;Use ManifestDPIAware to improve appearance of installer")
+    string(APPEND CPACK_NSIS_DEFINES "\n  ManifestDPIAware true\n")
+  endif()
+
+  # Use ManifestLongPathAware to support packaging of application where an install prefix like the following
+  # would lead to paths having their length beyond the 260 characters limit:
+  # "C:/path/to/Slicer-build/_CPack_Packages/win-amd64/NSIS/<Slicer_MAIN_PROJECT>-X.Y.Z-YYYY-MM-DD-win-amd64"
+  string(APPEND CPACK_NSIS_DEFINES "\n  ;Use ManifestLongPathAware to support longer install prefix")
+  string(APPEND CPACK_NSIS_DEFINES "\n  ManifestLongPathAware true\n")
 
   if (NOT Slicer_CPACK_NSIS_INSTALL_REQUIRES_ADMIN_ACCOUNT)
     # Install as regular user (UAC dialog will not be shown).
@@ -383,21 +463,65 @@ if(CPACK_GENERATOR STREQUAL "NSIS")
   # Slicer does *NOT* require setting the windows path
   set(CPACK_NSIS_MODIFY_PATH OFF)
 
-  set(APPLICATION_NAME "${Slicer_MAIN_PROJECT_APPLICATION_NAME}")
   set(EXECUTABLE_NAME "${Slicer_MAIN_PROJECT_APPLICATION_NAME}")
   # Set application name used to create Start Menu shortcuts
-  set(PACKAGE_APPLICATION_NAME "${APPLICATION_NAME} ${CPACK_PACKAGE_VERSION}")
-  slicer_verbose_set(CPACK_PACKAGE_EXECUTABLES "..\\\\${EXECUTABLE_NAME}" "${PACKAGE_APPLICATION_NAME}")
+  set(CPACK_NSIS_DISPLAY_NAME "${Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME} ${CPACK_PACKAGE_VERSION}")
+  slicer_verbose_set(CPACK_PACKAGE_EXECUTABLES "..\\\\${EXECUTABLE_NAME}" "${CPACK_NSIS_DISPLAY_NAME}")
+
+  get_property(${app_name}_CPACK_NSIS_MUI_ICON GLOBAL PROPERTY ${app_name}_WIN_ICON_FILE)
+  slicer_cpack_set("CPACK_NSIS_MUI_ICON")
+  slicer_verbose_set(CPACK_NSIS_INSTALLED_ICON_NAME "${EXECUTABLE_NAME}.exe")
+  slicer_verbose_set(CPACK_NSIS_MUI_FINISHPAGE_RUN "../${EXECUTABLE_NAME}.exe")
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20")
+    set(CPACK_NSIS_BRANDING_TEXT " ")
+  elseif()
+    string(APPEND CPACK_NSIS_DEFINES "\n  BrandingText ' '\n")
+  endif()
+
+  # Header
+  if(EXISTS "${Slicer_CPACK_NSIS_INSTALLER_HEADER_FILE}")
+    string(REPLACE "/" "\\\\" _nsis_installer_file ${Slicer_CPACK_NSIS_INSTALLER_HEADER_FILE})
+    slicer_verbose_set(CPACK_NSIS_MUI_HEADERIMAGE "${_nsis_installer_file}")
+  endif()
+
+  # Welcome
+  if(EXISTS "${Slicer_CPACK_NSIS_INSTALLER_WELCOME_FILE}")
+    string(REPLACE "/" "\\\\" _nsis_installer_file ${Slicer_CPACK_NSIS_INSTALLER_WELCOME_FILE})
+    slicer_verbose_set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP "${_nsis_installer_file}")
+  endif()
+
+  # Unwelcome
+  if(EXISTS "${Slicer_CPACK_NSIS_INSTALLER_UNWELCOME_FILE}")
+    string(REPLACE "/" "\\\\" _nsis_installer_file ${Slicer_CPACK_NSIS_INSTALLER_UNWELCOME_FILE})
+    slicer_verbose_set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP "${_nsis_installer_file}")
+  endif()
+
+  set(CPACK_NSIS_WELCOME_TITLE "Welcome to the ${CPACK_NSIS_DISPLAY_NAME} Setup Wizard")
+  set(CPACK_NSIS_WELCOME_TITLE_3LINES True)
+  set(CPACK_NSIS_FINISH_TITLE "Completed the ${CPACK_NSIS_DISPLAY_NAME} Setup Wizard")
+  set(CPACK_NSIS_FINISH_TITLE_3LINES True)
+
+  # -------------------------------------------------------------------------
+  # Graphics Preference
+  # -------------------------------------------------------------------------
+  # Windows Settings -> System -> Display -> Graphics
+  # This area has options for setting custom graphics settings for an individual app with the following options:
+  # GpuPreference=0 -> "Let Windows Decide (default)"
+  # GpuPreference=1 -> "Power Saving" - uses integrated graphics
+  # GpuPreference=2 -> "High Performance" - uses discrete graphics
+  # Note: This is a user setting that has to be applied at the HKCU (HKEY_CURRENT_USER) level and cannot be set at the HKLM (HKEY_LOCAL_MACHINE) level
+  set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
+"WriteRegStr HKCU \\\"SOFTWARE\\\\Microsoft\\\\DirectX\\\\UserGpuPreferences\\\" \\\"$INSTDIR\\\\bin\\\\${EXECUTABLE_NAME}App-real.exe\\\" \\\"GpuPreference=2;\\\"
+")
+  set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS
+"DeleteRegValue HKCU \\\"SOFTWARE\\\\Microsoft\\\\DirectX\\\\UserGpuPreferences\\\" \\\"$INSTDIR\\\\bin\\\\${EXECUTABLE_NAME}App-real.exe\\\"
+")
 
   # -------------------------------------------------------------------------
   # File extensions
   # -------------------------------------------------------------------------
   set(FILE_EXTENSIONS .mrml .xcat .mrb)
-
   if(FILE_EXTENSIONS)
-
-    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS)
-    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS)
     foreach(ext ${FILE_EXTENSIONS})
       string(LENGTH "${ext}" len)
       math(EXPR len_m1 "${len} - 1")
@@ -405,6 +529,7 @@ if(CPACK_GENERATOR STREQUAL "NSIS")
       set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS
         "${CPACK_NSIS_EXTRA_INSTALL_COMMANDS}
 WriteRegStr SHCTX \\\"SOFTWARE\\\\Classes\\\\${APPLICATION_NAME}\\\" \\\"\\\" \\\"${APPLICATION_NAME} supported file\\\"
+WriteRegStr SHCTX \\\"SOFTWARE\\\\Classes\\\\${APPLICATION_NAME}\\\" \\\"URL Protocol\\\" \\\"\\\"
 WriteRegStr SHCTX \\\"SOFTWARE\\\\Classes\\\\${APPLICATION_NAME}\\\\shell\\\\open\\\\command\\\" \
 \\\"\\\" \\\"$\\\\\\\"$INSTDIR\\\\${EXECUTABLE_NAME}.exe$\\\\\\\" $\\\\\\\"%1$\\\\\\\"\\\"
 WriteRegStr SHCTX \\\"SOFTWARE\\\\Classes\\\\${ext}\\\" \\\"\\\" \\\"${APPLICATION_NAME}\\\"
@@ -420,4 +545,3 @@ DeleteRegKey SHCTX \\\"SOFTWARE\\\\Classes\\\\${ext}\\\"
 endif()
 
 include(CPack)
-

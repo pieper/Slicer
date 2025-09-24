@@ -35,43 +35,35 @@
 /// highlight color to indicates that the item is not really selectable
 /// but correspond to an action.
 
-/// We reimplemente the code form Qt "QComboBoxDelegate" used in the class QComboBox.
+/// We reimplement the code form Qt "QComboBoxDelegate" used in the class QComboBox.
 
 class QComboBox;
 
 class QMRML_WIDGETS_EXPORT qMRMLNodeComboBoxDelegate : public QItemDelegate
 {
   Q_OBJECT
-public :
+public:
   typedef QItemDelegate Superclass;
   qMRMLNodeComboBoxDelegate(QObject* parent, QComboBox* comboBox);
 
-  static bool isSeparator(const QModelIndex &index);
-  static void setSeparator(QAbstractItemModel *model, const QModelIndex &index);
+  static bool isSeparator(const QModelIndex& index);
+  static void setSeparator(QAbstractItemModel* model, const QModelIndex& index);
 
 protected:
   /// Reimplemented to force the highlight in case the item is not selectable
   /// but current. The highlight color used is then slightly different from
   /// the default color
-  void paint(QPainter *painter,
-                     const QStyleOptionViewItem &option,
-                     const QModelIndex &index) const override;
+  void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
-  QSize sizeHint(const QStyleOptionViewItem &option,
-                         const QModelIndex &index) const override;
+  QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
-  void drawDisplay(QPainter *painter,
-                           const QStyleOptionViewItem &option,
-                           const QRect &rect,
-                           const QString &text) const override;
+  void drawDisplay(QPainter* painter, const QStyleOptionViewItem& option, const QRect& rect, const QString& text) const override;
 
-  void drawFocus(QPainter *painter,
-                         const QStyleOptionViewItem &option,
-                         const QRect &rect) const override;
+  void drawFocus(QPainter* painter, const QStyleOptionViewItem& option, const QRect& rect) const override;
 
 private:
   QComboBox* mCombo;
   Q_DISABLE_COPY(qMRMLNodeComboBoxDelegate);
 };
 
-#endif // __qMRMLNodeComboBoxDelegate_h
+#endif

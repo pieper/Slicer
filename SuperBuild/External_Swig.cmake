@@ -12,15 +12,23 @@ endif()
 
 if(NOT SWIG_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
-  set(SWIG_TARGET_VERSION 3.0.10)
-  set(SWIG_DOWNLOAD_SOURCE_HASH "599883a08b673cb0975176084fa7a6f5c7e3f6ffa86e8ba600e9d81d80b9d7632668e61c8db519b4c800bdbddcdbf55b0f5ef49f6a80ceafaef864ffcaaa30c1")
-  set(SWIG_DOWNLOAD_WIN_HASH "7aee934e1b62086fe63275013e32a9991dd3a31ceaf2a4cc0f4ced50f5617e3592c9bf89301435d020d4d95b88333690f015cb84725f4e356277f1acdbf01389")
+  set(SWIG_TARGET_VERSION 4.3.1)
+  set(SWIG_DOWNLOAD_SOURCE_HASH "8958f7bc3345549a9bc4e00aa8d40a99f6c4bb92b95d627c8796cf8f8d1ba0041a89cab542f171778c2b26aa2a877767181ae9bd2c05fd055f373a32a463399c")
+  set(SWIG_DOWNLOAD_WIN_HASH "ca7210684b6ccb1b9bb186797bf1b67bbf3e76f6d0e702fee78edf7456992a4298eb5fa0b5f602a4240161fedd422920fe56e12cd60b8c8fd71c2f784f3d0f43")
+
+  set(EXTERNAL_PROJECT_OPTIONAL_ARGS)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+    list(APPEND EXTERNAL_PROJECT_OPTIONAL_ARGS
+      DOWNLOAD_EXTRACT_TIMESTAMP 1
+      )
+  endif()
 
   if(WIN32)
     set(EP_BINARY_DIR ${CMAKE_BINARY_DIR}/swigwin-${SWIG_TARGET_VERSION})
 
     # swig.exe available as pre-built binary on Windows:
     ExternalProject_Add(Swig
+      ${EXTERNAL_PROJECT_OPTIONAL_ARGS}
       URL https://github.com/Slicer/SlicerBinaryDependencies/releases/download/swig/swigwin-${SWIG_TARGET_VERSION}.zip
       URL_HASH SHA512=${SWIG_DOWNLOAD_WIN_HASH}
       SOURCE_DIR "${EP_BINARY_DIR}"
@@ -38,7 +46,7 @@ if(NOT SWIG_DIR AND NOT Slicer_USE_SYSTEM_${proj})
     # not windows
 
     # Set dependency list
-    set(${proj}_DEPENDENCIES PCRE python)
+    set(${proj}_DEPENDENCIES PCRE2 python)
 
     # Include dependent projects if any
     ExternalProject_Include_Dependencies(${proj} PROJECT_VAR proj DEPENDS_VAR ${proj}_DEPENDENCIES)
@@ -79,12 +87,14 @@ set(ENV{YFLAGS} \"${BISON_FLAGS}\")
 set(${proj}_WORKING_DIR \"${EP_BINARY_DIR}\")
 ExternalProject_Execute(${proj} \"configure\" sh ${EP_SOURCE_DIR}/configure
     --prefix=${EP_INSTALL_DIR}
-    --with-pcre-prefix=${PCRE_DIR}
+    --with-pcre2-prefix=${PCRE2_DIR}
     --without-octave
+    --without-java
     --with-python=${PYTHON_EXECUTABLE})
 ")
 
     ExternalProject_add(Swig
+      ${EXTERNAL_PROJECT_OPTIONAL_ARGS}
       URL https://github.com/Slicer/SlicerBinaryDependencies/releases/download/swig/swig-${SWIG_TARGET_VERSION}.tar.gz
       URL_HASH SHA512=${SWIG_DOWNLOAD_SOURCE_HASH}
       DOWNLOAD_DIR ${CMAKE_BINARY_DIR}

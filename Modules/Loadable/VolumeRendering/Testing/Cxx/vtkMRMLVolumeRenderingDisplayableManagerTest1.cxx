@@ -32,7 +32,9 @@
 #include <vtkMRMLApplicationLogic.h>
 
 // MRML includes
+#include <vtkMRMLAnnotationROINode.h>
 #include <vtkMRMLCoreTestingMacros.h>
+#include <vtkMRMLMarkupsROINode.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLScalarVolumeDisplayNode.h>
 #include <vtkMRMLScalarVolumeNode.h>
@@ -54,13 +56,20 @@
 #include <vtkWindowToImageFilter.h>
 
 // STD includes
+#include <string>
 
-const char vtkMRMLVolumeRenderingDisplayableManagerTest1EventLog[] =
-"# StreamVersion 1\n";
+const char vtkMRMLVolumeRenderingDisplayableManagerTest1EventLog[] = //
+  "# StreamVersion 1\n";
 
 //----------------------------------------------------------------------------
 int vtkMRMLVolumeRenderingDisplayableManagerTest1(int argc, char* argv[])
 {
+  if (argc < 2)
+  {
+    std::cerr << "Must pass share directory as first argument to test" << std::endl;
+  }
+  const char* moduleShareDirectory = argv[1];
+
   // Renderer, RenderWindow and Interactor
   vtkNew<vtkRenderer> renderer;
   vtkNew<vtkRenderWindow> renderWindow;
@@ -72,14 +81,17 @@ int vtkMRMLVolumeRenderingDisplayableManagerTest1(int argc, char* argv[])
   renderWindow->SetInteractor(renderWindowInteractor.GetPointer());
 
   // Set Interactor Style
-  //vtkNew<vtkMRMLThreeDViewInteractorStyle> iStyle;
-  //renderWindowInteractor->SetInteractorStyle(iStyle.GetPointer());
+  // vtkNew<vtkMRMLThreeDViewInteractorStyle> iStyle;
+  // renderWindowInteractor->SetInteractorStyle(iStyle.GetPointer());
 
   // move back far enough to see the reformat widgets
-  //renderer->GetActiveCamera()->SetPosition(0,0,-500.);
+  // renderer->GetActiveCamera()->SetPosition(0,0,-500.);
+
+  vtkNew<vtkMRMLAnnotationROINode> annotationROINode;
 
   // MRML scene
   vtkMRMLScene* scene = vtkMRMLScene::New();
+  scene->RegisterNodeClass(annotationROINode);
 
   // Application logic - Handle creation of vtkMRMLSelectionNode and vtkMRMLInteractionNode
   vtkMRMLApplicationLogic* applicationLogic = vtkMRMLApplicationLogic::New();
@@ -102,20 +114,19 @@ int vtkMRMLVolumeRenderingDisplayableManagerTest1(int argc, char* argv[])
   vtkNew<vtkImageData> imageData;
   imageData->SetDimensions(3, 3, 3);
   imageData->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
-  unsigned char* ptr = reinterpret_cast<unsigned char*>(
-    imageData->GetScalarPointer(0,0,0));
+  unsigned char* ptr = reinterpret_cast<unsigned char*>(imageData->GetScalarPointer(0, 0, 0));
   for (int z = 0; z < 3; ++z)
-    {
+  {
     for (int y = 0; y < 3; ++y)
-      {
+    {
       for (int x = 0; x < 3; ++x)
-        {
-        double normalizedIntensity = (static_cast<double>(x+(y*3)+(z*3*3)) / static_cast<double>(3*3*3 - 1));
+      {
+        double normalizedIntensity = (static_cast<double>(x + (y * 3) + (z * 3 * 3)) / static_cast<double>(3 * 3 * 3 - 1));
         std::cout << x << " " << y << " " << z << ": " << normalizedIntensity << std::endl;
         *(ptr++) = 255 - static_cast<unsigned char>(255. * normalizedIntensity);
-        }
       }
     }
+  }
   volumeNode->SetAndObserveImageData(imageData.GetPointer());
   scene->AddNode(volumeNode.GetPointer());
 
@@ -133,6 +144,7 @@ int vtkMRMLVolumeRenderingDisplayableManagerTest1(int argc, char* argv[])
   vtkNew<vtkSlicerVolumeRenderingLogic> vrLogic;
   vrLogic->SetDefaultRenderingMethod("vtkMRMLGPURayCastVolumeRenderingDisplayNode");
   vrLogic->SetMRMLScene(scene);
+  vrLogic->SetModuleShareDirectory(moduleShareDirectory);
 
   vrLogic->CreateDefaultVolumeRenderingNodes(volumeNode.GetPointer());
   vtkMRMLVolumeRenderingDisplayNode* vrDisplayNode = vrLogic->GetFirstVolumeRenderingDisplayNode(volumeNode.GetPointer());
@@ -144,72 +156,68 @@ int vtkMRMLVolumeRenderingDisplayableManagerTest1(int argc, char* argv[])
   volumeDisplayNode->SetWindowLevelMinMax(128, 245);
 
   // TODO: Automatically move the camera (simulating movements) to have a good screenshot.
-  renderer->SetBackground(0, 169. / 255, 79. /255);
-  renderer->SetBackground2(0, 83. / 255, 155. /255);
+  renderer->SetBackground(0, 169. / 255, 79. / 255);
+  renderer->SetBackground2(0, 83. / 255, 155. / 255);
   renderer->SetGradientBackground(true);
   renderer->ResetCamera();
 
   // Event recorder
   bool disableReplay = false, record = false, screenshot = false;
   for (int i = 0; i < argc; i++)
-    {
+  {
     disableReplay |= (strcmp("--DisableReplay", argv[i]) == 0);
-    record        |= (strcmp("--Record", argv[i]) == 0);
-    screenshot    |= (strcmp("--Screenshot", argv[i]) == 0);
-    }
+    record |= (strcmp("--Record", argv[i]) == 0);
+    screenshot |= (strcmp("--Screenshot", argv[i]) == 0);
+  }
   vtkNew<vtkInteractorEventRecorder> recorder;
   recorder->SetInteractor(displayableManagerGroup->GetInteractor());
   if (!disableReplay)
-    {
+  {
     if (record)
-      {
+    {
       std::cout << "Recording ..." << std::endl;
       recorder->SetFileName("vtkInteractorEventRecorder.log");
       recorder->On();
       recorder->Record();
-      }
+    }
     else
-      {
+    {
       // Play
       recorder->ReadFromInputStringOn();
       recorder->SetInputString(vtkMRMLVolumeRenderingDisplayableManagerTest1EventLog);
       recorder->Play();
-      }
     }
+  }
 
   int retval = vtkRegressionTestImageThreshold(renderWindow.GetPointer(), 85.0);
-  if ( record || retval == vtkRegressionTester::DO_INTERACTOR)
-    {
+  if (record || retval == vtkRegressionTester::DO_INTERACTOR)
+  {
     displayableManagerGroup->GetInteractor()->Initialize();
     displayableManagerGroup->GetInteractor()->Start();
-    }
+  }
 
   if (record || screenshot)
-    {
+  {
     vtkNew<vtkWindowToImageFilter> windowToImageFilter;
     windowToImageFilter->SetInput(renderWindow.GetPointer());
-#if VTK_MAJOR_VERSION >= 9 || (VTK_MAJOR_VERSION >= 8 && VTK_MINOR_VERSION >= 1)
-    windowToImageFilter->SetScale(1, 1); //set the resolution of the output image
-#else
-    windowToImageFilter->SetMagnification(1); //set the resolution of the output image
-#endif
+    windowToImageFilter->SetScale(1, 1); // set the resolution of the output image
     windowToImageFilter->Update();
 
     vtkNew<vtkTesting> testHelper;
-    testHelper->AddArguments(argc, const_cast<const char **>(argv));
+    testHelper->AddArguments(argc, const_cast<const char**>(argv));
 
-    vtkStdString screenshootFilename = testHelper->GetDataRoot();
+    std::string screenshootFilename = testHelper->GetDataRoot();
     screenshootFilename += "/Baseline/vtkMRMLCameraDisplayableManagerTest1.png";
     vtkNew<vtkPNGWriter> writer;
     writer->SetFileName(screenshootFilename.c_str());
     writer->SetInputConnection(windowToImageFilter->GetOutputPort());
     writer->Write();
     std::cout << "Saved screenshot: " << screenshootFilename << std::endl;
-    }
+  }
 
   vtkGPUVolumeRayCastMapper* mapper = vtkGPUVolumeRayCastMapper::SafeDownCast(vrDisplayableManager->GetVolumeMapper(volumeNode.GetPointer()));
   if (mapper)
-    {
+  {
     CHECK_INT(mapper->GetMaxMemoryInBytes() / 1024 / 1024, 256);
     viewNode->SetGPUMemorySize(250);
     CHECK_INT(mapper->GetMaxMemoryInBytes() / 1024 / 1024, 256);
@@ -229,7 +237,7 @@ int vtkMRMLVolumeRenderingDisplayableManagerTest1(int argc, char* argv[])
     CHECK_INT(mapper->GetMaxMemoryInBytes() / 1024 / 1024, 8192);
     viewNode->SetGPUMemorySize(16384);
     CHECK_INT(mapper->GetMaxMemoryInBytes() / 1024 / 1024, 16384);
-   }
+  }
 
   vrDisplayableManager->SetMRMLApplicationLogic(nullptr);
   applicationLogic->Delete();

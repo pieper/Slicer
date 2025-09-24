@@ -27,20 +27,43 @@
 // QtGUI includes
 #include "qSlicerBaseQTGUIExport.h"
 
+class qSlicerWebPythonProxyPrivate;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerWebPythonProxy
-  : public QObject
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerWebPythonProxy : public QObject
 {
   Q_OBJECT
+  Q_PROPERTY(bool verbose READ verbose WRITE setVerbose)
 
 public:
+  typedef QObject Superclass;
 
   /// Constructor
-  explicit qSlicerWebPythonProxy(QObject *parent = nullptr);
+  explicit qSlicerWebPythonProxy(QObject* parent = nullptr);
+  virtual ~qSlicerWebPythonProxy();
+
+  /// This enum maps to ctkAbstractPythonManager execution modes Py_eval_input,
+  /// Py_file_input and Py_single_input.
+  ///
+  /// \see https://docs.python.org/3/c-api/veryhigh.html#Py_eval_input
+  /// \see https://docs.python.org/3/c-api/veryhigh.html#Py_file_input
+  /// \see https://docs.python.org/3/c-api/veryhigh.html#Py_single_input
+  ///
+  /// \sa ctkAbstractPythonManager::ExecuteStringMode
+  enum EvalPythonMode
+  {
+    EvalInput = 0,
+    FileInput,
+    SingleInput
+  };
+  Q_ENUMS(EvalPythonMode);
+
+  /// Enabled detailed logging during Python evaluation.
+  bool verbose() const;
+  void setVerbose(bool value);
 
 public slots:
 
-  /// Convenient function to execute python code from 
+  /// Convenient function to execute python code from
   /// the JavaScript (when an instance of this class
   /// is registered with the WebChannel).
   ///
@@ -48,17 +71,19 @@ public slots:
   /// the passed code, and the resulting QVariant is returned
   /// as a string.
   ///
-  /// As a precaution, the user is prompted to allow or disallow 
+  /// As a precaution, the user is prompted to allow or disallow
   /// running python code from web pages.
   ///
   /// \sa qSlicerWebWidget::initializeWebEngineProfile
-  QString evalPython(const QString &python);
+  QString evalPython(const QString& python, int mode = FileInput);
+
+protected:
+  qSlicerWebPythonProxy(qSlicerWebPythonProxyPrivate* pimpl);
+  QScopedPointer<qSlicerWebPythonProxyPrivate> d_ptr;
 
 private:
-  /// Keep track of user response to avoid going through ctk dialog to check
-  bool isPythonEvaluationAllowed();
-  bool pythonEvaluationAllowed;
-
+  Q_DECLARE_PRIVATE(qSlicerWebPythonProxy);
+  Q_DISABLE_COPY(qSlicerWebPythonProxy);
 };
 
 #endif

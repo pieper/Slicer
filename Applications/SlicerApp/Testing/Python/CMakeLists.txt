@@ -122,7 +122,7 @@ macro(nowarning_test test_name)
 endmacro()
 nowarning_test(mainwindow --no-splash)
 nowarning_test(mainwindow_application_info --application-information)
-nowarning_test(mainwindow_python_interactor --show-python-interactor)
+nowarning_test(mainwindow_python_console --show-python-console)
 nowarning_test(mainwindow_nocli --disable-cli-modules)
 nowarning_test(mainwindow_noloadable --disable-loadable-modules)
 nowarning_test(mainwindow_noscripted --disable-scripted-loadable-modules)
@@ -133,7 +133,7 @@ nowarning_test(mainwindow_nocli_noloadable_noscripted --disable-cli-modules --di
 nowarning_test(mainwindow_nomodules --disable-modules)
 nowarning_test(nomainwindow --no-main-window)
 nowarning_test(nomainwindow_application_info --no-main-window --application-information)
-nowarning_test(nomainwindow_python_interactor --no-main-window --show-python-interactor)
+nowarning_test(nomainwindow_python_console --no-main-window --show-python-console)
 nowarning_test(nomainwindow_nocli --no-main-window --disable-cli-modules)
 nowarning_test(nomainwindow_noloadable --no-main-window --disable-loadable-modules)
 nowarning_test(nomainwindow_noscripted --no-main-window --disable-scripted-loadable-modules)
@@ -198,6 +198,17 @@ slicer_add_python_test(
 if(UNIX)
 set_tests_properties(py_nomainwindow_${testname} PROPERTIES
   PASS_REGULAR_EXPRESSION "ModuleAWidget finalized"
+  # Workaround the fact using PASS_REGULAR_EXPRESSION ignores return code
+  # by checking for output characteristics of Python exceptions.
+  #
+  # This is needed because the message "ModuleAWidget finalized" is displayed
+  # early on before potential python exceptions.
+  #
+  # Note this is a partial workaround as non-python errors would not cause
+  # the test to fail.
+  #
+  # See https://github.com/jcfr/cmake-add_test-PASS_REGULAR_EXPRESSION
+  FAIL_REGULAR_EXPRESSION "Traceback"
   )
 endif()
 
@@ -266,9 +277,27 @@ slicer_add_python_unittest(
   TESTNAME_PREFIX nomainwindow_
   )
 
+add_test(
+  NAME py_doctest_slicer_util
+  COMMAND ${PYTHON_EXECUTABLE}
+    -m doctest -v ${Slicer_SOURCE_DIR}/Base/Python/slicer/util.py
+  )
+
 slicer_add_python_unittest(
   SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_util_without_modules.py
   SLICER_ARGS --no-main-window  --disable-modules
+  TESTNAME_PREFIX nomainwindow_
+  )
+
+slicer_add_python_unittest(
+  SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_util_chdir.py
+  SLICER_ARGS --no-main-window --disable-modules
+  TESTNAME_PREFIX nomainwindow_
+  )
+
+slicer_add_python_unittest(
+  SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_util_load_data.py
+  SLICER_ARGS --no-main-window --disable-cli-modules
   TESTNAME_PREFIX nomainwindow_
   )
 
@@ -281,6 +310,30 @@ slicer_add_python_unittest(
 slicer_add_python_unittest(
   SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_util_getNodes.py
   SLICER_ARGS --no-main-window --disable-modules
+  TESTNAME_PREFIX nomainwindow_
+  )
+
+slicer_add_python_unittest(
+  SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_parameter_node_wrapper.py
+  SLICER_ARGS --no-main-window --disable-cli-modules --disable-scripted-loadable-modules
+  TESTNAME_PREFIX nomainwindow_
+  )
+
+slicer_add_python_unittest(
+  SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_parameter_pack.py
+  SLICER_ARGS --no-main-window --disable-cli-modules --disable-scripted-loadable-modules
+  TESTNAME_PREFIX nomainwindow_
+  )
+
+slicer_add_python_unittest(
+  SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_parameter_node_wrapper_guis.py
+  SLICER_ARGS --no-main-window --disable-cli-modules
+  TESTNAME_PREFIX nomainwindow_
+  )
+
+slicer_add_python_unittest(
+  SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_parameter_node_wrapper_gui_creation.py
+  SLICER_ARGS --no-main-window --disable-cli-modules --disable-scripted-loadable-modules
   TESTNAME_PREFIX nomainwindow_
   )
 
@@ -304,6 +357,12 @@ slicer_add_python_unittest(
 
 slicer_add_python_unittest(
   SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_python_sqlite3.py
+  SLICER_ARGS --no-main-window  --disable-modules
+  TESTNAME_PREFIX nomainwindow_
+  )
+
+slicer_add_python_unittest(
+  SCRIPT ${Slicer_SOURCE_DIR}/Base/Python/slicer/tests/test_slicer_python_lzma.py
   SLICER_ARGS --no-main-window  --disable-modules
   TESTNAME_PREFIX nomainwindow_
   )
@@ -384,7 +443,7 @@ add_test(
 
 #
 # SelfTests
-# see http://wiki.slicer.org/slicerWiki/index.php/Documentation/Nightly/Developers/Tutorials/SelfTestModule
+# see https://wiki.slicer.org/slicerWiki/index.php/Documentation/Nightly/Developers/Tutorials/SelfTestModule
 #
 
 if(Slicer_USE_QtTesting AND Slicer_USE_PYTHONQT)
@@ -394,24 +453,23 @@ if(Slicer_USE_QtTesting AND Slicer_USE_PYTHONQT)
   slicer_add_python_unittest(SCRIPT DICOMReaders.py)
   slicer_add_python_unittest(SCRIPT KneeAtlasTest.py)
   slicer_add_python_unittest(SCRIPT sceneImport2428.py)
+  slicer_add_python_unittest(SCRIPT SlicerDisplayNodeSequenceTest.py)
   slicer_add_python_unittest(SCRIPT SlicerMRBMultipleSaveRestoreLoopTest.py)
   slicer_add_python_unittest(SCRIPT SlicerMRBMultipleSaveRestoreTest.py)
   slicer_add_python_unittest(SCRIPT SlicerMRBSaveRestoreCheckPathsTest.py)
   slicer_add_python_unittest(SCRIPT Slicer4Minute.py)
   slicer_add_python_unittest(SCRIPT SlicerBoundsTest.py)
-  slicer_add_python_unittest(SCRIPT Charting.py)
   if(Slicer_BUILD_WEBENGINE_SUPPORT)
     slicer_add_python_unittest(SCRIPT WebEngine.py)
   endif()
   slicer_add_python_unittest(SCRIPT SliceLinkLogic.py)
   slicer_add_python_unittest(SCRIPT ScenePerformance.py)
-  slicer_add_python_unittest(SCRIPT SlicerCreateRulerCrashIssue4199.py)
   slicer_add_python_unittest(SCRIPT SlicerRestoreSceneViewCrashIssue3445.py)
   slicer_add_python_unittest(SCRIPT RSNAVisTutorial.py)
   slicer_add_python_unittest(SCRIPT RSNAQuantTutorial.py)
-  slicer_add_python_unittest(SCRIPT slicerCloseCrashBug2590.py)
   slicer_add_python_unittest(SCRIPT SlicerOrientationSelectorTest.py)
-  slicer_add_python_unittest(SCRIPT SlicerTransformInteractionTest1.py)
+  # Currently needs to be updated for new widget. PR-7562: https://github.com/Slicer/Slicer/pull/7562
+  #slicer_add_python_unittest(SCRIPT SlicerTransformInteractionTest1.py)
   slicer_add_python_unittest(SCRIPT UtilTest.py)
   slicer_add_python_unittest(SCRIPT ViewControllersSliceInterpolationBug1926.py)
   slicer_add_python_unittest(SCRIPT RSNA2012ProstateDemo.py)
@@ -419,25 +477,26 @@ if(Slicer_USE_QtTesting AND Slicer_USE_PYTHONQT)
   slicer_add_python_unittest(SCRIPT FiducialLayoutSwitchBug1914.py)
   slicer_add_python_unittest(SCRIPT ShaderProperties.py)
   slicer_add_python_unittest(SCRIPT SlicerScriptedFileReaderWriterTest.py)
+  slicer_add_python_unittest(SCRIPT CurvedPlanarReformation.py)
 
   # add as hidden module for use at run time
   set(KIT_PYTHON_SCRIPTS
     AtlasTests.py
     sceneImport2428.py
+    SlicerDisplayNodeSequenceTest.py
     SlicerMRBMultipleSaveRestoreLoopTest.py
     SlicerMRBMultipleSaveRestoreTest.py
     SlicerMRBSaveRestoreCheckPathsTest.py
     Slicer4Minute.py
     SlicerBoundsTest.py
-    Charting.py
     WebEngine.py
     SliceLinkLogic.py
     ScenePerformance.py
     RSNAVisTutorial.py
     RSNAQuantTutorial.py
-    slicerCloseCrashBug2590.py
     SlicerOrientationSelectorTest.py
-    SlicerTransformInteractionTest1.py
+    # Currently needs to be updated for new widget. PR-7562: https://github.com/Slicer/Slicer/pull/7562
+    #SlicerTransformInteractionTest1.py
     ViewControllersSliceInterpolationBug1926.py
     RSNA2012ProstateDemo.py
     JRC2013Vis.py
@@ -445,20 +504,19 @@ if(Slicer_USE_QtTesting AND Slicer_USE_PYTHONQT)
     ShaderProperties.py
     UtilTest.py
     SlicerScriptedFileReaderWriterTest.py
+    CurvedPlanarReformation.py
     )
 
-  if(Slicer_BUILD_CLI_SUPPORT)
-    slicer_add_python_unittest(SCRIPT CLIEventTest.py SLICER_ARGS --no-main-window)
-    slicer_add_python_unittest(SCRIPT TwoCLIsInARowTest.py)
-    slicer_add_python_unittest(SCRIPT TwoCLIsInParallelTest.py)
+  slicer_add_python_unittest(SCRIPT CLIEventTest.py SLICER_ARGS --no-main-window)
+  slicer_add_python_unittest(SCRIPT TwoCLIsInARowTest.py)
+  slicer_add_python_unittest(SCRIPT TwoCLIsInParallelTest.py)
 
-    if(Slicer_BUILD_BRAINSTOOLS)
-      slicer_add_python_unittest(SCRIPT BRAINSFitRigidRegistrationCrashIssue4139.py)
+  if(Slicer_BUILD_BRAINSTOOLS)
+    slicer_add_python_unittest(SCRIPT BRAINSFitRigidRegistrationCrashIssue4139.py)
 
-      list(APPEND KIT_PYTHON_SCRIPTS
-        BRAINSFitRigidRegistrationCrashIssue4139.py
-        )
-    endif()
+    list(APPEND KIT_PYTHON_SCRIPTS
+      BRAINSFitRigidRegistrationCrashIssue4139.py
+      )
   endif()
 
   set(KIT_PYTHON_RESOURCES
@@ -476,4 +534,3 @@ if(Slicer_USE_QtTesting AND Slicer_USE_PYTHONQT)
     )
 
 endif()
-

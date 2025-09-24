@@ -26,25 +26,21 @@
 class qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate;
 class vtkMRMLNode;
 
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class Q_SLICER_QTMODULES_SUPERLOADABLEMODULETEMPLATE_EXPORT qSlicerSuperLoadableModuleTemplateModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_SUPERLOADABLEMODULETEMPLATE_EXPORT qSlicerSuperLoadableModuleTemplateModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerSuperLoadableModuleTemplateModuleWidget(QWidget *parent=0);
+  qSlicerSuperLoadableModuleTemplateModuleWidget(QWidget* parent = 0);
   virtual ~qSlicerSuperLoadableModuleTemplateModuleWidget();
 
 public slots:
 
-
 protected:
   QScopedPointer<qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate> d_ptr;
 
-  virtual void setup();
+  void setup() override;
 
 private:
   Q_DECLARE_PRIVATE(qSlicerSuperLoadableModuleTemplateModuleWidget);

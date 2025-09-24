@@ -26,11 +26,35 @@ endif()
 if(NOT Slicer_USE_SYSTEM_${proj})
   set(requirements_file ${CMAKE_BINARY_DIR}/${proj}-requirements.txt)
   file(WRITE ${requirements_file} [===[
-  certifi==2020.6.20 --hash=sha256:8fc0819f1f30ba15bdb34cceffb9ef04d99f420f68eb75d901e9560b8749fc41
-  idna==2.10 --hash=sha256:b97d804b1e9b523befed77c48dacec60e6dcb0b5391d57af6a65a312a90648c0
-  chardet==3.0.4 --hash=sha256:fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691
-  urllib3==1.25.10 --hash=sha256:e7983572181f5e1522d9c98453462384ee92a0be7fac5f1413a1e35c56cc0461
-  requests==2.24.0 --hash=sha256:fe75cc94a9443b9246fc7049224f75604b113c36acb93f87b80ed42c44cbb898
+  # [certifi]
+  certifi==2025.4.26 --hash=sha256:30350364dfe371162649852c63336a15c70c6510c2ad5015b21c2345311805f3
+  # [/certifi]
+  # [idna]
+  idna==3.10 --hash=sha256:946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3
+  # [/idna]
+  # [charset-normalizer]
+  # Hashes correspond to the following packages:
+  #  - charset_normalizer-3.4.2-cp312-cp312-macosx_10_13_universal2.whl
+  #  - charset_normalizer-3.4.2-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+  #  - charset_normalizer-3.4.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
+  #  - charset_normalizer-3.4.2-cp312-cp312-musllinux_1_2_aarch64.whl
+  #  - charset_normalizer-3.4.2-cp312-cp312-musllinux_1_2_x86_64.whl
+  #  - charset_normalizer-3.4.2-cp312-cp312-win_amd64.whl
+  #  - charset_normalizer-3.4.2-py3-none-any.whl
+  charset-normalizer==3.4.2 --hash=sha256:0c29de6a1a95f24b9a1aa7aefd27d2487263f00dfd55a77719b530788f75cff7 \
+                            --hash=sha256:cddf7bd982eaa998934a91f69d182aec997c6c468898efe6679af88283b498d3 \
+                            --hash=sha256:4e594135de17ab3866138f496755f302b72157d115086d100c3f19370839dd3a \
+                            --hash=sha256:a370b3e078e418187da8c3674eddb9d983ec09445c99a3a263c2011993522981 \
+                            --hash=sha256:dedb8adb91d11846ee08bec4c8236c8549ac721c245678282dcb06b221aab59f \
+                            --hash=sha256:5a9979887252a82fefd3d3ed2a8e3b937a7a809f65dcb1e068b090e165bbe99e \
+                            --hash=sha256:7f56930ab0abd1c45cd15be65cc741c28b1c9a34876ce8c17a2fa107810c0af0
+  # [/charset-normalizer]
+  # [urllib3]
+  urllib3==2.4.0 --hash=sha256:4e16665048960a0900c702d4a66415956a584919c03361cac9f1df5c5dd7e813
+  # [/urllib3]
+  # [requests]
+  requests==2.32.3 --hash=sha256:70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6
+  # [/requests]
   ]===])
 
   ExternalProject_Add(${proj}
@@ -46,11 +70,6 @@ if(NOT Slicer_USE_SYSTEM_${proj})
       ${${proj}_DEPENDENCIES}
     )
 
-  ExternalProject_GenerateProjectDescription_Step(${proj}
-    VERSION ${_version}
-    )
-
 else()
   ExternalProject_Add_Empty(${proj} DEPENDS ${${proj}_DEPENDENCIES})
 endif()
-

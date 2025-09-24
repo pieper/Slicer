@@ -28,13 +28,13 @@
 #include <QFontDatabase>
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_Markups
-class qMRMLSequenceBrowserSeekWidgetPrivate
-  : public Ui_qMRMLSequenceBrowserSeekWidget
+class qMRMLSequenceBrowserSeekWidgetPrivate : public Ui_qMRMLSequenceBrowserSeekWidget
 {
   Q_DECLARE_PUBLIC(qMRMLSequenceBrowserSeekWidget);
+
 protected:
   qMRMLSequenceBrowserSeekWidget* const q_ptr;
+
 public:
   qMRMLSequenceBrowserSeekWidgetPrivate(qMRMLSequenceBrowserSeekWidget& object);
   void init();
@@ -65,7 +65,7 @@ void qMRMLSequenceBrowserSeekWidgetPrivate::init()
 // qMRMLSequenceBrowserSeekWidget methods
 
 //-----------------------------------------------------------------------------
-qMRMLSequenceBrowserSeekWidget::qMRMLSequenceBrowserSeekWidget(QWidget *newParent)
+qMRMLSequenceBrowserSeekWidget::qMRMLSequenceBrowserSeekWidget(QWidget* newParent)
   : Superclass(newParent)
   , d_ptr(new qMRMLSequenceBrowserSeekWidgetPrivate(*this))
 {
@@ -87,10 +87,10 @@ void qMRMLSequenceBrowserSeekWidget::setMRMLSequenceBrowserNode(vtkMRMLSequenceB
 {
   Q_D(qMRMLSequenceBrowserSeekWidget);
 
-  qvtkReconnect(d->SequenceBrowserNode, browserNode, vtkMRMLSequenceBrowserNode::IndexDisplayFormatModifiedEvent,
-    this, SLOT(onIndexDisplayFormatModified()));
-  qvtkReconnect(d->SequenceBrowserNode, browserNode, vtkCommand::ModifiedEvent,
-    this, SLOT(updateWidgetFromMRML()));
+  qvtkReconnect(d->SequenceBrowserNode, browserNode, vtkMRMLSequenceBrowserNode::IndexDisplayFormatModifiedEvent, this, SLOT(onIndexDisplayFormatModified()));
+  qvtkReconnect(d->SequenceBrowserNode, browserNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRML()));
+  // Update slider when a new item is added to a sequence
+  qvtkReconnect(d->SequenceBrowserNode, browserNode, vtkMRMLSequenceBrowserNode::SequenceNodeModifiedEvent, this, SLOT(updateWidgetFromMRML()));
 
   d->SequenceBrowserNode = browserNode;
   this->onIndexDisplayFormatModified();
@@ -102,20 +102,20 @@ void qMRMLSequenceBrowserSeekWidget::setSelectedItemNumber(int itemNumber)
 {
   Q_D(qMRMLSequenceBrowserSeekWidget);
   if (d->SequenceBrowserNode == nullptr)
-    {
+  {
     qCritical("setSelectedItemNumber failed: browser node is invalid");
     this->updateWidgetFromMRML();
     return;
-    }
+  }
   int selectedItemNumber = -1;
   vtkMRMLSequenceNode* sequenceNode = d->SequenceBrowserNode->GetMasterSequenceNode();
   if (sequenceNode != nullptr && itemNumber >= 0)
-    {
+  {
     if (itemNumber < sequenceNode->GetNumberOfDataNodes())
-      {
+    {
       selectedItemNumber = itemNumber;
-      }
     }
+  }
   d->SequenceBrowserNode->SetSelectedItemNumber(selectedItemNumber);
 }
 
@@ -125,7 +125,11 @@ void qMRMLSequenceBrowserSeekWidget::onIndexDisplayFormatModified()
   Q_D(qMRMLSequenceBrowserSeekWidget);
   // Reset the fixed width of the label
   QFontMetrics fontMetrics = QFontMetrics(d->label_IndexValue->font());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  d->label_IndexValue->setFixedWidth(fontMetrics.horizontalAdvance(d->label_IndexValue->text()));
+#else
   d->label_IndexValue->setFixedWidth(fontMetrics.width(d->label_IndexValue->text()));
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -135,12 +139,12 @@ void qMRMLSequenceBrowserSeekWidget::updateWidgetFromMRML()
   vtkMRMLSequenceNode* sequenceNode = d->SequenceBrowserNode.GetPointer() ? d->SequenceBrowserNode->GetMasterSequenceNode() : nullptr;
   this->setEnabled(sequenceNode != nullptr);
   if (!sequenceNode)
-    {
+  {
     d->label_IndexName->setText("");
     d->label_IndexUnit->setText("");
     d->label_IndexValue->setText("");
     return;
-    }
+  }
 
   d->label_IndexName->setText(sequenceNode->GetIndexName().c_str());
 
@@ -149,55 +153,59 @@ void qMRMLSequenceBrowserSeekWidget::updateWidgetFromMRML()
   bool sliderBlockSignals = d->slider_IndexValue->blockSignals(true);
   int numberOfDataNodes = sequenceNode->GetNumberOfDataNodes();
   if (numberOfDataNodes > 0 && !d->SequenceBrowserNode->GetRecordingActive())
-    {
+  {
     d->slider_IndexValue->setEnabled(true);
     d->slider_IndexValue->setMinimum(0);
     d->slider_IndexValue->setMaximum(numberOfDataNodes - 1);
-    }
+  }
   else
-    {
+  {
     d->slider_IndexValue->setEnabled(false);
-    }
+  }
   d->slider_IndexValue->blockSignals(sliderBlockSignals);
 
   int selectedItemNumber = d->SequenceBrowserNode->GetSelectedItemNumber();
-  if (selectedItemNumber >= 0)
-    {
+  if (selectedItemNumber >= 0 && selectedItemNumber < numberOfDataNodes)
+  {
     QString indexValue;
     QString indexUnit;
 
     if (d->SequenceBrowserNode->GetIndexDisplayMode() == vtkMRMLSequenceBrowserNode::IndexDisplayAsIndexValue)
-      {
+    {
       // display as formatted index value (12.34sec)
-      indexValue = QString::fromStdString(d->SequenceBrowserNode->GetFormattedIndexValue(d->SequenceBrowserNode->GetSelectedItemNumber()));
+      indexValue = QString::fromStdString(d->SequenceBrowserNode->GetFormattedIndexValue(selectedItemNumber));
       indexUnit = QString::fromStdString(sequenceNode->GetIndexUnit());
       if (indexValue.length() == 0)
-        {
-        qWarning() << "Item " << selectedItemNumber << " has no index value defined";
-        }
-      }
-    else
       {
+        qWarning() << Q_FUNC_INFO << "Item" << selectedItemNumber << "has no index value defined";
+      }
+    }
+    else
+    {
       // display index as item index number (23/37)
       indexValue = QString::number(selectedItemNumber + 1) + "/" + QString::number(sequenceNode->GetNumberOfDataNodes());
       indexUnit = "";
-      }
+    }
 
     QFontMetrics fontMetrics = QFontMetrics(d->label_IndexValue->font());
 
     d->label_IndexValue->setText(indexValue);
     d->label_IndexUnit->setText(indexUnit);
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    d->label_IndexValue->setFixedWidth(std::max(fontMetrics.horizontalAdvance(indexValue), d->label_IndexValue->width()));
+#else
     d->label_IndexValue->setFixedWidth(std::max(fontMetrics.width(indexValue), d->label_IndexValue->width()));
+#endif
     d->slider_IndexValue->setValue(selectedItemNumber);
-    }
+  }
   else
-    {
+  {
     d->label_IndexValue->setFixedWidth(0);
     d->label_IndexValue->setText("");
     d->label_IndexUnit->setText("");
     d->slider_IndexValue->setValue(0);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------

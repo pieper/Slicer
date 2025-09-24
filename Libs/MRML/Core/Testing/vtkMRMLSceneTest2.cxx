@@ -31,16 +31,13 @@ namespace
 {
 
 //---------------------------------------------------------------------------
-std::vector<std::string> vector_diff(const std::vector<std::string>& v1,
-                                     const std::vector<std::string>& v2)
+std::vector<std::string> vector_diff(const std::vector<std::string>& v1, const std::vector<std::string>& v2)
 {
   std::set<std::string> s_v1(v1.begin(), v1.end());
   std::set<std::string> s_v2(v2.begin(), v2.end());
   std::vector<std::string> result;
 
-  std::set_difference(s_v1.begin(), s_v1.end(),
-                      s_v2.begin(), s_v2.end(),
-                      std::back_inserter(result));
+  std::set_difference(s_v1.begin(), s_v1.end(), s_v2.begin(), s_v2.end(), std::back_inserter(result));
   return result;
 }
 
@@ -48,7 +45,7 @@ std::vector<std::string> vector_diff(const std::vector<std::string>& v1,
 class vtkMRMLSceneCallback : public vtkMRMLCoreTestingUtilities::vtkMRMLNodeCallback
 {
 public:
-  static vtkMRMLSceneCallback *New() {return new vtkMRMLSceneCallback;}
+  static vtkMRMLSceneCallback* New() { return new vtkMRMLSceneCallback; }
 
   int NumberOfSingletonNodes;
 
@@ -56,144 +53,142 @@ public:
   std::vector<std::string> NodeAddedClassNames;
 
   void ResetNumberOfEvents() override
-    {
+  {
     vtkMRMLCoreTestingUtilities::vtkMRMLNodeCallback::ResetNumberOfEvents();
     this->NumberOfSingletonNodes = 0;
     this->NodeAddedClassNames.clear();
-    }
+  }
 
-  void Execute(vtkObject* caller, unsigned long eid, void *calldata) override
-    {
+  void Execute(vtkObject* caller, unsigned long eid, void* calldata) override
+  {
     vtkMRMLCoreTestingUtilities::vtkMRMLNodeCallback::Execute(caller, eid, calldata);
 
     // Let's return if an error already occurred
     if (this->CheckStatus() == EXIT_FAILURE)
-      {
+    {
       return;
-      }
+    }
 
     vtkMRMLScene* callerScene = vtkMRMLScene::SafeDownCast(caller);
 
     if (eid == vtkMRMLScene::NodeAboutToBeAddedEvent)
-      {
+    {
       vtkMRMLNode* node = reinterpret_cast<vtkMRMLNode*>(calldata);
       if (!node)
-        {
+      {
         SetErrorString(__LINE__, "mrmlEventCallback - NodeAboutToBeAddedEvent - node is NULL");
         return;
-        }
       }
+    }
     else if (eid == vtkMRMLScene::NodeAddedEvent)
-      {
+    {
       vtkMRMLNode* node = reinterpret_cast<vtkMRMLNode*>(calldata);
       if (!node)
-        {
+      {
         SetErrorString(__LINE__, "mrmlEventCallback - NodeAddedEvent - node is NULL");
         return;
-        }
+      }
       if (node->GetSingletonTag())
-        {
+      {
         ++this->NumberOfSingletonNodes;
-        }
+      }
 
       this->NodeAddedClassNames.emplace_back(node->GetClassName());
-      }
+    }
     else if (eid == vtkMRMLScene::NodeAboutToBeRemovedEvent)
-      {
+    {
       vtkMRMLNode* node = reinterpret_cast<vtkMRMLNode*>(calldata);
       if (!node)
-        {
+      {
         SetErrorString(__LINE__, "mrmlEventCallback - NodeAboutToBeRemovedEvent - node is NULL");
         return;
-        }
       }
+    }
     else if (eid == vtkMRMLScene::NodeRemovedEvent)
-      {
+    {
       vtkMRMLNode* node = reinterpret_cast<vtkMRMLNode*>(calldata);
       if (!node)
-        {
+      {
         SetErrorString(__LINE__, "mrmlEventCallback - NodeRemovedEvent - node is NULL");
         return;
-        }
       }
+    }
     else if (eid == vtkMRMLScene::StartCloseEvent)
-      {
+    {
       if (callerScene->IsImporting())
-        {
+      {
         SetErrorString(__LINE__, "StartCloseEvent - IsImporting is expected to be 0");
         return;
-        }
+      }
       if (!callerScene->IsClosing())
-        {
+      {
         SetErrorString(__LINE__, "StartCloseEvent - IsClosing is expected to be 1");
         return;
-        }
+      }
       if (!callerScene->IsBatchProcessing())
-        {
+      {
         SetErrorString(__LINE__, "StartCloseEvent - IsUpdating is expected to be 1");
         return;
-        }
       }
+    }
     else if (eid == vtkMRMLScene::EndCloseEvent)
-      {
+    {
       if (callerScene->IsImporting())
-        {
+      {
         SetErrorString(__LINE__, "EndCloseEvent - IsImporting is expected to be 0");
         return;
-        }
+      }
       if (callerScene->IsClosing())
-        {
+      {
         SetErrorString(__LINE__, "EndCloseEvent - IsClosing is expected to be 0");
         return;
-        }
       }
+    }
     else if (eid == vtkMRMLScene::StartImportEvent)
-      {
+    {
       if (!callerScene->IsImporting())
-        {
+      {
         SetErrorString(__LINE__, "StartImport - ImportState is expected");
         return;
-        }
+      }
       if (!callerScene->IsBatchProcessing())
-        {
+      {
         SetErrorString(__LINE__, "StartImport - IsBatchProcessing is expected");
         return;
-        }
       }
+    }
     else if (eid == vtkMRMLScene::EndImportEvent)
-      {
+    {
       if (callerScene->IsImporting())
-        {
+      {
         SetErrorString(__LINE__, "EndImportEvent - ImportState is not expected");
         return;
-        }
       }
     }
+  }
 
 protected:
-  vtkMRMLSceneCallback()
-    {
-    this->NumberOfSingletonNodes = 0;
-    }
-  ~vtkMRMLSceneCallback() override  = default;
+  vtkMRMLSceneCallback() { this->NumberOfSingletonNodes = 0; }
+  ~vtkMRMLSceneCallback() override = default;
 
 }; // class vtkMRMLSceneCallback
 
-}; //namespace
+}; // namespace
 
 //---------------------------------------------------------------------------
-int vtkMRMLSceneTest2(int argc, char * argv [] )
+int vtkMRMLSceneTest2(int argc, char* argv[])
 {
-  if( argc < 2 )
-    {
+  if (argc < 2)
+  {
     std::cerr << "Error: missing arguments" << std::endl;
     std::cerr << "Usage: " << std::endl;
     std::cerr << argv[0] << "  inputURL_scene.mrml " << std::endl;
     return EXIT_FAILURE;
-    }
+  }
+  const char* sceneFilePath = argv[1];
 
   // Instantiate scene
-  vtkSmartPointer<vtkMRMLScene>  scene = vtkSmartPointer<vtkMRMLScene>::New(); // vtkSmartPointer instead of vtkNew to allow SetPointer
+  vtkSmartPointer<vtkMRMLScene> scene = vtkSmartPointer<vtkMRMLScene>::New(); // vtkSmartPointer instead of vtkNew to allow SetPointer
   EXERCISE_BASIC_OBJECT_METHODS(scene.GetPointer());
   CHECK_INT(scene->GetNumberOfNodes(), 0);
 
@@ -210,7 +205,6 @@ int vtkMRMLSceneTest2(int argc, char * argv [] )
   scene->AddObserver(vtkMRMLScene::EndCloseEvent, callback.GetPointer());
   scene->AddObserver(vtkMRMLScene::StartImportEvent, callback.GetPointer());
   scene->AddObserver(vtkMRMLScene::EndImportEvent, callback.GetPointer());
-
 
   //---------------------------------------------------------------------------
   // Make sure IsClosing, IsImporting, IsBatchProcessing default values are correct
@@ -241,38 +235,11 @@ int vtkMRMLSceneTest2(int argc, char * argv [] )
   CHECK_INT(callback->GetNumberOfEvents(vtkMRMLScene::EndImportEvent), 1);
 
   //---------------------------------------------------------------------------
-  // Extract number of nodes
+  // Extract list of node that should be added to the scene
   //---------------------------------------------------------------------------
-  vtkNew<vtkXMLDataParser> xmlParser;
-  xmlParser->SetFileName(argv[1]);
-  CHECK_BOOL(xmlParser->Parse()!=0, true);
-  int expectedNumberOfNode = xmlParser->GetRootElement()->GetNumberOfNestedElements();
-  CHECK_BOOL(expectedNumberOfNode>0, true);
-
-  // Loop though all exepcted node and populate expectedNodeAddedNames vector
-  // Note that node that can't be instantiated using CreateNodeByClass are not expected
-  std::vector<std::string> expectedNodeAddedClassNames; // List of node that should be added to the scene
-  for(int i=0; i < xmlParser->GetRootElement()->GetNumberOfNestedElements(); ++i)
-    {
-    std::string className = "vtkMRML";
-    className += xmlParser->GetRootElement()->GetNestedElement(i)->GetName();
-    // Append 'Node' prefix only if required
-    if (className.find("Node") != className.size() - 4)
-      {
-      className += "Node";
-      }
-    vtkSmartPointer<vtkMRMLNode> nodeSmartPointer;
-    nodeSmartPointer.TakeReference(scene->CreateNodeByClass(className.c_str()));
-    if (!nodeSmartPointer)
-      {
-      std::cout << "className:" << className << std::endl;
-      --expectedNumberOfNode;
-      }
-    else
-      {
-      expectedNodeAddedClassNames.push_back(className);
-      }
-    }
+  std::vector<std::string> expectedNodeAddedClassNames;
+  CHECK_EXIT_SUCCESS(vtkMRMLCoreTestingUtilities::GetExpectedNodeAddedClassNames(sceneFilePath, expectedNodeAddedClassNames));
+  int expectedNumberOfNode = static_cast<int>(expectedNodeAddedClassNames.size());
 
   //---------------------------------------------------------------------------
   // Check if the correct number of Events are sent - Also Keep track # of Singleton node
@@ -280,30 +247,28 @@ int vtkMRMLSceneTest2(int argc, char * argv [] )
   callback->ResetNumberOfEvents();
 
   // Load the scene
-  scene->SetURL( argv[1] );
-
+  scene->SetURL(argv[1]);
   scene->Connect();
 
   CHECK_EXIT_SUCCESS(callback->CheckStatus());
 
-  std::vector<std::string> unexpectedAddedNodeNames =
-      vector_diff(expectedNodeAddedClassNames, callback->NodeAddedClassNames);
+  std::vector<std::string> unexpectedAddedNodeNames = vector_diff(expectedNodeAddedClassNames, callback->NodeAddedClassNames);
   if (!unexpectedAddedNodeNames.empty())
-    {
+  {
     std::cerr << "line " << __LINE__ << " - unexpectedAddedNodeNames: ";
-    for(size_t i = 0; i < unexpectedAddedNodeNames.size(); ++i)
-      {
+    for (size_t i = 0; i < unexpectedAddedNodeNames.size(); ++i)
+    {
       std::cerr << unexpectedAddedNodeNames[i] << " ";
-      }
+    }
     std::cerr << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // If additional nodes have been instantiated, let's update expectedNumberOfNode
   if (static_cast<int>(callback->NodeAddedClassNames.size()) > expectedNumberOfNode)
-    {
+  {
     expectedNumberOfNode = static_cast<int>(callback->NodeAddedClassNames.size());
-    }
+  }
   CHECK_INT(scene->GetNumberOfNodes(), expectedNumberOfNode);
   CHECK_INT(callback->GetNumberOfEvents(vtkMRMLScene::NodeAddedEvent), expectedNumberOfNode);
   CHECK_INT(callback->GetNumberOfEvents(vtkMRMLScene::NodeAboutToBeAddedEvent), expectedNumberOfNode);
@@ -351,19 +316,19 @@ int vtkMRMLSceneTest2(int argc, char * argv [] )
   //---------------------------------------------------------------------------
   // Print content
   //---------------------------------------------------------------------------
-  vtkCollection * collection = scene->GetNodes();
+  vtkCollection* collection = scene->GetNodes();
   std::cout << "Collection GetNumberOfItems() = ";
   std::cout << collection->GetNumberOfItems() << std::endl;
 
   std::cout << "List of Node Names in this Scene" << std::endl;
   vtkCollectionSimpleIterator it;
   vtkMRMLNode* node = nullptr;
-  vtkCollection *nodes = scene->GetNodes();
+  vtkCollection* nodes = scene->GetNodes();
   for (nodes->InitTraversal(it);
     (node = vtkMRMLNode::SafeDownCast(nodes->GetNextItemAsObject(it)));)
-    {
+  {
     std::cout << " " << node->GetName() << std::endl;
-    }
+  }
 #endif
 
   //---------------------------------------------------------------------------

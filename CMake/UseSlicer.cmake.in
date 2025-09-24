@@ -95,7 +95,7 @@ endif()
 if(DEFINED Slicer_SKIP_SlicerBlockSetCMakeOSXVariables)
   message(AUTHOR_WARNING
     "Setting Slicer_SKIP_SlicerBlockSetCMakeOSXVariables is not required anymore."
-    "Calling 'find_package(Slicer)' does NOT implies the inclusion of "
+    "Calling 'find_package(Slicer)' does NOT imply the inclusion of "
     "'SlicerBlockSetCMakeOSXVariables'."
     "For convenience, if the developer would like to have the CMAKE_OSX_* variable "
     "automatically set, component 'ConfigurePrerequisites' should be used."
@@ -116,7 +116,13 @@ endif()
 
 # Expose mechanism allowing extensions to register ITK IOFactories.
 # For details: http://viewvc.slicer.org/viewvc.cgi/Slicer4?view=revision&revision=21592
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 list(APPEND ITK_LIBRARIES ITKFactoryRegistration)
 list(APPEND ITK_INCLUDE_DIRS ${ITKFactoryRegistration_INCLUDE_DIRS})
 
@@ -236,9 +242,7 @@ include(ExternalProjectDependency)
 include(ExternalProjectDependencyForPython)
 include(ExternalProjectGenerateProjectDescription)
 include(SlicerInitializeBuildType)
-if(Slicer_BUILD_CLI_SUPPORT)
-  include(SlicerMacroBuildCLI)
-endif()
+include(SlicerMacroBuildCLI)
 include(SlicerMacroBuildModuleQtLibrary)
 include(SlicerMacroBuildModuleVTKLibrary)
 include(SlicerMacroPythonWrapModuleVTKLibrary)
@@ -247,6 +251,7 @@ include(SlicerMacroBuildModuleLogic)
 include(SlicerMacroBuildModuleMRML)
 include(SlicerMacroBuildModuleWidgets)
 include(SlicerMacroBuildLoadableModule)
+include(SlicerMacroBuildScriptedCLI)
 include(SlicerMacroBuildScriptedModule)
 include(SlicerFunctionAddPythonQtResources)
 include(SlicerMacroExtractRepositoryInfo)
@@ -294,8 +299,14 @@ endif()
 #-----------------------------------------------------------------------------
 set(Slicer_BUNDLE_EXTENSIONS_LOCATION "")
 if(APPLE)
-  set(Slicer_BUNDLE_EXTENSIONS_LOCATION "${Slicer_EXTENSIONS_DIRNAME}/${EXTENSION_NAME}/")
-  set(CMAKE_INSTALL_NAME_TOOL "" CACHE FILEPATH "" FORCE) # XXX Probably not needed anymore
+  set(Slicer_BUNDLE_EXTENSIONS_LOCATION "${Slicer_EXTENSIONS_DIRBASENAME}-${Slicer_REVISION}/${EXTENSION_NAME}/")
+
+  set(CMAKE_INSTALL_NAME_TOOL "" CACHE FILEPATH "" FORCE)
+  # Due to the possibility of external projects (e.g., LibFFI) enabling languages (e.g., ASM)
+  # that necessitate `install_name_tool` via the "CMakeFindBinUtils" module, we opt to clear
+  # CMAKE_INSTALL_NAME_TOOL on a per-project basis.
+  # mark_as_superbuild(VARS CMAKE_INSTALL_NAME_TOOL:FILEPATH ALL_PROJECTS)
+
   set(CMAKE_MACOSX_RPATH 0 CACHE BOOL "" FORCE)
   mark_as_superbuild(VARS CMAKE_MACOSX_RPATH:BOOL ALL_PROJECTS)
 endif()
@@ -303,28 +314,24 @@ endif()
 #-----------------------------------------------------------------------------
 # Set SlicerExecutionModel_DEFAULT_CLI_*_OUTPUT_DIRECTORY variables
 #-----------------------------------------------------------------------------
-if(Slicer_BUILD_CLI_SUPPORT)
-  set(SlicerExecutionModel_DEFAULT_CLI_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_BIN_DIR}")
-  set(SlicerExecutionModel_DEFAULT_CLI_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_LIB_DIR}")
-  set(SlicerExecutionModel_DEFAULT_CLI_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_LIB_DIR}")
-endif()
+set(SlicerExecutionModel_DEFAULT_CLI_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_BIN_DIR}")
+set(SlicerExecutionModel_DEFAULT_CLI_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_LIB_DIR}")
+set(SlicerExecutionModel_DEFAULT_CLI_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_LIB_DIR}")
 
 #-----------------------------------------------------------------------------
 # Set Slicer_INSTALL_*MODULE_*_DIR variables
 #-----------------------------------------------------------------------------
-if(Slicer_BUILD_CLI_SUPPORT)
-  set(Slicer_INSTALL_CLIMODULES_BIN_DIR "${Slicer_INSTALL_ROOT}${Slicer_BUNDLE_EXTENSIONS_LOCATION}${Slicer_CLIMODULES_BIN_DIR}")
-  set(Slicer_INSTALL_CLIMODULES_LIB_DIR "${Slicer_INSTALL_ROOT}${Slicer_BUNDLE_EXTENSIONS_LOCATION}${Slicer_CLIMODULES_LIB_DIR}")
-  set(Slicer_INSTALL_CLIMODULES_SHARE_DIR "${Slicer_INSTALL_ROOT}${Slicer_BUNDLE_EXTENSIONS_LOCATION}${Slicer_CLIMODULES_SHARE_DIR}")
-  if(APPLE)
-    set(SlicerExecutionModel_DEFAULT_CLI_INSTALL_RUNTIME_DESTINATION "${Slicer_INSTALL_CLIMODULES_BIN_DIR}")
-    set(SlicerExecutionModel_DEFAULT_CLI_INSTALL_LIBRARY_DESTINATION "${Slicer_INSTALL_CLIMODULES_LIB_DIR}")
-    set(SlicerExecutionModel_DEFAULT_CLI_INSTALL_ARCHIVE_DESTINATION "${Slicer_INSTALL_CLIMODULES_LIB_DIR}")
-    set(SlicerExecutionModel_DEFAULT_CLI_EXECUTABLE_LINK_FLAGS
-      "${SlicerExecutionModel_DEFAULT_CLI_EXECUTABLE_LINK_FLAGS} -Wl,-rpath,@loader_path/../../../../../")
-    set(SlicerExecutionModel_DEFAULT_CLI_LIBRARY_LINK_FLAGS
-      "${SlicerExecutionModel_DEFAULT_CLI_LIBRARY_LINK_FLAGS} -Wl,-rpath,@loader_path/../../../../../")
-  endif()
+set(Slicer_INSTALL_CLIMODULES_BIN_DIR "${Slicer_INSTALL_ROOT}${Slicer_BUNDLE_EXTENSIONS_LOCATION}${Slicer_CLIMODULES_BIN_DIR}")
+set(Slicer_INSTALL_CLIMODULES_LIB_DIR "${Slicer_INSTALL_ROOT}${Slicer_BUNDLE_EXTENSIONS_LOCATION}${Slicer_CLIMODULES_LIB_DIR}")
+set(Slicer_INSTALL_CLIMODULES_SHARE_DIR "${Slicer_INSTALL_ROOT}${Slicer_BUNDLE_EXTENSIONS_LOCATION}${Slicer_CLIMODULES_SHARE_DIR}")
+if(APPLE)
+  set(SlicerExecutionModel_DEFAULT_CLI_INSTALL_RUNTIME_DESTINATION "${Slicer_INSTALL_CLIMODULES_BIN_DIR}")
+  set(SlicerExecutionModel_DEFAULT_CLI_INSTALL_LIBRARY_DESTINATION "${Slicer_INSTALL_CLIMODULES_LIB_DIR}")
+  set(SlicerExecutionModel_DEFAULT_CLI_INSTALL_ARCHIVE_DESTINATION "${Slicer_INSTALL_CLIMODULES_LIB_DIR}")
+  set(SlicerExecutionModel_DEFAULT_CLI_EXECUTABLE_LINK_FLAGS
+    "${SlicerExecutionModel_DEFAULT_CLI_EXECUTABLE_LINK_FLAGS} -Wl,-rpath,@loader_path/../../../../../")
+  set(SlicerExecutionModel_DEFAULT_CLI_LIBRARY_LINK_FLAGS
+    "${SlicerExecutionModel_DEFAULT_CLI_LIBRARY_LINK_FLAGS} -Wl,-rpath,@loader_path/../../../../../")
 endif()
 
 set(Slicer_INSTALL_QTLOADABLEMODULES_BIN_DIR "${Slicer_INSTALL_ROOT}${Slicer_BUNDLE_EXTENSIONS_LOCATION}${Slicer_QTLOADABLEMODULES_BIN_DIR}")
@@ -396,30 +403,6 @@ if(NOT Slicer_DONT_USE_EXTENSION)
   slicer_setting_variable_message("EXTENSION_BUILD_SUBDIRECTORY" SKIP_TRUNCATE)
 
   #-----------------------------------------------------------------------------
-  set(_url $ENV{MIDAS_PACKAGE_URL})
-  if("${_url}" STREQUAL "")
-    set(_url "http://slicer.kitware.com/midas3")
-  endif()
-
-  set(_email $ENV{MIDAS_PACKAGE_EMAIL})
-  if("${_email}" STREQUAL "")
-    set(_email "YOUR-MIDAS-LOGIN-NOTFOUND")
-  endif()
-
-  set(_api_key $ENV{MIDAS_PACKAGE_API_KEY})
-  if("${_api_key}" STREQUAL "")
-    set(_api_key "YOUR-MIDAS-APIKEY-NOTFOUND")
-  endif()
-
-  #-----------------------------------------------------------------------------
-  set(MIDAS_PACKAGE_URL ${_url} CACHE STRING "MIDAS URL where the extension should be uploaded.")
-  set(MIDAS_PACKAGE_EMAIL ${_email} CACHE STRING "Email allowing to authenticate to the MIDAS server.")
-  set(MIDAS_PACKAGE_API_KEY ${_api_key} CACHE STRING "Token allowing to authenticate to the MIDAS server.")
-
-  slicer_setting_variable_message("MIDAS_PACKAGE_URL")
-  slicer_setting_variable_message("MIDAS_PACKAGE_EMAIL" OBFUSCATE)
-  slicer_setting_variable_message("MIDAS_PACKAGE_API_KEY" OBFUSCATE)
-
   include(SlicerExtensionDescriptionSpec)
 
   foreach(var IN LISTS Slicer_EXT_OPTIONAL_METADATA_NAMES)
@@ -430,9 +413,7 @@ if(NOT Slicer_DONT_USE_EXTENSION)
   # If not defined, initialize optional variables with their default values.
   #
   foreach(var IN LISTS Slicer_EXT_OPTIONAL_METADATA_NAMES)
-    if(NOT DEFINED EXTENSION_${var} AND
-        NOT ${var} STREQUAL "SVNUSERNAME" AND
-        NOT ${var} STREQUAL "SVNPASSWORD")
+    if(NOT DEFINED EXTENSION_${var})
       set(EXTENSION_${var} "${Slicer_EXT_METADATA_${var}_DEFAULT}")
       slicer_setting_variable_message(EXTENSION_${var}
         PRETEXT "Setting default for EXTENSION_${var}")
@@ -450,7 +431,5 @@ if(NOT Slicer_DONT_USE_EXTENSION)
 
      find_package(Git)
      mark_as_superbuild(GIT_EXECUTABLE)
-     find_package(Subversion)
-     mark_as_superbuild(Subversion_SVN_EXECUTABLE)
   endif()
 endif()

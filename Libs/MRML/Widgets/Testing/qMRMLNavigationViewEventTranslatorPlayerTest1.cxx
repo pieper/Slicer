@@ -57,15 +57,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLNavigationView* widget = reinterpret_cast<qMRMLNavigationView*>(data);
 
   Q_UNUSED(widget);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLNavigationViewEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLNavigationViewEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -113,17 +113,14 @@ int qMRMLNavigationViewEventTranslatorPlayerTest1(int argc, char * argv [] )
   threeDView.setMRMLViewNode(viewNode);
   navigationView.setMRMLViewNode(viewNode);
 
-  etpWidget.addTestCase(&topLevel,
-                        xmlDirectory + "qMRMLNavigationViewEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(&topLevel, xmlDirectory + "qMRMLNavigationViewEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

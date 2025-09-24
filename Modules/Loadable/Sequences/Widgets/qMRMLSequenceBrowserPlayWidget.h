@@ -37,17 +37,48 @@ class qMRMLSequenceBrowserPlayWidgetPrivate;
 class vtkMRMLNode;
 class vtkMRMLSequenceBrowserNode;
 
-/// \ingroup Slicer_QtModules_Markups
-class Q_SLICER_MODULE_SEQUENCES_WIDGETS_EXPORT qMRMLSequenceBrowserPlayWidget
-: public qMRMLWidget
+class Q_SLICER_MODULE_SEQUENCES_WIDGETS_EXPORT qMRMLSequenceBrowserPlayWidget : public qMRMLWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
+  /// Enable displaying recording control buttons (record and snapshot).
+  /// The buttons are only visible if this flag is enabled and there is at least one sequence that
+  /// has recording enabled.
+  Q_PROPERTY(bool RecordingControlsVisible READ recordingControlsVisible WRITE setRecordingControlsVisible)
+
+  Q_PROPERTY(QString PlayPauseShortcut READ playPauseShortcut WRITE setPlayPauseShortcut)
+  Q_PROPERTY(QString PreviousFrameShortcut READ previousFrameShortcut WRITE setPreviousFrameShortcut)
+  Q_PROPERTY(QString NextFrameShortcut READ nextFrameShortcut WRITE setNextFrameShortcut)
+
 public:
   typedef qMRMLWidget Superclass;
-  qMRMLSequenceBrowserPlayWidget(QWidget *newParent = 0);
+  qMRMLSequenceBrowserPlayWidget(QWidget* newParent = 0);
   ~qMRMLSequenceBrowserPlayWidget() override;
+
+  /// Get keyboard shortcut string for play/pause button
+  QString playPauseShortcut() const;
+
+  /// Get keyboard shortcut string for previous frame button
+  QString previousFrameShortcut() const;
+
+  /// Get keyboard shortcut string for next frame button
+  QString nextFrameShortcut() const;
+
+  /// Returns true if recording controls (record and snapshot buttons) are allowed to be shown.
+  ///
+  /// \note Regardless of this flag, recording controls are not shown if recording is not enabled
+  /// for any of the browsed sequences.
+  bool recordingControlsVisible() const;
+
+public slots:
+  void setMRMLSequenceBrowserNode(vtkMRMLSequenceBrowserNode* browserNode);
+  void setMRMLSequenceBrowserNode(vtkMRMLNode* browserNode);
+  void setPlaybackEnabled(bool play);
+  void setRecordingEnabled(bool play);
+  void setPlaybackRateFps(double playbackRateFps);
+  void setPlaybackLoopEnabled(bool loopEnabled);
+  void setRecordingControlsVisible(bool show);
 
   /// Add a keyboard shortcut for play/pause button
   void setPlayPauseShortcut(QString keySequence);
@@ -58,13 +89,6 @@ public:
   /// Add a keyboard shortcut for next frame button
   void setNextFrameShortcut(QString keySequence);
 
-public slots:
-  void setMRMLSequenceBrowserNode(vtkMRMLSequenceBrowserNode* browserNode);
-  void setMRMLSequenceBrowserNode(vtkMRMLNode* browserNode);
-  void setPlaybackEnabled(bool play);
-  void setRecordingEnabled(bool play);
-  void setPlaybackRateFps(double playbackRateFps);
-  void setPlaybackLoopEnabled(bool loopEnabled);
   void onVcrFirst();
   void onVcrPrevious();
   void onVcrNext();
@@ -81,7 +105,6 @@ protected:
 private:
   Q_DECLARE_PRIVATE(qMRMLSequenceBrowserPlayWidget);
   Q_DISABLE_COPY(qMRMLSequenceBrowserPlayWidget);
-
 };
 
 #endif

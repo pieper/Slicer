@@ -32,16 +32,21 @@
 class qSlicerCoreCommandOptionsPrivate
 {
   Q_DECLARE_PUBLIC(qSlicerCoreCommandOptions);
+
 protected:
   qSlicerCoreCommandOptions* q_ptr;
+
 public:
   qSlicerCoreCommandOptionsPrivate(qSlicerCoreCommandOptions& object);
 
   void init();
 
+  // clang-format off
   QHash<QString, QVariant> ParsedArgs;
   QString                  ExtraPythonScript;
+  int                      ExtraPythonScriptProcessedArgumentsCount;
   bool                     RunPythonAndExit;
+  // clang-format on
 };
 
 //-----------------------------------------------------------------------------
@@ -50,6 +55,7 @@ public:
 //-----------------------------------------------------------------------------
 qSlicerCoreCommandOptionsPrivate::qSlicerCoreCommandOptionsPrivate(qSlicerCoreCommandOptions& object)
   : q_ptr(&object)
+  , ExtraPythonScriptProcessedArgumentsCount(0)
   , RunPythonAndExit(false)
 {
 }
@@ -58,7 +64,7 @@ qSlicerCoreCommandOptionsPrivate::qSlicerCoreCommandOptionsPrivate(qSlicerCoreCo
 void qSlicerCoreCommandOptionsPrivate::init()
 {
   Q_Q(qSlicerCoreCommandOptions);
-  q->setArgumentPrefix("--", "-"); // Use Unix-style argument names
+  q->setArgumentPrefix("--", "-");       // Use Unix-style argument names
   q->enableSettings("disable-settings"); // Enable QSettings support
 }
 
@@ -66,8 +72,9 @@ void qSlicerCoreCommandOptionsPrivate::init()
 // qSlicerCoreCommandOptions methods
 
 //-----------------------------------------------------------------------------
-qSlicerCoreCommandOptions::qSlicerCoreCommandOptions():Superclass()
-, d_ptr(new qSlicerCoreCommandOptionsPrivate(*this))
+qSlicerCoreCommandOptions::qSlicerCoreCommandOptions()
+  : Superclass()
+  , d_ptr(new qSlicerCoreCommandOptionsPrivate(*this))
 {
   Q_D(qSlicerCoreCommandOptions);
   d->init();
@@ -86,35 +93,57 @@ bool qSlicerCoreCommandOptions::parse(const QStringList& arguments)
   bool ok = false;
   d->ParsedArgs = this->parseArguments(arguments, &ok);
   if (!ok)
-    {
+  {
     return false;
-    }
+  }
 
-  // If first unparsed argument is python script, enable 'shebang' mode
+  // If the first argument is a Python script, enable the 'shebang' mode.
+  //
+  // If there is a -I argument before a Python script (.py), enable running the script.
+  //
+  // This a commonly used command-line switch of Python.exe to "isolate Python from the user's environment".
+  // For example, VS Code runs Slicer using these arguments to query its Python interpreter version:
+  //   .../Slicer.exe -I \
+  //     ...\.vscode\extensions\ms-python.python-2023.6.1\pythonFiles\get_output_via_markers.py \
+  //     ...\.vscode\extensions\ms-python.python-2023.6.1\pythonFiles\interpreterInfo.py
+
   QStringList unparsedArguments = this->unparsedArguments();
+  QString extraPythonScript;
+  int extraPythonScriptProcessedArgumentsCount = 0;
   if (unparsedArguments.size() > 0 && unparsedArguments.at(0).endsWith(".py"))
+  {
+    extraPythonScript = unparsedArguments.at(0);
+    extraPythonScriptProcessedArgumentsCount = 1;
+  }
+  else if (unparsedArguments.size() > 1 && unparsedArguments.at(0) == "-I" && unparsedArguments.at(1).endsWith(".py"))
+  {
+    extraPythonScript = unparsedArguments.at(1);
+    extraPythonScriptProcessedArgumentsCount = 2;
+  }
+  if (!extraPythonScript.isEmpty())
+  {
+    if (!this->pythonScript().isEmpty())
     {
-    if(!this->pythonScript().isEmpty())
-      {
       qWarning() << "Ignore script specified using '--python-script'";
-      }
-    this->setExtraPythonScript(unparsedArguments.at(0));
-    this->setRunPythonAndExit(true);
     }
+    this->setExtraPythonScript(extraPythonScript);
+    this->setExtraPythonScriptProcessedArgumentsCount(extraPythonScriptProcessedArgumentsCount);
+    this->setRunPythonAndExit(true);
+  }
 
   if (!d->ParsedArgs.value("c").toString().isEmpty())
-    {
+  {
     this->setRunPythonAndExit(true);
-    }
+  }
 
   return true;
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCoreCommandOptions::displayHelpAndExit()const
+bool qSlicerCoreCommandOptions::displayHelpAndExit() const
 {
   Q_D(const qSlicerCoreCommandOptions);
-  return d->ParsedArgs.value("help").toBool();
+  return d->ParsedArgs.value(/*no tr*/ "help").toBool();
 }
 
 //-----------------------------------------------------------------------------
@@ -125,15 +154,15 @@ bool qSlicerCoreCommandOptions::ignoreRest() const
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCoreCommandOptions::ignoreSlicerRC()const
+bool qSlicerCoreCommandOptions::ignoreSlicerRC() const
 {
   Q_D(const qSlicerCoreCommandOptions);
-  return d->ParsedArgs.value("ignore-slicerrc").toBool() ||
-      this->isTestingEnabled();
+  return d->ParsedArgs.value("ignore-slicerrc").toBool() || //
+         this->isTestingEnabled();
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerCoreCommandOptions::additionalModulePaths()const
+QStringList qSlicerCoreCommandOptions::additionalModulePaths() const
 {
   Q_D(const qSlicerCoreCommandOptions);
   QStringList allAdditionalModulePaths;
@@ -141,9 +170,9 @@ QStringList qSlicerCoreCommandOptions::additionalModulePaths()const
   // note the singular form: 'path' not 'paths'
   QString additionalModulePath = d->ParsedArgs.value("additional-module-path").toString();
   if (!additionalModulePath.isEmpty())
-    {
+  {
     allAdditionalModulePaths << additionalModulePath;
-    }
+  }
   // handle rest of pathS
   allAdditionalModulePaths.append(d->ParsedArgs.value("additional-module-paths").toStringList());
   return allAdditionalModulePaths;
@@ -200,14 +229,14 @@ bool qSlicerCoreCommandOptions::disableBuiltInLoadableModules() const
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCoreCommandOptions::disableScriptedLoadableModules()const
+bool qSlicerCoreCommandOptions::disableScriptedLoadableModules() const
 {
   Q_D(const qSlicerCoreCommandOptions);
   return d->ParsedArgs.value("disable-scripted-loadable-modules").toBool();
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCoreCommandOptions::disableBuiltInScriptedLoadableModules()const
+bool qSlicerCoreCommandOptions::disableBuiltInScriptedLoadableModules() const
 {
   Q_D(const qSlicerCoreCommandOptions);
   return d->ParsedArgs.value("disable-builtin-scripted-loadable-modules").toBool();
@@ -227,20 +256,22 @@ QString qSlicerCoreCommandOptions::pythonScript() const
 //-----------------------------------------------------------------------------
 CTK_GET_CPP(qSlicerCoreCommandOptions, QString, extraPythonScript, ExtraPythonScript);
 CTK_SET_CPP(qSlicerCoreCommandOptions, const QString&, setExtraPythonScript, ExtraPythonScript);
+CTK_GET_CPP(qSlicerCoreCommandOptions, int, extraPythonScriptProcessedArgumentsCount, ExtraPythonScriptProcessedArgumentsCount);
+CTK_SET_CPP(qSlicerCoreCommandOptions, int, setExtraPythonScriptProcessedArgumentsCount, ExtraPythonScriptProcessedArgumentsCount);
 
 //-----------------------------------------------------------------------------
 QString qSlicerCoreCommandOptions::pythonCode() const
 {
   Q_D(const qSlicerCoreCommandOptions);
   QString pythonCode = d->ParsedArgs.value("python-code").toString();
-  if(!pythonCode.isEmpty())
-    {
+  if (!pythonCode.isEmpty())
+  {
     return pythonCode;
-    }
+  }
   else
-    {
+  {
     return d->ParsedArgs.value("c").toString();
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -251,7 +282,7 @@ CTK_SET_CPP(qSlicerCoreCommandOptions, bool, setRunPythonAndExit, RunPythonAndEx
 bool qSlicerCoreCommandOptions::displayVersionAndExit() const
 {
   Q_D(const qSlicerCoreCommandOptions);
-  return d->ParsedArgs.value("version").toBool();
+  return d->ParsedArgs.value(/*no tr*/ "version").toBool();
 }
 
 //-----------------------------------------------------------------------------
@@ -265,7 +296,7 @@ bool qSlicerCoreCommandOptions::displayProgramPathAndExit() const
 bool qSlicerCoreCommandOptions::displayHomePathAndExit() const
 {
   Q_D(const qSlicerCoreCommandOptions);
-  return d->ParsedArgs.value("home").toBool();
+  return d->ParsedArgs.value(/*no tr*/ "home").toBool();
 }
 
 //-----------------------------------------------------------------------------
@@ -285,13 +316,12 @@ bool qSlicerCoreCommandOptions::displayTemporaryPathAndExit() const
 //-----------------------------------------------------------------------------
 bool qSlicerCoreCommandOptions::displayMessageAndExit() const
 {
-  return
-      this->displayHelpAndExit()
-      || this->displayVersionAndExit()
-      || this->displayProgramPathAndExit()
-      || this->displayHomePathAndExit()
-      || this->displaySettingsPathAndExit()
-      || this->displayTemporaryPathAndExit();
+  return this->displayHelpAndExit()            //
+         || this->displayVersionAndExit()      //
+         || this->displayProgramPathAndExit()  //
+         || this->displayHomePathAndExit()     //
+         || this->displaySettingsPathAndExit() //
+         || this->displayTemporaryPathAndExit();
 }
 
 //-----------------------------------------------------------------------------
@@ -309,7 +339,7 @@ bool qSlicerCoreCommandOptions::verboseModuleDiscovery() const
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCoreCommandOptions::verbose()const
+bool qSlicerCoreCommandOptions::verbose() const
 {
   return !this->runPythonAndExit();
 }
@@ -322,10 +352,10 @@ bool qSlicerCoreCommandOptions::disableMessageHandlers() const
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerCoreCommandOptions::disableTerminalOutputs()const
+bool qSlicerCoreCommandOptions::disableTerminalOutputs() const
 {
   Q_D(const qSlicerCoreCommandOptions);
-#if defined (Q_OS_WIN32) && !defined (Slicer_BUILD_WIN32_CONSOLE)
+#if defined(Q_OS_WIN32) && !defined(Slicer_BUILD_WIN32_CONSOLE)
   return true;
 #else
   return d->ParsedArgs.value("disable-terminal-outputs").toBool();
@@ -336,8 +366,8 @@ bool qSlicerCoreCommandOptions::disableTerminalOutputs()const
 bool qSlicerCoreCommandOptions::settingsDisabled() const
 {
   Q_D(const qSlicerCoreCommandOptions);
-  return d->ParsedArgs.value("disable-settings").toBool() ||
-      this->isTestingEnabled();
+  return d->ParsedArgs.value("disable-settings").toBool() || //
+         this->isTestingEnabled();
 }
 
 //-----------------------------------------------------------------------------
@@ -351,125 +381,182 @@ bool qSlicerCoreCommandOptions::keepTemporarySettings() const
 bool qSlicerCoreCommandOptions::isTestingEnabled() const
 {
   Q_D(const qSlicerCoreCommandOptions);
-  return d->ParsedArgs.value("testing").toBool();
+  return d->ParsedArgs.value(/*no tr*/ "testing").toBool();
 }
 
-#ifdef Slicer_USE_PYTHONQT
 //-----------------------------------------------------------------------------
 bool qSlicerCoreCommandOptions::isPythonDisabled() const
 {
+#ifdef Slicer_USE_PYTHONQT
   Q_D(const qSlicerCoreCommandOptions);
   return d->ParsedArgs.value("disable-python").toBool();
-}
+#else
+  return true;
 #endif
+}
 
 //-----------------------------------------------------------------------------
 void qSlicerCoreCommandOptions::addArguments()
 {
-  this->addArgument("ignore-rest", "-", QVariant::Bool,
-                    "Ignores the rest of the labeled arguments following this flag.",
-                    QVariant(false), true);
+  this->addArgument("ignore-rest",
+                    "-",
+                    QVariant::Bool,
+                    /*no tr*/ "Ignores the rest of the labeled arguments following this flag.",
+                    QVariant(false),
+                    true);
 
-  this->addArgument("help", "h", QVariant::Bool,
-                    "Display available command line arguments.");
+  this->addArgument(/*no tr*/ "help",
+                    "h",
+                    QVariant::Bool,
+                    /*no tr*/ "Display available command line arguments.");
 
 #ifdef Slicer_USE_PYTHONQT
-  QString testingDescription = "Activate testing mode. It implies --disable-settings and --ignore-slicerrc.";
+  QString testingDescription = /*no tr*/ "Activate testing mode. It implies --disable-settings and --ignore-slicerrc.";
 #else
-  QString testingDescription = "Activate testing mode. It implies --disable-settings.";
+  QString testingDescription = /*no tr*/ "Activate testing mode. It implies --disable-settings.";
 #endif
-  this->addArgument("testing", "", QVariant::Bool,
-                    testingDescription,
-                    QVariant(false));
+  this->addArgument(/*no tr*/ "testing", "", QVariant::Bool, testingDescription, QVariant(false));
 
 #ifdef Slicer_USE_PYTHONQT
-  this->addArgument("disable-python", "", QVariant::Bool,
-                    "Disable python support. This is equivalent to build the application with Slicer_USE_PYTHONQT=OFF.");
+  this->addArgument("disable-python",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable python support. This is equivalent to build the application with Slicer_USE_PYTHONQT=OFF.");
 
-  this->addArgument("python-script", "", QVariant::String,
-                    "Python script to execute after slicer loads.");
+  this->addArgument("python-script",
+                    "",
+                    QVariant::String,
+                    /*no tr*/ "Python script to execute after slicer loads.");
 
-  this->addArgument("python-code", "", QVariant::String,
-                    "Python code to execute after slicer loads.");
+  this->addArgument("python-code",
+                    "",
+                    QVariant::String,
+                    /*no tr*/ "Python code to execute after slicer loads.");
 
-  this->addArgument("", "c", QVariant::String,
-                    "Python code to execute after slicer loads. By default, no modules are loaded and Slicer exits afterward.");
+  this->addArgument("",
+                    "c",
+                    QVariant::String,
+                    /*no tr*/ "Python code to execute after slicer loads. By default, no modules are loaded and Slicer exits afterward.");
 
-  this->addArgument("ignore-slicerrc", "", QVariant::Bool,
-                    "Do not load the Slicer resource file (~/.slicerrc.py).");
+  this->addArgument("ignore-slicerrc",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Do not load the Slicer resource file (~/.slicerrc.py).");
 #endif
 
-  this->addArgument("additional-module-path", "", QVariant::String,
-                    "Additional module path to consider when searching for modules to load.");
+  this->addArgument("additional-module-path",
+                    "",
+                    QVariant::String,
+                    /*no tr*/ "Additional module path to consider when searching for modules to load.");
 
-  this->addArgument("additional-module-paths", "", QVariant::StringList,
-                    "List of additional module path to consider when searching for modules to load.");
+  this->addArgument("additional-module-paths",
+                    "",
+                    QVariant::StringList,
+                    /*no tr*/ "List of additional module path to consider when searching for modules to load.");
 
-  this->addArgument("modules-to-ignore", "", QVariant::String,
-                    "Comma separated list of modules that should *NOT* be loaded.");
+  this->addArgument("modules-to-ignore",
+                    "",
+                    QVariant::String,
+                    /*no tr*/ "Comma separated list of modules that should *NOT* be loaded.");
 
-  this->addArgument("disable-modules", "", QVariant::Bool,
-                    "Disable the loading of any Modules.");
+  this->addArgument("disable-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of any Modules.");
 
-  this->addArgument("disable-builtin-modules", "", QVariant::Bool,
-                    "Disable the loading of builtin Modules.");
+  this->addArgument("disable-builtin-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of builtin Modules.");
 
-#ifdef Slicer_BUILD_CLI_SUPPORT
-  this->addArgument("disable-cli-modules", "", QVariant::Bool,
-                    "Disable the loading of any Command Line Modules.");
+  this->addArgument("disable-cli-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of any Command Line Modules.");
 
-  this->addArgument("disable-builtin-cli-modules", "", QVariant::Bool,
-                    "Disable the loading of builtin Command Line Modules.");
-#endif
+  this->addArgument("disable-builtin-cli-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of builtin Command Line Modules.");
 
-  this->addArgument("disable-loadable-modules", "", QVariant::Bool,
-                    "Disable the loading of any Loadable Modules.");
+  this->addArgument("disable-loadable-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of any Loadable Modules.");
 
-  this->addArgument("disable-builtin-loadable-modules", "", QVariant::Bool,
-                    "Disable the loading of builtin Loadable Modules.");
+  this->addArgument("disable-builtin-loadable-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of builtin Loadable Modules.");
 
 #ifdef Slicer_USE_PYTHONQT
-  this->addArgument("disable-scripted-loadable-modules", "", QVariant::Bool,
-                    "Disable the loading of any Scripted Loadable Modules.");
+  this->addArgument("disable-scripted-loadable-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of any Scripted Loadable Modules.");
 
-  this->addArgument("disable-builtin-scripted-loadable-modules", "", QVariant::Bool,
-                    "Disable the loading of builtinScripted Loadable Modules.");
+  this->addArgument("disable-builtin-scripted-loadable-modules",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Disable the loading of builtinScripted Loadable Modules.");
 #endif
 
-  this->addArgument("version", "", QVariant::Bool,
-                    "Display version information and exits.");
+  this->addArgument(/*no tr*/ "version",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Display version information and exits.");
 
-  this->addArgument("program-path", "", QVariant::Bool,
-                    "Display application program path and exits.");
+  this->addArgument("program-path",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Display application program path and exits.");
 
-  this->addArgument("home", "", QVariant::Bool,
-                    "Display home path and exits.");
+  this->addArgument(/*no tr*/ "home",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Display home path and exits.");
 
-  this->addArgument("settings-path", "", QVariant::Bool,
-                    "Display settings path and exits.");
+  this->addArgument("settings-path",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Display settings path and exits.");
 
-  this->addArgument("temporary-path", "", QVariant::Bool,
-                    "Display temporary path and exits.");
+  this->addArgument("temporary-path",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Display temporary path and exits.");
 
-  this->addArgument("application-information", "", QVariant::Bool,
-                    "Display application information in the terminal.");
+  this->addArgument("application-information",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Display application information in the terminal.");
 
-  this->addArgument("verbose-module-discovery", "", QVariant::Bool,
-                    "Enable verbose output during module discovery process.");
+  this->addArgument("verbose-module-discovery",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Enable verbose output during module discovery process.");
 
-  this->addArgument("disable-settings", "", QVariant::Bool,
-                    "Start application ignoring user settings and using new temporary settings.");
+  this->addArgument("disable-settings",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Start application ignoring user settings and using new temporary settings.");
 
-  this->addArgument("keep-temporary-settings", "", QVariant::Bool,
-                    "Indicate whether temporary settings should be maintained.");
+  this->addArgument("keep-temporary-settings",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Indicate whether temporary settings should be maintained.");
 
-  this->addArgument("disable-message-handlers", "", QVariant::Bool,
-                    "Start application disabling the 'terminal' message handlers.");
+  this->addArgument("disable-message-handlers",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Start application disabling the 'terminal' message handlers.");
 
-#if defined (Q_OS_WIN32) && !defined (Slicer_BUILD_WIN32_CONSOLE)
+#if defined(Q_OS_WIN32) && !defined(Slicer_BUILD_WIN32_CONSOLE)
 #else
-  this->addArgument("disable-terminal-outputs", "", QVariant::Bool,
-                    "Start application disabling stdout/stderr outputs and capturing outputs only using the error log.");
+  this->addArgument("disable-terminal-outputs",
+                    "",
+                    QVariant::Bool,
+                    /*no tr*/ "Start application disabling stdout/stderr outputs and capturing outputs only using the error log.");
 #endif
 }
 

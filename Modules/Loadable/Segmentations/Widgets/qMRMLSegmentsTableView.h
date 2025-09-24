@@ -45,7 +45,6 @@ class QTableView;
 class vtkMRMLNode;
 class vtkSegment;
 
-/// \ingroup Slicer_QtModules_Segmentations_Widgets
 class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_EXPORT qMRMLSegmentsTableView : public qMRMLWidget
 {
   Q_OBJECT
@@ -63,6 +62,11 @@ public:
   Q_PROPERTY(bool filterBarVisible READ filterBarVisible WRITE setFilterBarVisible)
   Q_PROPERTY(QString textFilter READ textFilter WRITE setTextFilter)
   Q_PROPERTY(bool jumpToSelectedSegmentEnabled READ jumpToSelectedSegmentEnabled WRITE setJumpToSelectedSegmentEnabled)
+  Q_PROPERTY(int segmentCount READ segmentCount)
+  Q_PROPERTY(QString useTerminologySelectorSettingsKey READ useTerminologySelectorSettingsKey WRITE setUseTerminologySelectorSettingsKey)
+  Q_PROPERTY(bool useTerminologySelector READ useTerminologySelector WRITE setUseTerminologySelector)
+  Q_PROPERTY(bool terminologySelectorOptionVisible READ terminologySelectorOptionVisible WRITE setTerminologySelectorOptionVisible)
+  Q_PROPERTY(bool terminologySelectorAutoDisable READ terminologySelectorAutoDisable WRITE setTerminologySelectorAutoDisable)
 
   typedef qMRMLWidget Superclass;
   /// Constructor
@@ -102,25 +106,42 @@ public:
   /// Segments that have their ID listed in hideSegments are
   /// not shown in the table.
   Q_INVOKABLE void setHideSegments(const QStringList& segmentIDs);
-  Q_INVOKABLE QStringList hideSegments()const;
+  Q_INVOKABLE QStringList hideSegments() const;
 
   /// Return list of visible segment IDs
-  Q_INVOKABLE QStringList displayedSegmentIDs()const;
+  Q_INVOKABLE QStringList displayedSegmentIDs() const;
 
-  Q_INVOKABLE qMRMLSortFilterSegmentsProxyModel* sortFilterProxyModel()const;
-  Q_INVOKABLE qMRMLSegmentsModel* model()const;
+  Q_INVOKABLE qMRMLSortFilterSegmentsProxyModel* sortFilterProxyModel() const;
+  Q_INVOKABLE qMRMLSegmentsModel* model() const;
 
   /// The text used to filter the segments in the table
   /// \sa setTextFilter
   QString textFilter();
+
+  /// The settings key used to specify whether standard terminologies or simple selectors are used for choosing segment name and color.
+  /// Default value is "Segmentations/UseTerminologySelector".
+  /// If set to empty then the option will not be saved to and loaded from application settings.
+  /// \sa setUseTerminologySelectorSettingsKey
+  QString useTerminologySelectorSettingsKey() const;
+
+  /// Returns true if standard terminologies are used for choosing segment name and color.
+  /// If false then simple selectors are used.
+  bool useTerminologySelector() const;
+
+  /// Returns true if the user can choose between the standard terminologies selector or the simple selectors for segment name and color.
+  bool terminologySelectorOptionVisible() const;
+
+  /// Offer automatic disable of using standard terminologies selector if custom segment names or colors are used frequently.
+  bool terminologySelectorAutoDisable() const;
+
   // If the specified status should be shown in the table
   /// \sa setStatusShown
   Q_INVOKABLE bool statusShown(int status);
 
   /// Get the row for the specified segment ID
-  int rowForSegmentID(QString segmentID);
+  Q_INVOKABLE int rowForSegmentID(QString segmentID);
   /// Get the segment ID for the specified row
-  QString segmentIDForRow(int row);
+  Q_INVOKABLE QString segmentIDForRow(int row);
 
 public slots:
   /// Set segmentation MRML node
@@ -145,6 +166,9 @@ public slots:
   /// Show only selected segments
   void showOnlySelectedSegments();
 
+  /// Toggle visibility for the selected segments
+  void toggleSelectedSegmentsVisibility();
+
   /// Jump position of all slice views to show the segment's center.
   /// Segment's center is determined as the center of bounding box.
   void jumpSlices();
@@ -153,7 +177,7 @@ public slots:
   void setJumpToSelectedSegmentEnabled(bool enable);
 
   /// Set the status of the selected segments
-  void setSelectedSegmentsStatus(int status=-1);
+  void setSelectedSegmentsStatus(int status = -1);
 
   /// Erase the contents of the selected segments and set the status to "Not started"
   void clearSelectedSegments();
@@ -166,24 +190,34 @@ public slots:
   /// Set the text used to filter the segments in the table
   /// \sa textFilter
   void setTextFilter(QString textFilter);
+  /// Set the settings key used to specify whether standard terminologies are used for name and color.
+  /// \sa useTerminologySelectorSettingsKey
+  void setUseTerminologySelectorSettingsKey(QString settingsKey);
+  /// Set if standard terminologies are used for choosing segment name and color.
+  void setUseTerminologySelector(bool useTerminologySelector);
+  /// Set if the user can choose between the standard terminologies selector or the simple selectors for segment name and color.
+  void setTerminologySelectorOptionVisible(bool visible);
+  /// Offer automatic disable of using standard terminologies selector if custom segment names or colors are used frequently.
+  void setTerminologySelectorAutoDisable(bool autoDisable);
+
   /// Set if the specified status should be shown in the table
   /// \sa statusShown
   void setStatusShown(int status, bool shown);
 
   /// Returns true if automatic jump to current segment is enabled.
-  bool jumpToSelectedSegmentEnabled()const;
+  bool jumpToSelectedSegmentEnabled() const;
 
 signals:
   /// Emitted if selection changes
-  void selectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+  void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
   /// Emitted when a segment property (e.g., name) is about to be changed.
   /// Can be used for capturing the current state of the segment, before it is modified.
-  void segmentAboutToBeModified(const QString &segmentID);
+  void segmentAboutToBeModified(const QString& segmentID);
 
 protected slots:
   /// Forwards selection changed events. In case of batch update of items, selected and deselected are empty.
-  void onSegmentSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+  void onSegmentSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
   /// Handles actions on table cell (visibility)
   void onVisibility3DActionToggled(bool visible);
@@ -197,6 +231,8 @@ protected slots:
 
   /// Handles clicks on a table cell (visibility + state)
   void onSegmentsTableClicked(const QModelIndex& modelIndex);
+  /// Handles clicks on a table cell (name + color change / terminology change)
+  void onSegmentsTableDoubleClicked(const QModelIndex& modelIndex);
 
   /// Handle MRML scene event
   void endProcessing();
@@ -209,6 +245,13 @@ protected slots:
 
   /// Update the filter parameters in the vtkMRMLSegmentationNode
   void updateMRMLFromFilterParameters();
+
+  /// Signals to save/restore segment ID selection when the model is reset
+  void modelAboutToBeReset();
+  void modelReset();
+
+  /// Toggle using standard terminology for this segments table
+  void onUseTerminologyActionToggled(bool useTerminology);
 
 protected:
   /// Convenience function to set segment visibility options from event handlers
@@ -225,6 +268,8 @@ protected:
 
   /// Handle context menu events
   void contextMenuEvent(QContextMenuEvent* event) override;
+
+  bool userSetCustomNameOrColor();
 
 protected:
   QScopedPointer<qMRMLSegmentsTableViewPrivate> d_ptr;

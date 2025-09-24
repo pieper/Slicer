@@ -5,7 +5,7 @@
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
+  See Copyright.txt or https://www.kitware.com/Copyright.htm for details.
 
      This software is distributed WITHOUT ANY WARRANTY; without even
      the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -27,6 +27,7 @@
 #include "vtkSmartPointer.h"
 
 class vtkCellPicker;
+class vtkVolumePicker;
 class vtkWorldPointPicker;
 
 /// \brief Interactive manipulation of the camera.
@@ -47,13 +48,14 @@ class vtkWorldPointPicker;
 /// \sa vtkInteractorStyleTrackballActor
 /// \sa vtkInteractorStyleJoystickCamera
 /// \sa vtkInteractorStyleJoystickActor
-class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLThreeDViewInteractorStyle :
-  public vtkMRMLViewInteractorStyle
+class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLThreeDViewInteractorStyle : public vtkMRMLViewInteractorStyle
 {
 public:
-  static vtkMRMLThreeDViewInteractorStyle *New();
+  static vtkMRMLThreeDViewInteractorStyle* New();
   vtkTypeMacro(vtkMRMLThreeDViewInteractorStyle, vtkMRMLViewInteractorStyle);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+
+  void SetDisplayableManagers(vtkMRMLDisplayableManagerGroup* displayableManagers) override;
 
   ///
   /// Event bindings controlling the effects of pressing mouse buttons
@@ -67,12 +69,12 @@ public:
 
   ///
   /// Get/Set the CameraNode
-  vtkGetObjectMacro ( CameraNode, vtkMRMLCameraNode );
-  vtkSetObjectMacro ( CameraNode, vtkMRMLCameraNode );
+  vtkGetObjectMacro(CameraNode, vtkMRMLCameraNode);
+  vtkSetObjectMacro(CameraNode, vtkMRMLCameraNode);
 
   ///
   /// Reimplemented to set the default interactive update rate
-  void SetInteractor(vtkRenderWindowInteractor *interactor) override;
+  void SetInteractor(vtkRenderWindowInteractor* interactor) override;
 
 protected:
   vtkMRMLThreeDViewInteractorStyle();
@@ -80,11 +82,17 @@ protected:
 
   bool QuickPick(int x, int y, double pickPoint[3]);
 
-  vtkMRMLCameraNode *CameraNode;
+  void ProcessDisplayableManagerEvents(vtkMRMLAbstractDisplayableManager* displayableManager, unsigned long event, void* callData) override;
 
-  /// For jump to slice feature (when mouse is moved while shift key is pressed)
+  vtkMRMLCameraNode* CameraNode;
+
+  // For jump to slice feature (when mouse is moved while shift key is pressed)
+  // Slow but can pick anything (volumes and semi-transparent surfaces)
   vtkSmartPointer<vtkCellPicker> AccuratePicker;
+  // Picker that uses Z buffer. Fast but ignores volumes and semi-transparent surfaces.
   vtkSmartPointer<vtkWorldPointPicker> QuickPicker;
+  // Picker for volume-rendered images. Fast, as it only computes a single ray.
+  vtkSmartPointer<vtkVolumePicker> QuickVolumePicker;
 
 private:
   vtkMRMLThreeDViewInteractorStyle(const vtkMRMLThreeDViewInteractorStyle&) = delete;

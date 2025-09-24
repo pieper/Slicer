@@ -22,7 +22,7 @@
 #include "qSlicerSegmentationsModule.h"
 #include "qSlicerSegmentationsModuleWidget.h"
 #include "qSlicerSegmentationsReader.h"
-#include "qSlicerSegmentationsSettingsPanel.h"  
+#include "qSlicerSegmentationsSettingsPanel.h"
 #include "qSlicerSubjectHierarchySegmentationsPlugin.h"
 #include "qSlicerSubjectHierarchySegmentsPlugin.h"
 #include "vtkSlicerSegmentationsModuleLogic.h"
@@ -57,7 +57,7 @@
 
 // PythonQt includes
 #ifdef Slicer_USE_PYTHONQT
-#include "PythonQt.h"
+# include "PythonQt.h"
 #endif
 
 // Qt includes
@@ -68,7 +68,6 @@
 VTK_MODULE_INIT(vtkSlicerSegmentationsModuleMRMLDisplayableManager)
 
 //-----------------------------------------------------------------------------
-/// \ingroup SlicerRt_QtModules_Segmentations
 class qSlicerSegmentationsModulePrivate
 {
 public:
@@ -95,22 +94,22 @@ qSlicerSegmentationsModule::qSlicerSegmentationsModule(QObject* _parent)
 qSlicerSegmentationsModule::~qSlicerSegmentationsModule() = default;
 
 //-----------------------------------------------------------------------------
-QString qSlicerSegmentationsModule::helpText()const
+QString qSlicerSegmentationsModule::helpText() const
 {
-  QString help =
-    "Segmentations module manages segmentations. Each segmentation can contain"
-    " multiple segments, which correspond to one structure or ROI. Each segment"
-    " can contain multiple data representations for the same structure, and the"
-    " module supports automatic conversion between these representations"
-    " as well as advanced display settings and import/export features.";
+  QString help = tr("Segmentations module manages segmentations. Each segmentation can contain"
+                    " multiple segments, which correspond to one structure or ROI. Each segment"
+                    " can contain multiple data representations for the same structure, and the"
+                    " module supports automatic conversion between these representations"
+                    " as well as advanced display settings and import/export features.");
   help += this->defaultDocumentationLink();
   return help;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerSegmentationsModule::acknowledgementText()const
+QString qSlicerSegmentationsModule::acknowledgementText() const
 {
-  return "This work is part of SparKit project, funded by Cancer Care Ontario (CCO)'s ACRU program and Ontario Consortium for Adaptive Interventions in Radiation Oncology (OCAIRO).";
+  return tr("This work is part of SparKit project, funded by Cancer Care Ontario (CCO)'s "
+            "ACRU program and Ontario Consortium for Adaptive Interventions in Radiation Oncology (OCAIRO).");
 }
 
 //-----------------------------------------------------------------------------
@@ -130,13 +129,13 @@ QStringList qSlicerSegmentationsModule::contributors() const
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerSegmentationsModule::dependencies()const
+QStringList qSlicerSegmentationsModule::dependencies() const
 {
   return QStringList() << "Terminologies";
 }
- 
+
 //-----------------------------------------------------------------------------
-QIcon qSlicerSegmentationsModule::icon()const
+QIcon qSlicerSegmentationsModule::icon() const
 {
   return QIcon(":/Icons/Segmentations.png");
 }
@@ -145,14 +144,13 @@ QIcon qSlicerSegmentationsModule::icon()const
 void qSlicerSegmentationsModule::setMRMLScene(vtkMRMLScene* scene)
 {
   // Connect scene node added event to make connections enabling per-segment subject hierarchy actions
-  qvtkReconnect( this->mrmlScene(), scene, vtkMRMLScene::NodeAddedEvent, this, SLOT( onNodeAdded(vtkObject*,vtkObject*) ) );
+  qvtkReconnect(this->mrmlScene(), scene, vtkMRMLScene::NodeAddedEvent, this, SLOT(onNodeAdded(vtkObject*, vtkObject*)));
 
   Superclass::setMRMLScene(scene);
 
   // Subject hierarchy is instantiated before Segmentations, so need to connect to existing the quasi-singleton subject hierarchy node
   vtkCollection* shNodeCollection = scene->GetNodesByClass("vtkMRMLSubjectHierarchyNode");
-  vtkMRMLSubjectHierarchyNode*  subjectHierarchyNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(
-    shNodeCollection->GetItemAsObject(0) );
+  vtkMRMLSubjectHierarchyNode* subjectHierarchyNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(shNodeCollection->GetItemAsObject(0));
   shNodeCollection->Delete();
   this->onNodeAdded(scene, subjectHierarchyNode);
 }
@@ -175,11 +173,11 @@ void qSlicerSegmentationsModule::setup()
 
   // Register settings panel
   if (qSlicerApplication::application())
-    {
+  {
     qSlicerSegmentationsSettingsPanel* panel = new qSlicerSegmentationsSettingsPanel();
-    qSlicerApplication::application()->settingsDialog()->addPanel("Segmentations", panel);
+    qSlicerApplication::application()->settingsDialog()->addPanel(tr("Segmentations"), panel);
     panel->setSegmentationsLogic(segmentationsLogic);
-    }
+  }
 
   // Use the displayable manager class to make sure the the containing library is loaded
   vtkSmartPointer<vtkMRMLSegmentationsDisplayableManager3D> dm3d = vtkSmartPointer<vtkMRMLSegmentationsDisplayableManager3D>::New();
@@ -197,11 +195,11 @@ void qSlicerSegmentationsModule::setup()
   // (otherwise it would be the responsibility of the module that embeds the segment editor widget)
 #ifdef Slicer_USE_PYTHONQT
   if (!qSlicerCoreApplication::testAttribute(qSlicerCoreApplication::AA_DisablePython))
-    {
+  {
     PythonQt::init();
     PythonQtObjectPtr context = PythonQt::self()->getMainModule();
     context.evalScript(QString("import SegmentEditorEffects; SegmentEditorEffects.registerEffects()"));
-    }
+  }
 #endif
 }
 
@@ -209,39 +207,13 @@ void qSlicerSegmentationsModule::setup()
 qSlicerAbstractModuleRepresentation* qSlicerSegmentationsModule::createWidgetRepresentation()
 {
   qSlicerSegmentationsModuleWidget* moduleWidget = new qSlicerSegmentationsModuleWidget();
-
-  qSlicerAbstractCoreModule* terminologiesModule = qSlicerCoreApplication::application()->moduleManager()->module("Terminologies");
-  if (terminologiesModule)
-    {
-    vtkSlicerTerminologiesModuleLogic* terminologiesLogic = vtkSlicerTerminologiesModuleLogic::SafeDownCast(terminologiesModule->logic());
-    moduleWidget->setTerminologiesLogic(terminologiesLogic);
-    }
-  else
-    {
-    qCritical() << Q_FUNC_INFO << ": Terminologies module is not found";
-    } 
-
   return moduleWidget;
 }
 
 //-----------------------------------------------------------------------------
 vtkMRMLAbstractLogic* qSlicerSegmentationsModule::createLogic()
 {
-  vtkSlicerSegmentationsModuleLogic* moduleLogic = vtkSlicerSegmentationsModuleLogic::New();
-
-  qSlicerAbstractCoreModule* terminologiesModule = qSlicerCoreApplication::application()->moduleManager()->module("Terminologies");
-  if (terminologiesModule)
-    {
-    vtkSlicerTerminologiesModuleLogic* terminologiesLogic = vtkSlicerTerminologiesModuleLogic::SafeDownCast(terminologiesModule->logic());
-    moduleLogic->SetTerminologiesLogic(terminologiesLogic);
-    }
-  else
-    {
-    qCritical() << Q_FUNC_INFO << ": Terminologies module is not found";
-    } 
-
-  return moduleLogic;
-
+  return vtkSlicerSegmentationsModuleLogic::New();
 }
 
 //-----------------------------------------------------------------------------
@@ -249,40 +221,44 @@ void qSlicerSegmentationsModule::onNodeAdded(vtkObject* sceneObject, vtkObject* 
 {
   vtkMRMLScene* scene = vtkMRMLScene::SafeDownCast(sceneObject);
   if (!scene)
-    {
+  {
     return;
-    }
+  }
 
   // Get segmentations subject hierarchy plugin
-  qSlicerSubjectHierarchySegmentationsPlugin* segmentationsPlugin = qobject_cast<qSlicerSubjectHierarchySegmentationsPlugin*>(
-    qSlicerSubjectHierarchyPluginHandler::instance()->pluginByName("Segmentations") );
+  qSlicerSubjectHierarchySegmentationsPlugin* segmentationsPlugin =
+    qobject_cast<qSlicerSubjectHierarchySegmentationsPlugin*>(qSlicerSubjectHierarchyPluginHandler::instance()->pluginByName("Segmentations"));
   if (!segmentationsPlugin)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access segmentations subject hierarchy plugin";
     return;
-    }
+  }
 
   // Connect segment added and removed events to plugin to update subject hierarchy accordingly
   vtkMRMLSegmentationNode* segmentationNode = vtkMRMLSegmentationNode::SafeDownCast(nodeObject);
   if (segmentationNode)
-    {
-    qvtkConnect( segmentationNode, vtkSegmentation::SegmentAdded,
-      segmentationsPlugin, SLOT( onSegmentAdded(vtkObject*,void*) ) );
-    qvtkConnect( segmentationNode, vtkSegmentation::SegmentRemoved,
-      segmentationsPlugin, SLOT( onSegmentRemoved(vtkObject*,void*) ) );
-    qvtkConnect( segmentationNode, vtkSegmentation::SegmentModified,
-      segmentationsPlugin, SLOT( onSegmentModified(vtkObject*,void*) ) );
-    }
+  {
+    qvtkConnect(segmentationNode, vtkSegmentation::SegmentAdded, segmentationsPlugin, SLOT(onSegmentAdded(vtkObject*, void*)));
+    qvtkConnect(segmentationNode, vtkSegmentation::SegmentRemoved, segmentationsPlugin, SLOT(onSegmentRemoved(vtkObject*, void*)));
+    qvtkConnect(segmentationNode, vtkSegmentation::SegmentModified, segmentationsPlugin, SLOT(onSegmentModified(vtkObject*, void*)));
+    qvtkConnect(segmentationNode, vtkMRMLSegmentationNode::DisplayModifiedEvent, segmentationsPlugin, SLOT(onDisplayNodeModified(vtkObject*)));
+    qvtkConnect(segmentationNode, vtkSegmentation::SegmentsOrderModified, segmentationsPlugin, SLOT(onSegmentsOrderModified(vtkObject*, void*)));
+  }
 
   // Connect subject hierarchy modified event to handle renaming segments from subject hierarchy
   vtkMRMLSubjectHierarchyNode* subjectHierarchyNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(nodeObject);
   if (subjectHierarchyNode)
-    {
-    qvtkConnect( subjectHierarchyNode, vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemModifiedEvent,
-      segmentationsPlugin, SLOT( onSubjectHierarchyItemModified(vtkObject*,void*) ) );
-    qvtkConnect( subjectHierarchyNode, vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemAboutToBeRemovedEvent,
-      segmentationsPlugin, SLOT( onSubjectHierarchyItemAboutToBeRemoved(vtkObject*,void*) ) );
-    }
+  {
+    qvtkConnect(subjectHierarchyNode, vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemModifiedEvent, segmentationsPlugin, SLOT(onSubjectHierarchyItemModified(vtkObject*, void*)));
+    qvtkConnect(subjectHierarchyNode,
+                vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemAboutToBeRemovedEvent,
+                segmentationsPlugin,
+                SLOT(onSubjectHierarchyItemAboutToBeRemoved(vtkObject*, void*)));
+    qvtkConnect(subjectHierarchyNode,
+                vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemChildrenReorderedEvent,
+                segmentationsPlugin,
+                SLOT(onSubjectHierarchyItemChildrenReordered(vtkObject*, void*)));
+  }
 }
 
 //-----------------------------------------------------------------------------

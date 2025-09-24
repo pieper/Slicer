@@ -49,35 +49,34 @@ vtkMRMLAnnotationSnapshotStorageNode::~vtkMRMLAnnotationSnapshotStorageNode() = 
 //----------------------------------------------------------------------------
 void vtkMRMLAnnotationSnapshotStorageNode::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 }
 
 //----------------------------------------------------------------------------
-bool vtkMRMLAnnotationSnapshotStorageNode::CanReadInReferenceNode(vtkMRMLNode *refNode)
+bool vtkMRMLAnnotationSnapshotStorageNode::CanReadInReferenceNode(vtkMRMLNode* refNode)
 {
   return refNode->IsA("vtkMRMLAnnotationSnapshotNode");
 }
 
 //----------------------------------------------------------------------------
-int vtkMRMLAnnotationSnapshotStorageNode::ReadDataInternal(vtkMRMLNode *refNode)
+int vtkMRMLAnnotationSnapshotStorageNode::ReadDataInternal(vtkMRMLNode* refNode)
 {
-  vtkMRMLAnnotationSnapshotNode *sceneViewNode =
-    vtkMRMLAnnotationSnapshotNode::SafeDownCast(refNode);
+  vtkMRMLAnnotationSnapshotNode* sceneViewNode = vtkMRMLAnnotationSnapshotNode::SafeDownCast(refNode);
 
   std::string fullName = this->GetFullNameFromFileName();
   if (fullName.empty())
-    {
+  {
     vtkErrorMacro("ReadData: File name not specified");
     return 0;
-    }
+  }
 
   // compute file prefix
   std::string extension = vtkMRMLStorageNode::GetLowercaseExtensionFromFileName(fullName);
-  if( extension.empty() )
-    {
+  if (extension.empty())
+  {
     vtkErrorMacro("ReadData: no file extension specified: " << fullName.c_str());
     return 0;
-    }
+  }
 
   vtkDebugMacro("ReadData: extension = " << extension.c_str());
 
@@ -85,60 +84,60 @@ int vtkMRMLAnnotationSnapshotStorageNode::ReadDataInternal(vtkMRMLNode *refNode)
   vtkNew<vtkImageData> imageData;
 
   try
+  {
+    if (extension == std::string(".png"))
     {
-    if ( extension == std::string(".png") )
-      {
       vtkNew<vtkPNGReader> reader;
       reader->SetFileName(fullName.c_str());
       reader->Update();
       if (reader->GetOutput())
-        {
+      {
         vtkDebugMacro("ReadData: read file, copying output to image data");
         imageData->DeepCopy(reader->GetOutput());
-        }
       }
-    else if (extension == std::string(".jpg") ||
+    }
+    else if (extension == std::string(".jpg") || //
              extension == std::string(".jpeg"))
-      {
+    {
       vtkNew<vtkJPEGReader> reader;
       reader->SetFileName(fullName.c_str());
       reader->Update();
       if (reader->GetOutput())
-        {
-        imageData->DeepCopy(reader->GetOutput());
-        }
-      }
-    else if (extension == std::string(".tiff"))
       {
+        imageData->DeepCopy(reader->GetOutput());
+      }
+    }
+    else if (extension == std::string(".tiff"))
+    {
       vtkNew<vtkTIFFReader> reader;
       reader->SetFileName(fullName.c_str());
       reader->Update();
       if (reader->GetOutput())
-        {
-        imageData->DeepCopy(reader->GetOutput());
-        }
-      }
-    else if (extension == std::string(".bmp"))
       {
+        imageData->DeepCopy(reader->GetOutput());
+      }
+    }
+    else if (extension == std::string(".bmp"))
+    {
       vtkNew<vtkBMPReader> reader;
       reader->SetFileName(fullName.c_str());
       reader->Update();
       if (reader->GetOutput())
-        {
-        imageData->DeepCopy(reader->GetOutput());
-        }
-      }
-    else
       {
+        imageData->DeepCopy(reader->GetOutput());
+      }
+    }
+    else
+    {
       vtkDebugMacro("Cannot read scene view file '" << fullName.c_str() << "' (extension = " << extension.c_str() << ")");
       return 0;
-      }
     }
+  }
   catch (...)
-    {
+  {
     vtkWarningMacro("ReadData: error in read, setting result to 0");
     result = 0;
-    }
+  }
 
   sceneViewNode->SetScreenShot(imageData.GetPointer());
   sceneViewNode->GetScreenShot()->SetSpacing(1.0, 1.0, 1.0);
@@ -148,15 +147,15 @@ int vtkMRMLAnnotationSnapshotStorageNode::ReadDataInternal(vtkMRMLNode *refNode)
 }
 
 //----------------------------------------------------------------------------
-int vtkMRMLAnnotationSnapshotStorageNode::WriteDataInternal(vtkMRMLNode *refNode)
+int vtkMRMLAnnotationSnapshotStorageNode::WriteDataInternal(vtkMRMLNode* refNode)
 {
-  vtkMRMLAnnotationSnapshotNode *sceneViewNode = vtkMRMLAnnotationSnapshotNode::SafeDownCast(refNode);
+  vtkMRMLAnnotationSnapshotNode* sceneViewNode = vtkMRMLAnnotationSnapshotNode::SafeDownCast(refNode);
 
   if (sceneViewNode->GetScreenShot() == nullptr)
-    {
+  {
     // nothing to write
     return 1;
-    }
+  }
 
   std::string fullName = this->GetFullNameFromFileName();
   if (fullName.empty())
@@ -169,66 +168,66 @@ int vtkMRMLAnnotationSnapshotStorageNode::WriteDataInternal(vtkMRMLNode *refNode
 
   int result = 1;
   if (extension == ".png")
-    {
+  {
     vtkNew<vtkPNGWriter> writer;
     writer->SetFileName(fullName.c_str());
-    writer->SetInputData( sceneViewNode->GetScreenShot() );
+    writer->SetInputData(sceneViewNode->GetScreenShot());
     try
-      {
-      writer->Write();
-      }
-    catch (...)
-      {
-      result = 0;
-      }
-    }
-  else if (extension == ".jpg" || extension == ".jpeg")
     {
+      writer->Write();
+    }
+    catch (...)
+    {
+      result = 0;
+    }
+  }
+  else if (extension == ".jpg" || extension == ".jpeg")
+  {
     vtkNew<vtkJPEGWriter> writer;
     writer->SetFileName(fullName.c_str());
-    writer->SetInputData( sceneViewNode->GetScreenShot() );
+    writer->SetInputData(sceneViewNode->GetScreenShot());
     try
-      {
-      writer->Write();
-      }
-    catch (...)
-      {
-      result = 0;
-      }
-    }
-  else if (extension == ".tiff")
     {
+      writer->Write();
+    }
+    catch (...)
+    {
+      result = 0;
+    }
+  }
+  else if (extension == ".tiff")
+  {
     vtkNew<vtkTIFFWriter> writer;
     writer->SetFileName(fullName.c_str());
-    writer->SetInputData( sceneViewNode->GetScreenShot() );
+    writer->SetInputData(sceneViewNode->GetScreenShot());
     try
-      {
-      writer->Write();
-      }
-    catch (...)
-      {
-      result = 0;
-      }
-    }
-  else if (extension == ".bmp")
     {
+      writer->Write();
+    }
+    catch (...)
+    {
+      result = 0;
+    }
+  }
+  else if (extension == ".bmp")
+  {
     vtkNew<vtkBMPWriter> writer;
     writer->SetFileName(fullName.c_str());
-    writer->SetInputData( sceneViewNode->GetScreenShot() );
+    writer->SetInputData(sceneViewNode->GetScreenShot());
     try
-      {
-      writer->Write();
-      }
-    catch (...)
-      {
-      result = 0;
-      }
-    }
-  else
     {
-    result = 0;
-    vtkErrorMacro( << "No file extension recognized: " << fullName.c_str() );
+      writer->Write();
     }
+    catch (...)
+    {
+      result = 0;
+    }
+  }
+  else
+  {
+    result = 0;
+    vtkErrorMacro(<< "No file extension recognized: " << fullName.c_str());
+  }
 
   return result;
 }

@@ -29,49 +29,64 @@
 
 //----------------------------------------------------------------------------
 // Test macros
-#define VERIFY_EQUAL(description, actual, expected) \
-{ \
-  if (expected != actual) \
-    { \
-    std::cerr << "Test failure: Mismatch in " << description << ". Expected " << expected << ", actual value is " << actual << std::endl << std::endl; \
-    exit(EXIT_FAILURE); \
-    } \
-  else \
-    { \
-    std::cout << "Test case success: " << description << " matches expected value " << actual << std::endl; \
-    } \
-}
+#define VERIFY_EQUAL(description, actual, expected)                                                                                                      \
+  {                                                                                                                                                      \
+    if (expected != actual)                                                                                                                              \
+    {                                                                                                                                                    \
+      std::cerr << "Test failure: Mismatch in " << description << ". Expected " << expected << ", actual value is " << actual << std::endl << std::endl; \
+      exit(EXIT_FAILURE);                                                                                                                                \
+    }                                                                                                                                                    \
+    else                                                                                                                                                 \
+    {                                                                                                                                                    \
+      std::cout << "Test case success: " << description << " matches expected value " << actual << std::endl;                                            \
+    }                                                                                                                                                    \
+  }
 
 //----------------------------------------------------------------------------
 // Conversion graph
 
 // Convenience macro for defining a converter rule class with a single line
-#define RULE(from, to, weight) \
-class vtkRep##from##ToRep##to##Rule: public vtkSegmentationConverterRule \
-{ \
-public: \
-  static vtkRep##from##ToRep##to##Rule* New(); \
-  vtkTypeMacro(vtkRep##from##ToRep##to##Rule, vtkSegmentationConverterRule); \
-  virtual vtkSegmentationConverterRule* CreateRuleInstance() override; \
-  virtual vtkDataObject* ConstructRepresentationObjectByRepresentation( \
-    std::string vtkNotUsed(representationName))  override { return nullptr; }; \
-  virtual vtkDataObject* ConstructRepresentationObjectByClass( \
-    std::string vtkNotUsed(className)) override { return nullptr; }; \
-  virtual bool Convert( \
-    vtkSegment* vtkNotUsed(segment)) override { return true; } \
-  virtual unsigned int GetConversionCost( \
-    vtkDataObject* sourceRepresentation=nullptr, \
-    vtkDataObject* targetRepresentation=nullptr)  override \
-  { \
-    (void)sourceRepresentation; \
-    (void)targetRepresentation; \
-    return weight; \
-  }; \
-  virtual const char* GetName() override { return "Rep " #from " to Rep " #to; } \
-  virtual const char* GetSourceRepresentationName() override { return "Rep" #from ; }  \
-  virtual const char* GetTargetRepresentationName()  override { return "Rep" #to ; } \
-}; \
-vtkSegmentationConverterRuleNewMacro(vtkRep##from##ToRep##to##Rule);
+// clang-format off
+#define RULE(from, to, weight)                                                                                                                    \
+  class vtkRep##from##ToRep##to##Rule : public vtkSegmentationConverterRule                                                                       \
+  {                                                                                                                                               \
+  public:                                                                                                                                         \
+    static vtkRep##from##ToRep##to##Rule* New();                                                                                                  \
+    vtkTypeMacro(vtkRep##from##ToRep##to##Rule, vtkSegmentationConverterRule);                                                                    \
+    virtual vtkSegmentationConverterRule* CreateRuleInstance() override;                                                                          \
+    virtual vtkDataObject* ConstructRepresentationObjectByRepresentation(std::string vtkNotUsed(representationName)) override                     \
+    {                                                                                                                                             \
+      return nullptr;                                                                                                                             \
+    };                                                                                                                                            \
+    virtual vtkDataObject* ConstructRepresentationObjectByClass(std::string vtkNotUsed(className)) override                                       \
+    {                                                                                                                                             \
+      return nullptr;                                                                                                                             \
+    };                                                                                                                                            \
+    virtual bool Convert(vtkSegment* vtkNotUsed(segment)) override                                                                                \
+    {                                                                                                                                             \
+      return true;                                                                                                                                \
+    }                                                                                                                                             \
+    virtual unsigned int GetConversionCost(vtkDataObject* sourceRepresentation = nullptr, vtkDataObject* targetRepresentation = nullptr) override \
+    {                                                                                                                                             \
+      (void)sourceRepresentation;                                                                                                                 \
+      (void)targetRepresentation;                                                                                                                 \
+      return weight;                                                                                                                              \
+    };                                                                                                                                            \
+    virtual const char* GetName() override                                                                                                        \
+    {                                                                                                                                             \
+      return "Rep " #from " to Rep " #to;                                                                                                         \
+    }                                                                                                                                             \
+    virtual const char* GetSourceRepresentationName() override                                                                                    \
+    {                                                                                                                                             \
+      return "Rep" #from;                                                                                                                         \
+    }                                                                                                                                             \
+    virtual const char* GetTargetRepresentationName() override                                                                                    \
+    {                                                                                                                                             \
+      return "Rep" #to;                                                                                                                           \
+    }                                                                                                                                             \
+  };                                                                                                                                              \
+  vtkSegmentationConverterRuleNewMacro(vtkRep##from##ToRep##to##Rule);
+// clang-format on
 
 /*
 Test conversion graph:
@@ -97,12 +112,24 @@ RULE(C, E, 4);
 RULE(D, E, 2);
 RULE(E, D, 1);
 
-void PrintPath(const vtkSegmentationConverter::ConversionPathType& path)
+void PrintPath(vtkSegmentationConversionPath* path)
 {
-  for (vtkSegmentationConverter::ConversionPathType::const_iterator ruleIt = path.begin(); ruleIt != path.end(); ++ruleIt)
-    {
-    std::cout << "      " << (*ruleIt)->GetName() << "(" << (*ruleIt)->GetConversionCost() << ")" << std::endl;
-    }
+  for (int i = 0; i < path->GetNumberOfRules(); i++)
+  {
+    vtkSegmentationConverterRule* rule = path->GetRule(i);
+    std::cout << "      " << rule->GetName() << "(" << rule->GetConversionCost() << ")" << std::endl;
+  }
+}
+
+void PrintPaths(vtkSegmentationConversionPaths* paths)
+{
+  vtkSegmentationConversionPath* path = nullptr;
+  vtkCollectionSimpleIterator it;
+  for (paths->InitTraversal(it); (path = paths->GetNextPath(it));)
+  {
+    std::cout << "    Path: (total cost = " << path->GetCost() << ")" << std::endl;
+    PrintPath(path);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -121,10 +148,10 @@ void TestRegisterUnregister()
   VERIFY_EQUAL("number of rules after unregister", converterFactory->GetConverterRules().size(), 3);
 
   // Remove all
-  while (converterFactory->GetConverterRules().size()>0)
-    {
+  while (converterFactory->GetConverterRules().size() > 0)
+  {
     converterFactory->UnregisterConverterRule(converterFactory->GetConverterRules()[0]);
-    }
+  }
   VERIFY_EQUAL("number of rules after unregister", converterFactory->GetConverterRules().size(), 0);
 }
 
@@ -145,58 +172,44 @@ int vtkSegmentationConverterTest1(int vtkNotUsed(argc), char* vtkNotUsed(argv)[]
 
   vtkSmartPointer<vtkSegmentationConverter> converter = vtkSmartPointer<vtkSegmentationConverter>::New();
 
-  vtkSegmentationConverter::ConversionPathAndCostListType pathsCosts;
-  vtkSegmentationConverter::ConversionPathType shortestPath;
-
   // A->E paths: ABCE, ABCDE, ADE
   std::cout << "Conversion from RepA to RepE" << std::endl;
   std::cout << "  All paths:" << std::endl;
-  converter->GetPossibleConversions("RepA", "RepE", pathsCosts);
-  for (vtkSegmentationConverter::ConversionPathAndCostListType::iterator pathsCostsIt = pathsCosts.begin(); pathsCostsIt != pathsCosts.end(); ++pathsCostsIt)
-    {
-    std::cout << "    Path: (total cost = " << pathsCostsIt->second << ")" << std::endl;
-    PrintPath(pathsCostsIt->first);
-    }
-  VERIFY_EQUAL("number of paths from representation A to E", pathsCosts.size(), 3);
+  vtkNew<vtkSegmentationConversionPaths> paths;
+  converter->GetPossibleConversions("RepA", "RepE", paths);
+  PrintPaths(paths);
+  VERIFY_EQUAL("number of paths from representation A to E", paths->GetNumberOfPaths(), 3);
   std::cout << "  Cheapest path:" << std::endl;
-  shortestPath = vtkSegmentationConverter::GetCheapestPath(pathsCosts);
+  vtkSegmentationConversionPath* shortestPath = vtkSegmentationConverter::GetCheapestPath(paths);
   PrintPath(shortestPath);
-  VERIFY_EQUAL("number of paths from representation A to E", shortestPath.size(), 3);
+  VERIFY_EQUAL("minimum number of rules from representation A to E", shortestPath->GetNumberOfRules(), 3);
 
   // E->A paths: none
   std::cout << "Conversion from RepE to RepA" << std::endl;
-  converter->GetPossibleConversions("RepE", "RepA", pathsCosts);
-  VERIFY_EQUAL("number of paths from representation E to A", pathsCosts.size(), 0);
+  converter->GetPossibleConversions("RepE", "RepA", paths);
+  VERIFY_EQUAL("number of paths from representation E to A", paths->GetNumberOfPaths(), 0);
 
   // B->D paths: BAD, BCD, BCED
   std::cout << "Conversion from RepB to RepD" << std::endl;
   std::cout << "  All paths:" << std::endl;
-  converter->GetPossibleConversions("RepB", "RepD", pathsCosts);
-  for (vtkSegmentationConverter::ConversionPathAndCostListType::iterator pathsCostsIt = pathsCosts.begin(); pathsCostsIt != pathsCosts.end(); ++pathsCostsIt)
-    {
-    std::cout << "    Path: (total cost = " << pathsCostsIt->second << ")" << std::endl;
-    PrintPath(pathsCostsIt->first);
-    }
-  VERIFY_EQUAL("number of paths from representation B to D", pathsCosts.size(), 3);
+  converter->GetPossibleConversions("RepB", "RepD", paths);
+  PrintPaths(paths);
+  VERIFY_EQUAL("number of paths from representation B to D", paths->GetNumberOfPaths(), 3);
   std::cout << "  Cheapest path:" << std::endl;
-  shortestPath = vtkSegmentationConverter::GetCheapestPath(pathsCosts);
+  shortestPath = vtkSegmentationConverter::GetCheapestPath(paths);
   PrintPath(shortestPath);
-  VERIFY_EQUAL("number of paths from representation B to D", shortestPath.size(), 2);
+  VERIFY_EQUAL("number of paths from representation B to D", shortestPath->GetNumberOfRules(), 2);
 
   // C->D paths: CD, CED
   std::cout << "Conversion from RepC to RepD" << std::endl;
   std::cout << "  All paths:" << std::endl;
-  converter->GetPossibleConversions("RepC", "RepD", pathsCosts);
-  for (vtkSegmentationConverter::ConversionPathAndCostListType::iterator pathsCostsIt = pathsCosts.begin(); pathsCostsIt != pathsCosts.end(); ++pathsCostsIt)
-    {
-    std::cout << "    Path: (total cost = " << pathsCostsIt->second << ")" << std::endl;
-    PrintPath(pathsCostsIt->first);
-    }
-  VERIFY_EQUAL("number of paths from representation C to D", pathsCosts.size(), 2);
+  converter->GetPossibleConversions("RepC", "RepD", paths);
+  PrintPaths(paths);
+  VERIFY_EQUAL("number of paths from representation C to D", paths->GetNumberOfPaths(), 2);
   std::cout << "  Cheapest path:" << std::endl;
-  shortestPath = vtkSegmentationConverter::GetCheapestPath(pathsCosts);
+  shortestPath = vtkSegmentationConverter::GetCheapestPath(paths);
   PrintPath(shortestPath);
-  VERIFY_EQUAL("number of paths from representation C to D", shortestPath.size(), 1);
+  VERIFY_EQUAL("number of paths from representation C to D", shortestPath->GetNumberOfRules(), 1);
 
   std::cout << "Test passed." << std::endl;
   return EXIT_SUCCESS;

@@ -29,38 +29,34 @@
 
 class QComboBox;
 
-/// \brief Abstract Item delegate to show unselectable items highlighed when the mouse is
+/// \brief Abstract Item delegate to show unselectable items highlighted when the mouse is
 /// over them to give a feeling of selectable item.
 ///
 /// This is used in qMRMLNodeComboBox for the extra items:
 /// e.g. "Add/Remove/Edit node" actions
-/// The highlight color is slightly more treansparent than the style palette
+/// The highlight color is slightly more transparent than the style palette
 /// highlight color to indicates that the item is not really selectable
 /// but correspond to an action.
 ///
-/// We reimplemente the code from Qt "QComboMenuDelegate" used in the class QComboBox.
-class QMRML_WIDGETS_EXPORT qMRMLNodeComboBoxMenuDelegate: public QAbstractItemDelegate
+/// We reimplement the code from Qt "QComboMenuDelegate" used in the class QComboBox.
+class QMRML_WIDGETS_EXPORT qMRMLNodeComboBoxMenuDelegate : public QAbstractItemDelegate
 {
   Q_OBJECT
 public:
   typedef QAbstractItemDelegate Superclass;
-  qMRMLNodeComboBoxMenuDelegate(QObject *parent, QComboBox *cmb);
+  qMRMLNodeComboBoxMenuDelegate(QObject* parent, QComboBox* cmb);
 
 protected:
-  void paint(QPainter *painter,
-                     const QStyleOptionViewItem &option,
-                     const QModelIndex &index) const override;
-  QSize sizeHint(const QStyleOptionViewItem &option,
-                         const QModelIndex &index) const override;
+  void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
+  QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 
 private:
   /// Reimplemented to force the highlight in case the item is not selectable
   /// but current. The highlight color used is then slightly different from
   /// the default color
-  QStyleOptionMenuItem getStyleOption(const QStyleOptionViewItem &option,
-                                      const QModelIndex &index) const;
-  QComboBox *mCombo;
+  QStyleOptionMenuItem getStyleOption(const QStyleOptionViewItem& option, const QModelIndex& index) const;
+  QComboBox* mCombo;
   Q_DISABLE_COPY(qMRMLNodeComboBoxMenuDelegate);
 };
 
-#endif // __qMRMLNodeComboBoxMenuDelegate_h
+#endif

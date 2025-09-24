@@ -1,7 +1,7 @@
 project(MRMLCore)
 
 #-----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 #-----------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -11,16 +11,30 @@ if(NOT DEFINED BUILD_SHARED_LIBS)
   option(BUILD_SHARED_LIBS "Build with shared libraries." ON)
 endif()
 
-# MRML scenes that are older than MRML_SUPPORT_VERSION won't be supported.
-# Or said differently, MRML_SUPPORT_VERSION is the earliest version supported
+set(MRML_APPLICATION_NAME "Slicer" CACHE STRING "Current MRML scene creator application name" )
+mark_as_advanced(MRML_APPLICATION_NAME)
+
+# The format is: 0xXXYYZZ where XX is the major version, YY the minor and
+# ZZ the patch version.
+# This format is chosen to allow easy comparison in C++ precompiler macros.
+set(MRML_APPLICATION_VERSION 0x040000 CACHE STRING "Current MRML application version" )
+mark_as_advanced(MRML_APPLICATION_VERSION)
+
+# Revision can be used to identify version with finer granularity than version.
+# It is an integer number that is incremented with each new software revision.
+set(MRML_APPLICATION_REVISION 0 CACHE STRING "Current MRML application revision number" )
+mark_as_advanced(MRML_APPLICATION_REVISION)
+
+# MRML scenes that are older than MRML_APPLICATION_SUPPORT_VERSION won't be supported.
+# Or said differently, MRML_APPLICATION_SUPPORT_VERSION is the earliest version supported
 # for a MRML scene.
 # The format is: 0xXXYYZZ where XX is the major version, YY the minor and
 # ZZ the patch version.
-# For example, set MRML_SUPPORT_VERSION to 0x040000 if you don't want to
+# For example, set MRML_APPLICATION_SUPPORT_VERSION to 0x040000 if you don't want to
 # support scenes of Slicer 3.
 # Supports Slicer3 and Slicer4 scenes by default.
-set(MRML_SUPPORT_VERSION 0x030000 CACHE STRING "MRML scene version to support " )
-mark_as_advanced(MRML_SUPPORT_VERSION)
+set(MRML_APPLICATION_SUPPORT_VERSION 0x030000 CACHE STRING "MRML application version to support" )
+mark_as_advanced(MRML_APPLICATION_SUPPORT_VERSION)
 
 option(MRML_USE_vtkTeem "Build MRML with vtkTeem support." ON)
 mark_as_advanced(MRML_USE_vtkTeem)
@@ -47,7 +61,13 @@ set(${PROJECT_NAME}_ITK_COMPONENTS
   ITKTransform
   )
 find_package(ITK 4.6 COMPONENTS ${${PROJECT_NAME}_ITK_COMPONENTS} REQUIRED)
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 list(APPEND ITK_LIBRARIES ITKFactoryRegistration)
 list(APPEND ITK_INCLUDE_DIRS ${ITKFactoryRegistration_INCLUDE_DIRS})
 include(${ITK_USE_FILE})
@@ -71,6 +91,11 @@ endif()
 if(NOT Slicer_BUILD_vtkAddon)
   find_package(vtkAddon REQUIRED)
 endif()
+
+#
+# RapidJSON
+#
+find_package(RapidJSON REQUIRED)
 
 # --------------------------------------------------------------------------
 # Include dirs
@@ -116,48 +141,96 @@ endif()
 set(MRMLCore_SRCS
   vtkArchive.cxx
   vtkArchive.h
+  vtkCacheManager.cxx
+  vtkCapPolyData.cxx
   vtkCodedEntry.cxx
-  vtkEventBroker.cxx
+  vtkCurveMeasurementsCalculator.cxx
+  vtkCurveMeasurementsCalculator.h
   vtkDataFileFormatHelper.cxx
-  vtkMRMLMeasurement.cxx
-  vtkMRMLLogic.cxx
+  vtkDataIOManager.cxx
+  vtkDataTransfer.cxx
+  vtkEventBroker.cxx
+  vtkImageMathematicsAddon.cxx
+  vtkImplicitInvertableBoolean.cxx
   vtkMRMLAbstractLayoutNode.cxx
   vtkMRMLAbstractViewNode.cxx
+  vtkMRMLBSplineTransformNode.cxx
   vtkMRMLCameraNode.cxx
-  vtkMRMLChartNode.cxx
-  vtkMRMLChartViewNode.cxx
   vtkMRMLClipModelsNode.cxx
+  vtkMRMLClipNode.cxx
   vtkMRMLColorNode.cxx
-  vtkMRMLColors.cxx
   vtkMRMLColorTableNode.cxx
   vtkMRMLColorTableStorageNode.cxx
+  vtkMRMLColors.cxx
   vtkMRMLCoreTestingUtilities.cxx
   vtkMRMLCrosshairNode.cxx
   vtkMRMLDiffusionTensorDisplayPropertiesNode.cxx
   vtkMRMLDiffusionWeightedVolumeDisplayNode.cxx
   vtkMRMLDiffusionWeightedVolumeNode.cxx
   vtkMRMLDisplayNode.cxx
+  vtkMRMLDisplayableHierarchyNode.cxx
   vtkMRMLDisplayableNode.cxx
-  vtkMRMLFiducial.cxx
-  vtkMRMLFiducialListNode.cxx
-  vtkMRMLFiducialListStorageNode.cxx
   vtkMRMLFolderDisplayNode.cxx
+  vtkMRMLGlyphableVolumeDisplayNode.cxx
+  vtkMRMLGlyphableVolumeSliceDisplayNode.cxx
+  vtkMRMLGridTransformNode.cxx
   vtkMRMLHierarchyNode.cxx
   vtkMRMLHierarchyStorageNode.cxx
-  vtkMRMLDisplayableHierarchyNode.cxx
+  vtkMRMLI18N.cxx
+  vtkMRMLI18N.h
+  vtkMRMLInteractionEventData.cxx
+  vtkMRMLInteractionEventData.h
   vtkMRMLInteractionNode.cxx
+  vtkMRMLJsonElement.cxx
   vtkMRMLLabelMapVolumeDisplayNode.cxx
   vtkMRMLLabelMapVolumeNode.cxx
+  vtkMRMLLayoutNode.cxx
   vtkMRMLLinearTransformNode.cxx
   vtkMRMLLinearTransformSequenceStorageNode.cxx
   vtkMRMLLinearTransformSequenceStorageNode.h
+  vtkMRMLMarkupsAngleNode.cxx
+  vtkMRMLMarkupsAngleNode.h
+  vtkMRMLMarkupsClosedCurveNode.cxx
+  vtkMRMLMarkupsClosedCurveNode.h
+  vtkMRMLMarkupsCurveNode.cxx
+  vtkMRMLMarkupsCurveNode.h
+  vtkMRMLMarkupsDisplayNode.cxx
+  vtkMRMLMarkupsDisplayNode.h
+  vtkMRMLMarkupsFiducialDisplayNode.cxx
+  vtkMRMLMarkupsFiducialDisplayNode.h
+  vtkMRMLMarkupsFiducialNode.cxx
+  vtkMRMLMarkupsFiducialNode.h
+  vtkMRMLMarkupsFiducialStorageNode.cxx
+  vtkMRMLMarkupsFiducialStorageNode.h
+  vtkMRMLMarkupsLineNode.cxx
+  vtkMRMLMarkupsLineNode.h
+  vtkMRMLMarkupsNode.cxx
+  vtkMRMLMarkupsNode.h
+  vtkMRMLMarkupsPlaneDisplayNode.cxx
+  vtkMRMLMarkupsPlaneDisplayNode.h
+  vtkMRMLMarkupsPlaneNode.cxx
+  vtkMRMLMarkupsPlaneNode.h
+  vtkMRMLMarkupsROIDisplayNode.cxx
+  vtkMRMLMarkupsROIDisplayNode.h
+  vtkMRMLMarkupsROINode.cxx
+  vtkMRMLMarkupsROINode.h
   vtkMRMLMarkupsStorageNode.cxx
+  vtkMRMLMeasurement.cxx
+  vtkMRMLMeasurementAngle.cxx
+  vtkMRMLMeasurementAngle.h
+  vtkMRMLMeasurementArea.cxx
+  vtkMRMLMeasurementArea.h
+  vtkMRMLMeasurementLength.cxx
+  vtkMRMLMeasurementLength.h
+  vtkMRMLMeasurementVolume.cxx
+  vtkMRMLMeasurementVolume.h
   vtkMRMLMessageCollection.cxx
   vtkMRMLModelDisplayNode.cxx
   vtkMRMLModelHierarchyNode.cxx
   vtkMRMLModelNode.cxx
   vtkMRMLModelStorageNode.cxx
   vtkMRMLNode.cxx
+  vtkMRMLPETProceduralColorNode.cxx
   vtkMRMLParser.cxx
   vtkMRMLPlotChartNode.cxx
   vtkMRMLPlotSeriesNode.cxx
@@ -173,66 +246,60 @@ set(MRMLCore_SRCS
   vtkMRMLSceneViewStorageNode.cxx
   vtkMRMLScriptedModuleNode.cxx
   vtkMRMLScriptedModuleNode.h
-  vtkMRMLSegmentationNode.cxx
-  vtkMRMLSegmentationNode.h
   vtkMRMLSegmentationDisplayNode.cxx
   vtkMRMLSegmentationDisplayNode.h
+  vtkMRMLSegmentationNode.cxx
+  vtkMRMLSegmentationNode.h
   vtkMRMLSegmentationStorageNode.cxx
   vtkMRMLSegmentationStorageNode.h
+  vtkMRMLSelectionNode.cxx
   vtkMRMLSequenceNode.cxx
   vtkMRMLSequenceNode.h
   vtkMRMLSequenceStorageNode.cxx
   vtkMRMLSequenceStorageNode.h
-  vtkMRMLSelectionNode.cxx
   vtkMRMLSliceCompositeNode.cxx
+  vtkMRMLSliceDisplayNode.cxx
   vtkMRMLSliceNode.cxx
   vtkMRMLSnapshotClipNode.cxx
+  vtkMRMLStaticMeasurement.cxx
   vtkMRMLStorableNode.cxx
   vtkMRMLStorageNode.cxx
   vtkMRMLSubjectHierarchyConstants.h
-  vtkMRMLSubjectHierarchyNode.cxx
-  vtkMRMLSubjectHierarchyNode.h
   vtkMRMLSubjectHierarchyLegacyNode.cxx
   vtkMRMLSubjectHierarchyLegacyNode.h
+  vtkMRMLSubjectHierarchyNode.cxx
+  vtkMRMLSubjectHierarchyNode.h
   vtkMRMLTableNode.cxx
-  vtkMRMLTableStorageNode.cxx
   vtkMRMLTableSQLiteStorageNode.cxx
+  vtkMRMLTableStorageNode.cxx
   vtkMRMLTableViewNode.cxx
   vtkMRMLTextNode.cxx
   vtkMRMLTextStorageNode.cxx
-  vtkMRMLTransformNode.cxx
-  vtkMRMLTransformStorageNode.cxx
   vtkMRMLTransformDisplayNode.cxx
+  vtkMRMLTransformNode.cxx
+  vtkMRMLTransformSequenceStorageNode.cxx
+  vtkMRMLTransformSequenceStorageNode.h
+  vtkMRMLTransformStorageNode.cxx
   vtkMRMLTransformableNode.cxx
+  vtkMRMLTranslator.h
   vtkMRMLUnitNode.cxx
   vtkMRMLVectorVolumeDisplayNode.cxx
   vtkMRMLViewNode.cxx
   vtkMRMLVolumeArchetypeStorageNode.cxx
   vtkMRMLVolumeDisplayNode.cxx
-  vtkMRMLGlyphableVolumeDisplayNode.cxx
-  vtkMRMLGlyphableVolumeSliceDisplayNode.cxx
   vtkMRMLVolumeHeaderlessStorageNode.cxx
   vtkMRMLVolumeNode.cxx
   vtkMRMLVolumeSequenceStorageNode.cxx
   vtkMRMLVolumeSequenceStorageNode.h
+  vtkMRMLdGEMRICProceduralColorNode.cxx
   vtkObservation.cxx
   vtkObserverManager.cxx
-  vtkMRMLLayoutNode.cxx
-  # Classes for remote data handling:
-  vtkCacheManager.cxx
-  vtkDataIOManager.cxx
-  vtkDataTransfer.cxx
-  vtkMRMLBSplineTransformNode.cxx
-  vtkMRMLGridTransformNode.cxx
   vtkPermissionPrompter.cxx
-  vtkURIHandler.cxx
-  vtkTagTableCollection.cxx
+  vtkProjectMarkupsCurvePointsFilter.cxx
+  vtkProjectMarkupsCurvePointsFilter.h
   vtkTagTable.cxx
-  vtkMRMLdGEMRICProceduralColorNode.cxx
-  vtkMRMLPETProceduralColorNode.cxx
-  # Classes for 2D Plotting
-  vtkMRMLDoubleArrayNode.cxx
-  vtkMRMLDoubleArrayStorageNode.cxx
+  vtkTagTableCollection.cxx
+  vtkURIHandler.cxx
   # Note: when you add new node types, add
   # register code to the vtkMRMLScene constructor
   )
@@ -245,9 +312,9 @@ if(MRML_USE_vtkTeem)
     vtkMRMLDiffusionTensorVolumeNode.cxx
     vtkMRMLDiffusionTensorVolumeSliceDisplayNode.cxx
     vtkMRMLNRRDStorageNode.cxx
+    vtkMRMLStreamingVolumeNode.cxx
     vtkMRMLTensorVolumeNode.cxx
     vtkMRMLVectorVolumeNode.cxx
-    vtkMRMLStreamingVolumeNode.cxx
     )
 endif()
 
@@ -259,12 +326,12 @@ set_source_files_properties(
 # Abstract/pure virtual classes
 
 set_source_files_properties(
-  vtkMRMLNode.cxx
-  vtkMRMLVolumeNode.cxx
-  vtkMRMLTransformNode.cxx
   vtkMRMLDisplayNode.cxx
   vtkMRMLDisplayableNode.cxx
+  vtkMRMLNode.cxx
+  vtkMRMLTransformNode.cxx
   vtkMRMLVolumeDisplayNode.cxx
+  vtkMRMLVolumeNode.cxx
   ABSTRACT
   )
 
@@ -289,8 +356,9 @@ set(libs
   vtkSegmentationCore
   ${ITK_LIBRARIES}
   ${VTK_LIBRARIES}
-  vtkIOInfovis
+  VTK::IOInfovis
   ${LibArchive_LIBRARY}
+  RapidJSON
   )
 if(MRML_USE_vtkTeem)
   list(APPEND libs vtkTeem)
@@ -347,11 +415,10 @@ if(VTK_WRAP_PYTHON)
     KIT_INSTALL_LIB_DIR ${${PROJECT_NAME}_INSTALL_LIB_DIR}
     )
   # Export target
-  export(TARGETS ${lib_name}Python ${lib_name}PythonD APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
+  export(TARGETS ${lib_name}Python APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
   # Folder
   if(NOT "${${PROJECT_NAME}_FOLDER}" STREQUAL "")
     set_target_properties(${lib_name}Python PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
-    set_target_properties(${lib_name}PythonD PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     if(TARGET ${lib_name}Hierarchy)
       set_target_properties(${lib_name}Hierarchy PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     endif()

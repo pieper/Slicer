@@ -36,10 +36,12 @@
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkNew.h>
 #include <vtkPolyDataNormals.h>
+#include <vtkSMPThreadLocalObject.h>
 #include <vtkTriangleFilter.h>
 #include <vtkStripper.h>
 #include <vtkImageStencil.h>
 #include <vtkImageCast.h>
+#include <vtkVersion.h> // For VTK_VERSION_*
 
 // std includes
 #include <map>
@@ -51,11 +53,11 @@ vtkPolyDataToFractionalLabelmapFilter::vtkPolyDataToFractionalLabelmapFilter()
 {
   this->NumberOfOffsets = 6;
 
-  this->LinesCache = std::map<double, vtkSmartPointer<vtkCellArray> >();
-  this->SliceCache = std::map<double, vtkSmartPointer<vtkPolyData> >();
+  this->LinesCache = std::map<double, vtkSmartPointer<vtkCellArray>>();
+  this->SliceCache = std::map<double, vtkSmartPointer<vtkPolyData>>();
   this->PointIdsCache = std::map<double, vtkIdType*>();
   this->NptsCache = std::map<double, vtkIdType>();
-  this->PointNeighborCountsCache = std::map<double,  vtkSmartPointer<vtkIdTypeArray> >();
+  this->PointNeighborCountsCache = std::map<double, vtkSmartPointer<vtkIdTypeArray>>();
 
   this->CellLocator = vtkCellLocator::New();
 
@@ -79,24 +81,22 @@ vtkPolyDataToFractionalLabelmapFilter::~vtkPolyDataToFractionalLabelmapFilter()
 //----------------------------------------------------------------------------
 void vtkPolyDataToFractionalLabelmapFilter::SetOutput(vtkOrientedImageData* output)
 {
-    this->GetExecutive()->SetOutputData(0, output);
+  this->GetExecutive()->SetOutputData(0, output);
 }
 
 //----------------------------------------------------------------------------
 vtkOrientedImageData* vtkPolyDataToFractionalLabelmapFilter::GetOutput()
 {
   if (this->GetNumberOfOutputPorts() < 1)
-    {
+  {
     return nullptr;
-    }
+  }
 
-  return vtkOrientedImageData::SafeDownCast(
-    this->GetExecutive()->GetOutputData(0));
+  return vtkOrientedImageData::SafeDownCast(this->GetExecutive()->GetOutputData(0));
 }
 
 //----------------------------------------------------------------------------
-int vtkPolyDataToFractionalLabelmapFilter::FillOutputPortInformation(
-  int, vtkInformation* info)
+int vtkPolyDataToFractionalLabelmapFilter::FillOutputPortInformation(int, vtkInformation* info)
 {
   info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkOrientedImageData");
   return 1;
@@ -110,29 +110,31 @@ int vtkPolyDataToFractionalLabelmapFilter::FillOutputPortInformation(
 //
 // These classes and methods are not inherited from vtkPolyDataToImageStencil,
 // so they needed to be duplicated here to allow PolyDataCutter to function.
-namespace {
+namespace
+{
 
 // A Node in a linked list that contains information about one edge
 class EdgeLocatorNode
 {
 public:
-  EdgeLocatorNode()  = default;
+  EdgeLocatorNode() = default;
 
   // Free the list that this node is the head of
-  void FreeList() {
-    EdgeLocatorNode *ptr = this->next;
+  void FreeList()
+  {
+    EdgeLocatorNode* ptr = this->next;
     while (ptr)
-      {
-      EdgeLocatorNode *tmp = ptr;
+    {
+      EdgeLocatorNode* tmp = ptr;
       ptr = ptr->next;
       tmp->next = nullptr;
       delete tmp;
-      }
+    }
   }
 
-  vtkIdType ptId{-1};
-  vtkIdType edgeId{-1};
-  EdgeLocatorNode *next{nullptr};
+  vtkIdType ptId{ -1 };
+  vtkIdType edgeId{ -1 };
+  EdgeLocatorNode* next{ nullptr };
 };
 
 // The EdgeLocator class itself, for keeping track of edges
@@ -143,7 +145,10 @@ private:
   MapType EdgeMap;
 
 public:
-  EdgeLocator() : EdgeMap() {}
+  EdgeLocator()
+    : EdgeMap()
+  {
+  }
   ~EdgeLocator() { this->Initialize(); }
 
   // Description:
@@ -155,70 +160,64 @@ public:
   // given the supplied edgeId, and the return value will be false.  If
   // the edge (i0, i1) is in the list, then edgeId will be set to the
   // stored value and the return value will be true.
-  bool InsertUniqueEdge(vtkIdType i0, vtkIdType i1, vtkIdType &edgeId);
+  bool InsertUniqueEdge(vtkIdType i0, vtkIdType i1, vtkIdType& edgeId);
 
   // Description:
   // A helper function for interpolating a new point along an edge.  It
   // stores the index of the interpolated point in "i", and returns true
   // if a new point was added to the locator.  The values i0, i1, v0, v1
   // are the edge endpoints and scalar values, respectively.
-  bool InterpolateEdge(
-    vtkPoints *inPoints, vtkPoints *outPoints,
-    vtkIdType i0, vtkIdType i1, double v0, double v1,
-    vtkIdType &i);
+  bool InterpolateEdge(vtkPoints* inPoints, vtkPoints* outPoints, vtkIdType i0, vtkIdType i1, double v0, double v1, vtkIdType& i);
 };
 
 void EdgeLocator::Initialize()
 {
-  for (MapType::iterator i = this->EdgeMap.begin();
-       i != this->EdgeMap.end();
-       ++i)
-    {
+  for (MapType::iterator i = this->EdgeMap.begin(); i != this->EdgeMap.end(); ++i)
+  {
     i->second.FreeList();
-    }
+  }
   this->EdgeMap.clear();
 }
 
-bool EdgeLocator::InsertUniqueEdge(
-  vtkIdType i0, vtkIdType i1, vtkIdType &edgeId)
+bool EdgeLocator::InsertUniqueEdge(vtkIdType i0, vtkIdType i1, vtkIdType& edgeId)
 {
   // Ensure consistent ordering of edge
   if (i1 < i0)
-    {
+  {
     vtkIdType tmp = i0;
     i0 = i1;
     i1 = tmp;
-    }
+  }
 
-  EdgeLocatorNode *node = &this->EdgeMap[i0];
+  EdgeLocatorNode* node = &this->EdgeMap[i0];
 
   if (node->ptId < 0)
-    {
+  {
     // Didn't find key, so add a new edge entry
     node->ptId = i1;
     node->edgeId = edgeId;
     return true;
-    }
+  }
 
   // Search through the list for i1
   if (node->ptId == i1)
-    {
+  {
     edgeId = node->edgeId;
     return false;
-    }
+  }
 
   int i = 1;
   while (node->next != nullptr)
-    {
+  {
     i++;
     node = node->next;
 
     if (node->ptId == i1)
-      {
+    {
       edgeId = node->edgeId;
       return false;
-      }
     }
+  }
 
   // No entry for i1, so make one and return
   node->next = new EdgeLocatorNode;
@@ -228,15 +227,12 @@ bool EdgeLocator::InsertUniqueEdge(
   return true;
 }
 
-bool EdgeLocator::InterpolateEdge(
-  vtkPoints *points, vtkPoints *outPoints,
-  vtkIdType i0, vtkIdType i1, double v0, double v1,
-  vtkIdType &i)
+bool EdgeLocator::InterpolateEdge(vtkPoints* points, vtkPoints* outPoints, vtkIdType i0, vtkIdType i1, double v0, double v1, vtkIdType& i)
 {
   // This swap guarantees that exactly the same point is computed
   // for both line directions, as long as the endpoints are the same.
   if (v1 > 0)
-    {
+  {
     vtkIdType tmpi = i0;
     i0 = i1;
     i1 = tmpi;
@@ -244,27 +240,27 @@ bool EdgeLocator::InterpolateEdge(
     double tmp = v0;
     v0 = v1;
     v1 = tmp;
-    }
+  }
 
   // Check to see if this point has already been computed
   i = outPoints->GetNumberOfPoints();
   if (!this->InsertUniqueEdge(i0, i1, i))
-    {
+  {
     return false;
-    }
+  }
 
   // Get the edge and interpolate the new point
   double p0[3], p1[3], p[3];
   points->GetPoint(i0, p0);
   points->GetPoint(i1, p1);
 
-  double f = v0/(v0 - v1);
+  double f = v0 / (v0 - v1);
   double s = 1.0 - f;
   double t = 1.0 - s;
 
-  p[0] = s*p0[0] + t*p1[0];
-  p[1] = s*p0[1] + t*p1[1];
-  p[2] = s*p0[2] + t*p1[2];
+  p[0] = s * p0[0] + t * p1[0];
+  p[1] = s * p0[1] + t * p1[1];
+  p[2] = s * p0[2] + t * p1[2];
 
   // Add the point, store the new index in the locator
   outPoints->InsertNextPoint(p);
@@ -299,7 +295,7 @@ void vtkPolyDataToFractionalLabelmapFilter::GetOutputOrigin(double origin[3])
 }
 
 //----------------------------------------------------------------------------
-void vtkPolyDataToFractionalLabelmapFilter::SetOutputOrigin(double origin[3])
+void vtkPolyDataToFractionalLabelmapFilter::SetOutputOrigin(const double origin[3])
 {
   this->OutputImageTransformData->SetOrigin(origin);
 }
@@ -323,7 +319,7 @@ void vtkPolyDataToFractionalLabelmapFilter::GetOutputSpacing(double spacing[3])
 }
 
 //----------------------------------------------------------------------------
-void vtkPolyDataToFractionalLabelmapFilter::SetOutputSpacing(double spacing[3])
+void vtkPolyDataToFractionalLabelmapFilter::SetOutputSpacing(const double spacing[3])
 {
   this->OutputImageTransformData->SetSpacing(spacing);
 }
@@ -334,18 +330,16 @@ void vtkPolyDataToFractionalLabelmapFilter::SetOutputSpacing(double x, double y,
   this->OutputImageTransformData->SetSpacing(x, y, z);
 }
 
-
 //----------------------------------------------------------------------------
-vtkOrientedImageData* vtkPolyDataToFractionalLabelmapFilter::AllocateOutputData(
-  vtkDataObject *out, int* uExt)
+vtkOrientedImageData* vtkPolyDataToFractionalLabelmapFilter::AllocateOutputData(vtkDataObject* out, int* uExt)
 {
-  vtkOrientedImageData *outputData = vtkOrientedImageData::SafeDownCast(out);
+  vtkOrientedImageData* outputData = vtkOrientedImageData::SafeDownCast(out);
   if (!outputData)
-    {
+  {
     vtkWarningMacro("Call to AllocateOutputData with non vtkOrientedImageData"
                     " output");
     return nullptr;
-    }
+  }
 
   // Allocate output image data
   outputData->SetExtent(uExt);
@@ -354,38 +348,33 @@ vtkOrientedImageData* vtkPolyDataToFractionalLabelmapFilter::AllocateOutputData(
   // Set-up fractional labelmap
   void* fractionalLabelMapVoxelsPointer = outputData->GetScalarPointerForExtent(outputData->GetExtent());
   if (!fractionalLabelMapVoxelsPointer)
-    {
+  {
     vtkErrorMacro("Convert: Failed to allocate memory for output labelmap image!");
     return nullptr;
-    }
+  }
   else
-    {
+  {
     int extent[6];
     outputData->GetExtent(extent);
-    memset(fractionalLabelMapVoxelsPointer, FRACTIONAL_MIN, ((extent[1]-extent[0]+1)*(extent[3]-extent[2]+1)*(extent[5]-extent[4]+1) * outputData->GetScalarSize() * outputData->GetNumberOfScalarComponents()));
-    }
+    memset(fractionalLabelMapVoxelsPointer,
+           FRACTIONAL_MIN,
+           ((extent[1] - extent[0] + 1) * (extent[3] - extent[2] + 1) * (extent[5] - extent[4] + 1) * outputData->GetScalarSize() * outputData->GetNumberOfScalarComponents()));
+  }
 
   return outputData;
 }
 
 //----------------------------------------------------------------------------
-int vtkPolyDataToFractionalLabelmapFilter::RequestData(
-  vtkInformation *vtkNotUsed(request),
-  vtkInformationVector **inputVector,
-  vtkInformationVector *outputVector)
+int vtkPolyDataToFractionalLabelmapFilter::RequestData(vtkInformation* vtkNotUsed(request), vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
 
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
-  vtkOrientedImageData *outputData = vtkOrientedImageData::SafeDownCast(
-    outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkOrientedImageData* outputData = vtkOrientedImageData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
-    this->AllocateOutputData(
-    outputData,
-    outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()));
+  this->AllocateOutputData(outputData, outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT()));
 
-  vtkInformation *inputInfo = inputVector[0]->GetInformationObject(0);
-  vtkPolyData *inputData = vtkPolyData::SafeDownCast(
-    inputInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkInformation* inputInfo = inputVector[0]->GetInformationObject(0);
+  vtkPolyData* inputData = vtkPolyData::SafeDownCast(inputInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   vtkSmartPointer<vtkMatrix4x4> outputLabelmapImageToWorldMatrix = vtkSmartPointer<vtkMatrix4x4>::New();
   this->OutputImageTransformData->GetImageToWorldMatrix(outputLabelmapImageToWorldMatrix);
@@ -397,8 +386,7 @@ int vtkPolyDataToFractionalLabelmapFilter::RequestData(
   inverseOutputLabelmapGeometryTransform->Inverse();
 
   // Transform the polydata from RAS to IJK space
-  vtkSmartPointer<vtkTransformPolyDataFilter> transformPolyDataFilter =
-    vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+  vtkSmartPointer<vtkTransformPolyDataFilter> transformPolyDataFilter = vtkSmartPointer<vtkTransformPolyDataFilter>::New();
   transformPolyDataFilter->SetInputData(inputData);
   transformPolyDataFilter->SetTransform(inverseOutputLabelmapGeometryTransform);
 
@@ -437,12 +425,14 @@ int vtkPolyDataToFractionalLabelmapFilter::RequestData(
   }
   else
   {
-    memset(emptyImageDataPointer, 0, ((extent[1]-extent[0]+1)*(extent[3]-extent[2]+1)*(extent[5]-extent[4]+1) * emptyImageData->GetScalarSize() * emptyImageData->GetNumberOfScalarComponents()));
+    memset(
+      emptyImageDataPointer,
+      0,
+      ((extent[1] - extent[0] + 1) * (extent[3] - extent[2] + 1) * (extent[5] - extent[4] + 1) * emptyImageData->GetScalarSize() * emptyImageData->GetNumberOfScalarComponents()));
   }
 
-
   // The magnitude of the offset step size ( n-1 / 2n )
-  double offsetStepSize = (double)(this->NumberOfOffsets-1.0)/(2 * this->NumberOfOffsets);
+  double offsetStepSize = (double)(this->NumberOfOffsets - 1.0) / (2 * this->NumberOfOffsets);
 
   vtkSmartPointer<vtkImageStencilData> imageStencilData = vtkSmartPointer<vtkImageStencilData>::New();
   imageStencilData->SetExtent(extent);
@@ -461,15 +451,15 @@ int vtkPolyDataToFractionalLabelmapFilter::RequestData(
   // Iterate through "NumberOfOffsets" in each of the dimensions and create a binary labelmap at each offset
   for (int k = 0; k < this->NumberOfOffsets; ++k)
   {
-    double kOffset = ( (double) k / this->NumberOfOffsets - offsetStepSize );
+    double kOffset = ((double)k / this->NumberOfOffsets - offsetStepSize);
 
     for (int j = 0; j < this->NumberOfOffsets; ++j)
     {
-      double jOffset = ( (double) j / this->NumberOfOffsets - offsetStepSize );
+      double jOffset = ((double)j / this->NumberOfOffsets - offsetStepSize);
 
       for (int i = 0; i < this->NumberOfOffsets; ++i)
       {
-        double iOffset = ( (double) i / this->NumberOfOffsets - offsetStepSize );
+        double iOffset = ((double)i / this->NumberOfOffsets - offsetStepSize);
 
         // Create stencil for the current binary labelmap offset
         imageStencilData->AllocateExtents();
@@ -480,7 +470,7 @@ int vtkPolyDataToFractionalLabelmapFilter::RequestData(
         imageCast->Update();
         this->AddBinaryLabelMapToFractionalLabelMap(imageCast->GetOutput(), outputData);
 
-        this->UpdateProgress(((i+1)*(j+1)*(k+1))/(this->NumberOfOffsets*this->NumberOfOffsets*this->NumberOfOffsets));
+        this->UpdateProgress(((i + 1) * (j + 1) * (k + 1)) / (this->NumberOfOffsets * this->NumberOfOffsets * this->NumberOfOffsets));
 
       } // i
     } // j
@@ -505,20 +495,20 @@ void vtkPolyDataToFractionalLabelmapFilter::AddBinaryLabelMapToFractionalLabelMa
     return;
   }
 
-  int binaryExtent[6] = {0,-1,0,-1,0,-1};
+  int binaryExtent[6] = { 0, -1, 0, -1, 0, -1 };
   binaryLabelMap->GetExtent(binaryExtent);
 
-  int fractionalExtent[6] = {0,-1,0,-1,0,-1};
+  int fractionalExtent[6] = { 0, -1, 0, -1, 0, -1 };
   fractionalLabelMap->GetExtent(fractionalExtent);
 
   // Get points to the extent in both the binary and fractional labelmaps
   char* binaryLabelMapPointer = (char*)binaryLabelMap->GetScalarPointerForExtent(binaryExtent);
   FRACTIONAL_DATA_TYPE* fractionalLabelMapPointer = (FRACTIONAL_DATA_TYPE*)fractionalLabelMap->GetScalarPointerForExtent(fractionalExtent);
 
-  int dimensions[6] = {0,0,0};
+  int dimensions[6] = { 0, 0, 0 };
   fractionalLabelMap->GetDimensions(dimensions);
 
-  int numberOfVoxels = dimensions[0]*dimensions[1]*dimensions[2];
+  int numberOfVoxels = dimensions[0] * dimensions[1] * dimensions[2];
 
   for (int i = 0; i < numberOfVoxels; ++i)
   {
@@ -526,13 +516,10 @@ void vtkPolyDataToFractionalLabelmapFilter::AddBinaryLabelMapToFractionalLabelMa
     ++binaryLabelMapPointer;
     ++fractionalLabelMapPointer;
   }
-
 }
 
 //----------------------------------------------------------------------------
-void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
-  vtkImageStencilData *data, vtkPolyData* closedSurface,
-  int extent[6])
+void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(vtkImageStencilData* data, vtkPolyData* closedSurface, int extent[6])
 {
   // Description of algorithm:
   // 1) cut the polydata at each z slice to create polylines
@@ -544,23 +531,23 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
   //    and use them to create one z slice of the vtkStencilData
 
   // the spacing and origin of the generated stencil
-  double *spacing = data->GetSpacing();
-  double *origin = data->GetOrigin();
+  double* spacing = data->GetSpacing();
+  double* origin = data->GetOrigin();
 
   // if we have no data then return
   if (!this->GetInput()->GetNumberOfPoints())
-    {
+  {
     return;
-    }
+  }
 
   // Only divide once
   double invspacing[3];
-  invspacing[0] = 1.0/spacing[0];
-  invspacing[1] = 1.0/spacing[1];
-  invspacing[2] = 1.0/spacing[2];
+  invspacing[0] = 1.0 / spacing[0];
+  invspacing[1] = 1.0 / spacing[1];
+  invspacing[2] = 1.0 / spacing[2];
 
   // get the input data
-  vtkPolyData *input = closedSurface;
+  vtkPolyData* input = closedSurface;
 
   // the output produced by cutting the polydata with the Z plane
   vtkSmartPointer<vtkPolyData> slice;
@@ -572,43 +559,50 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
 
   // The extent for one slice of the image
   int sliceExtent[6];
-  sliceExtent[0] = extent[0]; sliceExtent[1] = extent[1];
-  sliceExtent[2] = extent[2]; sliceExtent[3] = extent[3];
-  sliceExtent[4] = extent[4]; sliceExtent[5] = extent[4];
+  sliceExtent[0] = extent[0];
+  sliceExtent[1] = extent[1];
+  sliceExtent[2] = extent[2];
+  sliceExtent[3] = extent[3];
+  sliceExtent[4] = extent[4];
+  sliceExtent[5] = extent[4];
 
   // Loop through the slices
   for (int idxZ = extent[4]; idxZ <= extent[5]; idxZ++)
-    {
+  {
 
-    double z = idxZ*spacing[2] + origin[2];
+    double z = idxZ * spacing[2] + origin[2];
 
     raster.PrepareForNewData();
 
-    if ( this->SliceCache.count(z) == 0 )
-      {
+    if (this->SliceCache.count(z) == 0)
+    {
 
       slice = vtkSmartPointer<vtkPolyData>::New();
 
       // Step 1: Cut the data into slices
       if (input->GetNumberOfPolys() > 0 || input->GetNumberOfStrips() > 0)
-        {
+      {
 
         this->PolyDataCutter(input, slice, z);
-        }
+      }
       else
-        {
+      {
         // if no polys, select polylines instead
+#if (VTK_VERSION_NUMBER >= VTK_VERSION_CHECK(9, 2, 20230212))
+        vtkSMPThreadLocalObject<vtkIdList> storage;
+        this->PolyDataSelector(input, slice, storage.Local(), z, spacing[2]);
+#else
         this->PolyDataSelector(input, slice, z, spacing[2]);
-        }
+#endif
+      }
 
       if (!slice->GetNumberOfLines())
-        {
+      {
         continue;
-        }
+      }
 
       this->SliceCache.insert(std::pair<double, vtkPolyData*>(z, slice));
-
-      }
+    }
 
     slice = this->SliceCache[z];
 
@@ -618,14 +612,14 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
     vtkIdType numberOfPoints = points->GetNumberOfPoints();
 
     for (vtkIdType j = 0; j < numberOfPoints; j++)
-      {
+    {
       double tempPoint[3];
       points->GetPoint(j, tempPoint);
-      tempPoint[0] = (tempPoint[0] - origin[0])*invspacing[0];
-      tempPoint[1] = (tempPoint[1] - origin[1])*invspacing[1];
-      tempPoint[2] = (tempPoint[2] - origin[2])*invspacing[2];
+      tempPoint[0] = (tempPoint[0] - origin[0]) * invspacing[0];
+      tempPoint[1] = (tempPoint[1] - origin[1]) * invspacing[1];
+      tempPoint[2] = (tempPoint[2] - origin[2]) * invspacing[2];
       points->SetPoint(j, tempPoint);
-      }
+    }
 
     if (this->LinesCache.count(z) == 0)
     {
@@ -635,72 +629,72 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
       vtkSmartPointer<vtkIdTypeArray> pointNeighborCountsArray = vtkSmartPointer<vtkIdTypeArray>::New();
       pointNeighborCountsArray->Allocate(numberOfPoints, 1);
       vtkIdType* pointNeighborCounts = pointNeighborCountsArray->GetPointer(0);
-      memset(pointNeighborCounts, 0, numberOfPoints*sizeof(vtkIdType));
+      memset(pointNeighborCounts, 0, numberOfPoints * sizeof(vtkIdType));
 
       // get the connectivity count for each point
       vtkSmartPointer<vtkCellArray> lines = slice->GetLines();
       vtkIdType npts = 0;
-      vtkIdType *pointIds = nullptr;
+      const vtkIdType* pointIds = nullptr;
       vtkIdType count = lines->GetNumberOfConnectivityEntries();
       for (vtkIdType loc = 0; loc < count; loc += npts + 1)
-        {
+      {
         lines->GetCell(loc, npts, pointIds);
         if (npts > 0)
-          {
+        {
           pointNeighborCounts[pointIds[0]] += 1;
-          for (vtkIdType j = 1; j < npts-1; j++)
-            {
+          for (vtkIdType j = 1; j < npts - 1; j++)
+          {
             pointNeighborCounts[pointIds[j]] += 2;
-            }
-          pointNeighborCounts[pointIds[npts-1]] += 1;
-          if (pointIds[0] != pointIds[npts-1])
-            {
+          }
+          pointNeighborCounts[pointIds[npts - 1]] += 1;
+          if (pointIds[0] != pointIds[npts - 1])
+          {
             // store the neighbors for end points, because these are
             // potentially loose ends that will have to be dealt with later
             pointNeighbors[pointIds[0]] = pointIds[1];
-            pointNeighbors[pointIds[npts-1]] = pointIds[npts-2];
-            }
+            pointNeighbors[pointIds[npts - 1]] = pointIds[npts - 2];
           }
         }
+      }
 
       // use connectivity count to identify loose ends and branch points
       std::vector<vtkIdType> looseEndIds;
       std::vector<vtkIdType> branchIds;
 
       for (vtkIdType j = 0; j < numberOfPoints; j++)
-        {
+      {
         if (pointNeighborCounts[j] == 1)
-          {
+        {
           looseEndIds.push_back(j);
-          }
-        else if (pointNeighborCounts[j] > 2)
-          {
-          branchIds.push_back(j);
-          }
         }
+        else if (pointNeighborCounts[j] > 2)
+        {
+          branchIds.push_back(j);
+        }
+      }
 
       // remove any spurs
       for (size_t b = 0; b < branchIds.size(); b++)
-        {
+      {
         for (size_t i = 0; i < looseEndIds.size(); i++)
-          {
+        {
           if (pointNeighbors[looseEndIds[i]] == branchIds[b])
-            {
+          {
             // mark this pointId as removed
             pointNeighborCounts[looseEndIds[i]] = 0;
             looseEndIds.erase(looseEndIds.begin() + i);
             i--;
             if (--pointNeighborCounts[branchIds[b]] <= 2)
-              {
+            {
               break;
-              }
             }
           }
         }
+      }
 
       // join any loose ends
       while (looseEndIds.size() >= 2)
-        {
+      {
         size_t n = looseEndIds.size();
 
         // search for the two closest loose ends
@@ -711,7 +705,7 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
         bool isOnHull = false;
 
         for (size_t i = 0; i < n && !isCoincident; i++)
-          {
+        {
           // first loose end
           vtkIdType firstLooseEndId = looseEndIds[i];
           vtkIdType neighborId = pointNeighbors[firstLooseEndId];
@@ -721,11 +715,11 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
           double neighbor[3];
           slice->GetPoint(neighborId, neighbor);
 
-          for (size_t j = i+1; j < n; j++)
-            {
+          for (size_t j = i + 1; j < n; j++)
+          {
             vtkIdType secondLooseEndId = looseEndIds[j];
             if (secondLooseEndId != neighborId)
-              {
+            {
               double currentLooseEnd[3];
               slice->GetPoint(secondLooseEndId, currentLooseEnd);
 
@@ -738,54 +732,53 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
               v1[1] = firstLooseEnd[1] - neighbor[1];
               v2[0] = currentLooseEnd[0] - firstLooseEnd[0];
               v2[1] = currentLooseEnd[1] - firstLooseEnd[1];
-              double dotprod = v1[0]*v2[0] + v1[1]*v2[1];
-              double distance2 = v2[0]*v2[0] + v2[1]*v2[1];
+              double dotprod = v1[0] * v2[0] + v1[1] * v2[1];
+              double distance2 = v2[0] * v2[0] + v2[1] * v2[1];
 
               // check if points are coincident
               if (distance2 == 0)
-                {
+              {
                 firstIndex = i;
                 secondIndex = j;
                 isCoincident = true;
                 break;
-                }
+              }
 
               // prefer adding segments that lie on hull
               double midpoint[2], normal[2];
-              midpoint[0] = 0.5*(currentLooseEnd[0] + firstLooseEnd[0]);
-              midpoint[1] = 0.5*(currentLooseEnd[1] + firstLooseEnd[1]);
+              midpoint[0] = 0.5 * (currentLooseEnd[0] + firstLooseEnd[0]);
+              midpoint[1] = 0.5 * (currentLooseEnd[1] + firstLooseEnd[1]);
               normal[0] = currentLooseEnd[1] - firstLooseEnd[1];
               normal[1] = -(currentLooseEnd[0] - firstLooseEnd[0]);
               double sidecheck = 0.0;
               bool checkOnHull = true;
               for (size_t k = 0; k < n; k++)
-                {
+              {
                 if (k != i && k != j)
-                  {
+                {
                   double checkEnd[3];
                   slice->GetPoint(looseEndIds[k], checkEnd);
-                  double dotprod2 = ((checkEnd[0] - midpoint[0])*normal[0] +
-                                     (checkEnd[1] - midpoint[1])*normal[1]);
-                  if (dotprod2*sidecheck < 0)
-                    {
+                  double dotprod2 = ((checkEnd[0] - midpoint[0]) * normal[0] + (checkEnd[1] - midpoint[1]) * normal[1]);
+                  if (dotprod2 * sidecheck < 0)
+                  {
                     checkOnHull = false;
-                    }
-                  sidecheck = dotprod2;
                   }
+                  sidecheck = dotprod2;
                 }
+              }
 
               // check if new candidate is better than previous one
-              if ((checkOnHull && !isOnHull) ||
-                  (checkOnHull == isOnHull && dotprod > maxval*distance2))
-                {
+              if ((checkOnHull && !isOnHull) || //
+                  (checkOnHull == isOnHull && dotprod > maxval * distance2))
+              {
                 firstIndex = i;
                 secondIndex = j;
                 isOnHull |= checkOnHull;
-                maxval = dotprod/distance2;
-                }
+                maxval = dotprod / distance2;
               }
             }
           }
+        }
 
         // get info about the two loose ends and their neighbors
         vtkIdType firstLooseEndId = looseEndIds[firstIndex];
@@ -807,28 +800,27 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
         looseEndIds.erase(looseEndIds.begin() + firstIndex);
 
         if (!isCoincident)
-          {
+        {
           // create a new line segment by connecting these two points
           lines->InsertNextCell(2);
           lines->InsertCellPoint(firstLooseEndId);
           lines->InsertCellPoint(secondLooseEndId);
-          }
         }
-
-        this->LinesCache.insert(std::pair<double, vtkCellArray*>(z, lines));
-        this->NptsCache.insert(std::pair<double, vtkIdType>(z, npts));
-        this->PointNeighborCountsCache.insert(std::pair<double, vtkSmartPointer<vtkIdTypeArray> >(z, pointNeighborCountsArray));
-
       }
 
-   if (this->LinesCache.count(z) == 0)
+      this->LinesCache.insert(std::pair<double, vtkCellArray*>(z, lines));
+      this->NptsCache.insert(std::pair<double, vtkIdType>(z, npts));
+      this->PointNeighborCountsCache.insert(std::pair<double, vtkSmartPointer<vtkIdTypeArray>>(z, pointNeighborCountsArray));
+    }
+
+    if (this->LinesCache.count(z) == 0)
     {
-     continue;
+      continue;
     }
 
     vtkCellArray* lines = this->LinesCache[z];
     vtkIdType count = lines->GetNumberOfConnectivityEntries();
-    vtkIdType* pointIds = this->PointIdsCache[z];
+    const vtkIdType* pointIds = this->PointIdsCache[z];
     vtkIdType npts = this->NptsCache[z];
     vtkIdTypeArray* pointNeighborCountsArray = this->PointNeighborCountsCache[z];
     vtkIdType* pointNeighborCounts = pointNeighborCountsArray->GetPointer(0);
@@ -837,53 +829,50 @@ void vtkPolyDataToFractionalLabelmapFilter::FillImageStencilData(
     // and for each integer y position on the line segment,
     // drop the corresponding x position into the y raster line.
     for (vtkIdType loc = 0; loc < count; loc += npts + 1)
-      {
+    {
       lines->GetCell(loc, npts, pointIds);
       if (npts > 0)
-        {
+      {
         vtkIdType pointId0 = pointIds[0];
         double point0[3];
         points->GetPoint(pointId0, point0);
         for (vtkIdType j = 1; j < npts; j++)
-          {
+        {
           vtkIdType pointId1 = pointIds[j];
           double point1[3];
           points->GetPoint(pointId1, point1);
 
           // make sure points aren't flagged for removal
-          if (pointNeighborCounts[pointId0] > 0 &&
+          if (pointNeighborCounts[pointId0] > 0 && //
               pointNeighborCounts[pointId1] > 0)
-            {
+          {
             raster.InsertLine(point0, point1);
-            }
+          }
 
           pointId0 = pointId1;
           point0[0] = point1[0];
           point0[1] = point1[1];
           point0[2] = point1[2];
-          }
         }
       }
+    }
 
     // Step 4: Use the x values stored in the xy raster to create
     // one z slice of the vtkStencilData
     sliceExtent[4] = idxZ;
     sliceExtent[5] = idxZ;
     raster.FillStencilData(data, sliceExtent);
-
-    }
-
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkPolyDataToFractionalLabelmapFilter::PolyDataCutter(
-  vtkPolyData *input, vtkPolyData *output, double z)
+void vtkPolyDataToFractionalLabelmapFilter::PolyDataCutter(vtkPolyData* input, vtkPolyData* output, double z)
 {
-  vtkPoints *points = input->GetPoints();
-  vtkPoints *newPoints = vtkPoints::New();
+  vtkPoints* points = input->GetPoints();
+  vtkPoints* newPoints = vtkPoints::New();
   newPoints->SetDataType(points->GetDataType());
   newPoints->Allocate(333);
-  vtkCellArray *newLines = vtkCellArray::New();
+  vtkCellArray* newLines = vtkCellArray::New();
   newLines->Allocate(1000);
 
   // An edge locator to avoid point duplication while clipping
@@ -892,7 +881,7 @@ void vtkPolyDataToFractionalLabelmapFilter::PolyDataCutter(
   vtkSmartPointer<vtkIdList> cells = vtkSmartPointer<vtkIdList>::New();
   cells->Initialize();
 
-  double bounds[6] = {0,0,0,0,0,0};
+  double bounds[6] = { 0, 0, 0, 0, 0, 0 };
   input->GetBounds(bounds);
   bounds[4] = z;
   bounds[5] = z;
@@ -903,33 +892,33 @@ void vtkPolyDataToFractionalLabelmapFilter::PolyDataCutter(
   // Go through all cells and clip them.
   vtkIdType numCells = cells->GetNumberOfIds();
 
-
   vtkIdType loc = 0;
   for (vtkIdType cellId = 0; cellId < numCells; cellId++)
-    {
+  {
 
     vtkIdType id = cells->GetId(cellId);
 
-    if (input->GetCellType(id) != VTK_TRIANGLE &&
+    if (input->GetCellType(id) != VTK_TRIANGLE && //
         input->GetCellType(id) != VTK_TRIANGLE_STRIP)
-      {
-        continue;
-      }
+    {
+      continue;
+    }
 
-    vtkIdType npts, *ptIds;
+    const vtkIdType* ptIds = nullptr;
+    vtkIdType npts;
     input->GetCellPoints(id, npts, ptIds);
     loc += npts + 1;
 
     vtkIdType numSubCells = 1;
     if (input->GetCellType(id) == VTK_TRIANGLE_STRIP)
-      {
+    {
       numSubCells = npts - 2;
       npts = 3;
-      }
+    }
 
     for (vtkIdType subId = 0; subId < numSubCells; subId++)
-      {
-      vtkIdType i1 = ptIds[npts-1];
+    {
+      vtkIdType i1 = ptIds[npts - 1];
       double point[3];
       points->GetPoint(i1, point);
       double v1 = point[2] - z;
@@ -942,7 +931,7 @@ void vtkPolyDataToFractionalLabelmapFilter::PolyDataCutter(
       linePts[1] = 0;
 
       for (vtkIdType i = 0; i < npts; i++)
-        {
+      {
         // Save previous point info
         vtkIdType i0 = i1;
         double v0 = v1;
@@ -955,27 +944,26 @@ void vtkPolyDataToFractionalLabelmapFilter::PolyDataCutter(
         c1 = (v1 > 0);
 
         // If at least one edge end point wasn't clipped
-        if ( (c0 | c1) )
-          {
+        if ((c0 | c1))
+        {
           // If only one end was clipped, interpolate new point
-          if ( (c0 ^ c1) )
-            {
-            edgeLocator.InterpolateEdge(
-              points, newPoints, i0, i1, v0, v1, linePts[c0 ^ odd]);
-            }
+          if ((c0 ^ c1))
+          {
+            edgeLocator.InterpolateEdge(points, newPoints, i0, i1, v0, v1, linePts[c0 ^ odd]);
           }
         }
+      }
 
       // Insert the contour line if one was created
       if (linePts[0] != linePts[1])
-        {
+      {
         newLines->InsertNextCell(2, linePts);
-        }
+      }
 
       // Increment to get to the next triangle, if cell is a strip
       ptIds++;
-      }
     }
+  }
 
   output->SetPoints(newPoints);
   output->SetLines(newLines);
@@ -992,5 +980,4 @@ void vtkPolyDataToFractionalLabelmapFilter::DeleteCache()
   this->NptsCache.clear();
   this->PointIdsCache.clear();
   this->PointNeighborCountsCache.clear();
-
 }

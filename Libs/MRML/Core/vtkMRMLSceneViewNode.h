@@ -18,23 +18,27 @@
 #include "vtkMRMLStorableNode.h"
 
 // VTK includes
-#include <vtkStdString.h>
 class vtkCollection;
 class vtkImageData;
+
+// STD includes
+#include <string>
 
 class vtkMRMLStorageNode;
 class VTK_MRML_EXPORT vtkMRMLSceneViewNode : public vtkMRMLStorableNode
 {
-  public:
-  static vtkMRMLSceneViewNode *New();
-  vtkTypeMacro(vtkMRMLSceneViewNode,vtkMRMLStorableNode);
+public:
+  static vtkMRMLSceneViewNode* New();
+  vtkTypeMacro(vtkMRMLSceneViewNode, vtkMRMLStorableNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
 
+  void SetScene(vtkMRMLScene* scene) override;
+
   ///
   /// Read node attributes from XML file
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   ///
   /// Write this node's information to a MRML file in XML format.
@@ -46,15 +50,15 @@ class VTK_MRML_EXPORT vtkMRMLSceneViewNode : public vtkMRMLStorableNode
 
   ///
   /// Copy the node's attributes to this object
-  void Copy(vtkMRMLNode *node) override;
+  void Copy(vtkMRMLNode* node) override;
 
   ///
   /// Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "SceneView";}
+  const char* GetNodeTagName() override { return "SceneView"; }
 
   ///
   /// Updates scene nodes
-  void UpdateScene(vtkMRMLScene *scene) override;
+  void UpdateScene(vtkMRMLScene* scene) override;
 
   ///
   /// Updates internal nodes
@@ -63,7 +67,7 @@ class VTK_MRML_EXPORT vtkMRMLSceneViewNode : public vtkMRMLStorableNode
   ///
   /// Set dependencies between this node and a child node
   /// when parsing XML file
-  void ProcessChildNode(vtkMRMLNode *node) override;
+  void ProcessChildNode(vtkMRMLNode* node) override;
 
   /// \sa StoreScene() RestoreScene()
   vtkMRMLScene* GetStoredScene();
@@ -81,16 +85,18 @@ class VTK_MRML_EXPORT vtkMRMLSceneViewNode : public vtkMRMLStorableNode
   /// Restore content of the scene from the node.
   /// If removeNodes is true (default), remove nodes from the main Slicer scene that
   /// do no appear in the scene view. If it is false, and nodes are found that will be
-  /// deleted, don't remove them, print a warning, set the scene error code to 1, save
-  /// the warning to the scene error message, and return.
+  /// deleted, don't remove them, then the method returns with false.
+  /// This can be used for asking confirmation from the user to delete nodes
+  /// (if the user decides that nodes can be removed then this method is called again
+  /// with removeNodes=true).
   /// \sa GetStoredScene() StoreScene() AddMissingNodes()
-  void RestoreScene(bool removeNodes = true);
+  bool RestoreScene(bool removeNodes = true);
 
   void SetAbsentStorageFileNames();
 
   /// A description of this sceneView
-  void SetSceneViewDescription(const vtkStdString& newDescription);
-  vtkGetMacro(SceneViewDescription, vtkStdString);
+  void SetSceneViewDescription(const std::string& newDescription);
+  vtkGetMacro(SceneViewDescription, std::string);
 
   /// The attached screenshot of this sceneView
   virtual void SetScreenShot(vtkImageData* newScreenShot);
@@ -106,7 +112,6 @@ class VTK_MRML_EXPORT vtkMRMLSceneViewNode : public vtkMRMLStorableNode
   virtual void SetScreenShotType(int type);
   vtkGetMacro(ScreenShotType, int);
 
-
   ///
   /// Create default storage node or nullptr if does not have one
   vtkMRMLStorageNode* CreateDefaultStorageNode() override;
@@ -114,19 +119,19 @@ class VTK_MRML_EXPORT vtkMRMLSceneViewNode : public vtkMRMLStorableNode
   /// Get vector of nodes of a specified class in the scene.
   /// Returns 0 on failure, number of nodes on success.
   /// \sa vtkMRMLScene;:GetNodesByClass
-  int GetNodesByClass(const char *className, std::vector<vtkMRMLNode *> &nodes);
+  int GetNodesByClass(const char* className, std::vector<vtkMRMLNode*>& nodes);
   /// Get a collection of nodes of a specified class (for python access)
   /// You are responsible for deleting the returned collection.
   /// Returns nullptr on failure.
   /// \sa vtkMRMLScene::GetNodesByClass
-  vtkCollection* GetNodesByClass(const char *className);
+  vtkCollection* GetNodesByClass(const char* className);
 
   /// check if a node should be included in the save/restore cycle. Returns
   /// false if it's a scene view node, scene view storage node, scene view
   /// hierarchy node, snapshot clip node, true otherwise
-  bool IncludeNodeInSceneView(vtkMRMLNode *node);
+  bool IncludeNodeInSceneView(vtkMRMLNode* node);
 
-  void SetSceneViewRootDir( const char* name);
+  void SetSceneViewRootDir(const char* name);
 
 protected:
   vtkMRMLSceneViewNode();
@@ -134,18 +139,16 @@ protected:
   vtkMRMLSceneViewNode(const vtkMRMLSceneViewNode&);
   void operator=(const vtkMRMLSceneViewNode&);
 
-
   vtkMRMLScene* SnapshotScene;
 
   /// The associated Description
-  vtkStdString SceneViewDescription;
+  std::string SceneViewDescription;
 
   /// The vtkImageData of the screenshot
   vtkImageData* ScreenShot;
 
   /// The type of the screenshot
   int ScreenShotType;
-
 };
 
 #endif

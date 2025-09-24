@@ -15,19 +15,21 @@
 #include "itkImageFileReader.h"
 #include <vtkVersion.h>
 
+/// \brief Read vector image (up to 5D) from a single file
+
 class VTK_ITK_EXPORT vtkITKArchetypeImageSeriesVectorReaderFile : public vtkITKArchetypeImageSeriesReader
 {
- public:
-  static vtkITKArchetypeImageSeriesVectorReaderFile *New();
-  vtkTypeMacro(vtkITKArchetypeImageSeriesVectorReaderFile,vtkITKArchetypeImageSeriesReader);
+public:
+  static vtkITKArchetypeImageSeriesVectorReaderFile* New();
+  vtkTypeMacro(vtkITKArchetypeImageSeriesVectorReaderFile, vtkITKArchetypeImageSeriesReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
- protected:
+protected:
   vtkITKArchetypeImageSeriesVectorReaderFile();
   ~vtkITKArchetypeImageSeriesVectorReaderFile() override;
 
-  void ExecuteDataWithInformation(vtkDataObject *output, vtkInformation *outInfo) override;
-  static void ReadProgressCallback(itk::ProcessObject* obj,const itk::ProgressEvent&, void* data);
+  void ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo) override;
+  static void ReadProgressCallback(itk::Object* obj, const itk::EventObject&, void* data);
 
 private:
   vtkITKArchetypeImageSeriesVectorReaderFile(const vtkITKArchetypeImageSeriesVectorReaderFile&) = delete;

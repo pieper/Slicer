@@ -18,8 +18,6 @@
 
 ==============================================================================*/
 
-#include "vtkSlicerConfigure.h" // Slicer_VTK_RENDERING_USE_{OpenGL|OpenGL2}_BACKEND
-
 // Qt includes
 #include <QApplication>
 #include <QTimer>
@@ -37,31 +35,26 @@
 // this test only works on VTKv6 and later
 
 #include <vtkAutoInit.h>
-#if defined(Slicer_VTK_RENDERING_USE_OpenGL2_BACKEND)
 VTK_MODULE_INIT(vtkRenderingContextOpenGL2);
-#else
-VTK_MODULE_INIT(vtkRenderingContextOpenGL);
-#endif
 
 // STD includes
 
-int qMRMLVolumePropertyNodeWidgetTest1(int argc, char * argv [] )
+int qMRMLVolumePropertyNodeWidgetTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
 
-  vtkSmartPointer<vtkMRMLVolumePropertyNode> volumePropertyNode =
-    vtkSmartPointer<vtkMRMLVolumePropertyNode>::New();
+  vtkSmartPointer<vtkMRMLVolumePropertyNode> volumePropertyNode = vtkSmartPointer<vtkMRMLVolumePropertyNode>::New();
 
   qMRMLVolumePropertyNodeWidget widget;
   widget.setMRMLVolumePropertyNode(volumePropertyNode);
 
   widget.show();
 
-  if (argc < 2 || QString(argv[1]) != "-I" )
-    {
+  if (argc < 2 || QString(argv[1]) != "-I")
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
   return app.exec();
 }

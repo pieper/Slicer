@@ -1,58 +1,79 @@
-/*=auto=========================================================================
+/*==============================================================================
 
-  Portions (c) Copyright 2005 Brigham and Women's Hospital (BWH) All Rights Reserved.
+  Program: 3D Slicer
+
+  Copyright (c) Children's Hospital of Philadelphia, USA. All Rights Reserved.
 
   See COPYRIGHT.txt
   or http://www.slicer.org/copyright/copyright.txt for details.
 
-=========================================================================auto=*/
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+
+  This file was originally developed by Csaba Pinter, Ebatinca, funded
+  by the grant GRT-00000485 of Children's Hospital of Philadelphia, USA.
+
+==============================================================================*/
+
 ///  vtkMRMLVolumeSequenceStorageNode - MRML node that can read/write
-///  a Sequence node containing volumes in a single NRRD file
-///
+///  a Sequence node containing volumes in a single NRRD file.
 
 #ifndef __vtkMRMLVolumeSequenceStorageNode_h
 #define __vtkMRMLVolumeSequenceStorageNode_h
 
 #include "vtkMRML.h"
 
-#include "vtkMRMLNRRDStorageNode.h"
+#include "vtkMRMLStorageNode.h"
 #include <string>
 
-/// \ingroup Slicer_QtModules_Sequences
-class VTK_MRML_EXPORT vtkMRMLVolumeSequenceStorageNode : public vtkMRMLNRRDStorageNode
-{
-  public:
+/// \brief Store a sequence of volumes in a NRRD file.
+///
+/// The sequence axis is always the last image axis ("list" kind)..
+/// It can store vector (spatial or RGB/RGBA color) voxel in the first image axis (vector or RGB/RGBA kind).
+/// Altogether it can store 4D (xyzt) or 5D (cxyzt) data.
+///
+/// If the image stores spatial vectors then those vectors are written to the file in LPS coordinate system.
+/// A file stores spatial vectors if the component axis is "vector" kind and measurement frame is specified;
+/// or it is "covariant-vector" kind.
+///
+/// Custom fields store information on the sequence:
+/// - DataNodeClassName: exact node type that the file should be read into (e.g., vtkMRMLScalarVolumeNode)
+/// - axis 3 index type: numeric or text
+/// - axis 3 index values: space-separated list of index values (URL-encoded, to deal with special characters)
+///
 
-  static vtkMRMLVolumeSequenceStorageNode *New();
-  vtkTypeMacro(vtkMRMLVolumeSequenceStorageNode,vtkMRMLNRRDStorageNode);
+class VTK_MRML_EXPORT vtkMRMLVolumeSequenceStorageNode : public vtkMRMLStorageNode
+{
+public:
+  static vtkMRMLVolumeSequenceStorageNode* New();
+  vtkTypeMacro(vtkMRMLVolumeSequenceStorageNode, vtkMRMLStorageNode);
 
   vtkMRMLNode* CreateNodeInstance() override;
 
   ///
   /// Get node XML tag name (like Storage, Model)
-  const char* GetNodeTagName() override {return "VolumeSequenceStorage";};
+  const char* GetNodeTagName() override { return "VolumeSequenceStorage"; };
 
-  /// Return true if the node can be read in.
-  bool CanReadInReferenceNode(vtkMRMLNode *refNode) override;
+  /// Get node type to be displayed to the user.
+  std::string GetTypeDisplayName() override { return vtkMRMLTr("vtkMRMLVolumeSequenceStorageNode", "Volume Sequence Storage"); };
 
-  /// Return true if the node can be written by using the writer.
+  /// Return true if this class can read the node.
+  bool CanReadInReferenceNode(vtkMRMLNode* refNode) override;
+
+  /// Return true if this class can write the node.
   bool CanWriteFromReferenceNode(vtkMRMLNode* refNode) override;
 
   /// Write the data. Returns 1 on success, 0 otherwise.
   ///
-#ifdef NRRD_CHUNK_IO_AVAILABLE
   /// The nrrd file will be formatted such as:
-  /// "kinds: domain domain domain list"
-  /// This order is the optimal, best perfomance, choice for streaming
-  /// 3D+T data to a file using the Teem library.
-#else
-  /// The nrrd file will be formatted such as:
-  /// "kinds: list domain domain domain"
-#endif
-  int WriteDataInternal(vtkMRMLNode *refNode) override;
+  /// "kinds: [component] domain domain domain list"
+  int WriteDataInternal(vtkMRMLNode* refNode) override;
 
   ///
-  /// Return a default file extension for writting
+  /// Return a default file extension for writing
   const char* GetDefaultWriteFileExtension() override;
 
 protected:
@@ -67,12 +88,7 @@ protected:
   /// but it has an early exit if the file to be read is incompatible.
   ///
   /// It is assumed that the nrrd file is formatted such as:
-  /// "kinds: list domain domain domain"
-#ifdef NRRD_CHUNK_IO_AVAILABLE
-  /// or
-  /// "kinds: domain domain domain list"
-#endif
-
+  /// "kinds: [component] domain domain domain list"
   int ReadDataInternal(vtkMRMLNode* refNode) override;
 
   /// Initialize all the supported write file types

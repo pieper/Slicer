@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Unit Settings</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="margin">
@@ -33,7 +33,7 @@
       <string>Select the current unit node to modify.</string>
      </property>
      <property name="nodeTypes">
-      <stringlist>
+      <stringlist notr="true">
        <string>vtkMRMLUnitNode</string>
       </stringlist>
      </property>

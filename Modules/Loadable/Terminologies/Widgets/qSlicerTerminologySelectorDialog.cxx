@@ -26,36 +26,40 @@
 #include "vtkSlicerTerminologyEntry.h"
 
 // Qt includes
+#include <QDebug>
 #include <QDialog>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QPushButton>
-#include <QDebug>
+#include <QVBoxLayout>
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_Terminologies_Widgets
 class qSlicerTerminologySelectorDialogPrivate : public QDialog
 {
   Q_DECLARE_PUBLIC(qSlicerTerminologySelectorDialog);
+
 protected:
   qSlicerTerminologySelectorDialog* const q_ptr;
+
 public:
-  qSlicerTerminologySelectorDialogPrivate(qSlicerTerminologySelectorDialog& object);
+  explicit qSlicerTerminologySelectorDialogPrivate(qSlicerTerminologySelectorDialog& object, QWidget* parent);
   ~qSlicerTerminologySelectorDialogPrivate() override;
+
 public:
   void init();
+
 private:
-  qSlicerTerminologyNavigatorWidget* NavigatorWidget;
-  QPushButton* SelectButton;
-  QPushButton* CancelButton;
+  qSlicerTerminologyNavigatorWidget* NavigatorWidget{ nullptr };
+  QPushButton* SelectButton{ nullptr };
+  QPushButton* CancelButton{ nullptr };
 
   /// Terminology and other metadata (name, color, auto-generated flags) into which the selection is set
   qSlicerTerminologyNavigatorWidget::TerminologyInfoBundle TerminologyInfo;
 };
 
 //-----------------------------------------------------------------------------
-qSlicerTerminologySelectorDialogPrivate::qSlicerTerminologySelectorDialogPrivate(qSlicerTerminologySelectorDialog& object)
-  : q_ptr(&object)
+qSlicerTerminologySelectorDialogPrivate::qSlicerTerminologySelectorDialogPrivate(qSlicerTerminologySelectorDialog& object, QWidget* parent)
+  : QDialog(parent)
+  , q_ptr(&object) // parent is passed to the private object to allow centering on the parent instead of on the screen
 {
 }
 
@@ -68,6 +72,8 @@ void qSlicerTerminologySelectorDialogPrivate::init()
   Q_Q(qSlicerTerminologySelectorDialog);
 
   // Set up UI
+  this->setWindowTitle("Terminology");
+
   QVBoxLayout* layout = new QVBoxLayout(this);
   layout->setSpacing(4);
   layout->setContentsMargins(0, 0, 0, 0);
@@ -91,6 +97,8 @@ void qSlicerTerminologySelectorDialogPrivate::init()
 
   // Make connections
   connect(this->NavigatorWidget, SIGNAL(selectionValidityChanged(bool)), q, SLOT(setSelectButtonEnabled(bool)));
+  connect(this->NavigatorWidget, SIGNAL(typeDoubleClicked()), this, SLOT(accept()));
+  connect(this->NavigatorWidget, SIGNAL(colorDoubleClicked()), this, SLOT(accept()));
   connect(this->SelectButton, SIGNAL(clicked()), this, SLOT(accept()));
   connect(this->CancelButton, SIGNAL(clicked()), this, SLOT(reject()));
 }
@@ -101,17 +109,16 @@ void qSlicerTerminologySelectorDialogPrivate::init()
 //-----------------------------------------------------------------------------
 qSlicerTerminologySelectorDialog::qSlicerTerminologySelectorDialog(QObject* parent)
   : QObject(parent)
-  , d_ptr(new qSlicerTerminologySelectorDialogPrivate(*this))
+  , d_ptr(new qSlicerTerminologySelectorDialogPrivate(*this, qobject_cast<QWidget*>(parent)))
 {
   Q_D(qSlicerTerminologySelectorDialog);
   d->init();
 }
 
 //-----------------------------------------------------------------------------
-qSlicerTerminologySelectorDialog::qSlicerTerminologySelectorDialog(
-  qSlicerTerminologyNavigatorWidget::TerminologyInfoBundle &initialTerminologyInfo, QObject* parent)
+qSlicerTerminologySelectorDialog::qSlicerTerminologySelectorDialog(qSlicerTerminologyNavigatorWidget::TerminologyInfoBundle& initialTerminologyInfo, QObject* parent)
   : QObject(parent)
-  , d_ptr(new qSlicerTerminologySelectorDialogPrivate(*this))
+  , d_ptr(new qSlicerTerminologySelectorDialogPrivate(*this, qobject_cast<QWidget*>(parent)))
 {
   Q_D(qSlicerTerminologySelectorDialog);
   d->TerminologyInfo = initialTerminologyInfo;
@@ -133,9 +140,9 @@ bool qSlicerTerminologySelectorDialog::exec()
   // Show dialog
   bool result = false;
   if (d->exec() != QDialog::Accepted)
-    {
+  {
     return result;
-    }
+  }
 
   // Save selection after clean exit
   d->NavigatorWidget->terminologyInfo(d->TerminologyInfo);
@@ -143,8 +150,7 @@ bool qSlicerTerminologySelectorDialog::exec()
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerTerminologySelectorDialog::getTerminology(
-  qSlicerTerminologyNavigatorWidget::TerminologyInfoBundle &terminologyInfo, QObject* parent)
+bool qSlicerTerminologySelectorDialog::getTerminology(qSlicerTerminologyNavigatorWidget::TerminologyInfoBundle& terminologyInfo, QObject* parent)
 {
   // Open terminology dialog and store result
   qSlicerTerminologySelectorDialog dialog(terminologyInfo, parent);
@@ -162,17 +168,16 @@ bool qSlicerTerminologySelectorDialog::getTerminology(vtkSlicerTerminologyEntry*
   qSlicerTerminologySelectorDialog dialog(terminologyInfo, parent);
   dialog.setOverrideSectionVisible(false);
   if (!dialog.exec())
-    {
+  {
     return false;
-    }
+  }
   dialog.terminologyInfo(terminologyInfo);
   terminologyEntry->Copy(terminologyInfo.GetTerminologyEntry());
   return true;
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerTerminologySelectorDialog::terminologyInfo(
-  qSlicerTerminologyNavigatorWidget::TerminologyInfoBundle &terminologyInfo )
+void qSlicerTerminologySelectorDialog::terminologyInfo(qSlicerTerminologyNavigatorWidget::TerminologyInfoBundle& terminologyInfo)
 {
   Q_D(qSlicerTerminologySelectorDialog);
   terminologyInfo = d->TerminologyInfo;

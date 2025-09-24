@@ -32,25 +32,29 @@
 #include "vtkSlicerTablesModuleLogicExport.h"
 
 class vtkAbstractArray;
+class vtkMRMLMessageCollection;
 class vtkMRMLTableNode;
 
-/// \ingroup Slicer_QtModules_ExtensionTemplate
 /// \brief Slicer logic class for double array manipulation
 /// This class manages the logic associated with reading, saving,
 /// and changing propertied of the double array nodes
-class VTK_SLICER_TABLES_MODULE_LOGIC_EXPORT vtkSlicerTablesLogic
-  : public vtkSlicerModuleLogic
+class VTK_SLICER_TABLES_MODULE_LOGIC_EXPORT vtkSlicerTablesLogic : public vtkSlicerModuleLogic
 {
 public:
-
-  static vtkSlicerTablesLogic *New();
+  static vtkSlicerTablesLogic* New();
   vtkTypeMacro(vtkSlicerTablesLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Loads a table from filename.
   /// If findSchema is true then the method looks for a schema file (for example, basefilename.schema.csv)
   /// and if a schema file is found then it is used.
-  vtkMRMLTableNode* AddTable(const char* fileName, const char* name = nullptr, bool findSchema = true, const char* password = nullptr);
+  /// \param userMessages User-displayable warning or error messages can be received if userMessages object is
+  ///   specified.
+  vtkMRMLTableNode* AddTable(const char* fileName,
+                             const char* name = nullptr,
+                             bool findSchema = true,
+                             const char* password = nullptr,
+                             vtkMRMLMessageCollection* userMessages = nullptr);
 
   /// Returns ID of the layout that is similar to current layout but also contains a table view
   static int GetLayoutWithTable(int currentLayout);

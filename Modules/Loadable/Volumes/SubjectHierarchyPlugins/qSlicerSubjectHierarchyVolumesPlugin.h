@@ -37,7 +37,6 @@
 class qSlicerSubjectHierarchyVolumesPluginPrivate;
 class vtkMRMLScalarVolumeNode;
 
-/// \ingroup Slicer_QtModules_SubjectHierarchy_Plugins
 class Q_SLICER_VOLUMES_SUBJECT_HIERARCHY_PLUGINS_EXPORT qSlicerSubjectHierarchyVolumesPlugin : public qSlicerSubjectHierarchyAbstractPlugin
 {
 public:
@@ -50,6 +49,16 @@ public:
   ~qSlicerSubjectHierarchyVolumesPlugin() override;
 
 public:
+  /// Get view context menu item actions that are available when right-clicking an object in the views.
+  /// These item context menu actions can be shown in the implementations of \sa showViewContextMenuActionsForItem
+  QList<QAction*> viewContextMenuActions() const override;
+
+  /// Show context menu actions valid for a given subject hierarchy item to be shown in the view.
+  /// \param itemID Subject Hierarchy item to show the context menu items for
+  /// \param eventData Supplementary data for the item that may be considered for the menu (sub-item ID, attribute,
+  /// etc.)
+  void showViewContextMenuActionsForItem(vtkIdType itemID, QVariantMap eventData) override;
+
   /// Determines if a data node can be placed in the hierarchy using the actual plugin,
   /// and gets a confidence value for a certain MRML node (usually the type and possibly attributes are checked).
   /// \param node Node to be added to the hierarchy
@@ -57,9 +66,7 @@ public:
   ///   Default value is invalid. In that case the parent will be ignored, the confidence numbers are got based on the to-be child node alone.
   /// \return Floating point confidence number between 0 and 1, where 0 means that the plugin cannot handle the
   ///   node, and 1 means that the plugin is the only one that can handle the node (by node type or identifier attribute)
-  double canAddNodeToSubjectHierarchy(
-    vtkMRMLNode* node,
-    vtkIdType parentItemID=vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID )const override;
+  double canAddNodeToSubjectHierarchy(vtkMRMLNode* node, vtkIdType parentItemID = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID) const override;
 
   /// Determines if the actual plugin can handle a subject hierarchy item. The plugin with
   /// the highest confidence number will "own" the item in the subject hierarchy (set icon, tooltip,
@@ -67,11 +74,11 @@ public:
   /// \param item Item to handle in the subject hierarchy tree
   /// \return Floating point confidence number between 0 and 1, where 0 means that the plugin cannot handle the
   ///   item, and 1 means that the plugin is the only one that can handle the item (by node type or identifier attribute)
-  double canOwnSubjectHierarchyItem(vtkIdType itemID)const override;
+  double canOwnSubjectHierarchyItem(vtkIdType itemID) const override;
 
   /// Get role that the plugin assigns to the subject hierarchy item.
   ///   Each plugin should provide only one role.
-  Q_INVOKABLE const QString roleForPlugin()const override;
+  Q_INVOKABLE const QString roleForPlugin() const override;
 
   /// Get icon of an owned subject hierarchy item
   /// \return Icon to set, empty icon if nothing to set
@@ -81,14 +88,14 @@ public:
   QIcon visibilityIcon(int visible) override;
 
   /// Generate tooltip for a owned subject hierarchy item
-  QString tooltip(vtkIdType itemID)const override;
+  QString tooltip(vtkIdType itemID) const override;
 
   /// Set display visibility of a owned subject hierarchy item
   void setDisplayVisibility(vtkIdType itemID, int visible) override;
 
   /// Get display visibility of a owned subject hierarchy item
   /// \return Display visibility (0: hidden, 1: shown, 2: partially shown)
-  int getDisplayVisibility(vtkIdType itemID)const override;
+  int getDisplayVisibility(vtkIdType itemID) const override;
 
   /// Get visibility context menu item actions to add to tree view.
   /// These item visibility context menu actions can be shown in the implementations of \sa showVisibilityContextMenuActionsForItem
@@ -98,11 +105,14 @@ public:
   /// \param itemID Subject Hierarchy item to show the visibility context menu items for
   void showVisibilityContextMenuActionsForItem(vtkIdType itemID) override;
 
+  /// Show an item in a selected view.
+  bool showItemInView(vtkIdType itemID, vtkMRMLAbstractViewNode* viewNode, vtkIdList* allItemsToShow) override;
+
 public:
   /// Show volume in all slice views. The argument node replaces any volume shown on the specified layer
   /// \param node Volume node to show
   /// \param layer Layer to show volume on. Only one layer can be specified. By default it's the background layer
-  void showVolumeInAllViews(vtkMRMLScalarVolumeNode* node, int layer=vtkMRMLApplicationLogic::BackgroundLayer);
+  void showVolumeInAllViews(vtkMRMLScalarVolumeNode* node, int layer = vtkMRMLApplicationLogic::BackgroundLayer);
 
   /// Hide given volume from all layers of all slice views
   void hideVolumeFromAllViews(vtkMRMLScalarVolumeNode* node);
@@ -110,8 +120,8 @@ public:
   /// Collect subject hierarchy item IDs of all volumes that are shown in any slice view
   /// \param shownVolumeItemIDs Output argument for subject hierarchy item IDs of shown volumes
   /// \param layer Layer(s) from which the shown volumes are collected. By default it's all layers
-  void collectShownVolumes( QSet<vtkIdType>& shownVolumeItemIDs,
-    int layer=vtkMRMLApplicationLogic::BackgroundLayer | vtkMRMLApplicationLogic::ForegroundLayer | vtkMRMLApplicationLogic::LabelLayer )const;
+  void collectShownVolumes(QSet<vtkIdType>& shownVolumeItemIDs,
+                           int layer = vtkMRMLApplicationLogic::BackgroundLayer | vtkMRMLApplicationLogic::ForegroundLayer | vtkMRMLApplicationLogic::LabelLayer) const;
 
 protected slots:
   /// Show volumes in study. The first two scalar volumes are shown if there are more.
@@ -133,8 +143,19 @@ protected slots:
   void onSliceCompositeNodeModified();
 
   /// Toggle flag determining whether field of view in slice views is reset when showing a volume
-  /// in subject hierarchy. By default it is off. State is stored in the application settings.
+  /// in subject hierarchy. By default it is on. State is stored in the application settings.
   void toggleResetFieldOfViewOnShowAction(bool);
+
+  /// Toggle flag determining whether orientation slice views should be reset to background volume axis
+  /// closest to the view's default view axis when showing a volume in subject hierarchy.
+  /// By default it is on. State is stored in the application settings.
+  void toggleResetViewOrientationOnShowAction(bool);
+
+  /// Set window/level by mapped menu signal
+  void setVolumePreset(const QString& presetId);
+
+  /// Toggle color legend option for current volume item in a slice view
+  void toggleVisibilityForCurrentItem(bool);
 
 protected:
   QScopedPointer<qSlicerSubjectHierarchyVolumesPluginPrivate> d_ptr;

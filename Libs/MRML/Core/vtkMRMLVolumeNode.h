@@ -40,14 +40,24 @@ class vtkMatrix4x4;
 class VTK_MRML_EXPORT vtkMRMLVolumeNode : public vtkMRMLDisplayableNode
 {
 public:
-  vtkTypeMacro(vtkMRMLVolumeNode,vtkMRMLDisplayableNode);
+  vtkTypeMacro(vtkMRMLVolumeNode, vtkMRMLDisplayableNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+
+  enum
+  {
+    VoxelVectorTypeUndefined,
+    VoxelVectorTypeSpatial, // 3D contravariant spatial vector (displacement field, motion, etc.)
+    VoxelVectorTypeColorRGB,
+    VoxelVectorTypeColorRGBA,
+    VoxelVectorTypeSpatialCovariant, // 3D covariant spatial vector (gradient, etc.)
+    VoxelVectorType_Last             // must be last
+  };
 
   vtkMRMLNode* CreateNodeInstance() override = 0;
 
   ///
   /// Read node attributes from XML file
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   ///
   /// Write this node's information to a MRML file in XML format.
@@ -55,12 +65,11 @@ public:
 
   /// Copy node content (excludes basic data, such as name and node references).
   /// \sa vtkMRMLNode::CopyContent
-  vtkMRMLCopyContentMacro(vtkMRMLVectorVolumeDisplayNode);
+  vtkMRMLCopyContentMacro(vtkMRMLVolumeNode);
 
   ///
   /// Copy the node's attributes to this object
-  void CopyOrientation(vtkMRMLVolumeNode *node);
-
+  void CopyOrientation(vtkMRMLVolumeNode* node);
 
   ///
   /// Get node XML tag name (like Volume, Model)
@@ -68,7 +77,7 @@ public:
 
   ///
   /// Finds the storage node and read the data
-  void UpdateScene(vtkMRMLScene *scene) override;
+  void UpdateScene(vtkMRMLScene* scene) override;
 
   //--------------------------------------------------------------------------
   /// RAS->IJK Matrix Calculation
@@ -80,18 +89,12 @@ public:
   /// This matrix can be computed either from corner points, or just he
   /// scanOrder.
   /// Return true on success, false otherwise
-  static bool ComputeIJKToRASFromScanOrder(const char *order,
-                                           const double* spacing,
-                                           const int *dims,
-                                           bool centerImage,
-                                           vtkMatrix4x4 *IJKToRAS);
+  static bool ComputeIJKToRASFromScanOrder(const char* order, const double* spacing, const int* dims, bool centerImage, vtkMatrix4x4* IJKToRAS);
 
-  static const char* ComputeScanOrderFromIJKToRAS(vtkMatrix4x4 *IJKToRAS);
+  static const char* ComputeScanOrderFromIJKToRAS(vtkMatrix4x4* IJKToRAS);
 
   void SetIJKToRASDirections(double dirs[3][3]);
-  void SetIJKToRASDirections(double ir, double ia, double is,
-                             double jr, double ja, double js,
-                             double kr, double ka, double ks);
+  void SetIJKToRASDirections(double ir, double jr, double kr, double ia, double ja, double ka, double is, double js, double ks);
   void SetIToRASDirection(double ir, double ia, double is);
   void SetJToRASDirection(double jr, double ja, double js);
   void SetKToRASDirection(double kr, double ka, double ks);
@@ -106,10 +109,10 @@ public:
   /// parameters that go to make up the IJKToRAS matrix
   /// In setter methods, StorableModifiedTime may need to be updated,
   /// which cannot be achieved by using vtkGetVector3Macro.
-  vtkGetVector3Macro (Spacing, double);
+  vtkGetVector3Macro(Spacing, double);
   virtual void SetSpacing(double arg1, double arg2, double arg3);
   virtual void SetSpacing(double arg[3]);
-  vtkGetVector3Macro (Origin, double);
+  vtkGetVector3Macro(Origin, double);
   virtual void SetOrigin(double arg1, double arg2, double arg3);
   virtual void SetOrigin(double arg[3]);
 
@@ -172,12 +175,12 @@ public:
   /// made to store all information in the MRML node (vtkMRMLVolumeNode::Origin,
   /// vtkMRMLVolumeNode::Spacing, and vtkMRMLVolumeNode::IJKToRASDirections).
   /// \sa GetImageData(), SetImageDataConnection()
-  virtual void SetAndObserveImageData(vtkImageData *ImageData);
+  virtual void SetAndObserveImageData(vtkImageData* ImageData);
   virtual vtkImageData* GetImageData();
   /// Set and observe image data pipeline.
   /// It is propagated to the display nodes.
   /// \sa GetImageDataConnection()
-  virtual void SetImageDataConnection(vtkAlgorithmOutput *inputPort);
+  virtual void SetImageDataConnection(vtkAlgorithmOutput* inputPort);
   /// Return the input image data pipeline.
   vtkGetObjectMacro(ImageDataConnection, vtkAlgorithmOutput);
 
@@ -187,24 +190,26 @@ public:
   /// (0,dim[0],0,dim[1],0,dim[2]), which is not the case many times for segmentation merged labelmaps.
   void ShiftImageDataExtentToZeroStart();
 
+  /// Ensure that the IJK coordinate system is right-handed (IJKToRAS matrix determinant is positive).
+  /// This is the expectation in Slicer and most medical imaging software.
+  void SetIJKCoordinateSystemToRightHanded();
+
   ///
   /// alternative method to propagate events generated in Display nodes
-  void ProcessMRMLEvents ( vtkObject * /*caller*/,
-                                   unsigned long /*event*/,
-                                   void * /*callData*/ ) override;
+  void ProcessMRMLEvents(vtkObject* /*caller*/, unsigned long /*event*/, void* /*callData*/) override;
 
   /// ImageDataModifiedEvent is generated when image data is changed
   enum
-    {
+  {
     ImageDataModifiedEvent = 18001
-    };
+  };
 
   ///
   /// Set/Get the ITK MetaDataDictionary
-  void SetMetaDataDictionary( const itk::MetaDataDictionary& );
+  void SetMetaDataDictionary(const itk::MetaDataDictionary&);
   const itk::MetaDataDictionary& GetMetaDataDictionary() const;
 
-  bool CanApplyNonLinearTransforms()const override;
+  bool CanApplyNonLinearTransforms() const override;
 
   void ApplyTransform(vtkAbstractTransform* transform) override;
 
@@ -230,6 +235,27 @@ public:
   /// Returns true if the parent transform is changed.
   bool AddCenteringTransform();
 
+  /// Get/Set how to interpret a scalar components of a voxel.
+  /// VoxelVectorTypeUndefined: voxel type is not specified, scalar or independent scalar components.
+  /// VoxelVectorTypeSpatialVector: 3-component spatial vector with RAS components,
+  ///   (sign of first two values are inverted when stored in files as LPS)/
+  /// VoxelVectorTypeColorRGB: 3-component vector stores red, green, blue values.
+  /// VoxelVectorTypeColorRGBA: 4-component vector stores red, green, blue, alpha values.
+  vtkGetMacro(VoxelVectorType, int);
+  vtkSetMacro(VoxelVectorType, int);
+
+  /// Convert between voxel type ID and name
+  static const char* GetVoxelVectorTypeAsString(int id);
+  static int GetVoxelVectorTypeFromString(const char* name);
+
+  /// Return true if the IJK coordinate system is right-handed (IJKToRAS matrix determinant is positive).
+  /// This is the expectation in Slicer and most medical imaging software.
+  static bool IsIJKCoordinateSystemRightHanded(vtkMatrix4x4* ijkToRasMatrix);
+
+  /// Switch the IJK coordinate system handedness between left-handed and right-handed
+  /// by inverting the K axis direction. The physical location of voxels do not change.
+  static void ReverseSliceOrder(vtkImageData* imageData, vtkMatrix4x4* ijkToRasMatrix);
+
 protected:
   vtkMRMLVolumeNode();
   ~vtkMRMLVolumeNode() override;
@@ -242,15 +268,15 @@ protected:
 
   /// Called when a display node is added/removed/modified. Propagate the polydata
   /// to the new display node.
-  virtual void UpdateDisplayNodeImageData(vtkMRMLDisplayNode *dnode);
+  virtual void UpdateDisplayNodeImageData(vtkMRMLDisplayNode* dnode);
 
   ///
   /// Called when a node reference ID is added (list size increased).
-  void OnNodeReferenceAdded(vtkMRMLNodeReference *reference) override;
+  void OnNodeReferenceAdded(vtkMRMLNodeReference* reference) override;
 
   ///
   /// Called when a node reference ID is modified.
-  void OnNodeReferenceModified(vtkMRMLNodeReference *reference) override;
+  void OnNodeReferenceModified(vtkMRMLNodeReference* reference) override;
 
   ///
   /// Return the bounds of the node transformed or not depending on
@@ -261,7 +287,11 @@ protected:
 
   /// Returns the origin that would put the volume center in the origin.
   /// If useParentTransform is false then parent transform is ignored.
-  void GetCenterPositionRAS(double* centerPositionRAS, bool useParentTransform=true);
+  void GetCenterPositionRAS(double* centerPositionRAS, bool useParentTransform = true);
+
+  /// Returns the interpolation algorithm that should be used for resampling the volume.
+  /// The value is one of VTK_NEAREST_INTERPOLATION, VTK_LINEAR_INTERPOLATION, or VTK_CUBIC_INTERPOLATION.
+  virtual int GetResamplingInterpolationMode();
 
   /// these are unit length direction cosines
   double IJKToRASDirections[3][3];
@@ -273,6 +303,7 @@ protected:
   vtkAlgorithmOutput* ImageDataConnection;
   vtkEventForwarderCommand* DataEventForwarder;
 
+  int VoxelVectorType;
   itk::MetaDataDictionary Dictionary;
 };
 

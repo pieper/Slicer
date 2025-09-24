@@ -30,7 +30,6 @@
 
 class qSlicerSubjectHierarchyParseLocalDataPluginPrivate;
 
-/// \ingroup Slicer_QtModules_SubjectHierarchy_Widgets
 class Q_SLICER_MODULE_SUBJECTHIERARCHY_WIDGETS_EXPORT qSlicerSubjectHierarchyParseLocalDataPlugin : public qSlicerSubjectHierarchyAbstractPlugin
 {
 public:
@@ -45,18 +44,20 @@ public:
   /// Get scene context menu item actions to add to tree view
   /// Separate method is needed for the scene, as its actions are set to the
   /// tree by a different method \sa itemContextMenuActions
-  QList<QAction*> sceneContextMenuActions()const override;
+  QList<QAction*> sceneContextMenuActions() const override;
 
   /// Show context menu actions valid for a given subject hierarchy item.
   /// \param itemID Subject Hierarchy item to show the context menu items for
   void showContextMenuActionsForItem(vtkIdType itemID) override;
 
-protected slots:
+public slots:
   /// Create subject hierarchy from loaded local directories.
   /// Organizes all items in subject hierarchy that have storable data nodes and has a valid storage node with a file
   /// name (meaning it has been loaded from local disk). Creates patient/study/series hierarchies according to the
   /// paths of the loaded files, ignoring the part that is identical (if everything has been loaded from the same directory,
   /// then only creates subject hierarchy nodes for the directories within that directory).
+  // TODO: Port and move this function to SH logic, and add option to perform this parsing step after loading more than
+  //  one file. See https://discourse.slicer.org/t/python-called-qslicersubjecthierarchyparselocaldataplugin-function/18600
   void createHierarchyFromLoadedDirectoryStructure();
 
 protected:

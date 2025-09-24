@@ -32,6 +32,7 @@ Version:   $Revision: 1.2 $
 #include <vtkImageMapToWindowLevelColors.h>
 #include <vtkImageShiftScale.h>
 #include <vtkImageThreshold.h>
+#include <vtkMatrix4x4.h>
 #include <vtkObjectFactory.h>
 #include <vtkSphereSource.h>
 #include <vtkVersion.h>
@@ -42,37 +43,37 @@ Version:   $Revision: 1.2 $
 vtkMRMLNodeNewMacro(vtkMRMLDiffusionTensorVolumeDisplayNode);
 
 //----------------------------------------------------------------------------
-vtkMRMLDiffusionTensorVolumeDisplayNode
-::vtkMRMLDiffusionTensorVolumeDisplayNode()
+vtkMRMLDiffusionTensorVolumeDisplayNode::vtkMRMLDiffusionTensorVolumeDisplayNode()
 {
- this->ScalarInvariant = vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientation;
- this->DTIMathematics = vtkDiffusionTensorMathematics::New();
- this->DTIMathematicsAlpha = vtkDiffusionTensorMathematics::New();
- this->Threshold->SetInputConnection( this->DTIMathematics->GetOutputPort());
- this->MapToWindowLevelColors->SetInputConnection( this->DTIMathematics->GetOutputPort());
+  this->TypeDisplayName = vtkMRMLTr("vtkMRMLDiffusionTensorVolumeDisplayNode", "Diffusion Tensor Volume Display");
 
- this->ShiftScale = vtkImageShiftScale::New();
- this->ShiftScale->SetOutputScalarTypeToUnsignedChar();
- this->ShiftScale->SetClampOverflow(1);
+  this->ScalarInvariant = vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientation;
+  this->DTIMathematics = vtkDiffusionTensorMathematics::New();
+  this->DTIMathematicsAlpha = vtkDiffusionTensorMathematics::New();
+  this->Threshold->SetInputConnection(this->DTIMathematics->GetOutputPort());
+  this->MapToWindowLevelColors->SetInputConnection(this->DTIMathematics->GetOutputPort());
 
- this->ImageCast = vtkImageCast::New();
- this->ImageCast->SetOutputScalarTypeToUnsignedChar();
+  this->ShiftScale = vtkImageShiftScale::New();
+  this->ShiftScale->SetOutputScalarTypeToUnsignedChar();
+  this->ShiftScale->SetClampOverflow(1);
 
- this->ImageMath  = vtkImageMathematics::New();
- this->ImageMath->SetOperationToMultiplyByK();
- this->ImageMath->SetConstantK(255);
+  this->ImageCast = vtkImageCast::New();
+  this->ImageCast->SetOutputScalarTypeToUnsignedChar();
 
- this->DiffusionTensorGlyphFilter = vtkDiffusionTensorGlyph::New();
- vtkSphereSource *sphere = vtkSphereSource::New();
- this->DiffusionTensorGlyphFilter->SetSourceConnection( sphere->GetOutputPort() );
- sphere->Delete();
+  this->ImageMath = vtkImageMathematics::New();
+  this->ImageMath->SetOperationToMultiplyByK();
+  this->ImageMath->SetConstantK(255);
 
- this->ScalarRangeFlag = vtkMRMLDisplayNode::UseDataScalarRange;
+  this->DiffusionTensorGlyphFilter = vtkDiffusionTensorGlyph::New();
+  vtkSphereSource* sphere = vtkSphereSource::New();
+  this->DiffusionTensorGlyphFilter->SetSourceConnection(sphere->GetOutputPort());
+  sphere->Delete();
+
+  this->ScalarRangeFlag = vtkMRMLDisplayNode::UseDataScalarRange;
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLDiffusionTensorVolumeDisplayNode
-::~vtkMRMLDiffusionTensorVolumeDisplayNode()
+vtkMRMLDiffusionTensorVolumeDisplayNode ::~vtkMRMLDiffusionTensorVolumeDisplayNode()
 {
   this->DTIMathematics->Delete();
   this->DTIMathematicsAlpha->Delete();
@@ -83,7 +84,6 @@ vtkMRMLDiffusionTensorVolumeDisplayNode
   this->ImageCast->Delete();
 }
 
-
 //----------------------------------------------------------------------------
 void vtkMRMLDiffusionTensorVolumeDisplayNode::WriteXML(ostream& of, int nIndent)
 {
@@ -93,8 +93,7 @@ void vtkMRMLDiffusionTensorVolumeDisplayNode::WriteXML(ostream& of, int nIndent)
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode
-::ReadXMLAttributes(const char** atts)
+void vtkMRMLDiffusionTensorVolumeDisplayNode::ReadXMLAttributes(const char** atts)
 {
   int disabledModify = this->StartModify();
 
@@ -103,55 +102,51 @@ void vtkMRMLDiffusionTensorVolumeDisplayNode
   const char* attName;
   const char* attValue;
   while (*atts != nullptr)
-    {
+  {
     attName = *(atts++);
     attValue = *(atts++);
     if (!strcmp(attName, "scalarInvariant"))
-      {
+    {
       int scalarInvariant;
       std::stringstream ss;
       ss << attValue;
       ss >> scalarInvariant;
       this->SetScalarInvariant(scalarInvariant);
-      }
-
     }
+  }
   this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
 // Copy the node\"s attributes to this object.
 // Does NOT copy: ID, FilePrefix, Name, VolumeID
-void vtkMRMLDiffusionTensorVolumeDisplayNode::Copy(vtkMRMLNode *anode)
+void vtkMRMLDiffusionTensorVolumeDisplayNode::Copy(vtkMRMLNode* anode)
 {
   int disabledModify = this->StartModify();
 
   Superclass::Copy(anode);
-  vtkMRMLDiffusionTensorVolumeDisplayNode *node =
-    (vtkMRMLDiffusionTensorVolumeDisplayNode *) anode;
+  vtkMRMLDiffusionTensorVolumeDisplayNode* node = (vtkMRMLDiffusionTensorVolumeDisplayNode*)anode;
   this->SetScalarInvariant(node->ScalarInvariant);
 
   this->EndModify(disabledModify);
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode
-::PrintSelf(ostream& os, vtkIndent indent)
+void vtkMRMLDiffusionTensorVolumeDisplayNode::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 
   os << indent << "ScalarInvariant:             " << this->ScalarInvariant << "\n";
 }
 
 //---------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode
-::ProcessMRMLEvents( vtkObject *caller, unsigned long event, void *callData )
+void vtkMRMLDiffusionTensorVolumeDisplayNode::ProcessMRMLEvents(vtkObject* caller, unsigned long event, void* callData)
 {
   this->Superclass::ProcessMRMLEvents(caller, event, callData);
 }
 
 //-----------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode::UpdateScene(vtkMRMLScene *scene)
+void vtkMRMLDiffusionTensorVolumeDisplayNode::UpdateScene(vtkMRMLScene* scene)
 {
   this->Superclass::UpdateScene(scene);
 }
@@ -162,10 +157,8 @@ void vtkMRMLDiffusionTensorVolumeDisplayNode::UpdateReferences()
   this->Superclass::UpdateReferences();
 }
 
-
 //----------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode
-::UpdateReferenceID(const char *oldID, const char *newID)
+void vtkMRMLDiffusionTensorVolumeDisplayNode::UpdateReferenceID(const char* oldID, const char* newID)
 {
   this->Superclass::UpdateReferenceID(oldID, newID);
 }
@@ -176,110 +169,108 @@ void vtkMRMLDiffusionTensorVolumeDisplayNode::UpdateImageDataPipeline()
   int scalarInvariant = this->GetScalarInvariant();
   this->DTIMathematics->SetOperation(scalarInvariant);
   switch (scalarInvariant)
-    {
+  {
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientation:
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorMode:
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientationMiddleEigenvector:
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientationMinEigenvector:
-      {
+    {
       // alpha
       this->DTIMathematics->SetScaleFactor(1000.0);
-      this->DTIMathematicsAlpha->SetOperation(
-        vtkMRMLDiffusionTensorDisplayPropertiesNode::FractionalAnisotropy);
-      this->ImageMath->SetInputConnection( this->DTIMathematicsAlpha->GetOutputPort());
-      this->ImageCast->SetInputConnection( this->ImageMath->GetOutputPort());
-      this->Threshold->SetInputConnection( this->ImageCast->GetOutputPort());
+      this->DTIMathematicsAlpha->SetOperation(vtkMRMLDiffusionTensorDisplayPropertiesNode::FractionalAnisotropy);
+      this->ImageMath->SetInputConnection(this->DTIMathematicsAlpha->GetOutputPort());
+      this->ImageCast->SetInputConnection(this->ImageMath->GetOutputPort());
+      this->Threshold->SetInputConnection(this->ImageCast->GetOutputPort());
 
       // window/level
       this->ShiftScale->SetInputConnection(this->DTIMathematics->GetOutputPort());
       double halfWindow = (this->GetWindow() / 2.);
       double min = this->GetLevel() - halfWindow;
-      this->ShiftScale->SetShift ( -min );
-      this->ShiftScale->SetScale ( 255. / (this->GetWindow()) );
+      this->ShiftScale->SetShift(-min);
+      this->ShiftScale->SetScale(255. / (this->GetWindow()));
 
       this->ExtractRGB->SetInputConnection(this->ShiftScale->GetOutputPort());
-      if (this->AppendComponents->GetInputConnection(0, 0) != this->ExtractRGB->GetOutputPort() ||
+      if (this->AppendComponents->GetInputConnection(0, 0) != this->ExtractRGB->GetOutputPort() || //
           this->AppendComponents->GetInputConnection(0, 1) != this->Threshold->GetOutputPort())
-        {
+      {
         this->AppendComponents->RemoveAllInputs();
         this->AppendComponents->SetInputConnection(0, this->ExtractRGB->GetOutputPort());
-        this->AppendComponents->AddInputConnection(0, this->Threshold->GetOutputPort() );
-        }
-      break;
+        this->AppendComponents->AddInputConnection(0, this->Threshold->GetOutputPort());
       }
-    default:
-      this->DTIMathematics->SetScaleFactor(1.0);
-      this->Threshold->SetInputConnection( this->DTIMathematics->GetOutputPort());
-      this->MapToWindowLevelColors->SetInputConnection( this->DTIMathematics->GetOutputPort());
-      this->ExtractRGB->SetInputConnection(this->MapToColors->GetOutputPort());
-      if (this->AppendComponents->GetInputConnection(0, 0) != this->ExtractRGB->GetOutputPort() ||
-          this->AppendComponents->GetInputConnection(0, 1) != this->AlphaLogic->GetOutputPort())
-        {
-        this->AppendComponents->RemoveAllInputs();
-        this->AppendComponents->SetInputConnection(0, this->ExtractRGB->GetOutputPort() );
-        this->AppendComponents->AddInputConnection(0, this->AlphaLogic->GetOutputPort() );
-        }
       break;
     }
+    default:
+      this->DTIMathematics->SetScaleFactor(1.0);
+      this->Threshold->SetInputConnection(this->DTIMathematics->GetOutputPort());
+      this->MapToWindowLevelColors->SetInputConnection(this->DTIMathematics->GetOutputPort());
+      this->ExtractRGB->SetInputConnection(this->MapToColors->GetOutputPort());
+      if (this->AppendComponents->GetInputConnection(0, 0) != this->ExtractRGB->GetOutputPort() || //
+          this->AppendComponents->GetInputConnection(0, 1) != this->AlphaLogic->GetOutputPort())
+      {
+        this->AppendComponents->RemoveAllInputs();
+        this->AppendComponents->SetInputConnection(0, this->ExtractRGB->GetOutputPort());
+        this->AppendComponents->AddInputConnection(0, this->AlphaLogic->GetOutputPort());
+      }
+      break;
+  }
 
   Superclass::UpdateImageDataPipeline();
-
 }
 
 //----------------------------------------------------------------------------
-std::vector< vtkMRMLGlyphableVolumeSliceDisplayNode*>
-vtkMRMLDiffusionTensorVolumeDisplayNode::GetSliceGlyphDisplayNodes(
-  vtkMRMLVolumeNode* volumeNode )
+void vtkMRMLDiffusionTensorVolumeDisplayNode::SetTensorRotationMatrix(vtkMatrix4x4* rotationMatrix)
 {
-  std::vector< vtkMRMLGlyphableVolumeSliceDisplayNode*> nodes;
+  this->DTIMathematics->SetTensorRotationMatrix(rotationMatrix);
+  this->DTIMathematicsAlpha->SetTensorRotationMatrix(rotationMatrix);
+}
+
+//----------------------------------------------------------------------------
+std::vector<vtkMRMLGlyphableVolumeSliceDisplayNode*> vtkMRMLDiffusionTensorVolumeDisplayNode::GetSliceGlyphDisplayNodes(vtkMRMLVolumeNode* volumeNode)
+{
+  std::vector<vtkMRMLGlyphableVolumeSliceDisplayNode*> nodes;
   int nnodes = volumeNode->GetNumberOfDisplayNodes();
-  vtkMRMLDiffusionTensorVolumeSliceDisplayNode *node = nullptr;
-  for (int n=0; n<nnodes; n++)
-    {
-    node = vtkMRMLDiffusionTensorVolumeSliceDisplayNode::SafeDownCast(
-      volumeNode->GetNthDisplayNode(n));
+  vtkMRMLDiffusionTensorVolumeSliceDisplayNode* node = nullptr;
+  for (int n = 0; n < nnodes; n++)
+  {
+    node = vtkMRMLDiffusionTensorVolumeSliceDisplayNode::SafeDownCast(volumeNode->GetNthDisplayNode(n));
     if (node)
-      {
+    {
       nodes.push_back(node);
-      }
     }
+  }
   return nodes;
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode
-::AddSliceGlyphDisplayNodes( vtkMRMLVolumeNode* volumeNode )
+void vtkMRMLDiffusionTensorVolumeDisplayNode::AddSliceGlyphDisplayNodes(vtkMRMLVolumeNode* volumeNode)
 {
-  std::vector< vtkMRMLGlyphableVolumeSliceDisplayNode*> nodes =
-    this->GetSliceGlyphDisplayNodes( volumeNode );
+  std::vector<vtkMRMLGlyphableVolumeSliceDisplayNode*> nodes = this->GetSliceGlyphDisplayNodes(volumeNode);
   if (nodes.size() == 0)
-    {
-    vtkMRMLDiffusionTensorDisplayPropertiesNode *glyphDTDPN =
-      vtkMRMLDiffusionTensorDisplayPropertiesNode::New();
+  {
+    vtkMRMLDiffusionTensorDisplayPropertiesNode* glyphDTDPN = vtkMRMLDiffusionTensorDisplayPropertiesNode::New();
     this->GetScene()->AddNode(glyphDTDPN);
     int modifyState = glyphDTDPN->StartModify();
     glyphDTDPN->SetLineGlyphResolution(5);
     glyphDTDPN->EndModify(modifyState);
     glyphDTDPN->Delete();
 
-    for (int i=0; i<3; i++)
-      {
+    for (int i = 0; i < 3; i++)
+    {
       if (this->GetScene())
-        {
-        vtkMRMLDiffusionTensorVolumeSliceDisplayNode *node =
-          vtkMRMLDiffusionTensorVolumeSliceDisplayNode::New();
+      {
+        vtkMRMLDiffusionTensorVolumeSliceDisplayNode* node = vtkMRMLDiffusionTensorVolumeSliceDisplayNode::New();
         if (i == 0)
-          {
+        {
           node->SetName("Red");
-          }
+        }
         else if (i == 1)
-          {
+        {
           node->SetName("Yellow");
-          }
+        }
         else if (i == 2)
-          {
+        {
           node->SetName("Green");
-          }
+        }
 
         this->GetScene()->AddNode(node);
         node->Delete();
@@ -294,26 +285,22 @@ void vtkMRMLDiffusionTensorVolumeDisplayNode
         node->EndModify(modifyState2);
 
         volumeNode->AddAndObserveDisplayNodeID(node->GetID());
-
-        }
       }
-   }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode
-::SetInputToImageDataPipeline(vtkAlgorithmOutput *imageDataConnection)
+void vtkMRMLDiffusionTensorVolumeDisplayNode::SetInputToImageDataPipeline(vtkAlgorithmOutput* imageDataConnection)
 {
   this->DTIMathematics->SetInputConnection(imageDataConnection);
   this->DTIMathematicsAlpha->SetInputConnection(imageDataConnection);
 }
 
 //----------------------------------------------------------------------------
-vtkAlgorithmOutput* vtkMRMLDiffusionTensorVolumeDisplayNode
-::GetInputImageDataConnection()
+vtkAlgorithmOutput* vtkMRMLDiffusionTensorVolumeDisplayNode::GetInputImageDataConnection()
 {
-  return this->DTIMathematics->GetNumberOfInputConnections(0) ?
-    this->DTIMathematics->GetInputConnection(0, 0) : nullptr;
+  return this->DTIMathematics->GetNumberOfInputConnections(0) ? this->DTIMathematics->GetInputConnection(0, 0) : nullptr;
 }
 
 //----------------------------------------------------------------------------
@@ -321,42 +308,37 @@ vtkAlgorithmOutput* vtkMRMLDiffusionTensorVolumeDisplayNode
 vtkAlgorithmOutput* vtkMRMLDiffusionTensorVolumeDisplayNode::GetBackgroundImageStencilDataConnection()
 {
   switch (this->GetScalarInvariant())
-    {
+  {
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientation:
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorMode:
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientationMiddleEigenvector:
     case vtkMRMLDiffusionTensorDisplayPropertiesNode::ColorOrientationMinEigenvector:
-      {
+    {
       return nullptr;
-      }
-    default:
-      return this->Superclass::GetBackgroundImageStencilDataConnection();
     }
+    default: return this->Superclass::GetBackgroundImageStencilDataConnection();
+  }
 }
 
 //---------------------------------------------------------------------------
-vtkAlgorithmOutput* vtkMRMLDiffusionTensorVolumeDisplayNode
-::GetScalarImageDataConnection()
+vtkAlgorithmOutput* vtkMRMLDiffusionTensorVolumeDisplayNode::GetScalarImageDataConnection()
 {
   return this->DTIMathematics->GetOutputPort();
 }
 
 //---------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeDisplayNode
-::GetDisplayScalarRange(double range[2])
+void vtkMRMLDiffusionTensorVolumeDisplayNode::GetDisplayScalarRange(double range[2])
 {
   const int ScalarInvariant = this->GetScalarInvariant();
-  if (vtkMRMLDiffusionTensorDisplayPropertiesNode::
-      ScalarInvariantHasKnownScalarRange(ScalarInvariant))
-    {
-    vtkMRMLDiffusionTensorDisplayPropertiesNode
-      ::ScalarInvariantKnownScalarRange(ScalarInvariant, range);
-    }
+  if (vtkMRMLDiffusionTensorDisplayPropertiesNode::ScalarInvariantHasKnownScalarRange(ScalarInvariant))
+  {
+    vtkMRMLDiffusionTensorDisplayPropertiesNode::ScalarInvariantKnownScalarRange(ScalarInvariant, range);
+  }
   else
-    {
+  {
     this->DTIMathematics->Update();
     this->GetScalarImageData()->GetScalarRange(range);
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -381,15 +363,13 @@ std::vector<int> vtkMRMLDiffusionTensorVolumeDisplayNode::GetSupportedColorModes
 //----------------------------------------------------------------------------
 int vtkMRMLDiffusionTensorVolumeDisplayNode::GetNumberOfScalarInvariants()
 {
-  static std::vector<int> modes =
-    vtkMRMLDiffusionTensorVolumeDisplayNode::GetSupportedColorModes();
+  static std::vector<int> modes = vtkMRMLDiffusionTensorVolumeDisplayNode::GetSupportedColorModes();
   return modes.size();
 }
 
 //----------------------------------------------------------------------------
 int vtkMRMLDiffusionTensorVolumeDisplayNode::GetNthScalarInvariant(int i)
 {
-  static std::vector<int> modes =
-    vtkMRMLDiffusionTensorVolumeDisplayNode::GetSupportedColorModes();
+  static std::vector<int> modes = vtkMRMLDiffusionTensorVolumeDisplayNode::GetSupportedColorModes();
   return modes[i];
 }

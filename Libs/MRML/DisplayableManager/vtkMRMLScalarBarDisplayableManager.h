@@ -24,27 +24,30 @@
 
 class vtkMRMLScalarBarNode;
 class vtkMRMLScene;
+class vtkMRMLWindowLevelWidget;
 
-/// \brief Displayable manager for the scalar bars and window/level adjustment.
+/// \brief Displayable manager for window/level adjustment of volumes.
 ///
-/// This displayable manager for now just manages window/level adjustment events,
-/// but in the future it will implement scalar bar display in both 2D and 3D views.
-class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLScalarBarDisplayableManager :
-  public vtkMRMLAbstractSliceViewDisplayableManager
+/// This displayable manager only manages window/level adjustment events, does not display
+/// "scalar bar" (color legend). Its name was given because originally it was intended for
+/// displaying color legend as well, but later a dedicated displayable manager was added for that purpose
+/// (that can be used in any view types, for any displayable node types).
+class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLScalarBarDisplayableManager : public vtkMRMLAbstractSliceViewDisplayableManager
 {
 public:
   static vtkMRMLScalarBarDisplayableManager* New();
-  vtkTypeMacro(vtkMRMLScalarBarDisplayableManager,
-                       vtkMRMLAbstractSliceViewDisplayableManager);
+  vtkTypeMacro(vtkMRMLScalarBarDisplayableManager, vtkMRMLAbstractSliceViewDisplayableManager);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double &closestDistance2) override;
+  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& closestDistance2) override;
   bool ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData) override;
 
   void SetAdjustForegroundWindowLevelEnabled(bool enabled);
   bool GetAdjustForegroundWindowLevelEnabled();
   void SetAdjustBackgroundWindowLevelEnabled(bool enabled);
   bool GetAdjustBackgroundWindowLevelEnabled();
+
+  vtkMRMLWindowLevelWidget* GetWindowLevelWidget();
 
 protected:
   vtkMRMLScalarBarDisplayableManager();
@@ -68,7 +71,7 @@ private:
   void UpdateFromMRMLScene() override;
 
   class vtkInternal;
-  vtkInternal * Internal;
+  vtkInternal* Internal;
 };
 
 #endif

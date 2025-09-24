@@ -39,8 +39,10 @@ class qMRMLSequenceBrowserToolBarPrivate
 {
   QVTK_OBJECT
   Q_DECLARE_PUBLIC(qMRMLSequenceBrowserToolBar);
+
 protected:
   qMRMLSequenceBrowserToolBar* const q_ptr;
+
 public:
   qMRMLSequenceBrowserToolBarPrivate(qMRMLSequenceBrowserToolBar& object);
   void init();
@@ -85,16 +87,9 @@ void qMRMLSequenceBrowserToolBarPrivate::init()
   q->addWidget(this->SequenceBrowserSeekWidget);
   q->addWidget(this->SequenceBrowserNodeSelector);
 
-  this->SequenceBrowserPlayWidget->setPlayPauseShortcut("Ctrl+Shift+Down");
-  this->SequenceBrowserPlayWidget->setPreviousFrameShortcut("Ctrl+Shift+Left");
-  this->SequenceBrowserPlayWidget->setNextFrameShortcut("Ctrl+Shift+Right");
-
-  QObject::connect(this->SequenceBrowserNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this->SequenceBrowserPlayWidget, SLOT(setMRMLSequenceBrowserNode(vtkMRMLNode*)) );
-  QObject::connect(this->SequenceBrowserNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this->SequenceBrowserSeekWidget, SLOT(setMRMLSequenceBrowserNode(vtkMRMLNode*)) );
-  QObject::connect(this->SequenceBrowserNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    q, SIGNAL(activeBrowserNodeChanged(vtkMRMLNode*)) );
+  QObject::connect(this->SequenceBrowserNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this->SequenceBrowserPlayWidget, SLOT(setMRMLSequenceBrowserNode(vtkMRMLNode*)));
+  QObject::connect(this->SequenceBrowserNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this->SequenceBrowserSeekWidget, SLOT(setMRMLSequenceBrowserNode(vtkMRMLNode*)));
+  QObject::connect(this->SequenceBrowserNodeSelector, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SIGNAL(activeBrowserNodeChanged(vtkMRMLNode*)));
 }
 // --------------------------------------------------------------------------
 void qMRMLSequenceBrowserToolBarPrivate::setMRMLScene(vtkMRMLScene* newScene)
@@ -109,8 +104,8 @@ void qMRMLSequenceBrowserToolBarPrivate::setMRMLScene(vtkMRMLScene* newScene)
 
 // --------------------------------------------------------------------------
 qMRMLSequenceBrowserToolBar::qMRMLSequenceBrowserToolBar(const QString& title, QWidget* parentWidget)
-  :Superclass(title, parentWidget)
-   , d_ptr(new qMRMLSequenceBrowserToolBarPrivate(*this))
+  : Superclass(title, parentWidget)
+  , d_ptr(new qMRMLSequenceBrowserToolBarPrivate(*this))
 {
   Q_D(qMRMLSequenceBrowserToolBar);
   d->init();
@@ -136,7 +131,14 @@ void qMRMLSequenceBrowserToolBar::setMRMLScene(vtkMRMLScene* scene)
 }
 
 // --------------------------------------------------------------------------
-void qMRMLSequenceBrowserToolBar::setActiveBrowserNode(vtkMRMLSequenceBrowserNode * newActiveBrowserNode)
+vtkMRMLSequenceBrowserNode* qMRMLSequenceBrowserToolBar::activeBrowserNode()
+{
+  Q_D(qMRMLSequenceBrowserToolBar);
+  return vtkMRMLSequenceBrowserNode::SafeDownCast(d->SequenceBrowserNodeSelector->currentNode());
+}
+
+// --------------------------------------------------------------------------
+void qMRMLSequenceBrowserToolBar::setActiveBrowserNode(vtkMRMLSequenceBrowserNode* newActiveBrowserNode)
 {
   Q_D(qMRMLSequenceBrowserToolBar);
   d->SequenceBrowserNodeSelector->setCurrentNode(newActiveBrowserNode);

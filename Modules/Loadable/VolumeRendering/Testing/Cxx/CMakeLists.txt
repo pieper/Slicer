@@ -9,7 +9,13 @@ set(${KIT}Testing_ITK_COMPONENTS
   ITKCommon
   )
 find_package(ITK 4.6 COMPONENTS ${${KIT}Testing_ITK_COMPONENTS} REQUIRED)
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 list(APPEND ITK_LIBRARIES ITKFactoryRegistration)
 list(APPEND ITK_INCLUDE_DIRS
   ${ITKFactoryRegistration_INCLUDE_DIRS}
@@ -20,7 +26,6 @@ include(${ITK_USE_FILE})
 set(MRML_CORE_INPUT "${MRMLCore_SOURCE_DIR}/Testing/TestData/")
 set(INPUT ${CMAKE_CURRENT_SOURCE_DIR}/../Data/Input)
 set(TEMP "${CMAKE_BINARY_DIR}/Testing/Temporary")
-message("VolumeRendering CXX tests: TEMP var: ${TEMP}")
 
 #-----------------------------------------------------------------------------
 set(KIT_TEST_SRCS
@@ -31,6 +36,7 @@ set(KIT_TEST_SRCS
   vtkMRMLShaderPropertyStorageNodeTest1.cxx
   vtkMRMLVolumePropertyNodeTest1.cxx
   vtkMRMLVolumePropertyStorageNodeTest1.cxx
+  vtkMRMLVolumePropertyJsonStorageNodeTest1.cxx
   vtkMRMLVolumeRenderingDisplayableManagerTest1.cxx
   vtkMRMLVolumeRenderingMultiVolumeTest.cxx
   )
@@ -46,7 +52,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 slicerMacroConfigureModuleCxxTestDriver(
   NAME ${KIT}
   SOURCES ${KIT_TEST_SRCS}
-  TARGET_LIBRARIES vtkSlicerVolumesModuleLogic
+  TARGET_LIBRARIES vtkSlicerVolumesModuleLogic vtkSlicerMarkupsModuleLogic
   WITH_VTK_DEBUG_LEAKS_CHECK
   WITH_VTK_ERROR_OUTPUT_CHECK
   )
@@ -59,5 +65,6 @@ simple_test(qSlicer${MODULE_NAME}ModuleWidgetTest2 DATA{${MRML_CORE_INPUT}/fixed
 simple_test(vtkMRMLShaderPropertyStorageNodeTest1 ${TEMP})
 simple_test(vtkMRMLVolumePropertyNodeTest1 ${INPUT}/volRender.mrml)
 simple_test(vtkMRMLVolumePropertyStorageNodeTest1)
-simple_test(vtkMRMLVolumeRenderingDisplayableManagerTest1)
+simple_test(vtkMRMLVolumePropertyJsonStorageNodeTest1 ${TEMP})
+simple_test(vtkMRMLVolumeRenderingDisplayableManagerTest1 ${CMAKE_BINARY_DIR}/${Slicer_QTLOADABLEMODULES_SHARE_DIR}/VolumeRendering)
 simple_test(vtkMRMLVolumeRenderingMultiVolumeTest)

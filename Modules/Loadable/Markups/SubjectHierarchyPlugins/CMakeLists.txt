@@ -6,6 +6,8 @@ set(${KIT}_EXPORT_DIRECTIVE "Q_SLICER_${MODULE_NAME_UPPER}_SUBJECT_HIERARCHY_PLU
 
 set(${KIT}_INCLUDE_DIRECTORIES
   ${vtkSlicerMarkupsModuleMRML_INCLUDE_DIRS}
+  ${vtkSlicerMarkupsModuleLogic_INCLUDE_DIRS}
+  ${vtkSlicerMarkupsModuleVTKWidgets_INCLUDE_DIRS}
   ${qSlicerSubjectHierarchyModuleWidgets_INCLUDE_DIRS}
   ${vtkSlicerSubjectHierarchyModuleLogic_INCLUDE_DIRS}
   ${qSlicerTerminologiesModuleWidgets_INCLUDE_DIRS}
@@ -14,6 +16,7 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${qMRMLWidgets_INCLUDE_DIRS}
   ${MRMLLogic_INCLUDE_DIRS}
   ${MRMLCore_INCLUDE_DIRS}
+  ${MRMLDisplayableManager_INCLUDE_DIRS}
   )
 
 set(${KIT}_SRCS
@@ -28,19 +31,18 @@ set(${KIT}_MOC_SRCS
 set(${KIT}_UI_SRCS
   )
 
-set(${KIT}_RESOURCES
-  Resources/${KIT}.qrc
-  )
-
 #-----------------------------------------------------------------------------
 set(${KIT}_TARGET_LIBRARIES
   vtkSlicer${MODULE_NAME}ModuleMRML
+  vtkSlicer${MODULE_NAME}ModuleVTKWidgets
+  vtkSlicer${MODULE_NAME}ModuleLogic
   qSlicerSubjectHierarchyModuleWidgets
   vtkSlicerSubjectHierarchyModuleLogic
   qSlicerTerminologiesModuleWidgets
   qMRMLWidgets
   MRMLLogic
   MRMLCore
+  MRMLDisplayableManager
   )
 
 #-----------------------------------------------------------------------------

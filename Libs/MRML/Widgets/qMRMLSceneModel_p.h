@@ -46,6 +46,7 @@ class vtkMRMLScene;
 // VTK includes
 #include <vtkCallbackCommand.h>
 #include <vtkSmartPointer.h>
+#include <vtkWeakPointer.h>
 
 //------------------------------------------------------------------------------
 // qMRMLSceneModelPrivate
@@ -53,21 +54,21 @@ class vtkMRMLScene;
 class QMRML_WIDGETS_EXPORT qMRMLSceneModelPrivate
 {
   Q_DECLARE_PUBLIC(qMRMLSceneModel);
+
 protected:
   qMRMLSceneModel* const q_ptr;
+
 public:
   qMRMLSceneModelPrivate(qMRMLSceneModel& object);
   virtual ~qMRMLSceneModelPrivate();
   void init();
 
-  QModelIndexList indexes(const QString& nodeID)const;
+  QModelIndexList indexes(const QString& nodeID) const;
 
-  QStringList extraItems(QStandardItem* parent, const QString& extraType)const;
-  void insertExtraItem(int row, QStandardItem* parent,
-                       const QString& text, const QString& extraType,
-                       const Qt::ItemFlags& flags);
+  QStringList extraItems(QStandardItem* parent, const QString& extraType) const;
+  void insertExtraItem(int row, QStandardItem* parent, const QString& text, const QString& extraType, const Qt::ItemFlags& flags, const QString& extraItemData = "");
   void removeAllExtraItems(QStandardItem* parent, const QString extraType);
-  bool isExtraItem(const QStandardItem* item)const;
+  bool isExtraItem(const QStandardItem* item) const;
   void listenNodeModifiedEvent();
   void reparentItems(QList<QStandardItem*>& children, int newIndex, QStandardItem* newParent);
 
@@ -93,20 +94,20 @@ public:
   QIcon HiddenIcon;
   QIcon PartiallyVisibleIcon;
 
-  vtkMRMLScene* MRMLScene;
+  vtkWeakPointer<vtkMRMLScene> MRMLScene;
   QStandardItem* DraggedItem;
-  mutable QList<vtkMRMLNode*>  DraggedNodes;
+  mutable QList<vtkMRMLNode*> DraggedNodes;
   QList<vtkMRMLNode*> MisplacedNodes;
   // We keep a list of QStandardItem instead of vtkMRMLNode* because they are
   // likely to be unreachable when browsing the model
-  QList<QList<QStandardItem*> > Orphans;
+  QList<QList<QStandardItem*>> Orphans;
 
   // Map from MRML node to row.
   // It just stores the result of the latest lookup by indexFromNode,
   // not guaranteed to contain up-to-date information, should be just used
   // as a search hint. If the node cannot be found at the given index then
   // we need to browse through all model items.
-  mutable QMap<vtkMRMLNode*,QPersistentModelIndex> RowCache;
+  mutable QMap<vtkMRMLNode*, QPersistentModelIndex> RowCache;
 };
 
 #endif

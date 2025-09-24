@@ -33,7 +33,6 @@ class qSlicerModelsModuleWidgetPrivate;
 class vtkMRMLNode;
 class vtkMRMLSelectionNode;
 
-/// \ingroup Slicer_QtModules_Models
 class Q_SLICER_QTMODULES_MODELS_EXPORT qSlicerModelsModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
@@ -41,7 +40,7 @@ class Q_SLICER_QTMODULES_MODELS_EXPORT qSlicerModelsModuleWidget : public qSlice
 
 public:
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerModelsModuleWidget(QWidget *parent=nullptr);
+  qSlicerModelsModuleWidget(QWidget* parent = nullptr);
   ~qSlicerModelsModuleWidget() override;
 
   void enter() override;
@@ -59,10 +58,16 @@ public slots:
 
   void onClippingConfigurationButtonClicked();
   void onDisplayNodeChanged();
+  void onClipModelsNodeChanged(vtkMRMLNode*);
   void onClipSelectedModelToggled(bool);
+  void onClippingCapVisibilityToggled(bool);
+  void onClippingCapOpacityChanged(double);
+  void onClippingOutlineVisibilityToggled(bool);
 
-  static void onMRMLSceneEvent(vtkObject* vtk_obj, unsigned long event,
-                               void* client_data, void* call_data);
+  /// Create or get first color legend if group box is expanded
+  void onColorLegendCollapsibleGroupBoxToggled(bool);
+
+  static void onMRMLSceneEvent(vtkObject* vtk_obj, unsigned long event, void* client_data, void* call_data);
 
   /// hide/show all the models in the scene
   void hideAllModels();

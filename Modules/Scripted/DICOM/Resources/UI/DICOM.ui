@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>372</width>
+    <width>622</width>
     <height>663</height>
    </rect>
   </property>
@@ -26,7 +26,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QPushButton" name="importButton">
+      <widget class="ctkMenuButton" name="importButton">
        <property name="toolTip">
         <string>Import files into DICOM database</string>
        </property>
@@ -34,7 +34,7 @@
         <string>    Import DICOM files</string>
        </property>
        <property name="icon">
-        <iconset>
+        <iconset resource="../../../../../Base/QTGUI/Resources/qSlicerBaseQTGUI.qrc">
          <normaloff>:/Icons/Medium/SlicerImportDICOM.png</normaloff>:/Icons/Medium/SlicerImportDICOM.png</iconset>
        </property>
        <property name="iconSize">
@@ -46,9 +46,9 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="showBrowserButton">
+      <widget class="ctkMenuButton" name="showBrowserButton">
        <property name="toolTip">
-        <string>Show DICOM database browser window</string>
+        <string>Import files into DICOM database</string>
        </property>
        <property name="text">
         <string>    Show DICOM database</string>
@@ -59,7 +59,7 @@
        </property>
        <property name="iconSize">
         <size>
-         <width>32</width>
+         <width>64</width>
          <height>32</height>
         </size>
        </property>
@@ -87,7 +87,7 @@
     </spacer>
    </item>
    <item>
-    <widget class="QLabel" name="label_5">
+    <widget class="QLabel" name="loadedDataLabel">
      <property name="font">
       <font>
        <pointsize>12</pointsize>
@@ -114,7 +114,7 @@
      </property>
      <layout class="QFormLayout" name="formLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="queryServerLabel">
         <property name="text">
          <string>Pull data from remote server:</string>
         </property>
@@ -131,7 +131,7 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="label_6">
+       <widget class="QLabel" name="storageListenerLabel">
         <property name="text">
          <string>Storage listener:</string>
         </property>
@@ -181,7 +181,7 @@
        </layout>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="label_7">
+       <widget class="QLabel" name="runListenerAtStartLabel">
         <property name="text">
          <string>Start storage listener on startup:</string>
         </property>
@@ -207,24 +207,31 @@
      </property>
      <layout class="QFormLayout" name="formLayout_2">
       <item row="0" column="0">
-       <widget class="QLabel" name="label_8">
+       <widget class="QLabel" name="databaseDirectoryLabel">
         <property name="text">
          <string>Database location:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="ctkDirectoryButton" name="directoryButton"/>
+       <widget class="ctkDirectoryButton" name="directoryButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="label_9">
+       <widget class="QLabel" name="browserAutoHideLabel">
         <property name="text">
          <string>Auto-hide browser window:</string>
         </property>
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="label_10">
+       <widget class="QLabel" name="databaseMaintenanceLabel">
         <property name="text">
          <string>Maintenance:</string>
         </property>
@@ -263,6 +270,14 @@
      </layout>
     </widget>
    </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="dicomPluginsFrame">
+     <property name="text">
+      <string>DICOM plugins</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout"/>
+    </widget>
+   </item>
   </layout>
  </widget>
  <customwidgets>
@@ -281,6 +296,11 @@
    <class>ctkDirectoryButton</class>
    <extends>QWidget</extends>
    <header>ctkDirectoryButton.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ctkMenuButton</class>
+   <extends>QPushButton</extends>
+   <header>ctkMenuButton.h</header>
   </customwidget>
  </customwidgets>
  <resources>

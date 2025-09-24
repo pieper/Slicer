@@ -34,9 +34,7 @@
 #include <vtkMRMLLinearTransformNode.h>
 #include <vtkMRMLBSplineTransformNode.h>
 
-#ifdef Slicer_BUILD_CLI_SUPPORT
-# include <vtkMRMLCommandLineModuleNode.h>
-#endif
+#include <vtkMRMLCommandLineModuleNode.h>
 
 // VTK includes
 #include <vtkObjectFactory.h>
@@ -56,16 +54,18 @@
 #include "qMRMLNodeComboBox.h"
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_SubjectHierarchy_Widgets
-class qSlicerSubjectHierarchyRegisterPluginPrivate: public QObject
+class qSlicerSubjectHierarchyRegisterPluginPrivate : public QObject
 {
   Q_DECLARE_PUBLIC(qSlicerSubjectHierarchyRegisterPlugin);
+
 protected:
   qSlicerSubjectHierarchyRegisterPlugin* const q_ptr;
+
 public:
   qSlicerSubjectHierarchyRegisterPluginPrivate(qSlicerSubjectHierarchyRegisterPlugin& object);
   ~qSlicerSubjectHierarchyRegisterPluginPrivate() override;
   void init();
+
 public:
   QAction* RegisterThisAction;
   QAction* RegisterToAction;
@@ -78,10 +78,10 @@ public:
 
 //-----------------------------------------------------------------------------
 qSlicerSubjectHierarchyRegisterPluginPrivate::qSlicerSubjectHierarchyRegisterPluginPrivate(qSlicerSubjectHierarchyRegisterPlugin& object)
-: q_ptr(&object)
-, RegisterThisAction(nullptr)
-, RegisterToAction(nullptr)
-, CancelAction(nullptr)
+  : q_ptr(&object)
+  , RegisterThisAction(nullptr)
+  , RegisterToAction(nullptr)
+  , CancelAction(nullptr)
 {
 }
 
@@ -91,32 +91,32 @@ void qSlicerSubjectHierarchyRegisterPluginPrivate::init()
   Q_Q(qSlicerSubjectHierarchyRegisterPlugin);
 
   // Initial action
-  this->RegisterThisAction = new QAction("Register this...",q);
-  this->RegisterThisAction->setToolTip(tr("Select volume as moving image for registration. "
-                                          "Second volume can be selected from context menu after the first one has been set."));
+  this->RegisterThisAction = new QAction(qSlicerSubjectHierarchyRegisterPlugin::tr("Register this..."), q);
+  this->RegisterThisAction->setToolTip(qSlicerSubjectHierarchyRegisterPlugin::tr("Select volume as moving image for registration. "
+                                                                                 "Second volume can be selected from context menu after the first one has been set."));
   QObject::connect(this->RegisterThisAction, SIGNAL(triggered()), q, SLOT(registerCurrentItemTo()));
 
   // Actions for the registration methods
-  this->RegisterToAction = new QAction("Register * to this using...",q);
+  this->RegisterToAction = new QAction(qSlicerSubjectHierarchyRegisterPlugin::tr("Register * to this using..."), q);
 
   this->RegistrationMethodsSubMenu = QSharedPointer<QMenu>(new QMenu());
   this->RegisterToAction->setMenu(this->RegistrationMethodsSubMenu.data());
 
-  QAction* imageBasedRigidAction = new QAction("Rigid image-based registration",q);
+  QAction* imageBasedRigidAction = new QAction(qSlicerSubjectHierarchyRegisterPlugin::tr("Rigid image-based registration"), q);
   QObject::connect(imageBasedRigidAction, SIGNAL(triggered()), q, SLOT(registerImageBasedRigid()));
   this->RegistrationMethodsSubMenu->addAction(imageBasedRigidAction);
 
-  QAction* imageBasedBSplineAction = new QAction("BSpline image-based registration",q);
+  QAction* imageBasedBSplineAction = new QAction(qSlicerSubjectHierarchyRegisterPlugin::tr("BSpline image-based registration"), q);
   QObject::connect(imageBasedBSplineAction, SIGNAL(triggered()), q, SLOT(registerImageBasedBSpline()));
   this->RegistrationMethodsSubMenu->addAction(imageBasedBSplineAction);
 
-  QAction* interactiveLandmarkAction = new QAction("Interactive landmark registration",q);
+  QAction* interactiveLandmarkAction = new QAction(qSlicerSubjectHierarchyRegisterPlugin::tr("Interactive landmark registration"), q);
   QObject::connect(interactiveLandmarkAction, SIGNAL(triggered()), q, SLOT(registerInteractiveLandmark()));
   this->RegistrationMethodsSubMenu->addAction(interactiveLandmarkAction);
 
   // Cancel action
-  this->CancelAction = new QAction("Cancel registration (or right-click another volume to start registration)",q);
-  this->CancelAction->setToolTip(tr("Right-click another volume to select second volume and start registration"));
+  this->CancelAction = new QAction(qSlicerSubjectHierarchyRegisterPlugin::tr("Cancel registration (or right-click another volume to start registration)"), q);
+  this->CancelAction->setToolTip(qSlicerSubjectHierarchyRegisterPlugin::tr("Right-click another volume to select second volume and start registration"));
   QObject::connect(this->CancelAction, SIGNAL(triggered()), q, SLOT(cancel()));
 }
 
@@ -128,9 +128,9 @@ qSlicerSubjectHierarchyRegisterPluginPrivate::~qSlicerSubjectHierarchyRegisterPl
 
 //-----------------------------------------------------------------------------
 qSlicerSubjectHierarchyRegisterPlugin::qSlicerSubjectHierarchyRegisterPlugin(QObject* parent)
- : Superclass(parent)
- , m_RegisterFromItem(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID)
- , d_ptr( new qSlicerSubjectHierarchyRegisterPluginPrivate(*this) )
+  : Superclass(parent)
+  , m_RegisterFromItem(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID)
+  , d_ptr(new qSlicerSubjectHierarchyRegisterPluginPrivate(*this))
 {
   this->m_Name = QString("Register");
 
@@ -142,7 +142,7 @@ qSlicerSubjectHierarchyRegisterPlugin::qSlicerSubjectHierarchyRegisterPlugin(QOb
 qSlicerSubjectHierarchyRegisterPlugin::~qSlicerSubjectHierarchyRegisterPlugin() = default;
 
 //---------------------------------------------------------------------------
-QList<QAction*> qSlicerSubjectHierarchyRegisterPlugin::itemContextMenuActions()const
+QList<QAction*> qSlicerSubjectHierarchyRegisterPlugin::itemContextMenuActions() const
 {
   Q_D(const qSlicerSubjectHierarchyRegisterPlugin);
 
@@ -157,39 +157,39 @@ void qSlicerSubjectHierarchyRegisterPlugin::showContextMenuActionsForItem(vtkIdT
   Q_D(qSlicerSubjectHierarchyRegisterPlugin);
 
   if (!itemID)
-    {
+  {
     // There are no scene actions in this plugin
     return;
-    }
+  }
 
   // Volume
   if (qSlicerSubjectHierarchyPluginHandler::instance()->pluginByName("Volumes")->canOwnSubjectHierarchyItem(itemID))
-    {
+  {
     // Get current item
     vtkIdType currentItemID = qSlicerSubjectHierarchyPluginHandler::instance()->currentItem();
     if (!currentItemID)
-      {
+    {
       qCritical() << Q_FUNC_INFO << ": Invalid current item";
       return;
-      }
+    }
 
     // Show 'Register this' action if there is no 'from' item saved
     if (!this->m_RegisterFromItem)
-      {
+    {
       d->RegisterThisAction->setVisible(true);
-      }
+    }
     // Show 'Register to' action if 'from' item is saved, and another one is selected
     // (does not make sense to register a volume to itself)
     else if (currentItemID != this->m_RegisterFromItem)
-      {
+    {
       d->RegisterToAction->setVisible(true);
-      }
+    }
     // Show cancel action if 'from' item is saved, and the same item is selected
     else
-      {
+    {
       d->CancelAction->setVisible(true);
-      }
     }
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -199,81 +199,76 @@ void qSlicerSubjectHierarchyRegisterPlugin::registerCurrentItemTo()
 
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
 
   vtkIdType currentItemID = qSlicerSubjectHierarchyPluginHandler::instance()->currentItem();
   if (!currentItemID)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid current item";
     return;
-    }
+  }
 
   // Save selected item as 'from' item
   this->m_RegisterFromItem = currentItemID;
 
-  d->RegisterToAction->setText( QString("Register %1 to this using...").arg(shNode->GetItemName(currentItemID).c_str()) );
+  d->RegisterToAction->setText(tr("Register %1 to this using...").arg(shNode->GetItemName(currentItemID).c_str()));
 }
 
 //---------------------------------------------------------------------------
 void qSlicerSubjectHierarchyRegisterPlugin::registerImageBasedRigid()
 {
-#ifdef Slicer_BUILD_CLI_SUPPORT
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
   vtkIdType currentItemID = qSlicerSubjectHierarchyPluginHandler::instance()->currentItem();
   if (!currentItemID)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid current item";
     return;
-    }
+  }
   vtkMRMLScene* scene = qSlicerSubjectHierarchyPluginHandler::instance()->mrmlScene();
   if (!scene)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid MRML scene";
     this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
     return;
-    }
+  }
 
   // Get volume nodes from selected subject hierarchy items
   vtkMRMLNode* registerFromVolumeNode = shNode->GetItemDataNode(this->m_RegisterFromItem);
   vtkMRMLNode* registerToVolumeNode = shNode->GetItemDataNode(currentItemID);
   if (!registerFromVolumeNode || !registerToVolumeNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Unable to get input volume nodes from the selected subject hierarchy items";
     this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
     return;
-    }
+  }
 
   // Switch to BRAINSFit module and set selections
   qSlicerAbstractModuleWidget* moduleWidget = qSlicerSubjectHierarchyAbstractPlugin::switchToModule("BRAINSFit");
   if (moduleWidget)
-    {
+  {
     // Create parameter set node
-    vtkSmartPointer<vtkMRMLCommandLineModuleNode> registrationParameterSetNode =
-      vtkSmartPointer<vtkMRMLCommandLineModuleNode>::New();
-    std::string parameterSetNodeName = std::string("BRAINSRegistration_") +
-      registerFromVolumeNode->GetName() + "_To_" + registerToVolumeNode->GetName();
+    vtkSmartPointer<vtkMRMLCommandLineModuleNode> registrationParameterSetNode = vtkSmartPointer<vtkMRMLCommandLineModuleNode>::New();
+    std::string parameterSetNodeName = tr("BRAINSRegistration_%1_To_%2").arg(registerFromVolumeNode->GetName()).arg(registerToVolumeNode->GetName()).toStdString();
     registrationParameterSetNode->SetName(parameterSetNodeName.c_str());
-    registrationParameterSetNode->SetAttribute("CommandLineModule","General Registration (BRAINS)");
+    registrationParameterSetNode->SetAttribute("CommandLineModule", "General Registration (BRAINS)");
     registrationParameterSetNode->SetModuleDescription("General Registration (BRAINS)");
     scene->AddNode(registrationParameterSetNode);
 
     // Set registration input parameters
     registrationParameterSetNode->SetParameterAsString("movingVolume", registerFromVolumeNode->GetID()); // 'From' item is the moving volume
-    registrationParameterSetNode->SetParameterAsString("fixedVolume", registerToVolumeNode->GetID()); // 'To' item is the fixed volume
+    registrationParameterSetNode->SetParameterAsString("fixedVolume", registerToVolumeNode->GetID());    // 'To' item is the fixed volume
 
     // Set output transform
-    vtkSmartPointer<vtkMRMLLinearTransformNode> outputTransform =
-      vtkSmartPointer<vtkMRMLLinearTransformNode>::New();
-    std::string outputTransformName = std::string("LinearTransform_") +
-      registerFromVolumeNode->GetName() + "_To_" + registerToVolumeNode->GetName();
+    vtkSmartPointer<vtkMRMLLinearTransformNode> outputTransform = vtkSmartPointer<vtkMRMLLinearTransformNode>::New();
+    std::string outputTransformName = tr("LinearTransform_%1_To_%2").arg(registerFromVolumeNode->GetName()).arg(registerToVolumeNode->GetName()).toStdString();
     outputTransform->SetName(outputTransformName.c_str());
     scene->AddNode(outputTransform);
     registrationParameterSetNode->SetParameterAsString("linearTransform", outputTransform->GetID());
@@ -286,76 +281,67 @@ void qSlicerSubjectHierarchyRegisterPlugin::registerImageBasedRigid()
 
     // Choose current data node
     if (parameterSetNodeSelector)
-      {
+    {
       parameterSetNodeSelector->setCurrentNode(registrationParameterSetNode);
-      }
     }
+  }
 
   // Reset saved 'from' item
   this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
-
-#else
-  qWarning() << Q_FUNC_INFO << ": This operation cannot be performed with CLI disabled";
-#endif
 }
 
 //---------------------------------------------------------------------------
 void qSlicerSubjectHierarchyRegisterPlugin::registerImageBasedBSpline()
 {
-#ifdef Slicer_BUILD_CLI_SUPPORT
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
   vtkIdType currentItemID = qSlicerSubjectHierarchyPluginHandler::instance()->currentItem();
   if (!currentItemID)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid current item";
     return;
-    }
+  }
   vtkMRMLScene* scene = qSlicerSubjectHierarchyPluginHandler::instance()->mrmlScene();
   if (!scene)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid MRML scene";
     this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
     return;
-    }
+  }
 
   // Get volume nodes from selected subject hierarchy items
   vtkMRMLNode* registerFromVolumeNode = shNode->GetItemDataNode(this->m_RegisterFromItem);
   vtkMRMLNode* registerToVolumeNode = shNode->GetItemDataNode(currentItemID);
   if (!registerFromVolumeNode || !registerToVolumeNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Unable to get input volume nodes from the selected subject hierarchy items";
     this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
     return;
-    }
+  }
 
   // Switch to BRAINSFit module and set selections
   qSlicerAbstractModuleWidget* moduleWidget = qSlicerSubjectHierarchyAbstractPlugin::switchToModule("BRAINSFit");
   if (moduleWidget)
-    {
+  {
     // Create parameter set node
-    vtkSmartPointer<vtkMRMLCommandLineModuleNode> registrationParameterSetNode =
-      vtkSmartPointer<vtkMRMLCommandLineModuleNode>::New();
-    std::string parameterSetNodeName = std::string("BRAINSRegistration_") +
-      registerFromVolumeNode->GetName() + "_To_" + registerToVolumeNode->GetName();
+    vtkSmartPointer<vtkMRMLCommandLineModuleNode> registrationParameterSetNode = vtkSmartPointer<vtkMRMLCommandLineModuleNode>::New();
+    std::string parameterSetNodeName = tr("BRAINSRegistration_%1_To_%2").arg(registerFromVolumeNode->GetName()).arg(registerToVolumeNode->GetName()).toStdString();
     registrationParameterSetNode->SetName(parameterSetNodeName.c_str());
-    registrationParameterSetNode->SetAttribute("CommandLineModule","General Registration (BRAINS)");
+    registrationParameterSetNode->SetAttribute("CommandLineModule", "General Registration (BRAINS)");
     registrationParameterSetNode->SetModuleDescription("General Registration (BRAINS)");
     scene->AddNode(registrationParameterSetNode);
 
     // Set registration input parameters
     registrationParameterSetNode->SetParameterAsString("movingVolume", registerFromVolumeNode->GetID()); // 'From' item is the moving volume
-    registrationParameterSetNode->SetParameterAsString("fixedVolume", registerToVolumeNode->GetID()); // 'To' item is the fixed volume
+    registrationParameterSetNode->SetParameterAsString("fixedVolume", registerToVolumeNode->GetID());    // 'To' item is the fixed volume
 
     // Set output transform
-    vtkSmartPointer<vtkMRMLBSplineTransformNode> outputTransform =
-      vtkSmartPointer<vtkMRMLBSplineTransformNode>::New();
-    std::string outputTransformName = std::string("BSplineTransform_") +
-      registerFromVolumeNode->GetName() + "_To_" + registerToVolumeNode->GetName();
+    vtkSmartPointer<vtkMRMLBSplineTransformNode> outputTransform = vtkSmartPointer<vtkMRMLBSplineTransformNode>::New();
+    std::string outputTransformName = tr("BSplineTransform_%1_To_%2").arg(registerFromVolumeNode->GetName()).arg(registerToVolumeNode->GetName()).toStdString();
     outputTransform->SetName(outputTransformName.c_str());
     scene->AddNode(outputTransform);
     registrationParameterSetNode->SetParameterAsString("bsplineTransform", outputTransform->GetID());
@@ -368,17 +354,13 @@ void qSlicerSubjectHierarchyRegisterPlugin::registerImageBasedBSpline()
 
     // Choose current data node
     if (parameterSetNodeSelector)
-      {
+    {
       parameterSetNodeSelector->setCurrentNode(registrationParameterSetNode);
-      }
     }
+  }
 
   // Reset saved 'from' item
   this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
-
-#else
-  qWarning() << Q_FUNC_INFO << ": This operation cannot be performed with CLI disabled";
-#endif
 }
 
 //---------------------------------------------------------------------------
@@ -386,71 +368,71 @@ void qSlicerSubjectHierarchyRegisterPlugin::registerInteractiveLandmark()
 {
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
   vtkIdType currentItemID = qSlicerSubjectHierarchyPluginHandler::instance()->currentItem();
   if (!currentItemID)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid current item";
     return;
-    }
+  }
   vtkMRMLScene* scene = qSlicerSubjectHierarchyPluginHandler::instance()->mrmlScene();
   if (!scene)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid MRML scene";
     this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
     return;
-    }
+  }
 
   // Get volume nodes from selected subject hierarchy items
   vtkMRMLNode* registerFromVolumeNode = shNode->GetItemDataNode(this->m_RegisterFromItem);
   vtkMRMLNode* registerToVolumeNode = shNode->GetItemDataNode(currentItemID);
   if (!registerFromVolumeNode || !registerToVolumeNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Unable to get input volume nodes from the selected subject hierarchy items";
     this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
     return;
-    }
+  }
 
   // Switch to registration module and set selections
   qSlicerAbstractModuleWidget* moduleWidget = qSlicerSubjectHierarchyAbstractPlugin::switchToModule("LandmarkRegistration");
   QApplication::processEvents(); // Make sure the volume selector dialog shows up
   if (moduleWidget)
-    {
+  {
     // Get volume selector dialog
     QDialog* volumeSelectorDialog = qSlicerApplication::application()->mainWindow()->findChild<QDialog*>("LandmarkRegistrationVolumeSelect");
     if (volumeSelectorDialog)
-      {
+    {
       // Get volume selector comboboxes
       QList<qMRMLNodeComboBox*> comboboxes = volumeSelectorDialog->findChildren<qMRMLNodeComboBox*>();
 
       // Set fixed and moving image. Unfortunately currently only the tooltip refers to the role
-      foreach (qMRMLNodeComboBox* combobox, comboboxes)
-        {
+      for (qMRMLNodeComboBox* const combobox : comboboxes)
+      {
         if (combobox->toolTip().contains("moving", Qt::CaseInsensitive))
-          {
+        {
           combobox->setCurrentNode(registerFromVolumeNode->GetID());
-          }
-        else if (combobox->toolTip().contains("fixed", Qt::CaseInsensitive))
-          {
-          combobox->setCurrentNode(registerToVolumeNode->GetID());
-          }
         }
+        else if (combobox->toolTip().contains("fixed", Qt::CaseInsensitive))
+        {
+          combobox->setCurrentNode(registerToVolumeNode->GetID());
+        }
+      }
 
       // Click apply on the volume selector dialog
       QPushButton* applyButton = volumeSelectorDialog->findChild<QPushButton*>("VolumeDialogApply");
       if (applyButton)
-        {
-        applyButton->click();
-        }
-      }
-    else
       {
-      qCritical() << Q_FUNC_INFO << ": Failed to get volume selector dialog for landmark registration module";
+        applyButton->click();
       }
     }
+    else
+    {
+      qCritical() << Q_FUNC_INFO << ": Failed to get volume selector dialog for landmark registration module";
+    }
+  }
 
   // Reset saved 'from' item
   this->m_RegisterFromItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;

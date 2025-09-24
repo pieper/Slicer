@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>469</width>
-    <height>593</height>
+    <width>360</width>
+    <height>520</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,8 +24,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>449</width>
-        <height>573</height>
+        <width>340</width>
+        <height>500</height>
        </rect>
       </property>
       <property name="sizePolicy">
@@ -54,28 +54,7 @@
           <item row="0" column="1">
            <layout class="QHBoxLayout" name="horizontalLayout_2">
             <item>
-             <widget class="ctkComboBox" name="SliceOrientationMarkerTypeComboBox">
-              <item>
-               <property name="text">
-                <string>none</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>cube</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>human</string>
-               </property>
-              </item>
-              <item>
-               <property name="text">
-                <string>axes</string>
-               </property>
-              </item>
-             </widget>
+             <widget class="ctkComboBox" name="SliceOrientationMarkerTypeComboBox"/>
             </item>
             <item>
              <widget class="ctkComboBox" name="SliceOrientationMarkerSizeComboBox">
@@ -125,6 +104,37 @@
               <string>thick</string>
              </property>
             </item>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="SliceViewOrientationLabel">
+            <property name="text">
+             <string>View orientation:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="ctkComboBox" name="SliceViewOrientationComboBox">
+            <property name="currentIndex">
+             <number>-1</number>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="SliceViewOrientationLabel_2">
+            <property name="text">
+             <string>Show slice edge in 3D:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="ctkCheckBox" name="SliceEdgeVisibility3DCheckBox">
+            <property name="toolTip">
+             <string>Show colored frame around the slice when displayed in 3D views.</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
          </layout>
@@ -224,6 +234,16 @@
             </item>
            </layout>
           </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Use orthographic projection:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="ctkCheckBox" name="ThreeDUseOrthographicProjectionCheckBox"/>
+          </item>
           <item row="4" column="0">
            <widget class="QLabel" name="ThreeDRulerTypeLabel">
             <property name="text">
@@ -273,15 +293,150 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label">
+          <item row="6" column="0">
+           <widget class="QLabel" name="ThreeDShadowsVisibilityLabel">
             <property name="text">
-             <string>Use orthographic projection:</string>
+             <string>Shadows visibility:</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="ctkCheckBox" name="ThreeDUseOrthographicProjectionCheckBox"/>
+          <item row="6" column="1">
+           <widget class="ctkCheckBox" name="ThreeDShadowsVisibilityCheckBox">
+            <property name="toolTip">
+             <string>Show shadows by default to improve depth perception</string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QLabel" name="ThreeDAmbientShadowsSizeScaleLabel">
+            <property name="text">
+             <string>Size scale:</string>
+            </property>
+            <property name="indent">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="1">
+           <widget class="ctkSliderWidget" name="ThreeDAmbientShadowsSizeScaleSlider" native="true">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="singleStep" stdset="0">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="pageStep" stdset="0">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="minimum" stdset="0">
+             <double>-3.000000000000000</double>
+            </property>
+            <property name="maximum" stdset="0">
+             <double>3.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="0">
+           <widget class="QLabel" name="ThreeDAmbientShadowsVolumeOpacityThresholdLabel">
+            <property name="text">
+             <string>Volume opacity threshold:</string>
+            </property>
+            <property name="indent">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="8" column="1">
+           <widget class="ctkSliderWidget" name="ThreeDAmbientShadowsVolumeOpacityThresholdSlider" native="true">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="decimals" stdset="0">
+             <number>2</number>
+            </property>
+            <property name="singleStep" stdset="0">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="pageStep" stdset="0">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="maximum" stdset="0">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="value" stdset="0">
+             <double>0.250000000000000</double>
+            </property>
+            <property name="suffix" stdset="0">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="0">
+           <widget class="QLabel" name="ThreeDAmbientShadowsIntensityScaleLabel">
+            <property name="text">
+             <string>Intensity scale:</string>
+            </property>
+            <property name="indent">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="10" column="1">
+           <widget class="ctkSliderWidget" name="ThreeDAmbientShadowsIntensityScaleSlider" native="true">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="singleStep" stdset="0">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="pageStep" stdset="0">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="minimum" stdset="0">
+             <double>0.000000000000000</double>
+            </property>
+            <property name="maximum" stdset="0">
+             <double>3.000000000000000</double>
+            </property>
+            <property name="value" stdset="0">
+             <double>1.000000000000000</double>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="0">
+           <widget class="QLabel" name="ThreeDAmbientShadowsIntensityShiftLabel">
+            <property name="text">
+             <string>Intensity offset:</string>
+            </property>
+            <property name="indent">
+             <number>10</number>
+            </property>
+           </widget>
+          </item>
+          <item row="11" column="1">
+           <widget class="ctkSliderWidget" name="ThreeDAmbientShadowsIntensityShiftSlider" native="true">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="singleStep" stdset="0">
+             <double>0.010000000000000</double>
+            </property>
+            <property name="pageStep" stdset="0">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="minimum" stdset="0">
+             <double>0.000000000000000</double>
+            </property>
+            <property name="maximum" stdset="0">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="value" stdset="0">
+             <double>0.000000000000000</double>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -359,6 +514,11 @@ p, li { white-space: pre-wrap; }
    <header>ctkSettingsPanel.h</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>ctkSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>ctkSliderWidget.h</header>
+  </customwidget>
  </customwidgets>
  <resources/>
  <connections>
@@ -369,12 +529,76 @@ p, li { white-space: pre-wrap; }
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>355</x>
+     <x>439</x>
+     <y>228</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>439</x>
+     <y>257</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ThreeDShadowsVisibilityCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ThreeDAmbientShadowsSizeScaleSlider</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>189</x>
+     <y>289</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>206</x>
+     <y>315</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ThreeDShadowsVisibilityCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ThreeDAmbientShadowsVolumeOpacityThresholdSlider</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>305</x>
      <y>292</y>
     </hint>
     <hint type="destinationlabel">
-     <x>355</x>
-     <y>326</y>
+     <x>314</x>
+     <y>336</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ThreeDShadowsVisibilityCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ThreeDAmbientShadowsIntensityScaleSlider</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>305</x>
+     <y>292</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>314</x>
+     <y>360</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ThreeDShadowsVisibilityCheckBox</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ThreeDAmbientShadowsIntensityShiftSlider</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>305</x>
+     <y>292</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>314</x>
+     <y>384</y>
     </hint>
    </hints>
   </connection>

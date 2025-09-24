@@ -31,8 +31,7 @@
 #include <iostream>
 
 //---------------------------------------------------------------------------
-int vtkMRMLSceneIDTest(
-  int vtkNotUsed(argc), char * vtkNotUsed(argv) [] )
+int vtkMRMLSceneIDTest(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 {
   vtkNew<vtkMRMLScene> scene;
 
@@ -42,40 +41,40 @@ int vtkMRMLSceneIDTest(
   std::string baseName("Node Name");
   std::string nodeName = scene->GenerateUniqueName(baseName);
   if (nodeName != std::string(baseName))
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   nodeName = scene->GenerateUniqueName(baseName);
   if (nodeName != std::string("Node Name_1"))
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   nodeName = scene->GenerateUniqueName(baseName);
   if (nodeName != std::string("Node Name_2"))
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // "Node Name_1" is considered as a different basename
   std::string baseName_1 = baseName + "_1";
   nodeName = scene->GenerateUniqueName(baseName_1);
   if (nodeName != baseName_1)
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   nodeName = scene->GenerateUniqueName(baseName_1);
   if (nodeName != std::string("Node Name_1_1"))
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   vtkNew<vtkMRMLModelNode> node;
   node->SetName("Node Name_4");
@@ -85,48 +84,47 @@ int vtkMRMLSceneIDTest(
   // a node with the same name.
   nodeName = scene->GenerateUniqueName(std::string("Node Name_4"));
   if (nodeName != std::string("Node Name_4_1"))
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // GenerateUniqueName() must check into the scene if there is not already
   // a node with the same name.
   nodeName = scene->GenerateUniqueName(baseName);
   if (nodeName != std::string("Node Name_3"))
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // GenerateUniqueName() must check into the scene if there is not already
   // a node with the same name.
   nodeName = scene->GenerateUniqueName(baseName);
   if (nodeName != std::string("Node Name_5"))
-    {
+  {
     std::cerr << "GenerateUniqueName failed: " << nodeName << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   //---------------------------------------------------------------------------
   // UniqueIDs
   //---------------------------------------------------------------------------
   if (node->GetID() != std::string("vtkMRMLModelNode1"))
-    {
+  {
     std::cerr << __LINE__ << " Node ID failed: " << node->GetID() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Test node ID increment
   vtkNew<vtkMRMLModelNode> node2;
   scene->AddNode(node2.GetPointer());
 
   if (node2->GetID() != std::string("vtkMRMLModelNode2"))
-    {
-    std::cerr << __LINE__ << " Node ID failed: "
-              << node2->GetID() << std::endl;
+  {
+    std::cerr << __LINE__ << " Node ID failed: " << node2->GetID() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Test reserved ID
   scene->AddReservedID("vtkMRMLModelNode3");
@@ -134,11 +132,10 @@ int vtkMRMLSceneIDTest(
   scene->AddNode(node3.GetPointer());
 
   if (node3->GetID() != std::string("vtkMRMLModelNode4"))
-    {
-    std::cerr << __LINE__ << " Node ID failed: "
-              << node3->GetID() << std::endl;
+  {
+    std::cerr << __LINE__ << " Node ID failed: " << node3->GetID() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Test reserved ID by removing the node
   scene->AddReservedID("vtkMRMLModelNode5");
@@ -147,11 +144,10 @@ int vtkMRMLSceneIDTest(
   scene->AddNode(node4.GetPointer());
 
   if (node4->GetID() != std::string("vtkMRMLModelNode5"))
-    {
-    std::cerr << __LINE__ << " Node ID failed: "
-              << node4->GetID() << std::endl;
+  {
+    std::cerr << __LINE__ << " Node ID failed: " << node4->GetID() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Singleton nodes have their tag in the node ID
   vtkNew<vtkMRMLSliceNode> redSlice;
@@ -159,35 +155,32 @@ int vtkMRMLSceneIDTest(
   scene->AddNode(redSlice.GetPointer());
 
   if (strcmp(redSlice->GetID(), "vtkMRMLSliceNodeRed") != 0)
-    {
-    std::cerr << __LINE__ << " Node ID failed: "
-              << redSlice->GetID() << std::endl;
+  {
+    std::cerr << __LINE__ << " Node ID failed: " << redSlice->GetID() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   // Test increment when using different singleton tags
   vtkNew<vtkMRMLSliceNode> greenSlice;
   greenSlice->SetLayoutName("Green"); // sets the singleton tag
   scene->AddNode(greenSlice.GetPointer());
 
   if (strcmp(greenSlice->GetID(), "vtkMRMLSliceNodeGreen") != 0)
-    {
-    std::cerr << __LINE__ << " Node ID failed: "
-              << greenSlice->GetID() << std::endl;
+  {
+    std::cerr << __LINE__ << " Node ID failed: " << greenSlice->GetID() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Test Singleton unique ID
   vtkNew<vtkMRMLSliceNode> greenSlice2;
   greenSlice2->SetLayoutName("Green"); // sets the singleton tag
   scene->AddNode(greenSlice2.GetPointer());
 
-  if (greenSlice2->GetID() != nullptr ||
+  if (greenSlice2->GetID() != nullptr || //
       scene->GetNodeByID("vtkMRMLSliceNodeGreen") != greenSlice.GetPointer())
-    {
-    std::cerr << __LINE__ << " Node ID failed: "
-              << greenSlice->GetID() << std::endl;
+  {
+    std::cerr << __LINE__ << " Node ID failed: " << greenSlice->GetID() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   return EXIT_SUCCESS;
 }

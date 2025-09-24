@@ -14,25 +14,26 @@
 #include <vtkVersion.h>
 namespace itk
 {
-  class ProcessObject;
-  class ProgressEvent;
-};
+class Object;
+class ProgressEvent;
+}; // namespace itk
+
+/// \brief Read vector image (up to 5D) from multiple files
 
 class VTK_ITK_EXPORT vtkITKArchetypeImageSeriesVectorReaderSeries : public vtkITKArchetypeImageSeriesReader
 {
 public:
-  static vtkITKArchetypeImageSeriesVectorReaderSeries *New();
-  vtkTypeMacro(vtkITKArchetypeImageSeriesVectorReaderSeries,vtkITKArchetypeImageSeriesReader);
+  static vtkITKArchetypeImageSeriesVectorReaderSeries* New();
+  vtkTypeMacro(vtkITKArchetypeImageSeriesVectorReaderSeries, vtkITKArchetypeImageSeriesReader);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
-  static void ReadProgressCallback(itk::ProcessObject* obj,
-                                   const itk::ProgressEvent&,
-                                   void* data);
+  static void ReadProgressCallback(itk::Object* obj, const itk::EventObject&, void* data);
+
 protected:
   vtkITKArchetypeImageSeriesVectorReaderSeries();
   ~vtkITKArchetypeImageSeriesVectorReaderSeries() override;
 
-  void ExecuteDataWithInformation(vtkDataObject *output, vtkInformation *outInfo) override;
+  void ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo) override;
 
 private:
   vtkITKArchetypeImageSeriesVectorReaderSeries(const vtkITKArchetypeImageSeriesVectorReaderSeries&) = delete;

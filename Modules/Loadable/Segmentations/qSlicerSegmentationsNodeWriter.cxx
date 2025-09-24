@@ -14,7 +14,7 @@
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
   and was supported through CANARIE's Research Software Program, Cancer
-  Care Ontario, OpenAnatomy, and Brigham and Women’s Hospital through NIH grant R01MH112748.
+  Care Ontario, OpenAnatomy, and Brigham and Women's Hospital through NIH grant R01MH112748.
 
 ==============================================================================*/
 
@@ -32,31 +32,17 @@
 
 // MRML includes
 #include <vtkMRMLScene.h>
-#include <vtkMRMLSceneViewNode.h>
 #include <vtkMRMLSegmentationStorageNode.h>
 #include <vtkMRMLStorableNode.h>
 #include <vtkMRMLStorageNode.h>
 
 // VTK includes
-#include <vtkStdString.h>
 #include <vtkStringArray.h>
-
-//-----------------------------------------------------------------------------
-class qSlicerSegmentationsNodeWriterPrivate
-{
-public:
-  QString Description;
-  qSlicerIO::IOFileType FileType;
-  QStringList NodeClassNames;
-  bool SupportUseCompression;
-};
 
 //----------------------------------------------------------------------------
 qSlicerSegmentationsNodeWriter::qSlicerSegmentationsNodeWriter(QObject* parentObject)
   : qSlicerNodeWriter("Segmentation", QString("SegmentationFile"), QStringList() << "vtkMRMLSegmentationNode", true, parentObject)
-  , d_ptr(new qSlicerSegmentationsNodeWriterPrivate)
 {
-  Q_D(qSlicerSegmentationsNodeWriter);
 }
 
 //----------------------------------------------------------------------------
@@ -67,19 +53,17 @@ bool qSlicerSegmentationsNodeWriter::write(const qSlicerIO::IOProperties& proper
 {
   Q_ASSERT(!properties["nodeID"].toString().isEmpty());
 
-  vtkMRMLStorableNode* node = vtkMRMLStorableNode::SafeDownCast(
-    this->getNodeByID(properties["nodeID"].toString().toUtf8().data()));
-  if (!this->canWriteObject(node))
-    {
+  vtkMRMLStorableNode* node = vtkMRMLStorableNode::SafeDownCast(this->getNodeByID(properties["nodeID"].toString().toUtf8().data()));
+  if (this->canWriteObjectConfidence(node) <= 0.0)
+  {
     return false;
-    }
-  vtkMRMLSegmentationStorageNode* snode = vtkMRMLSegmentationStorageNode::SafeDownCast(
-    qSlicerCoreIOManager::createAndAddDefaultStorageNode(node));
+  }
+  vtkMRMLSegmentationStorageNode* snode = vtkMRMLSegmentationStorageNode::SafeDownCast(qSlicerCoreIOManager::createAndAddDefaultStorageNode(node));
   if (snode == nullptr)
-    {
+  {
     qDebug() << "No storage node for node" << properties["nodeID"].toString();
     return false;
-    }
+  }
   snode->SetCropToMinimumExtent(properties["cropToMinimumExtent"].toBool());
 
   return Superclass::write(properties);
@@ -88,8 +72,7 @@ bool qSlicerSegmentationsNodeWriter::write(const qSlicerIO::IOProperties& proper
 //-----------------------------------------------------------------------------
 qSlicerIOOptions* qSlicerSegmentationsNodeWriter::options() const
 {
-  Q_D(const qSlicerSegmentationsNodeWriter);
   qSlicerSegmentationsNodeWriterOptionsWidget* options = new qSlicerSegmentationsNodeWriterOptionsWidget;
-  options->setShowUseCompression(d->SupportUseCompression);
+  options->setShowUseCompression(this->supportUseCompression());
   return options;
 }

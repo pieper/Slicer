@@ -34,8 +34,7 @@
 class QSettings;
 class qSlicerSubjectHierarchySettingsPanelPrivate;
 
-class Q_SLICER_QTMODULES_SUBJECTHIERARCHY_EXPORT qSlicerSubjectHierarchySettingsPanel
-  : public ctkSettingsPanel
+class Q_SLICER_QTMODULES_SUBJECTHIERARCHY_EXPORT qSlicerSubjectHierarchySettingsPanel : public ctkSettingsPanel
 {
   Q_OBJECT
 public:
@@ -56,6 +55,7 @@ protected slots:
   void setDisplayPatientBirthDateEnabled(bool on);
   void setDisplayStudyIDEnabled(bool on);
   void setDisplayStudyDateEnabled(bool on);
+  void setUseTerminology(bool on);
 
 protected:
   QScopedPointer<qSlicerSubjectHierarchySettingsPanelPrivate> d_ptr;

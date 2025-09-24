@@ -29,9 +29,10 @@
 #include "qSlicerVolumeRenderingSubjectHierarchyPluginsExport.h"
 
 class qSlicerSubjectHierarchyVolumeRenderingPluginPrivate;
+class vtkMRMLViewNode;
+class vtkMRMLDisplayNode;
 class vtkSlicerVolumeRenderingLogic;
 
-/// \ingroup Slicer_QtModules_SubjectHierarchy_Widgets
 class Q_SLICER_VOLUMERENDERING_SUBJECT_HIERARCHY_PLUGINS_EXPORT qSlicerSubjectHierarchyVolumeRenderingPlugin : public qSlicerSubjectHierarchyAbstractPlugin
 {
 public:
@@ -44,24 +45,38 @@ public:
 
 public:
   /// Set volume rendering module logic. Required for accessing display nodes and setting up volume rendering related nodes.
-  void setVolumeRenderingLogic(vtkSlicerVolumeRenderingLogic* volumeRenderingLogic);
+  Q_INVOKABLE void setVolumeRenderingLogic(vtkSlicerVolumeRenderingLogic* volumeRenderingLogic);
 
   /// Get visibility context menu item actions to add to tree view.
   /// These item visibility context menu actions can be shown in the implementations of \sa showVisibilityContextMenuActionsForItem
-  QList<QAction*> visibilityContextMenuActions()const override;
+  QList<QAction*> visibilityContextMenuActions() const override;
 
   /// Show visibility context menu actions valid for a given subject hierarchy item.
   /// \param itemID Subject Hierarchy item to show the visibility context menu items for
   void showVisibilityContextMenuActionsForItem(vtkIdType itemID) override;
+
+  /// Show an item in a selected view.
+  /// Calls Volumes plugin's showItemInView implementation and adds support for showing a volume
+  /// in 3D views using volume rendering.
+  /// Returns true on success.
+  bool showItemInView(vtkIdType itemID, vtkMRMLAbstractViewNode* viewNode, vtkIdList* allItemsToShow) override;
+
+  /// Show/hide volume rendering in a view.
+  /// If viewNode is nullptr then it is displayed in all 3D views in the current layout.
+  Q_INVOKABLE bool showVolumeRendering(bool show, vtkIdType itemID, vtkMRMLViewNode* viewNode = nullptr);
 
 protected slots:
   /// Toggle volume rendering option for current volume item
   void toggleVolumeRenderingForCurrentItem(bool);
   /// Switch to Volume Rendering module and select current volume item
   void showVolumeRenderingOptionsForCurrentItem();
+  /// Toggle synchronization with slice views for current volume item
+  void synchronizeWithSliceViewsForCurrentItem(bool);
 
 protected:
   QScopedPointer<qSlicerSubjectHierarchyVolumeRenderingPluginPrivate> d_ptr;
+
+  void resetFieldOfView(vtkMRMLDisplayNode* displayNode, vtkMRMLViewNode* viewNode = nullptr);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerSubjectHierarchyVolumeRenderingPlugin);

@@ -30,25 +30,33 @@
 // VTK includes
 #include <vtkPolyData.h>
 
-/// \ingroup SegmentationCore
 /// \brief Convert binary labelmap representation (vtkOrientedImageData type) to
 ///   closed surface representation (vtkPolyData type). The conversion algorithm
 ///   performs a marching cubes operation on the image data followed by an optional
 ///   decimation step.
-class vtkSegmentationCore_EXPORT vtkBinaryLabelmapToClosedSurfaceConversionRule
-  : public vtkSegmentationConverterRule
+class vtkSegmentationCore_EXPORT vtkBinaryLabelmapToClosedSurfaceConversionRule : public vtkSegmentationConverterRule
 {
 public:
   /// Conversion parameter: decimation factor
   static const std::string GetDecimationFactorParameterName() { return "Decimation factor"; };
   /// Conversion parameter: smoothing factor
   static const std::string GetSmoothingFactorParameterName() { return "Smoothing factor"; };
+  /// Conversion parameter: Conversion method (flying edges or surface nets)
+  static const std::string GetConversionMethodParameterName() { return "Conversion method"; };
+  /// Conversion parameter: SurfaceNets smoothing
+  /// If SurfaceNets smoothing is enabled, the smoothing available within the SurfaceNets
+  /// filter and based of vtkConstrainedSmoothingFilter is used.
+  static const std::string GetSurfaceNetInternalSmoothingParameterName() { return "SurfaceNets smoothing"; };
   /// Conversion parameter: compute surface normals
   static const std::string GetComputeSurfaceNormalsParameterName() { return "Compute surface normals"; };
   /// Conversion parameter: joint smoothing
   /// If joint smoothing is enabled, surfaces will be created and smoothed as one vtkPolyData.
   /// Joint smoothing converts all segments in shared labelmap together, reducing smoothing artifacts.
   static const std::string GetJointSmoothingParameterName() { return "Joint smoothing"; };
+
+  // Conversion methods
+  static const std::string CONVERSION_METHOD_FLYING_EDGES;
+  static const std::string CONVERSION_METHOD_SURFACE_NETS;
 
 public:
   static vtkBinaryLabelmapToClosedSurfaceConversionRule* New();
@@ -71,15 +79,15 @@ public:
   /// Update the target representation based on the source representation
   bool Convert(vtkSegment* segment) override;
 
-  /// Perform postprocesing steps on the output
+  /// Perform postprocessing steps on the output
   /// Clears the joint smoothing cache
   bool PostConvert(vtkSegmentation* segmentation) override;
 
   /// Get the cost of the conversion.
-  unsigned int GetConversionCost(vtkDataObject* sourceRepresentation=nullptr, vtkDataObject* targetRepresentation=nullptr) override;
+  unsigned int GetConversionCost(vtkDataObject* sourceRepresentation = nullptr, vtkDataObject* targetRepresentation = nullptr) override;
 
   /// Human-readable name of the converter rule
-  const char* GetName()  override { return "Binary labelmap to closed surface"; };
+  const char* GetName() override { return "Binary labelmap to closed surface"; };
 
   /// Human-readable name of the source representation
   const char* GetSourceRepresentationName() override { return vtkSegmentationConverter::GetSegmentationBinaryLabelmapRepresentationName(); };
@@ -99,11 +107,11 @@ protected:
 protected:
   /// Cache for storing merged closed surfaces that have been joint smoothed
   /// The key used is the binary labelmap representation, which maps to the combined vtkPolyData containing surfaces for all segments in the segmentation
-  std::map<vtkOrientedImageData*, vtkSmartPointer<vtkPolyData> > JointSmoothCache;
+  std::map<vtkOrientedImageData*, vtkSmartPointer<vtkPolyData>> JointSmoothCache;
 
 private:
   vtkBinaryLabelmapToClosedSurfaceConversionRule(const vtkBinaryLabelmapToClosedSurfaceConversionRule&) = delete;
   void operator=(const vtkBinaryLabelmapToClosedSurfaceConversionRule&) = delete;
 };
 
-#endif // __vtkBinaryLabelmapToClosedSurfaceConversionRule_h
+#endif

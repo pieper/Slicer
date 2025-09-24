@@ -42,3 +42,27 @@ slicerMacroBuildScriptedModule(
   )
 slicer_add_python_unittest(SCRIPT MarkupsInViewsSelfTest.py
                            SLICER_ARGS --disable-cli-modules)
+
+# Test curvature computation
+slicer_add_python_test(SCRIPT MarkupsCurveMeasurementsTest.py
+                       SLICER_ARGS --disable-cli-modules)
+
+# Visual test of coordinate system along the curve (normal, binormal, tangent computation)
+slicer_add_python_test(SCRIPT MarkupsCurveCoordinateFrameTest.py
+                       SLICER_ARGS --disable-cli-modules)
+
+# Test other measurements
+slicer_add_python_test(SCRIPT MarkupsMeasurementsTest.py
+                       SLICER_ARGS --disable-cli-modules)
+
+# Test markup node names
+slicer_add_python_test(SCRIPT MarkupsNodeNameTest.py
+                       SLICER_ARGS --disable-cli-modules)
+
+# Test markups pluggable architecture
+slicerMacroBuildScriptedModule(
+  NAME PluggableMarkupsSelfTest
+  SCRIPTS PluggableMarkupsSelfTest.py
+  RESOURCES ${MARKUPS_PYTHON_RESOURCES}
+  )
+slicer_add_python_unittest(SCRIPT PluggableMarkupsSelfTest.py)

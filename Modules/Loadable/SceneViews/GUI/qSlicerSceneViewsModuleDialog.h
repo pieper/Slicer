@@ -5,28 +5,39 @@
 
 #include "qMRMLScreenShotDialog.h"
 
-/// \ingroup Slicer_QtModules_SceneViews
+class qSlicerSceneViewsModuleDialogPrivate;
+
 class qSlicerSceneViewsModuleDialog : public qMRMLScreenShotDialog
 {
   Q_OBJECT
 public:
   typedef qMRMLScreenShotDialog Superclass;
 
-  qSlicerSceneViewsModuleDialog();
+  qSlicerSceneViewsModuleDialog(QWidget* parent = nullptr);
   ~qSlicerSceneViewsModuleDialog() override;
 
   /// Set the SceneViews module logic.
   void setLogic(vtkSlicerSceneViewsModuleLogic* logic);
 
-  /// Initialize this dialog with values from an existing annotation Snapshot node.
-  void loadNode(const QString& nodeId);
+  /// Initialize this dialog with values from an existing scene view.
+  void loadSceneViewInfo(int index);
   /// Reset the dialog and give it a unique name.
   void reset();
 
   void accept() override;
 
+public slots:
+  void onUpdateExistingNodesClicked();
+  void onCaptureDisplayNodesClicked();
+  void onCaptureViewNodesClicked();
+  void onNodeSelectionChanged();
+
 private:
-    vtkSlicerSceneViewsModuleLogic* m_Logic;
+  Q_DECLARE_PRIVATE(qSlicerSceneViewsModuleDialog);
+
+  vtkSlicerSceneViewsModuleLogic* m_Logic;
+
+  QScopedPointer<qSlicerSceneViewsModuleDialogPrivate> d_ptr;
 };
 
 #endif

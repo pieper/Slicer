@@ -45,14 +45,14 @@ vtkMRMLNodeNewMacro(vtkMRMLPlotViewNode);
 //----------------------------------------------------------------------------
 vtkMRMLPlotViewNode::vtkMRMLPlotViewNode()
 {
+  this->TypeDisplayName = vtkMRMLTr("vtkMRMLPlotViewNode", "Plot View");
+
   vtkNew<vtkIntArray> events;
   events->InsertNextValue(vtkCommand::ModifiedEvent);
   events->InsertNextValue(vtkMRMLPlotViewNode::PlotChartNodeChangedEvent);
   events->InsertNextValue(vtkMRMLPlotChartNode::PlotModifiedEvent);
 
-  this->AddNodeReferenceRole(this->GetPlotChartNodeReferenceRole(),
-                             this->GetPlotChartNodeReferenceMRMLAttributeName(),
-                             events.GetPointer());
+  this->AddNodeReferenceRole(this->GetPlotChartNodeReferenceRole(), this->GetPlotChartNodeReferenceMRMLAttributeName(), events.GetPointer());
 }
 
 //----------------------------------------------------------------------------
@@ -89,7 +89,7 @@ void vtkMRMLPlotViewNode::ReadXMLAttributes(const char** atts)
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLPlotViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy/*=true*/)
+void vtkMRMLPlotViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy /*=true*/)
 {
   MRMLNodeModifyBlocker blocker(this);
   Superclass::CopyContent(anode, deepCopy);
@@ -105,7 +105,7 @@ void vtkMRMLPlotViewNode::CopyContent(vtkMRMLNode* anode, bool deepCopy/*=true*/
 //----------------------------------------------------------------------------
 void vtkMRMLPlotViewNode::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os,indent);
+  this->Superclass::PrintSelf(os, indent);
 
   vtkMRMLPrintBeginMacro(os, indent);
   vtkMRMLPrintIntMacro(DoPropagatePlotChartSelection);
@@ -134,16 +134,16 @@ vtkMRMLPlotChartNode* vtkMRMLPlotViewNode::GetPlotChartNode()
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLPlotViewNode::ProcessMRMLEvents(vtkObject *caller, unsigned long event, void *callData)
+void vtkMRMLPlotViewNode::ProcessMRMLEvents(vtkObject* caller, unsigned long event, void* callData)
 {
   Superclass::ProcessMRMLEvents(caller, event, callData);
 
-  vtkMRMLPlotChartNode *pnode = this->GetPlotChartNode();
-  if (pnode != nullptr && pnode == vtkMRMLPlotChartNode::SafeDownCast(caller) &&
-     (event ==  vtkCommand::ModifiedEvent || event == vtkMRMLPlotChartNode::PlotModifiedEvent))
-    {
+  vtkMRMLPlotChartNode* pnode = this->GetPlotChartNode();
+  if (pnode != nullptr && pnode == vtkMRMLPlotChartNode::SafeDownCast(caller) && //
+      (event == vtkCommand::ModifiedEvent || event == vtkMRMLPlotChartNode::PlotModifiedEvent))
+  {
     this->InvokeEvent(vtkMRMLPlotViewNode::PlotChartNodeChangedEvent, pnode);
-    }
+  }
 
   return;
 }
@@ -157,37 +157,37 @@ const char* vtkMRMLPlotViewNode::GetPlotChartNodeReferenceRole()
 //----------------------------------------------------------------------------
 const char* vtkMRMLPlotViewNode::GetPlotChartNodeReferenceMRMLAttributeName()
 {
-    return vtkMRMLPlotViewNode::PlotChartNodeReferenceMRMLAttributeName;
+  return vtkMRMLPlotViewNode::PlotChartNodeReferenceMRMLAttributeName;
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLPlotViewNode::OnNodeReferenceAdded(vtkMRMLNodeReference *reference)
+void vtkMRMLPlotViewNode::OnNodeReferenceAdded(vtkMRMLNodeReference* reference)
 {
   this->Superclass::OnNodeReferenceAdded(reference);
   if (std::string(reference->GetReferenceRole()) == this->PlotChartNodeReferenceRole)
-    {
+  {
     this->InvokeEvent(vtkMRMLPlotViewNode::PlotChartNodeChangedEvent, reference->GetReferencedNode());
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLPlotViewNode::OnNodeReferenceModified(vtkMRMLNodeReference *reference)
+void vtkMRMLPlotViewNode::OnNodeReferenceModified(vtkMRMLNodeReference* reference)
 {
   this->Superclass::OnNodeReferenceModified(reference);
   if (std::string(reference->GetReferenceRole()) == this->PlotChartNodeReferenceRole)
-    {
+  {
     this->InvokeEvent(vtkMRMLPlotViewNode::PlotChartNodeChangedEvent, reference->GetReferencedNode());
-    }
+  }
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLPlotViewNode::OnNodeReferenceRemoved(vtkMRMLNodeReference *reference)
+void vtkMRMLPlotViewNode::OnNodeReferenceRemoved(vtkMRMLNodeReference* reference)
 {
   this->Superclass::OnNodeReferenceRemoved(reference);
   if (std::string(reference->GetReferenceRole()) == this->PlotChartNodeReferenceRole)
-    {
+  {
     this->InvokeEvent(vtkMRMLPlotViewNode::PlotChartNodeChangedEvent, reference->GetReferencedNode());
-    }
+  }
 }
 
 //-----------------------------------------------------------
@@ -195,13 +195,13 @@ const char* vtkMRMLPlotViewNode::GetInteractionModeAsString(int id)
 {
   switch (id)
   {
-  case InteractionModePanView: return "PanView";
-  case InteractionModeSelectPoints: return "SelectPoints";
-  case InteractionModeFreehandSelectPoints: return "FreehandSelectPoints";
-  case InteractionModeMovePoints: return "MovePoints";
-  default:
-    // invalid id
-    return "";
+    case InteractionModePanView: return "PanView";
+    case InteractionModeSelectPoints: return "SelectPoints";
+    case InteractionModeFreehandSelectPoints: return "FreehandSelectPoints";
+    case InteractionModeMovePoints: return "MovePoints";
+    default:
+      // invalid id
+      return "";
   }
 }
 

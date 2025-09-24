@@ -18,6 +18,9 @@
 
 ==============================================================================*/
 
+// Qt includes
+#include <QTextStream>
+
 // Terminologies includes
 #include "qSlicerTerminologiesReader.h"
 
@@ -38,7 +41,6 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_Terminologies
 qSlicerTerminologiesReader::qSlicerTerminologiesReader(vtkSlicerTerminologiesModuleLogic* terminologiesLogic, QObject* _parent)
   : Superclass(_parent)
   , d_ptr(new qSlicerTerminologiesReaderPrivate)
@@ -57,28 +59,59 @@ void qSlicerTerminologiesReader::setTerminologiesLogic(vtkSlicerTerminologiesMod
 }
 
 //-----------------------------------------------------------------------------
-vtkSlicerTerminologiesModuleLogic* qSlicerTerminologiesReader::terminologiesLogic()const
+vtkSlicerTerminologiesModuleLogic* qSlicerTerminologiesReader::terminologiesLogic() const
 {
   Q_D(const qSlicerTerminologiesReader);
   return d->TerminologiesLogic;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerTerminologiesReader::description()const
+QString qSlicerTerminologiesReader::description() const
 {
-  return "Terminology";
+  return tr("Terminology");
 }
 
 //-----------------------------------------------------------------------------
-qSlicerIO::IOFileType qSlicerTerminologiesReader::fileType()const
+qSlicerIO::IOFileType qSlicerTerminologiesReader::fileType() const
 {
   return QString("TerminologyFile");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerTerminologiesReader::extensions()const
+QStringList qSlicerTerminologiesReader::extensions() const
 {
   return QStringList() << "Terminology (*.term.json)" << "Terminology (*.json)";
+}
+
+//----------------------------------------------------------------------------
+double qSlicerTerminologiesReader::canLoadFileConfidence(const QString& fileName) const
+{
+  double confidence = Superclass::canLoadFileConfidence(fileName);
+
+  // Confidence for .json file is 0.55 (5 characters in the file extension matched),
+  // for composite file extensions (.term.json) it would be 0.6.
+  // Therefore, confidence below 0.56 means that we got a generic file extension
+  // that we need to inspect further.
+  if (confidence > 0 && confidence < 0.56)
+  {
+    // Not a composite file extension, inspect the content
+    QString upperCaseFileName = fileName.toUpper();
+    if (upperCaseFileName.endsWith("JSON"))
+    {
+      QFile file(fileName);
+      if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+      {
+        QTextStream in(&file);
+        // Markups json files contain a schema URL like /anatomic-context-schema.json
+        // or /segment-context-schema.json around position 200, read a bit further
+        // to account for slight variations in the header.
+        QString line = in.read(400);
+        bool looksLikeTerminology = line.contains("/anatomic-context-schema.json") || line.contains("/segment-context-schema.json");
+        confidence = (looksLikeTerminology ? 0.6 : 0.4);
+      }
+    }
+  }
+  return confidence;
 }
 
 //-----------------------------------------------------------------------------
@@ -90,16 +123,16 @@ bool qSlicerTerminologiesReader::load(const IOProperties& properties)
 
   this->setLoadedNodes(QStringList());
   if (d->TerminologiesLogic.GetPointer() == nullptr)
-    {
+  {
     return false;
-    }
+  }
 
   bool contextLoaded = d->TerminologiesLogic->LoadContextFromFile(fileName.toUtf8().constData());
   if (!contextLoaded)
-    {
+  {
     this->setLoadedNodes(QStringList());
     return false;
-    }
+  }
 
   return true;
 }

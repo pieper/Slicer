@@ -27,19 +27,20 @@
 // MRML includes
 #include "qMRMLWidgetsExport.h"
 
+class QDropEvent;
 class qMRMLSliceViewPrivate;
 class vtkCollection;
 class vtkMRMLAbstractDisplayableManager;
+class vtkMRMLDisplayableManagerGroup;
 class vtkMRMLScene;
 class vtkMRMLSliceNode;
 class vtkMRMLSliceViewInteractorStyle;
 
 /// \brief 2D view for slice nodes.
-/// For performance reasons, the view block refreshs when the scene is in
+/// For performance reasons, the view block refreshes when the scene is in
 /// batch process state.
 /// \sa qMRMLSliceWidget, qMRMLSliceControllerWidget, qMRMLThreeDView
-class QMRML_WIDGETS_EXPORT qMRMLSliceView
-  : public ctkVTKSliceView
+class QMRML_WIDGETS_EXPORT qMRMLSliceView : public ctkVTKSliceView
 {
   Q_OBJECT
 public:
@@ -49,6 +50,12 @@ public:
   /// Constructors
   explicit qMRMLSliceView(QWidget* parent = nullptr);
   ~qMRMLSliceView() override;
+
+  /// Sets the interactor of the view
+  void setInteractor(vtkRenderWindowInteractor* interactor) override;
+
+  /// Returns the interactor observer of the view
+  Q_INVOKABLE vtkMRMLSliceViewInteractorStyle* interactorObserver() const;
 
   /// Add a displayable manager to the view,
   /// the displayable manager is proper to the 2D view and is not shared
@@ -63,40 +70,44 @@ public:
   Q_INVOKABLE void addDisplayableManager(const QString& displayableManager);
   /// Get the displayable managers registered in this view
   /// \sa addDisplayableManager
-  Q_INVOKABLE void getDisplayableManagers(vtkCollection *displayableManagers);
+  Q_INVOKABLE void getDisplayableManagers(vtkCollection* displayableManagers);
 
   /// Return a DisplayableManager given its class name
-  Q_INVOKABLE  vtkMRMLAbstractDisplayableManager* displayableManagerByClassName(const char* className);
+  Q_INVOKABLE vtkMRMLAbstractDisplayableManager* displayableManagerByClassName(const char* className);
 
   /// Get the 3D View node observed by view.
-  Q_INVOKABLE vtkMRMLSliceNode* mrmlSliceNode()const;
+  Q_INVOKABLE vtkMRMLSliceNode* mrmlSliceNode() const;
 
-  /// Returns the interactor style of the view
-  Q_INVOKABLE vtkMRMLSliceViewInteractorStyle* sliceViewInteractorStyle()const;
+  /// Returns the interactor observer of the view
+  /// \deprecated Use interactorObserver()
+  Q_INVOKABLE vtkMRMLSliceViewInteractorStyle* sliceViewInteractorStyle() const;
 
   /// Convert device coordinates to XYZ coordinates. The x and y
   /// components of the return value are the positions within a
   /// LightBox pane and the z component of the return value (rounded
   /// to the nearest integer) is the pane in the LightBox
-  Q_INVOKABLE QList<double> convertDeviceToXYZ(const QList<int>&xy)const;
+  Q_INVOKABLE QList<double> convertDeviceToXYZ(const QList<int>& xy) const;
 
-  /// Convert RAS to XYZ coordinates. parameters ras and return value
+  /// Convert RAS to XYZ coordinates. Parameter ras and return value
   /// are of length 3. Z component of the return value is the pane in
   /// the LightBox.
-  Q_INVOKABLE QList<double> convertRASToXYZ(const QList<double>& ras)const;
+  Q_INVOKABLE QList<double> convertRASToXYZ(const QList<double>& ras) const;
 
   /// Convert XYZ to RAS coordinates. parameters xyz and return value
   /// are of length 3. Z component of parameter xyz is the LightBox
   /// pane and the X and Y components of parameter xyz is the position
   /// in the LightBox pane.
-  Q_INVOKABLE QList<double> convertXYZToRAS(const QList<double> &xyz)const;
+  Q_INVOKABLE QList<double> convertXYZToRAS(const QList<double>& xyz) const;
 
   /// Set cursor in the view area
-  Q_INVOKABLE void setViewCursor(const QCursor &);
+  Q_INVOKABLE void setViewCursor(const QCursor&);
   /// Restore default cursor in the view area
   Q_INVOKABLE void unsetViewCursor();
   /// Set default cursor in the view area
-  Q_INVOKABLE void setDefaultViewCursor(const QCursor &cursor);
+  Q_INVOKABLE void setDefaultViewCursor(const QCursor& cursor);
+
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dropEvent(QDropEvent* event) override;
 
 public slots:
 
@@ -109,7 +120,8 @@ public slots:
   void setMRMLSliceNode(vtkMRMLSliceNode* newSliceNode);
 
 protected:
-  QScopedPointer<qMRMLSliceViewPrivate> d_ptr;
+  friend class qMRMLLayoutSliceViewFactory;
+  vtkMRMLDisplayableManagerGroup* displayableManagerGroup() const;
 
 private:
   Q_DECLARE_PRIVATE(qMRMLSliceView);

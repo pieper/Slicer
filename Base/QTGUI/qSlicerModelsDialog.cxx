@@ -48,10 +48,8 @@ void qSlicerModelsDialogPrivate::init()
   this->setupUi(this);
   this->AddModelToolButton->setIcon(this->style()->standardIcon(QStyle::SP_FileIcon));
   this->AddModelDirectoryToolButton->setIcon(this->style()->standardIcon(QStyle::SP_DirIcon));
-  connect(this->AddModelToolButton, SIGNAL(clicked()),
-          this, SLOT(openAddModelFileDialog()));
-  connect(this->AddModelDirectoryToolButton, SIGNAL(clicked()),
-          this, SLOT(openAddModelDirectoryDialog()));
+  connect(this->AddModelToolButton, SIGNAL(clicked()), this, SLOT(openAddModelFileDialog()));
+  connect(this->AddModelDirectoryToolButton, SIGNAL(clicked()), this, SLOT(openAddModelDirectoryDialog()));
 }
 
 //-----------------------------------------------------------------------------
@@ -60,12 +58,11 @@ void qSlicerModelsDialogPrivate::openAddModelFileDialog()
   Q_Q(qSlicerModelsDialog);
   QStringList filters = qSlicerFileDialog::nameFilters(q->fileType());
   // TODO add last open directory
-  this->SelectedFiles = QFileDialog::getOpenFileNames(
-    this, "Select Model file(s)", "", filters.join(", "));
+  this->SelectedFiles = QFileDialog::getOpenFileNames(this, qSlicerModelsDialog::tr("Select Model file(s)"), "", filters.join(", "));
   if (this->SelectedFiles.count() < 1)
-    {
+  {
     return;
-    }
+  }
   this->accept();
 }
 
@@ -74,12 +71,11 @@ void qSlicerModelsDialogPrivate::openAddModelDirectoryDialog()
 {
   Q_Q(qSlicerModelsDialog);
   // TODO add last open directory.
-  QString modelDirectory = QFileDialog::getExistingDirectory(
-    this, "Select a Model directory", "", QFileDialog::ReadOnly);
+  QString modelDirectory = QFileDialog::getExistingDirectory(this, qSlicerModelsDialog::tr("Select a Model directory"), "", QFileDialog::ReadOnly);
   if (modelDirectory.isEmpty())
-    {
+  {
     return;
-    }
+  }
 
   QStringList filters = qSlicerFileDialog::nameFilters(q->fileType());
   this->SelectedFiles = QDir(modelDirectory).entryList(filters);
@@ -100,19 +96,19 @@ qSlicerModelsDialog::qSlicerModelsDialog(QObject* _parent)
 qSlicerModelsDialog::~qSlicerModelsDialog() = default;
 
 //-----------------------------------------------------------------------------
-qSlicerIO::IOFileType qSlicerModelsDialog::fileType()const
+qSlicerIO::IOFileType qSlicerModelsDialog::fileType() const
 {
   return QString("ModelFile");
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerModelsDialog::description()const
+QString qSlicerModelsDialog::description() const
 {
   return tr("Models");
 }
 
 //-----------------------------------------------------------------------------
-qSlicerFileDialog::IOAction qSlicerModelsDialog::action()const
+qSlicerFileDialog::IOAction qSlicerModelsDialog::action() const
 {
   return qSlicerFileDialog::Read;
 }
@@ -126,29 +122,26 @@ bool qSlicerModelsDialog::exec(const qSlicerIO::IOProperties& readerProperties)
   d->LoadedNodeIDs.clear();
   bool res = false;
   if (d->exec() != QDialog::Accepted)
-    {
+  {
     return res;
-    }
+  }
   QStringList files = d->SelectedFiles;
-  foreach(QString file, files)
-    {
+  for (const QString& file : files)
+  {
     qSlicerIO::IOProperties properties = readerProperties;
     properties["fileName"] = file;
     vtkNew<vtkCollection> loadedNodes;
-    res = qSlicerCoreApplication::application()->coreIOManager()
-      ->loadNodes(this->fileType(),
-                  properties, loadedNodes.GetPointer()) || res;
+    res = qSlicerCoreApplication::application()->coreIOManager()->loadNodes(this->fileType(), properties, loadedNodes.GetPointer()) || res;
     for (int i = 0; i < loadedNodes->GetNumberOfItems(); ++i)
-      {
-      d->LoadedNodeIDs << vtkMRMLNode::SafeDownCast(loadedNodes->GetItemAsObject(i))
-        ->GetID();
-      }
+    {
+      d->LoadedNodeIDs << vtkMRMLNode::SafeDownCast(loadedNodes->GetItemAsObject(i))->GetID();
     }
+  }
   return res;
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerModelsDialog::loadedNodes()const
+QStringList qSlicerModelsDialog::loadedNodes() const
 {
   Q_D(const qSlicerModelsDialog);
   return d->LoadedNodeIDs;

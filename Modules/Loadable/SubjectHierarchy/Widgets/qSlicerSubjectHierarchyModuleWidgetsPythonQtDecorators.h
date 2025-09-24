@@ -17,9 +17,12 @@
 #include <PythonQt.h>
 
 // Slicer includes
+#include "qSlicerSubjectHierarchyAbstractPlugin.h"
 #include "qSlicerSubjectHierarchyPluginHandler.h"
 
 #include "qSlicerSubjectHierarchyModuleWidgetsExport.h"
+
+class QAction;
 
 // NOTE:
 //
@@ -32,12 +35,11 @@ class qSlicerSubjectHierarchyModuleWidgetsPythonQtDecorators : public QObject
 {
   Q_OBJECT
 public:
-
   qSlicerSubjectHierarchyModuleWidgetsPythonQtDecorators()
-    {
-    //PythonQt::self()->registerClass(&qSlicerSubjectHierarchyPluginHandler::staticMetaObject);
-    // Note: Use registerCPPClassForPythonQt to register pure Cpp classes
-    }
+  {
+    // PythonQt::self()->registerClass(&qSlicerSubjectHierarchyPluginHandler::staticMetaObject);
+    //  Note: Use registerCPPClassForPythonQt to register pure Cpp classes
+  }
 
 public slots:
 
@@ -48,20 +50,21 @@ public slots:
   // static methods
 
   //----------------------------------------------------------------------------
-  qSlicerSubjectHierarchyPluginHandler* static_qSlicerSubjectHierarchyPluginHandler_instance()
-    {
-    return qSlicerSubjectHierarchyPluginHandler::instance();
-    }
+  qSlicerSubjectHierarchyPluginHandler* static_qSlicerSubjectHierarchyPluginHandler_instance() { return qSlicerSubjectHierarchyPluginHandler::instance(); }
+
+  void static_qSlicerSubjectHierarchyAbstractPlugin_setActionPosition(QAction* action, int section, int weight = 0, double weightAdjustment = 0.0)
+  {
+    qSlicerSubjectHierarchyAbstractPlugin::setActionPosition(action, section, weight, weightAdjustment);
+  }
 
   //----------------------------------------------------------------------------
   // instance methods
 
   //----------------------------------------------------------------------------
-  bool registerPlugin(qSlicerSubjectHierarchyPluginHandler* handler,
-                      PythonQtPassOwnershipToCPP<qSlicerSubjectHierarchyAbstractPlugin*> plugin)
-    {
+  bool registerPlugin(qSlicerSubjectHierarchyPluginHandler* handler, PythonQtPassOwnershipToCPP<qSlicerSubjectHierarchyAbstractPlugin*> plugin)
+  {
     return handler->registerPlugin(plugin);
-    }
+  }
 };
 
 //-----------------------------------------------------------------------------

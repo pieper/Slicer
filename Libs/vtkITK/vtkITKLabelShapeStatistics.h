@@ -14,7 +14,7 @@
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
   and was supported through CANARIE's Research Software Program, Cancer
-  Care Ontario, OpenAnatomy, and Brigham and Women’s Hospital through NIH grant R01MH112748.
+  Care Ontario, OpenAnatomy, and Brigham and Women's Hospital through NIH grant R01MH112748.
 
 ==============================================================================*/
 
@@ -39,21 +39,21 @@
 class vtkPoints;
 
 /// \brief ITK-based utilities for calculating label statistics.
-/// Utilizes itk::LabelImageToShapeLabelMapFilter to calcualte label shape statistics
+/// Utilizes itk::LabelImageToShapeLabelMapFilter to calculate label shape statistics
 /// (https://itk.org/Doxygen/html/classitk_1_1LabelImageToShapeLabelMapFilter.html)
 /// Label centroid and flatness are the only statistics calculated by default.
-/// For a list of availiable parameters, see: vtkITKLabelShapeStatistics::ShapeStatistic
+/// For a list of available parameters, see: vtkITKLabelShapeStatistics::ShapeStatistic
 /// Calculated statistics can be changed using the SetComputeShapeStatistic/ComputeShapeStatisticOn/ComputeShapeStatisticOff methods.
 /// Output statistics are represented in a vtkTable where each column represents a statistic and each row is a different label value.
 class VTK_ITK_EXPORT vtkITKLabelShapeStatistics : public vtkTableAlgorithm
 {
 public:
-  static vtkITKLabelShapeStatistics *New();
+  static vtkITKLabelShapeStatistics* New();
   vtkTypeMacro(vtkITKLabelShapeStatistics, vtkTableAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Shape statistic parameters
-  /// See parameter definitions and formulas here: http://hdl.handle.net/1926/584
+  /// See parameter definitions and formulas here: https://hdl.handle.net/1926/584
   enum ShapeStatistic
   {
     /// Location of the center of mass of the label
@@ -97,9 +97,7 @@ protected:
   ~vtkITKLabelShapeStatistics() override;
 
   int FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info) override;
-  int RequestData(vtkInformation* request,
-    vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector) override;
+  int RequestData(vtkInformation* request, vtkInformationVector** inputVector, vtkInformationVector* outputVector) override;
 
 protected:
   std::vector<std::string> ComputedStatistics;

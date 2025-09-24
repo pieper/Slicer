@@ -29,6 +29,7 @@
 
 #include "vtkMRMLSegmentationDisplayNode.h"
 #include "vtkMRMLSegmentationNode.h"
+#include "vtkMRMLVolumeNode.h"
 
 // VTK includes
 #include <vtkStringArray.h>
@@ -40,17 +41,24 @@
 #include <QSettings>
 #include <QUrl>
 
+// CTK includes
+#include <ctkMessageBox.h>
+
 // Slicer includes
+#include "qSlicerCoreApplication.h"
 #include <vtkMRMLSliceLogic.h>
+#include <vtkOrientedImageData.h>
+#include <vtkOrientedImageDataResample.h>
 #include <vtkSlicerApplicationLogic.h>
 
 //-----------------------------------------------------------------------------
-class qMRMLSegmentationFileExportWidgetPrivate: public Ui_qMRMLSegmentationFileExportWidget
+class qMRMLSegmentationFileExportWidgetPrivate : public Ui_qMRMLSegmentationFileExportWidget
 {
   Q_DECLARE_PUBLIC(qMRMLSegmentationFileExportWidget);
 
 protected:
   qMRMLSegmentationFileExportWidget* const q_ptr;
+
 public:
   qMRMLSegmentationFileExportWidgetPrivate(qMRMLSegmentationFileExportWidget& object);
   void init();
@@ -73,16 +81,11 @@ void qMRMLSegmentationFileExportWidgetPrivate::init()
   Q_Q(qMRMLSegmentationFileExportWidget);
   this->setupUi(q);
   q->setEnabled(false);
-  QObject::connect(this->ExportToFilesButton, SIGNAL(clicked()),
-    q, SLOT(exportToFiles()));
-  QObject::connect(this->ShowDestinationFolderButton, SIGNAL(clicked()),
-    q, SLOT(showDestinationFolder()));
-  QObject::connect(this->FileFormatComboBox, SIGNAL(currentIndexChanged(const QString&)),
-    q, SLOT(setFileFormat(const QString&)));
-  QObject::connect(this->ColorTableNodeSelector, SIGNAL(currentNodeIDChanged(const QString&)),
-    q, SLOT(setColorNodeID(const QString&)));
-  QObject::connect(this->UseColorTableValuesCheckBox, SIGNAL(toggled(bool)),
-    q, SLOT(setUseLabelsFromColorNode(bool)));
+  QObject::connect(this->ExportToFilesButton, SIGNAL(clicked()), q, SLOT(exportToFiles()));
+  QObject::connect(this->ShowDestinationFolderButton, SIGNAL(clicked()), q, SLOT(showDestinationFolder()));
+  QObject::connect(this->FileFormatComboBox, SIGNAL(currentIndexChanged(const QString&)), q, SLOT(setFileFormat(const QString&)));
+  QObject::connect(this->ColorTableNodeSelector, SIGNAL(currentNodeIDChanged(const QString&)), q, SLOT(setColorNodeID(const QString&)));
+  QObject::connect(this->UseColorTableValuesCheckBox, SIGNAL(toggled(bool)), q, SLOT(setUseLabelsFromColorNode(bool)));
 }
 
 //-----------------------------------------------------------------------------
@@ -128,10 +131,19 @@ void qMRMLSegmentationFileExportWidget::setSegmentationNode(vtkMRMLSegmentationN
   Q_D(qMRMLSegmentationFileExportWidget);
 
   qvtkReconnect(d->SegmentationNode, node, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromMRML()));
+  qvtkReconnect(d->SegmentationNode, node, vtkMRMLSegmentationNode::ReferenceImageGeometryChangedEvent, this, SLOT(onSegmentationReferenceImageGeometryChanged()));
+
+  bool nodeChanged = d->SegmentationNode != node;
 
   d->SegmentationNode = node;
   this->setEnabled(d->SegmentationNode.GetPointer() != nullptr);
   this->updateWidgetFromMRML();
+
+  // Get reference volume node
+  if (nodeChanged)
+  {
+    this->onSegmentationReferenceImageGeometryChanged();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -146,9 +158,9 @@ void qMRMLSegmentationFileExportWidget::updateWidgetFromMRML()
   Q_D(qMRMLSegmentationFileExportWidget);
   vtkMRMLColorTableNode* exportColorTableNode = nullptr;
   if (d->SegmentationNode)
-    {
+  {
     exportColorTableNode = d->SegmentationNode->GetLabelmapConversionColorTableNode();
-    }
+  }
   d->ColorTableNodeSelector->setCurrentNode(exportColorTableNode);
 }
 
@@ -158,9 +170,9 @@ void qMRMLSegmentationFileExportWidget::updateWidgetFromSettings()
   Q_D(qMRMLSegmentationFileExportWidget);
 
   if (d->SettingsKey.isEmpty())
-    {
+  {
     return;
-    }
+  }
 
   QSettings settings;
 
@@ -168,7 +180,8 @@ void qMRMLSegmentationFileExportWidget::updateWidgetFromSettings()
   d->FileFormatComboBox->setCurrentIndex(d->FileFormatComboBox->findText(fileFormat));
   this->setFileFormat(fileFormat);
 
-  d->DestinationFolderButton->setDirectory(settings.value(d->SettingsKey + "/DestinationFolder", ".").toString());
+  QString path = qSlicerCoreApplication::application()->toSlicerHomeAbsolutePath(settings.value(d->SettingsKey + "/DestinationFolder", ".").toString());
+  d->DestinationFolderButton->setDirectory(path);
   d->VisibleSegmentsOnlyCheckBox->setChecked(settings.value(d->SettingsKey + "/VisibleSegmentsOnly", false).toBool());
 
   d->MergeIntoSingleSTLFileCheckBox->setChecked(settings.value(d->SettingsKey + "/MergeIntoSingleFile", false).toBool());
@@ -187,19 +200,33 @@ void qMRMLSegmentationFileExportWidget::updateSettingsFromWidget()
   Q_D(qMRMLSegmentationFileExportWidget);
 
   if (d->SettingsKey.isEmpty())
-    {
+  {
     return;
-    }
+  }
 
   QSettings settings;
 
   settings.setValue(d->SettingsKey + "/FileFormat", d->FileFormatComboBox->currentText());
-  settings.setValue(d->SettingsKey + "/DestinationFolder", d->DestinationFolderButton->directory());
+  QString path = qSlicerCoreApplication::application()->toSlicerHomeRelativePath(d->DestinationFolderButton->directory());
+  settings.setValue(d->SettingsKey + "/DestinationFolder", path);
   settings.setValue(d->SettingsKey + "/VisibleSegmentsOnly", d->VisibleSegmentsOnlyCheckBox->isChecked());
   settings.setValue(d->SettingsKey + "/MergeIntoSingleFile", d->MergeIntoSingleSTLFileCheckBox->isChecked());
   settings.setValue(d->SettingsKey + "/SizeScale", d->SizeScaleSpinBox->value());
   settings.setValue(d->SettingsKey + "/ShowDestinationFolderOnExportComplete", d->ShowDestinationFolderOnExportCompleteCheckBox->isChecked());
   settings.setValue(d->SettingsKey + "/CoordinateSystem", d->CoordinateSystemComboBox->currentText());
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSegmentationFileExportWidget::onSegmentationReferenceImageGeometryChanged()
+{
+  Q_D(qMRMLSegmentationFileExportWidget);
+  if (!d->SegmentationNode)
+  {
+    return;
+  }
+
+  vtkMRMLNode* referenceVolumeNode = d->SegmentationNode->GetNodeReference(vtkMRMLSegmentationNode::GetReferenceImageGeometryReferenceRole().c_str());
+  d->ReferenceVolumeComboBox->setCurrentNode(referenceVolumeNode);
 }
 
 //-----------------------------------------------------------------------------
@@ -212,62 +239,82 @@ void qMRMLSegmentationFileExportWidget::exportToFiles()
   this->updateSettingsFromWidget();
 
   vtkSmartPointer<vtkStringArray> segmentIds;
-  if (d->VisibleSegmentsOnlyCheckBox->isChecked()
-    && d->SegmentationNode != nullptr
-    && vtkMRMLSegmentationDisplayNode::SafeDownCast(d->SegmentationNode->GetDisplayNode()) != nullptr)
-    {
+  if (d->VisibleSegmentsOnlyCheckBox->isChecked() //
+      && d->SegmentationNode != nullptr           //
+      && vtkMRMLSegmentationDisplayNode::SafeDownCast(d->SegmentationNode->GetDisplayNode()) != nullptr)
+  {
     segmentIds = vtkSmartPointer<vtkStringArray>::New();
     vtkMRMLSegmentationDisplayNode* displayNode = vtkMRMLSegmentationDisplayNode::SafeDownCast(d->SegmentationNode->GetDisplayNode());
     displayNode->GetVisibleSegmentIDs(segmentIds);
-    }
+  }
 
   bool merge = d->MergeIntoSingleSTLFileCheckBox->isChecked(); // merge is only used for STL format
 
   QString fileFormat = d->FileFormatComboBox->currentText();
   if (fileFormat.toUpper() == "STL" || fileFormat.toUpper() == "OBJ")
-    {
-    vtkSlicerSegmentationsModuleLogic::ExportSegmentsClosedSurfaceRepresentationToFiles(
-      d->DestinationFolderButton->directory().toUtf8().constData(),
-      d->SegmentationNode.GetPointer(),
-      segmentIds.GetPointer(),
-      d->FileFormatComboBox->currentText().toUtf8().constData(),
-      d->CoordinateSystemComboBox->currentText() == "LPS",
-      d->SizeScaleSpinBox->value(),
-      merge);
-    }
+  {
+    vtkSlicerSegmentationsModuleLogic::ExportSegmentsClosedSurfaceRepresentationToFiles(d->DestinationFolderButton->directory().toUtf8().constData(),
+                                                                                        d->SegmentationNode.GetPointer(),
+                                                                                        segmentIds.GetPointer(),
+                                                                                        d->FileFormatComboBox->currentText().toUtf8().constData(),
+                                                                                        d->CoordinateSystemComboBox->currentText() == "LPS",
+                                                                                        d->SizeScaleSpinBox->value(),
+                                                                                        merge);
+  }
   else if (fileFormat.toUpper() == "NRRD" || fileFormat.toUpper() == "NIFTI")
-    {
+  {
     std::string extension = fileFormat.toUtf8().constData();
     if (fileFormat == "NIFTI")
-      {
+    {
       extension = "nii";
       if (d->UseCompressionCheckBox->isChecked())
-        {
+      {
         extension = "nii.gz";
-        }
       }
+    }
 
     vtkMRMLColorTableNode* labelmapConversionColorTableNode = nullptr;
     if (d->UseColorTableValuesCheckBox->isChecked())
-      {
+    {
       labelmapConversionColorTableNode = vtkMRMLColorTableNode::SafeDownCast(d->ColorTableNodeSelector->currentNode());
-      }
-
-    vtkSlicerSegmentationsModuleLogic::ExportSegmentsBinaryLabelmapRepresentationToFiles(
-      d->DestinationFolderButton->directory().toUtf8().constData(),
-      d->SegmentationNode.GetPointer(),
-      segmentIds.GetPointer(),
-      extension,
-      d->UseCompressionCheckBox->isChecked(),
-      labelmapConversionColorTableNode);
     }
+
+    vtkMRMLVolumeNode* referenceVolumeNode = vtkMRMLVolumeNode::SafeDownCast(d->ReferenceVolumeComboBox->currentNode());
+    if (referenceVolumeNode && d->SegmentationNode && //
+        vtkSlicerSegmentationsModuleLogic::IsEffectiveExentOutsideReferenceVolume(referenceVolumeNode, d->SegmentationNode, segmentIds))
+    {
+      ctkMessageBox* exportWarningMesssgeBox = new ctkMessageBox(this);
+      exportWarningMesssgeBox->setAttribute(Qt::WA_DeleteOnClose);
+      exportWarningMesssgeBox->setWindowTitle(tr("Exporting may erase data"));
+      exportWarningMesssgeBox->addButton(QMessageBox::StandardButton::Ok);
+      exportWarningMesssgeBox->addButton(QMessageBox::StandardButton::Cancel);
+      exportWarningMesssgeBox->setDontShowAgainVisible(true);
+      exportWarningMesssgeBox->setIcon(QMessageBox::Warning);
+      exportWarningMesssgeBox->setDontShowAgainSettingsKey("Segmentations/AlwaysCropDuringSegmentationFileExport");
+      exportWarningMesssgeBox->setText(tr("The current segmentation does not completely fit into the new geometry.\n"
+                                          "Do you want to crop the segmentation?\n"));
+      if (exportWarningMesssgeBox->exec() != QMessageBox::StandardButton::Ok)
+      {
+        return;
+      }
+    }
+
+    vtkSlicerSegmentationsModuleLogic::ExportSegmentsBinaryLabelmapRepresentationToFiles(d->DestinationFolderButton->directory().toUtf8().constData(),
+                                                                                         d->SegmentationNode.GetPointer(),
+                                                                                         segmentIds.GetPointer(),
+                                                                                         extension,
+                                                                                         d->UseCompressionCheckBox->isChecked(),
+                                                                                         referenceVolumeNode,
+                                                                                         vtkSegmentation::EXTENT_UNION_OF_EFFECTIVE_SEGMENTS_AND_REFERENCE_GEOMETRY,
+                                                                                         labelmapConversionColorTableNode);
+  }
 
   QApplication::restoreOverrideCursor();
 
   if (d->ShowDestinationFolderOnExportCompleteCheckBox->isChecked())
-    {
+  {
     this->showDestinationFolder();
-    }
+  }
 
   emit exportToFilesDone();
 }
@@ -280,7 +327,7 @@ void qMRMLSegmentationFileExportWidget::showDestinationFolder()
 }
 
 //------------------------------------------------------------------------------
-QString qMRMLSegmentationFileExportWidget::settingsKey()const
+QString qMRMLSegmentationFileExportWidget::settingsKey() const
 {
   Q_D(const qMRMLSegmentationFileExportWidget);
   return d->SettingsKey;
@@ -299,20 +346,21 @@ void qMRMLSegmentationFileExportWidget::setFileFormat(const QString& formatStr)
 {
   Q_D(qMRMLSegmentationFileExportWidget);
 
-  bool stl = formatStr == "STL";
-  bool model = stl || formatStr == "OBJ";
+  bool formatIsSTL = formatStr == "STL";
+  bool formatIsModel = formatIsSTL || formatStr == "OBJ";
 
-  d->MergeIntoSingleSTLFileCheckBox->setVisible(stl);
-  d->MergeIntoSingleSTLFileCheckBox->setEnabled(model);
+  d->MergeIntoSingleSTLFileCheckBox->setVisible(formatIsSTL);
+  d->MergeIntoSingleSTLFileCheckBox->setEnabled(formatIsModel);
 
-  d->MergeIntoSingleOBJFileCheckBox->setVisible(!stl);
-  d->MergeIntoSingleOBJFileCheckBox->setEnabled(model);
+  d->MergeIntoSingleOBJFileCheckBox->setVisible(!formatIsSTL);
+  d->MergeIntoSingleOBJFileCheckBox->setEnabled(formatIsModel);
 
-  d->CoordinateSystemComboBox->setEnabled(model);
-  d->SizeScaleSpinBox->setEnabled(model);
-  d->UseCompressionCheckBox->setEnabled(!model);
-  d->UseColorTableValuesCheckBox->setEnabled(!model);
-  d->ColorTableNodeSelector->setEnabled(!model && d->UseColorTableValuesCheckBox->isChecked());
+  d->CoordinateSystemComboBox->setEnabled(formatIsModel);
+  d->ReferenceVolumeComboBox->setEnabled(!formatIsModel);
+  d->SizeScaleSpinBox->setEnabled(formatIsModel);
+  d->UseCompressionCheckBox->setEnabled(!formatIsModel);
+  d->UseColorTableValuesCheckBox->setEnabled(!formatIsModel);
+  d->ColorTableNodeSelector->setEnabled(!formatIsModel && d->UseColorTableValuesCheckBox->isChecked());
 }
 
 //-----------------------------------------------------------------------------
@@ -331,6 +379,19 @@ void qMRMLSegmentationFileExportWidget::setColorNodeID(const QString& id)
   {
     return;
   }
+  // Get previous color node ID
+  std::string previousNodeID;
+  const char* previousNodeIDPtr = d->SegmentationNode->GetLabelmapConversionColorTableNodeID();
+  if (previousNodeIDPtr)
+  {
+    previousNodeID = previousNodeIDPtr;
+  }
+  // Compare with current node ID and update if different
   std::string nodeID = id.toStdString();
+  if (nodeID == previousNodeID)
+  {
+    // no change
+    return;
+  }
   d->SegmentationNode->SetLabelmapConversionColorTableNodeID(nodeID.c_str());
 }

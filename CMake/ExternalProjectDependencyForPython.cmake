@@ -62,7 +62,7 @@
 #
 #  ``OUTPUT_VAR_PREFIX <output-var-prefix>``
 #    Specify the prefix of output variables ``<output-var-prefix>_PATH`` and ``<output-var-prefix>_VERSION``.
-#    It defaults to upercase value of ``<python-module-name>``.
+#    It defaults to uppercase value of ``<python-module-name>``.
 #
 
 function(ExternalProject_FindPythonPackage)
@@ -118,7 +118,7 @@ function(ExternalProject_FindPythonPackage)
   # Get path
   execute_process(
     COMMAND
-      ${PYTHON_EXECUTABLE} -c 
+      ${PYTHON_EXECUTABLE} -c
         "import ${MY_MODULE_NAME}; print(${MY_MODULE_NAME}.__file__)"
     RESULT_VARIABLE _process_status
     OUTPUT_VARIABLE _process_output
@@ -135,7 +135,7 @@ function(ExternalProject_FindPythonPackage)
   if(NOT MY_NO_VERSION_PROPERTY)
     execute_process(
       COMMAND
-        ${PYTHON_EXECUTABLE} -c 
+        ${PYTHON_EXECUTABLE} -c
           "import ${MY_MODULE_NAME}; print(${MY_MODULE_NAME}.${MY_VERSION_PROPERTY})"
       RESULT_VARIABLE _process_status
       OUTPUT_VARIABLE _process_output

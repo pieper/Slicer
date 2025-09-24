@@ -16,12 +16,10 @@ or http://www.slicer.org/copyright/copyright.txt for details.
 // MRML includes
 #include "vtkMRMLVolumeNode.h"
 #include "vtkMRMLTransformNode.h"
+#include "vtkMRMLDisplayableNode.h"
 
 // CropModuleMRML includes
 #include "vtkMRMLCropVolumeParametersNode.h"
-
-// AnnotationModuleMRML includes
-#include "vtkMRMLAnnotationROINode.h"
 
 // STD includes
 
@@ -39,29 +37,28 @@ vtkMRMLNodeNewMacro(vtkMRMLCropVolumeParametersNode);
 //----------------------------------------------------------------------------
 vtkMRMLCropVolumeParametersNode::vtkMRMLCropVolumeParametersNode()
 {
+  this->TypeDisplayName = vtkMRMLTr("vtkMRMLCropVolumeParametersNode", "Crop Volume Parameters");
+
   this->HideFromEditors = 1;
 
   vtkNew<vtkIntArray> inputVolumeEvents;
   inputVolumeEvents->InsertNextValue(vtkCommand::ModifiedEvent);
   inputVolumeEvents->InsertNextValue(vtkMRMLVolumeNode::ImageDataModifiedEvent);
-  this->AddNodeReferenceRole(InputVolumeNodeReferenceRole,
-    InputVolumeNodeReferenceMRMLAttributeName,
-    inputVolumeEvents.GetPointer());
+  this->AddNodeReferenceRole(InputVolumeNodeReferenceRole, InputVolumeNodeReferenceMRMLAttributeName, inputVolumeEvents.GetPointer());
 
   vtkNew<vtkIntArray> roiEvents;
   roiEvents->InsertNextValue(vtkCommand::ModifiedEvent);
-  this->AddNodeReferenceRole(ROINodeReferenceRole,
-    ROINodeReferenceMRMLAttributeName,
-    roiEvents.GetPointer());
+  this->AddNodeReferenceRole(ROINodeReferenceRole, ROINodeReferenceMRMLAttributeName, roiEvents.GetPointer());
 
-  this->AddNodeReferenceRole(OutputVolumeNodeReferenceRole,
-    OutputVolumeNodeReferenceMRMLAttributeName);
+  this->AddNodeReferenceRole(OutputVolumeNodeReferenceRole, OutputVolumeNodeReferenceMRMLAttributeName);
 
   this->VoxelBased = false;
   this->InterpolationMode = vtkMRMLCropVolumeParametersNode::InterpolationLinear;
   this->IsotropicResampling = false;
   this->SpacingScalingConst = 1.;
   this->FillValue = 0.;
+
+  this->FitROIMode = vtkMRMLCropVolumeParametersNode::FitROIAlignToVolume;
 }
 
 //----------------------------------------------------------------------------
@@ -81,6 +78,7 @@ void vtkMRMLCropVolumeParametersNode::ReadXMLAttributes(const char** atts)
   vtkMRMLReadXMLBooleanMacro(isotropicResampling, IsotropicResampling);
   vtkMRMLReadXMLFloatMacro(spaceScalingConst, SpacingScalingConst);
   vtkMRMLReadXMLFloatMacro(fillValue, FillValue);
+  vtkMRMLReadXMLEnumMacro(fitROIMode, FitROIMode);
   vtkMRMLReadXMLEndMacro();
 
   this->EndModify(disabledModify);
@@ -96,11 +94,12 @@ void vtkMRMLCropVolumeParametersNode::WriteXML(ostream& of, int nIndent)
   vtkMRMLWriteXMLBooleanMacro(isotropicResampling, IsotropicResampling);
   vtkMRMLWriteXMLFloatMacro(spaceScalingConst, SpacingScalingConst);
   vtkMRMLWriteXMLFloatMacro(fillValue, FillValue);
+  vtkMRMLWriteXMLEnumMacro(fitROIMode, FitROIMode);
   vtkMRMLWriteXMLEndMacro();
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLCropVolumeParametersNode::CopyContent(vtkMRMLNode* anode, bool deepCopy/*=true*/)
+void vtkMRMLCropVolumeParametersNode::CopyContent(vtkMRMLNode* anode, bool deepCopy /*=true*/)
 {
   MRMLNodeModifyBlocker blocker(this);
   Superclass::CopyContent(anode, deepCopy);
@@ -111,30 +110,32 @@ void vtkMRMLCropVolumeParametersNode::CopyContent(vtkMRMLNode* anode, bool deepC
   vtkMRMLCopyBooleanMacro(IsotropicResampling);
   vtkMRMLCopyFloatMacro(SpacingScalingConst);
   vtkMRMLCopyFloatMacro(FillValue);
+  vtkMRMLCopyEnumMacro(FitROIMode);
   vtkMRMLCopyEndMacro();
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLCropVolumeParametersNode::PrintSelf(ostream& os, vtkIndent indent)
 {
-  Superclass::PrintSelf(os,indent);
+  Superclass::PrintSelf(os, indent);
   vtkMRMLPrintBeginMacro(os, indent);
   vtkMRMLPrintBooleanMacro(VoxelBased);
   vtkMRMLPrintIntMacro(InterpolationMode);
   vtkMRMLPrintBooleanMacro(IsotropicResampling);
   vtkMRMLPrintFloatMacro(SpacingScalingConst);
   vtkMRMLPrintFloatMacro(FillValue);
+  vtkMRMLPrintEnumMacro(FitROIMode);
   vtkMRMLPrintEndMacro();
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLCropVolumeParametersNode::SetInputVolumeNodeID(const char *nodeID)
+void vtkMRMLCropVolumeParametersNode::SetInputVolumeNodeID(const char* nodeID)
 {
   this->SetNodeReferenceID(InputVolumeNodeReferenceRole, nodeID);
 }
 
 //----------------------------------------------------------------------------
-const char * vtkMRMLCropVolumeParametersNode::GetInputVolumeNodeID()
+const char* vtkMRMLCropVolumeParametersNode::GetInputVolumeNodeID()
 {
   return this->GetNodeReferenceID(InputVolumeNodeReferenceRole);
 }
@@ -146,13 +147,13 @@ vtkMRMLVolumeNode* vtkMRMLCropVolumeParametersNode::GetInputVolumeNode()
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLCropVolumeParametersNode::SetOutputVolumeNodeID(const char *nodeID)
+void vtkMRMLCropVolumeParametersNode::SetOutputVolumeNodeID(const char* nodeID)
 {
   this->SetNodeReferenceID(OutputVolumeNodeReferenceRole, nodeID);
 }
 
 //----------------------------------------------------------------------------
-const char * vtkMRMLCropVolumeParametersNode::GetOutputVolumeNodeID()
+const char* vtkMRMLCropVolumeParametersNode::GetOutputVolumeNodeID()
 {
   return this->GetNodeReferenceID(OutputVolumeNodeReferenceRole);
 }
@@ -164,31 +165,31 @@ vtkMRMLVolumeNode* vtkMRMLCropVolumeParametersNode::GetOutputVolumeNode()
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLCropVolumeParametersNode::SetROINodeID(const char *nodeID)
+void vtkMRMLCropVolumeParametersNode::SetROINodeID(const char* nodeID)
 {
   this->SetNodeReferenceID(ROINodeReferenceRole, nodeID);
 }
 
 //----------------------------------------------------------------------------
-const char * vtkMRMLCropVolumeParametersNode::GetROINodeID()
+const char* vtkMRMLCropVolumeParametersNode::GetROINodeID()
 {
   return this->GetNodeReferenceID(ROINodeReferenceRole);
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLAnnotationROINode* vtkMRMLCropVolumeParametersNode::GetROINode()
+vtkMRMLDisplayableNode* vtkMRMLCropVolumeParametersNode::GetROINode()
 {
-  return vtkMRMLAnnotationROINode::SafeDownCast(this->GetNodeReference(ROINodeReferenceRole));
+  return vtkMRMLDisplayableNode::SafeDownCast(this->GetNodeReference(ROINodeReferenceRole));
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLCropVolumeParametersNode::SetROIAlignmentTransformNodeID(const char *nodeID)
+void vtkMRMLCropVolumeParametersNode::SetROIAlignmentTransformNodeID(const char* nodeID)
 {
   this->SetNodeReferenceID(ROIAlignmentTransformNodeReferenceRole, nodeID);
 }
 
 //----------------------------------------------------------------------------
-const char * vtkMRMLCropVolumeParametersNode::GetROIAlignmentTransformNodeID()
+const char* vtkMRMLCropVolumeParametersNode::GetROIAlignmentTransformNodeID()
 {
   return this->GetNodeReferenceID(ROIAlignmentTransformNodeReferenceRole);
 }
@@ -204,11 +205,43 @@ void vtkMRMLCropVolumeParametersNode::DeleteROIAlignmentTransformNode()
 {
   vtkMRMLTransformNode* transformNode = this->GetROIAlignmentTransformNode();
   if (transformNode)
-    {
+  {
     this->SetROIAlignmentTransformNodeID(nullptr);
     if (this->GetScene())
-      {
+    {
       this->GetScene()->RemoveNode(transformNode);
-      }
     }
+  }
+}
+
+//---------------------------------------------------------------------------
+const char* vtkMRMLCropVolumeParametersNode::GetFitROIModeAsString(int mode)
+{
+  switch (mode)
+  {
+    case vtkMRMLCropVolumeParametersNode::FitROIAlignToVolume: return "AlignToVolume";
+    case vtkMRMLCropVolumeParametersNode::FitROIAlignToWorld: return "AlignToWorld";
+    case vtkMRMLCropVolumeParametersNode::FitROIKeepOrientation: return "KeepOrientation";
+    default: vtkGenericWarningMacro("Unknown fit ROI mode: " << mode); return "";
+  }
+}
+
+//-----------------------------------------------------------
+int vtkMRMLCropVolumeParametersNode::GetFitROIModeFromString(const char* name)
+{
+  if (name == nullptr)
+  {
+    // invalid name
+    return -1;
+  }
+  for (int mode = 0; mode < FitROI_Last; mode++)
+  {
+    if (strcmp(name, GetFitROIModeAsString(mode)) == 0)
+    {
+      // found a matching name
+      return mode;
+    }
+  }
+  // unknown name
+  return -1;
 }

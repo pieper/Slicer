@@ -34,13 +34,13 @@
 
 class qMRMLSegmentationDisplayNodeWidgetPrivate;
 
+class vtkMRMLNode;
 class vtkMRMLSegmentationNode;
 class vtkMRMLSegmentationDisplayNode;
 class QItemSelection;
 
 /// \brief Qt widget for selecting a single segment from a segmentation.
 ///   If multiple segments are needed, then use \sa qMRMLSegmentsTableView instead in SimpleListMode
-/// \ingroup Slicer_QtModules_Segmentations_Widgets
 class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_EXPORT qMRMLSegmentationDisplayNodeWidget : public qMRMLWidget
 {
   Q_OBJECT
@@ -94,9 +94,13 @@ public slots:
   void onSegmentOpacitySliceFillChanged(double);
   void onSegmentOpacitySliceOutlineChanged(double);
   void onSegmentOpacity3DChanged(double);
+  void onEnableClippingChanged(int);
+  void onEnableCappingChanged(int);
+  void onCappingOpacityChanged(double);
+  void onClipNodeChanged(vtkMRMLNode*);
 
   /// Handles segment selection changes when connecting directly to a \sa qMRMLSegmentsTableView
-  void onSegmentSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+  void onSegmentSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
 
 protected:
   /// Update visibility and opacity section for selected segment

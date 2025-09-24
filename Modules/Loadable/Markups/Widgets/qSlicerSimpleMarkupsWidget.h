@@ -28,14 +28,14 @@
 
 // Markups Widgets includes
 #include "qSlicerMarkupsModuleWidgetsExport.h"
-#include "ui_qSlicerSimpleMarkupsWidget.h"
-
 
 class qSlicerSimpleMarkupsWidgetPrivate;
+class vtkMRMLInteractionNode;
+class QTableWidget;
+class qSlicerMarkupsPlaceWidget;
+class qMRMLNodeComboBox;
 
-/// \ingroup Slicer_QtModules_CreateModels
-class Q_SLICER_MODULE_MARKUPS_WIDGETS_EXPORT
-qSlicerSimpleMarkupsWidget : public qSlicerWidget
+class Q_SLICER_MODULE_MARKUPS_WIDGETS_EXPORT qSlicerSimpleMarkupsWidget : public qSlicerWidget
 {
   Q_OBJECT
   Q_PROPERTY(bool enterPlaceModeOnNodeChange READ enterPlaceModeOnNodeChange WRITE setEnterPlaceModeOnNodeChange)
@@ -48,7 +48,7 @@ qSlicerSimpleMarkupsWidget : public qSlicerWidget
 
 public:
   typedef qSlicerWidget Superclass;
-  qSlicerSimpleMarkupsWidget(QWidget *parent=nullptr);
+  qSlicerSimpleMarkupsWidget(QWidget* parent = nullptr);
   ~qSlicerSimpleMarkupsWidget() override;
 
   /// Get the currently selected markups node.
@@ -59,7 +59,7 @@ public:
 
   /// Get interaction node.
   /// \sa setInteractionNode()
-  Q_INVOKABLE vtkMRMLInteractionNode* interactionNode()const;
+  Q_INVOKABLE vtkMRMLInteractionNode* interactionNode() const;
 
   /// Get the markups table widget
   Q_INVOKABLE QTableWidget* tableWidget() const;
@@ -73,7 +73,7 @@ public:
   /// Accessors to control place mode behavior
   bool enterPlaceModeOnNodeChange() const;
 
-  /// If enabled then the control point will be shown in all slice views when a caontrol point is selected
+  /// If enabled then the control point will be shown in all slice views when a control point is selected
   /// /sa setViewGroup
   bool jumpToSliceEnabled() const;
 
@@ -94,7 +94,7 @@ public:
   void setViewGroup(int newViewGroup);
 
   /// Get view group where slice positions will be updated.
-  int viewGroup()const;
+  int viewGroup() const;
 
 public slots:
 
@@ -104,7 +104,7 @@ public slots:
   void setCurrentNode(vtkMRMLNode* currentNode);
 
   /// Set the default name of the markups node created in the combo box.
-  void setNodeBaseName(QString newNodeBaseName);
+  void setNodeBaseName(const QString& newNodeBaseName);
 
   /// Set interaction node used to update the widget.
   /// \sa interactionNode()
@@ -196,7 +196,6 @@ protected:
 private:
   Q_DECLARE_PRIVATE(qSlicerSimpleMarkupsWidget);
   Q_DISABLE_COPY(qSlicerSimpleMarkupsWidget);
-
 };
 
 #endif

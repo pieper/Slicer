@@ -23,6 +23,7 @@
 #include <QDesktopServices>
 #include <QNetworkCookieJar>
 #include <QNetworkReply>
+#include <QPalette>
 #include <QSettings>
 #include <QTime>
 #include <QUrl>
@@ -54,7 +55,10 @@ namespace
 class qSlicerWebEngineView : public QWebEngineView
 {
 public:
-  qSlicerWebEngineView(QWidget *parent = Q_NULLPTR) : QWebEngineView(parent){}
+  qSlicerWebEngineView(QWidget* parent = Q_NULLPTR)
+    : QWebEngineView(parent)
+  {
+  }
   ~qSlicerWebEngineView() override = default;
   QSize sizeHint() const override
   {
@@ -62,12 +66,13 @@ public:
     return QSize(150, 150);
   }
 };
-}
+} // namespace
 
 // --------------------------------------------------------------------------
-qSlicerWebEnginePage::qSlicerWebEnginePage(QWebEngineProfile *profile, QObject *parent)
-  : QWebEnginePage(profile, parent),
-    WebWidget(nullptr)
+qSlicerWebEnginePage::qSlicerWebEnginePage(QWebEngineProfile* profile, QObject* parent)
+  : QWebEnginePage(profile, parent)
+  , WebWidget(nullptr)
+  , JavaScriptConsoleMessageLoggingEnabled(false)
 {
 }
 
@@ -76,7 +81,7 @@ qSlicerWebEnginePage::~qSlicerWebEnginePage() = default;
 
 // --------------------------------------------------------------------------
 qSlicerWebWidgetPrivate::qSlicerWebWidgetPrivate(qSlicerWebWidget& object)
-  :q_ptr(&object)
+  : q_ptr(&object)
   , HandleExternalUrlWithDesktopService(false)
   , NavigationRequestAccepted(true)
 {
@@ -102,74 +107,69 @@ void qSlicerWebWidgetPrivate::init()
   QSettings settings;
   bool developerModeEnabled = settings.value("Developer/DeveloperMode", false).toBool();
   if (developerModeEnabled)
-    {
+  {
     // Enable dev tools by default for the test browser
     if (qgetenv("QTWEBENGINE_REMOTE_DEBUGGING").isNull())
-      {
+    {
       qputenv("QTWEBENGINE_REMOTE_DEBUGGING", "1337");
-      }
     }
+  }
 
   this->PythonProxy = new qSlicerWebPythonProxy(q);
   QWebEngineProfile* profile = QWebEngineProfile::defaultProfile();
-  this->initializeWebEngineProfile(profile);
 
   this->WebEnginePage = new qSlicerWebEnginePage(profile, this->WebView);
+  this->WebEnginePage->JavaScriptConsoleMessageLoggingEnabled = developerModeEnabled;
   this->WebEnginePage->WebWidget = q;
   this->WebView->setPage(this->WebEnginePage);
+
+  this->initializeWebEngineProfile(profile);
 
   this->WebChannel = new QWebChannel(this->WebView->page());
   this->initializeWebChannel(this->WebChannel);
   this->WebView->page()->setWebChannel(this->WebChannel);
 
-
   // XXX Since relying on automatic deletion of QWebEngineView when the application
   // exit causes the application to crash. This is a workaround for explicitly
   // deleting the object before the application exit.
   // See https://bugreports.qt.io/browse/QTBUG-50160#comment-305211
-  QObject::connect(QCoreApplication::instance(), SIGNAL(aboutToQuit()),
-                   this, SLOT(onAppAboutToQuit()));
+  QObject::connect(QCoreApplication::instance(), SIGNAL(aboutToQuit()), this, SLOT(onAppAboutToQuit()));
   this->verticalLayout->insertWidget(0, this->WebView);
 
-  this->WebView->installEventFilter(q);
+  QObject::connect(this->WebView, SIGNAL(loadStarted()), q, SLOT(onLoadStarted()));
 
-  QObject::connect(this->WebView, SIGNAL(loadStarted()),
-                   q, SLOT(onLoadStarted()));
+  QObject::connect(this->WebView, SIGNAL(loadProgress(int)), q, SLOT(onLoadProgress(int)));
 
-  QObject::connect(this->WebView, SIGNAL(loadProgress(int)),
-                   q, SLOT(onLoadProgress(int)));
+  QObject::connect(this->WebView, SIGNAL(loadFinished(bool)), q, SLOT(onLoadFinished(bool)));
 
-  QObject::connect(this->WebView, SIGNAL(loadFinished(bool)),
-                   q, SLOT(onLoadFinished(bool)));
+  QObject::connect(this->WebView, SIGNAL(loadProgress(int)), this->ProgressBar, SLOT(setValue(int)));
 
-  QObject::connect(this->WebView, SIGNAL(loadProgress(int)),
-                   this->ProgressBar, SLOT(setValue(int)));
+  QObject::connect(this->WebEnginePage, SIGNAL(pdfPrintingFinished(QString, bool)), q, SIGNAL(pdfPrintingFinished(QString, bool)));
 
   this->ProgressBar->setVisible(false);
+
+  // Set background color behind the document's body to match current theme
+  this->WebEnginePage->setBackgroundColor(q->palette().color(QPalette::Window));
 }
 
 // --------------------------------------------------------------------------
 void qSlicerWebWidgetPrivate::onAppAboutToQuit()
 {
   if (this->WebView)
-    {
+  {
     this->WebView->setParent(nullptr);
     delete this->WebView;
     this->WebView = nullptr;
-    }
+  }
 }
 
 // --------------------------------------------------------------------------
 void qSlicerWebWidgetPrivate::updateWebChannelScript(QByteArray& webChannelScript)
 {
-  webChannelScript.append(
-        "\n"
-        "new QWebChannel(qt.webChannelTransport, function(channel) {\n"
-        );
+  webChannelScript.append("\n"
+                          "new QWebChannel(qt.webChannelTransport, function(channel) {\n");
   this->initializeWebChannelTransport(webChannelScript);
-  webChannelScript.append(
-        "});\n"
-        );
+  webChannelScript.append("});\n");
 }
 
 // --------------------------------------------------------------------------
@@ -182,25 +182,25 @@ void qSlicerWebWidgetPrivate::initializeWebChannelTransport(QByteArray& webChann
 void qSlicerWebWidgetPrivate::initializeWebEngineProfile(QWebEngineProfile* profile)
 {
   if (!profile)
-    {
+  {
     qWarning() << Q_FUNC_INFO << "Invalid profile";
     return;
-    }
+  }
 
-  if (!profile->scripts()->findScript("qwebchannel_appended.js").isNull())
-    {
+  if (!this->WebEnginePage->scripts().findScript("qwebchannel_appended.js").isNull())
+  {
     // profile is already initialized
     return;
-    }
+  }
 
   QFile webChannelJsFile(":/qtwebchannel/qwebchannel.js");
 
   if (!webChannelJsFile.open(QIODevice::ReadOnly))
-    {
+  {
     qWarning() << QString("Couldn't open qwebchannel.js file: %1").arg(webChannelJsFile.errorString());
-    }
+  }
   else
-    {
+  {
     QByteArray webChannelJs = webChannelJsFile.readAll();
     this->updateWebChannelScript(webChannelJs);
     QWebEngineScript script;
@@ -209,13 +209,11 @@ void qSlicerWebWidgetPrivate::initializeWebEngineProfile(QWebEngineProfile* prof
     script.setWorldId(QWebEngineScript::MainWorld);
     script.setInjectionPoint(QWebEngineScript::DocumentCreation);
     script.setRunsOnSubFrames(false);
-    profile->scripts()->insert(script);
-    }
+    this->WebEnginePage->scripts().insert(script);
+  }
 
   // setup default download handler shared across all widgets
-  QObject::connect(profile, SIGNAL(downloadRequested(QWebEngineDownloadItem*)),
-                    this, SLOT(handleDownload(QWebEngineDownloadItem*)));
-
+  QObject::connect(profile, SIGNAL(downloadRequested(QWebEngineDownloadItem*)), this, SLOT(handleDownload(QWebEngineDownloadItem*)));
 }
 
 // --------------------------------------------------------------------------
@@ -230,7 +228,15 @@ void qSlicerWebWidgetPrivate::handleDownload(QWebEngineDownloadItem* download)
 {
   Q_Q(qSlicerWebWidget);
 
-  qSlicerWebDownloadWidget *downloader = new qSlicerWebDownloadWidget(q);
+  if (this->WebEnginePage != download->page())
+  {
+    // Since the download request is emitted by the default profile observed by
+    // all web widget instances, we ignore the request if it does not originate
+    // from the page associated with this web widget instance.
+    return;
+  }
+
+  qSlicerWebDownloadWidget* downloader = new qSlicerWebDownloadWidget(q);
   downloader->setAttribute(Qt::WA_DeleteOnClose);
   downloader->show();
   downloader->handleDownload(download);
@@ -246,9 +252,9 @@ qSlicerWebWidget::qSlicerWebWidget(QWidget* _parent)
 }
 
 //-----------------------------------------------------------------------------
-qSlicerWebWidget::qSlicerWebWidget(
-  qSlicerWebWidgetPrivate* pimpl, QWidget* _parent)
-  : Superclass(_parent), d_ptr(pimpl)
+qSlicerWebWidget::qSlicerWebWidget(qSlicerWebWidgetPrivate* pimpl, QWidget* _parent)
+  : Superclass(_parent)
+  , d_ptr(pimpl)
 {
   // Note: You are responsible to call init() in the constructor of derived class.
 }
@@ -285,15 +291,28 @@ void qSlicerWebWidget::setInternalHosts(const QStringList& hosts)
 }
 
 // --------------------------------------------------------------------------
-QWebEngineView *
-qSlicerWebWidget::webView()
+bool qSlicerWebWidget::javaScriptConsoleMessageLoggingEnabled() const
+{
+  Q_D(const qSlicerWebWidget);
+  return d->WebEnginePage->JavaScriptConsoleMessageLoggingEnabled;
+}
+
+// --------------------------------------------------------------------------
+void qSlicerWebWidget::setJavaScriptConsoleMessageLoggingEnabled(bool enable)
+{
+  Q_D(qSlicerWebWidget);
+  d->WebEnginePage->JavaScriptConsoleMessageLoggingEnabled = enable;
+}
+
+// --------------------------------------------------------------------------
+QWebEngineView* qSlicerWebWidget::webView()
 {
   Q_D(qSlicerWebWidget);
   return d->WebView;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerWebWidget::evalJS(const QString &js)
+QString qSlicerWebWidget::evalJS(const QString& js)
 {
   Q_D(qSlicerWebWidget);
 
@@ -302,16 +321,17 @@ QString qSlicerWebWidget::evalJS(const QString &js)
   // the script evaluation is completed.
   // Connect to the "evalResult(QString,QString)" signal to get
   // results from the WebView.
-  d->WebView->page()->runJavaScript(js, [this,js](const QVariant &v) {
-//    qDebug() << js << " returns " << v.toString();
-    emit evalResult(js, v.toString());
-  });
+  d->WebView->page()->runJavaScript(js,
+                                    [this, js](const QVariant& v)
+                                    {
+                                      //    qDebug() << js << " returns " << v.toString();
+                                      emit evalResult(js, v.toString());
+                                    });
   return QString();
-
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWebWidget::setHtml(const QString &html, const QUrl &baseUrl)
+void qSlicerWebWidget::setHtml(const QString& html, const QUrl& baseUrl)
 {
   Q_D(qSlicerWebWidget);
 
@@ -319,7 +339,7 @@ void qSlicerWebWidget::setHtml(const QString &html, const QUrl &baseUrl)
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerWebWidget::setUrl(const QString &url)
+void qSlicerWebWidget::setUrl(const QString& url)
 {
   Q_D(qSlicerWebWidget);
 
@@ -338,8 +358,7 @@ QString qSlicerWebWidget::url()
 void qSlicerWebWidget::onDownloadStarted(QNetworkReply* reply)
 {
   Q_D(qSlicerWebWidget);
-  connect(reply, SIGNAL(downloadProgress(qint64,qint64)),
-          SLOT(onDownloadProgress(qint64,qint64)));
+  connect(reply, SIGNAL(downloadProgress(qint64, qint64)), SLOT(onDownloadProgress(qint64, qint64)));
   d->DownloadTime.start();
   d->ProgressBar->setVisible(true);
 }
@@ -353,18 +372,19 @@ void qSlicerWebWidget::onDownloadProgress(qint64 bytesReceived, qint64 bytesTota
   double speed = bytesReceived * 1000.0 / d->DownloadTime.elapsed();
   QString unit;
   if (speed < 1024)
-    {
-    unit = "bytes/sec";
-    }
-  else if (speed < 1024*1024) {
+  {
+    unit = tr("bytes/sec");
+  }
+  else if (speed < 1024 * 1024)
+  {
     speed /= 1024;
-    unit = "kB/s";
-    }
+    unit = tr("kB/s");
+  }
   else
-    {
-    speed /= 1024*1024;
-    unit = "MB/s";
-    }
+  {
+    speed /= 1024 * 1024;
+    unit = tr("MB/s");
+  }
 
   d->ProgressBar->setFormat(QString("%p% (%1 %2)").arg(speed, 3, 'f', 1).arg(unit));
   d->ProgressBar->setMaximum(bytesTotal);
@@ -381,11 +401,21 @@ void qSlicerWebWidget::onDownloadFinished(QNetworkReply* reply)
 }
 
 // --------------------------------------------------------------------------
-void qSlicerWebWidget::initJavascript()
+void qSlicerWebWidget::printToPdf(const QString& filePath)
 {
   Q_D(qSlicerWebWidget);
-  d->setDocumentWebkitHidden(!d->WebView->isVisible());
+  d->WebEnginePage->printToPdf(filePath);
 }
+
+// --------------------------------------------------------------------------
+void qSlicerWebWidget::printToPdf(const QString& filePath, const QPageLayout& pageLayout)
+{
+  Q_D(qSlicerWebWidget);
+  d->WebEnginePage->printToPdf(filePath, pageLayout);
+}
+
+// --------------------------------------------------------------------------
+void qSlicerWebWidget::initJavascript() {}
 
 // --------------------------------------------------------------------------
 void qSlicerWebWidget::onLoadStarted()
@@ -413,53 +443,37 @@ void qSlicerWebWidget::onLoadFinished(bool ok)
 }
 
 // --------------------------------------------------------------------------
-bool qSlicerWebWidget::acceptNavigationRequest(const QUrl & url, QWebEnginePage::NavigationType type, bool isMainFrame)
+bool qSlicerWebWidget::acceptNavigationRequest(const QUrl& url, QWebEnginePage::NavigationType type, bool isMainFrame)
 {
   Q_D(qSlicerWebWidget);
   Q_ASSERT(d->WebEnginePage);
-  if(d->InternalHosts.contains(url.host()) || !d->HandleExternalUrlWithDesktopService)
-    {
+  if (d->InternalHosts.contains(url.host()) || url.scheme() == "data" // QWebEngineView::setHtml creates a special URL, which encodes data in the URL, always internal
+      || !d->HandleExternalUrlWithDesktopService                      // all requests are internal
+  )
+  {
     d->NavigationRequestAccepted = d->WebEnginePage->webEnginePageAcceptNavigationRequest(url, type, isMainFrame);
-    }
+  }
   else
+  {
+    if (!QDesktopServices::openUrl(url))
     {
-    if(!QDesktopServices::openUrl(url))
-      {
       qWarning() << "Failed to open url:" << url;
-      }
-    d->NavigationRequestAccepted = false;
     }
+    d->NavigationRequestAccepted = false;
+  }
   return d->NavigationRequestAccepted;
 }
 
 // --------------------------------------------------------------------------
-void qSlicerWebWidget::handleSslErrors(QNetworkReply* reply,
-                                       const QList<QSslError> &errors)
+void qSlicerWebWidget::handleSslErrors(QNetworkReply* reply, const QList<QSslError>& errors)
 {
 #ifdef QT_NO_SSL
-  Q_UNUSED(reply)
-  Q_UNUSED(errors)
+  Q_UNUSED(reply);
+  Q_UNUSED(errors);
 #else
-  foreach (QSslError e, errors)
-    {
-    qDebug() << "[SSL] [" << qPrintable(reply->url().host().trimmed()) << "]"
-             << qPrintable(e.errorString());
-    }
+  for (const QSslError& e : errors)
+  {
+    qDebug() << "[SSL] [" << qPrintable(reply->url().host().trimmed()) << "]" << qPrintable(e.errorString());
+  }
 #endif
-}
-
-// --------------------------------------------------------------------------
-bool qSlicerWebWidget::eventFilter(QObject* obj, QEvent* event)
-{
-  Q_D(qSlicerWebWidget);
-  Q_ASSERT(d->WebView == obj);
-  if (d->WebView == obj && !event->spontaneous() &&
-      (event->type() == QEvent::Show || event->type() == QEvent::Hide))
-    {
-    d->setDocumentWebkitHidden(!d->WebView->isVisible());
-    this->evalJS("if (typeof $ != 'undefined') {"
-                 "  $.event.trigger({type: 'webkitvisibilitychange'})"
-                 "} else { console.info('JQuery not loaded - Failed to trigger webkitvisibilitychange') }");
-    }
-  return QObject::eventFilter(obj, event);
 }

@@ -27,17 +27,16 @@
 
 // STD includes
 
-int qSlicerAboutDialogTest1(int argc, char * argv[] )
+int qSlicerAboutDialogTest1(int argc, char* argv[])
 {
   qSlicerApplication app(argc, argv);
 
   qSlicerAboutDialog about;
 
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
     QTimer::singleShot(100, qApp, SLOT(quit()));
-    }
+  }
 
   return about.exec();
 }
-

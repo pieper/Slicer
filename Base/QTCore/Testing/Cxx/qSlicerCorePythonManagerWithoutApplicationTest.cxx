@@ -25,7 +25,7 @@
 #include "qSlicerCorePythonManager.h"
 
 // ----------------------------------------------------------------------------
-class qSlicerCorePythonManagerWithoutApplicationTester: public QObject
+class qSlicerCorePythonManagerWithoutApplicationTester : public QObject
 {
   Q_OBJECT
 
@@ -46,6 +46,7 @@ void qSlicerCorePythonManagerWithoutApplicationTester::testInitialize()
 // ----------------------------------------------------------------------------
 void qSlicerCorePythonManagerWithoutApplicationTester::toPythonStringLiteral()
 {
+  // clang-format off
   QCOMPARE(qSlicerCorePythonManager::toPythonStringLiteral("simple string"),
                                                   QString("'simple string'"));
   QCOMPARE(qSlicerCorePythonManager::toPythonStringLiteral("C:\\folder1\\folder2"),
@@ -60,9 +61,9 @@ void qSlicerCorePythonManagerWithoutApplicationTester::toPythonStringLiteral()
                                                QString("'\\\'single-quoted string\\\''"));
   QCOMPARE(qSlicerCorePythonManager::toPythonStringLiteral("\"double-quoted string\""),
                                                   QString("'\"double-quoted string\"'"));
+  // clang-format on
 }
 
 // ----------------------------------------------------------------------------
 CTK_TEST_MAIN(qSlicerCorePythonManagerWithoutApplicationTest)
 #include "moc_qSlicerCorePythonManagerWithoutApplicationTest.cxx"
-

@@ -25,7 +25,7 @@
  * for details.
  * @sa
  * vtkSlicerMarkupsWidgetRepresentation2D vtkMRMLAbstractWidget
-*/
+ */
 
 #ifndef vtkSlicerMarkupsWidgetRepresentation2D_h
 #define vtkSlicerMarkupsWidgetRepresentation2D_h
@@ -54,29 +54,23 @@ public:
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Position is displayed (slice) position
-  void CanInteract(vtkMRMLInteractionEventData* interactionEventData,
-    int &foundComponentType, int &foundComponentIndex, double &closestDistance2) override;
-
-  /// Check if interaction with the transformation handles is possible
-  virtual void CanInteractWithHandles(vtkMRMLInteractionEventData* interactionEventData,
-    int& foundComponentType, int& foundComponentIndex, double& closestDistance2);
+  void CanInteract(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2) override;
 
   /// Checks if interaction with straight line between visible points is possible.
   /// Can be used on the output of CanInteract, as if no better component is found then the input is returned.
-  void CanInteractWithLine(vtkMRMLInteractionEventData* interactionEventData,
-    int &foundComponentType, int &foundComponentIndex, double &closestDistance2);
+  void CanInteractWithLine(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2);
 
   /// Subclasses of vtkSlicerMarkupsWidgetRepresentation2D must implement these methods. These
   /// are the methods that the widget and its representation use to
   /// communicate with each other.
-  void UpdateFromMRML(vtkMRMLNode* caller, unsigned long event, void *callData=nullptr) override;
+  void UpdateFromMRMLInternal(vtkMRMLNode* caller, unsigned long event, void* callData = nullptr) override;
 
   /// Methods to make this class behave as a vtkProp.
-  void GetActors(vtkPropCollection *) override;
-  void ReleaseGraphicsResources(vtkWindow *) override;
-  int RenderOverlay(vtkViewport *viewport) override;
-  int RenderOpaqueGeometry(vtkViewport *viewport) override;
-  int RenderTranslucentPolygonalGeometry(vtkViewport *viewport) override;
+  void GetActors(vtkPropCollection*) override;
+  void ReleaseGraphicsResources(vtkWindow*) override;
+  int RenderOverlay(vtkViewport* viewport) override;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
 
   /// Get the nth node's position on the slice. Will return
@@ -98,17 +92,12 @@ public:
   void GetSliceToWorldCoordinates(const double[2], double[3]);
   void GetWorldToSliceCoordinates(const double worldPos[3], double slicePos[2]);
 
-  void UpdateInteractionPipeline() override;
-
 protected:
   vtkSlicerMarkupsWidgetRepresentation2D();
   ~vtkSlicerMarkupsWidgetRepresentation2D() override;
 
-  /// Reimplemented for 2D specific mapper/actor settings
-  void SetupInteractionPipeline() override;
-
-    /// Get MRML view node as slice view node
-  vtkMRMLSliceNode *GetSliceNode();
+  /// Get MRML view node as slice view node
+  vtkMRMLSliceNode* GetSliceNode();
 
   void UpdatePlaneFromSliceNode();
 
@@ -137,8 +126,11 @@ protected:
   virtual bool IsCenterDisplayableOnSlice(vtkMRMLMarkupsNode* node);
 
   /// Convert display to world coordinates
-  void GetWorldToDisplayCoordinates(double r, double a, double s, double * displayCoordinates);
-  void GetWorldToDisplayCoordinates(double * worldCoordinates, double * displayCoordinates);
+  void GetWorldToDisplayCoordinates(double r, double a, double s, double* displayCoordinates);
+  void GetWorldToDisplayCoordinates(double* worldCoordinates, double* displayCoordinates);
+
+  /// Check if the representation polydata intersects the slice
+  bool IsRepresentationIntersectingSlice(vtkPolyData* representation, const char* arrayName);
 
   class ControlPointsPipeline2D : public ControlPointsPipeline
   {
@@ -159,8 +151,8 @@ protected:
   ControlPointsPipeline2D* GetControlPointsPipeline(int controlPointType);
 
   vtkSmartPointer<vtkIntArray> PointsVisibilityOnSlice;
-  bool                         CenterVisibilityOnSlice = { false };
-  bool                         AnyPointVisibilityOnSlice = { false };  // at least one point is visible
+  bool CenterVisibilityOnSlice = { false };
+  bool AnyPointVisibilityOnSlice = { false }; // at least one point is visible
 
   vtkSmartPointer<vtkTransform> WorldToSliceTransform;
   vtkSmartPointer<vtkPlane> SlicePlane;
@@ -168,17 +160,6 @@ protected:
   virtual void UpdateAllPointsAndLabelsFromMRML(double labelsOffset);
 
   double GetWidgetOpacity(int controlPointType);
-
-  class MarkupsInteractionPipeline2D : public MarkupsInteractionPipeline
-  {
-  public:
-    MarkupsInteractionPipeline2D(vtkSlicerMarkupsWidgetRepresentation* representation);
-    ~MarkupsInteractionPipeline2D() override = default;;
-
-    void GetViewPlaneNormal(double viewPlaneNormal[3]) override;
-
-    vtkSmartPointer<vtkTransformPolyDataFilter> WorldToSliceTransformFilter;
-  };
 
 private:
   vtkSlicerMarkupsWidgetRepresentation2D(const vtkSlicerMarkupsWidgetRepresentation2D&) = delete;

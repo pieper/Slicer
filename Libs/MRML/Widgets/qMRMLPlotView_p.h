@@ -41,7 +41,7 @@ class QToolButton;
 // CTK includes
 #include <ctkPimpl.h>
 #include <ctkVTKObject.h>
-//class ctkPopupWidget;
+// class ctkPopupWidget;
 
 // qMRML includes
 #include "qMRMLPlotView.h"
@@ -58,13 +58,15 @@ class vtkPlot;
 class vtkStringArray;
 
 //-----------------------------------------------------------------------------
-class qMRMLPlotViewPrivate: public QObject
+class qMRMLPlotViewPrivate : public QObject
 {
   Q_OBJECT
   QVTK_OBJECT
   Q_DECLARE_PUBLIC(qMRMLPlotView);
+
 protected:
   qMRMLPlotView* const q_ptr;
+
 public:
   qMRMLPlotViewPrivate(qMRMLPlotView& object);
   ~qMRMLPlotViewPrivate() override;
@@ -72,12 +74,12 @@ public:
   virtual void init();
 
   void setMRMLScene(vtkMRMLScene* scene);
-  vtkMRMLScene *mrmlScene();
+  vtkMRMLScene* mrmlScene();
 
   vtkMRMLPlotSeriesNode* plotSeriesNodeFromPlot(vtkPlot* plot);
 
   // Tries to update the existing plot. If returns nullptr then it means the existing plot must be deleted.
-  // If returned plot differs from the existin plot, then existing plot must be replaced by the returned one.
+  // If returned plot differs from the existing plot, then existing plot must be replaced by the returned one.
   vtkSmartPointer<vtkPlot> updatePlotFromPlotSeriesNode(vtkMRMLPlotSeriesNode* plotSeriesNode, vtkPlot* existingPlot);
 
   // Adjust range to make it displayable with logarithmic scale
@@ -97,17 +99,16 @@ public slots:
   void emitSelection();
 
 protected:
-
-  vtkWeakPointer<vtkMRMLScene>         MRMLScene;
-  vtkWeakPointer<vtkMRMLPlotViewNode>  MRMLPlotViewNode;
+  vtkWeakPointer<vtkMRMLScene> MRMLScene;
+  vtkWeakPointer<vtkMRMLPlotViewNode> MRMLPlotViewNode;
   vtkWeakPointer<vtkMRMLPlotChartNode> MRMLPlotChartNode;
 
-  //QToolButton*                       PinButton;
-//  ctkPopupWidget*                    PopupWidget;
+  // QToolButton*                       PinButton;
+  //  ctkPopupWidget*                    PopupWidget;
 
-  bool                               UpdatingWidgetFromMRML;
+  bool UpdatingWidgetFromMRML;
 
-  QMap< vtkPlot*, QString > MapPlotToPlotSeriesNodeID;
+  QMap<vtkPlot*, QString> MapPlotToPlotSeriesNodeID;
 };
 
 #endif

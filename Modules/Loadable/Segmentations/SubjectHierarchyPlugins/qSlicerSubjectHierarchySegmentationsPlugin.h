@@ -29,7 +29,6 @@
 class qSlicerSubjectHierarchySegmentationsPluginPrivate;
 class vtkMRMLSegmentationNode;
 
-/// \ingroup SlicerRt_QtModules_Segmentations
 class Q_SLICER_SEGMENTATIONS_PLUGINS_EXPORT qSlicerSubjectHierarchySegmentationsPlugin : public qSlicerSubjectHierarchyAbstractPlugin
 {
 public:
@@ -48,7 +47,7 @@ public:
   ///   Default value is invalid. In that case the parent will be ignored, the confidence numbers are got based on the to-be child node alone.
   /// \return Floating point confidence number between 0 and 1, where 0 means that the plugin cannot handle the
   ///   node, and 1 means that the plugin is the only one that can handle the node (by node type or identifier attribute)
-  double canAddNodeToSubjectHierarchy(vtkMRMLNode* node, vtkIdType parentItemID=vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID )const override;
+  double canAddNodeToSubjectHierarchy(vtkMRMLNode* node, vtkIdType parentItemID = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID) const override;
 
   /// Creates subject hierarchy item using default method and updates all segments
   bool addNodeToSubjectHierarchy(vtkMRMLNode* node, vtkIdType parentItemID) override;
@@ -61,7 +60,7 @@ public:
   /// \param parentItemID Prospective parent of the item to reparent.
   /// \return Floating point confidence number between 0 and 1, where 0 means that the plugin cannot handle the
   ///   item, and 1 means that the plugin is the only one that can handle the item
-  double canReparentItemInsideSubjectHierarchy(vtkIdType itemID, vtkIdType parentItemID)const override;
+  double canReparentItemInsideSubjectHierarchy(vtkIdType itemID, vtkIdType parentItemID) const override;
 
   /// Reparent an item that was already in the subject hierarchy under a new parent.
   /// \return True if reparented successfully, false otherwise
@@ -73,17 +72,17 @@ public:
   /// \param item Item to handle in the subject hierarchy tree
   /// \return Floating point confidence number between 0 and 1, where 0 means that the plugin cannot handle the
   ///   item, and 1 means that the plugin is the only one that can handle the item (by node type or identifier attribute)
-  double canOwnSubjectHierarchyItem(vtkIdType itemID)const override;
+  double canOwnSubjectHierarchyItem(vtkIdType itemID) const override;
 
   /// Get role that the plugin assigns to the subject hierarchy node.
   ///   Each plugin should provide only one role.
-  Q_INVOKABLE const QString roleForPlugin()const override;
+  Q_INVOKABLE const QString roleForPlugin() const override;
 
   /// Generate tooltip for a owned subject hierarchy item
-  QString tooltip(vtkIdType itemID)const override;
+  QString tooltip(vtkIdType itemID) const override;
 
   /// Get help text for plugin to be added in subject hierarchy module widget help box
-  const QString helpText()const override;
+  const QString helpText() const override;
 
   /// Get icon of an owned subject hierarchy item
   /// \return Icon to set, empty icon if nothing to set
@@ -97,10 +96,10 @@ public:
 
   /// Get display visibility of a owned subject hierarchy item
   /// \return Display visibility (0: hidden, 1: shown, 2: partially shown)
-  int getDisplayVisibility(vtkIdType itemID)const override;
+  int getDisplayVisibility(vtkIdType itemID) const override;
 
   /// Get item context menu item actions to add to tree view
-  QList<QAction*> itemContextMenuActions()const override;
+  QList<QAction*> itemContextMenuActions() const override;
 
   /// Show context menu actions valid for a given subject hierarchy item.
   /// \param itemID Subject Hierarchy item to show the context menu items for
@@ -108,11 +107,16 @@ public:
 
   /// Get visibility context menu item actions to add to tree view.
   /// These item visibility context menu actions can be shown in the implementations of \sa showVisibilityContextMenuActionsForItem
-  QList<QAction*> visibilityContextMenuActions()const override;
+  QList<QAction*> visibilityContextMenuActions() const override;
 
   /// Show visibility context menu actions valid for a given subject hierarchy item.
   /// \param itemID Subject Hierarchy item to show the visibility context menu items for
   void showVisibilityContextMenuActionsForItem(vtkIdType itemID) override;
+
+  /// Show a segmentation item in a selected view.
+  /// Overridden here to create closed surface representation for display in 3D views.
+  /// Returns true on success.
+  bool showItemInView(vtkIdType itemID, vtkMRMLAbstractViewNode* viewNode, vtkIdList* allItemsToShow) override;
 
 public slots:
   /// Called when segment is added in an observed segmentation node
@@ -127,6 +131,13 @@ public slots:
   /// Renames per-segment subject hierarchy node if necessary
   void onSegmentModified(vtkObject* caller, void* callData);
 
+  ///  Called when segmentation display node is modified
+  void onDisplayNodeModified(vtkObject* caller);
+
+  /// Called when segments order is modified in an observed segmentation node.
+  /// Updates subject hierarchy items order to match the segments order
+  void onSegmentsOrderModified(vtkObject* caller, void* callData);
+
   /// Called when a subject hierarchy item is modified.
   /// Renames segment if the modified item belongs to a segment
   void onSubjectHierarchyItemModified(vtkObject* caller, void* callData);
@@ -134,6 +145,8 @@ public slots:
   /// Called when a subject hierarchy item is about to be removed.
   /// Removes segment from parent segmentation if the removed item belongs to a segment
   void onSubjectHierarchyItemAboutToBeRemoved(vtkObject* caller, void* callData);
+
+  void onSubjectHierarchyItemChildrenReordered(vtkObject* caller, void* callData);
 
 protected slots:
   /// Export to binary labelmap
@@ -157,10 +170,19 @@ protected slots:
   /// Toggle 2D outline visibility for the current segmentation
   void toggle2DOutlineVisibility(bool);
 
+  void createBinaryLabelmapRepresentation();
+  void createClosedSurfaceRepresentation();
+  void removeBinaryLabelmapRepresentation();
+  void removeClosedSurfaceRepresentation();
+
 protected:
   QScopedPointer<qSlicerSubjectHierarchySegmentationsPluginPrivate> d_ptr;
 
   void updateAllSegmentsFromMRML(vtkMRMLSegmentationNode* segmentationNode);
+
+  /// Create or remove representation.
+  /// If create is true then representation is created, if false then the representation is removed.
+  void updateRepresentation(const QString& representationName, bool create);
 
 private:
   Q_DECLARE_PRIVATE(qSlicerSubjectHierarchySegmentationsPlugin);

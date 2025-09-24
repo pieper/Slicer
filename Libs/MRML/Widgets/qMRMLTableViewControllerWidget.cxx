@@ -32,40 +32,30 @@
 #include <vtkStringArray.h>
 
 // CTK includes
-#include <ctkLogger.h>
 #include <ctkPopupWidget.h>
 
 // qMRML includes
 #include "qMRMLColors.h"
 #include "qMRMLNodeFactory.h"
-#include "qMRMLSceneViewMenu.h"
 #include "qMRMLTableView.h"
 #include "qMRMLTableViewControllerWidget_p.h"
 
 // MRML includes
 #include <vtkMRMLScene.h>
-#include <vtkMRMLDoubleArrayNode.h>
 #include <vtkMRMLTableViewNode.h>
 #include <vtkMRMLTableNode.h>
-#include <vtkMRMLSceneViewNode.h>
 
 // STD include
 #include <string>
 
 //--------------------------------------------------------------------------
-static ctkLogger logger("org.slicer.libs.qmrmlwidgets.qMRMLTableViewControllerWidget");
-//--------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------
 // qMRMLTableViewControllerWidgetPrivate methods
 
 //---------------------------------------------------------------------------
-qMRMLTableViewControllerWidgetPrivate::qMRMLTableViewControllerWidgetPrivate(
-  qMRMLTableViewControllerWidget& object)
+qMRMLTableViewControllerWidgetPrivate::qMRMLTableViewControllerWidgetPrivate(qMRMLTableViewControllerWidget& object)
   : Superclass(object)
 {
   this->TableNode = nullptr;
-  this->TableViewNode = nullptr;
   this->TableView = nullptr;
   this->CopyAction = nullptr;
   this->PasteAction = nullptr;
@@ -90,27 +80,25 @@ void qMRMLTableViewControllerWidgetPrivate::setupPopupUi()
   this->CopyAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   // set CTRL+C shortcut
   this->CopyAction->setShortcuts(QKeySequence::Copy);
-  this->CopyAction->setToolTip(tr("Copy"));
+  this->CopyAction->setToolTip(qMRMLTableViewControllerWidget::tr("Copy"));
   q->addAction(this->CopyAction);
   this->PasteAction = new QAction(this);
   this->PasteAction->setIcon(QIcon(":Icons/Medium/SlicerEditPaste.png"));
   this->PasteAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   // set CTRL+V shortcut
   this->PasteAction->setShortcuts(QKeySequence::Paste);
-  this->PasteAction->setToolTip(tr("Paste"));
+  this->PasteAction->setToolTip(qMRMLTableViewControllerWidget::tr("Paste"));
   q->addAction(this->PasteAction);
   this->PlotAction = new QAction(this);
   this->PlotAction->setIcon(QIcon(":Icons/Medium/SlicerInteractivePlotting.png"));
   this->PlotAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   // set CTRL+P shortcut
   this->PlotAction->setShortcuts(QKeySequence::Print);
-  this->PlotAction->setToolTip(tr("Generate an Interactive Plot based on user-selection"
-                               " of the columns of the table."));
+  this->PlotAction->setToolTip(qMRMLTableViewControllerWidget::tr("Generate an Interactive Plot based on user-selection of the columns of the table."));
   q->addAction(this->PlotAction);
 
   // Connect Table selector
-  this->connect(this->tableComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-                SLOT(onTableNodeSelected(vtkMRMLNode*)));
+  this->connect(this->tableComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)), SLOT(onTableNodeSelected(vtkMRMLNode*)));
 
   this->connect(this->LockTableButton, SIGNAL(clicked()), SLOT(onLockTableButtonClicked()));
 
@@ -130,8 +118,7 @@ void qMRMLTableViewControllerWidgetPrivate::setupPopupUi()
   this->connect(this->PlotAction, SIGNAL(triggered()), SLOT(plotSelection()));
 
   // Connect the scene
-  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)),
-                   this->tableComboBox, SLOT(setMRMLScene(vtkMRMLScene*)));
+  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)), this->tableComboBox, SLOT(setMRMLScene(vtkMRMLScene*)));
 
   onTableNodeSelected(nullptr);
 }
@@ -140,31 +127,30 @@ void qMRMLTableViewControllerWidgetPrivate::setupPopupUi()
 void qMRMLTableViewControllerWidgetPrivate::init()
 {
   this->Superclass::init();
-  this->ViewLabel->setText(qMRMLTableViewControllerWidget::tr("1"));
+  this->ViewLabel->setText("1");
   this->BarLayout->addStretch(1);
   this->setColor(QColor("#e1ba3c"));
 }
 
 // --------------------------------------------------------------------------
-void qMRMLTableViewControllerWidgetPrivate::onTableNodeSelected(vtkMRMLNode * node)
+void qMRMLTableViewControllerWidgetPrivate::onTableNodeSelected(vtkMRMLNode* node)
 {
   Q_Q(qMRMLTableViewControllerWidget);
 
-  if (!this->TableViewNode)
-    {
+  if (!q->mrmlTableViewNode())
+  {
     return;
-    }
+  }
 
   if (this->TableNode.GetPointer() == node)
-    {
+  {
     return;
-    }
+  }
 
-  this->qvtkReconnect(this->TableNode, node, vtkCommand::ModifiedEvent,
-                      q, SLOT(updateWidgetFromMRML()));
-  this->TableNode = node;
+  this->qvtkReconnect(this->TableNode, node, vtkCommand::ModifiedEvent, q, SLOT(updateWidgetFromMRML()));
+  this->TableNode = vtkMRMLTableNode::SafeDownCast(node);
 
-  this->TableViewNode->SetTableNodeID(this->TableNode ? this->TableNode->GetID() : nullptr);
+  q->mrmlTableViewNode()->SetTableNodeID(this->TableNode ? this->TableNode->GetID() : nullptr);
 
   q->updateWidgetFromMRML();
 }
@@ -173,10 +159,10 @@ void qMRMLTableViewControllerWidgetPrivate::onTableNodeSelected(vtkMRMLNode * no
 void qMRMLTableViewControllerWidgetPrivate::onLockTableButtonClicked()
 {
   if (!this->TableNode)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::onLockTableButtonClicked failed: tableNode is invalid");
     return;
-    }
+  }
 
   // toggle the lock
   int locked = this->TableNode->GetLocked();
@@ -187,10 +173,10 @@ void qMRMLTableViewControllerWidgetPrivate::onLockTableButtonClicked()
 void qMRMLTableViewControllerWidgetPrivate::insertColumn()
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::insertColumn failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->insertColumn();
 }
 
@@ -198,10 +184,10 @@ void qMRMLTableViewControllerWidgetPrivate::insertColumn()
 void qMRMLTableViewControllerWidgetPrivate::deleteColumn()
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::deleteColumn failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->deleteColumn();
 }
 
@@ -209,10 +195,10 @@ void qMRMLTableViewControllerWidgetPrivate::deleteColumn()
 void qMRMLTableViewControllerWidgetPrivate::insertRow()
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::insertRow failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->insertRow();
 }
 
@@ -220,10 +206,10 @@ void qMRMLTableViewControllerWidgetPrivate::insertRow()
 void qMRMLTableViewControllerWidgetPrivate::deleteRow()
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::deleteRow failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->deleteRow();
 }
 
@@ -231,10 +217,10 @@ void qMRMLTableViewControllerWidgetPrivate::deleteRow()
 void qMRMLTableViewControllerWidgetPrivate::setFirstRowLocked(bool locked)
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::setFirstRowLocked failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->setFirstRowLocked(locked);
 }
 
@@ -242,10 +228,10 @@ void qMRMLTableViewControllerWidgetPrivate::setFirstRowLocked(bool locked)
 void qMRMLTableViewControllerWidgetPrivate::setFirstColumnLocked(bool locked)
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::setFirstColumnLocked failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->setFirstColumnLocked(locked);
 }
 
@@ -253,10 +239,10 @@ void qMRMLTableViewControllerWidgetPrivate::setFirstColumnLocked(bool locked)
 void qMRMLTableViewControllerWidgetPrivate::copySelection()
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::copySelection failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->copySelection();
 }
 
@@ -264,10 +250,10 @@ void qMRMLTableViewControllerWidgetPrivate::copySelection()
 void qMRMLTableViewControllerWidgetPrivate::pasteSelection()
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::pasteSelection failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->pasteSelection();
 }
 
@@ -275,10 +261,10 @@ void qMRMLTableViewControllerWidgetPrivate::pasteSelection()
 void qMRMLTableViewControllerWidgetPrivate::plotSelection()
 {
   if (!this->TableView)
-    {
+  {
     qWarning("qMRMLTableViewControllerWidgetPrivate::plotSelection failed: TableView is invalid");
     return;
-    }
+  }
   this->TableView->plotSelection();
 }
 
@@ -311,30 +297,38 @@ void qMRMLTableViewControllerWidget::setTableView(qMRMLTableView* view)
 void qMRMLTableViewControllerWidget::setViewLabel(const QString& newViewLabel)
 {
   Q_D(qMRMLTableViewControllerWidget);
-
-  if (d->TableViewNode)
-    {
-    logger.error("setViewLabel should be called before setViewNode !");
+  if (!this->mrmlTableViewNode())
+  {
+    qCritical() << Q_FUNC_INFO << " failed: must set view node first";
     return;
-    }
-
-  d->TableViewLabel = newViewLabel;
-  d->ViewLabel->setText(d->TableViewLabel);
+  }
+  this->mrmlTableViewNode()->SetLayoutLabel(newViewLabel.toUtf8());
 }
 
 //---------------------------------------------------------------------------
-CTK_GET_CPP(qMRMLTableViewControllerWidget, QString, viewLabel, TableViewLabel);
-
+QString qMRMLTableViewControllerWidget::viewLabel() const
+{
+  Q_D(const qMRMLTableViewControllerWidget);
+  if (this->mrmlTableViewNode())
+  {
+    qCritical() << Q_FUNC_INFO << " failed: must set view node first";
+    return QString();
+  }
+  return this->mrmlTableViewNode()->GetLayoutLabel();
+}
 
 // --------------------------------------------------------------------------
-void qMRMLTableViewControllerWidget::setMRMLTableViewNode(
-    vtkMRMLTableViewNode * viewNode)
+void qMRMLTableViewControllerWidget::setMRMLTableViewNode(vtkMRMLTableViewNode* viewNode)
 {
   Q_D(qMRMLTableViewControllerWidget);
-  this->qvtkReconnect(d->TableViewNode, viewNode, vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML()));
-  d->TableViewNode = viewNode;
-  this->updateWidgetFromMRML();
+  this->setMRMLViewNode(viewNode);
+}
+
+//---------------------------------------------------------------------------
+vtkMRMLTableViewNode* qMRMLTableViewControllerWidget::mrmlTableViewNode() const
+{
+  Q_D(const qMRMLTableViewControllerWidget);
+  return vtkMRMLTableViewNode::SafeDownCast(this->mrmlViewNode());
 }
 
 // --------------------------------------------------------------------------
@@ -342,15 +336,16 @@ void qMRMLTableViewControllerWidget::updateWidgetFromMRML()
 {
   Q_D(qMRMLTableViewControllerWidget);
 
-  //qDebug() << "qMRMLTableViewControllerWidget::updateWidgetFromMRML()";
+  // qDebug() << "qMRMLTableViewControllerWidget::updateWidgetFromMRML()";
 
-  if (!d->TableViewNode || !this->mrmlScene())
-    {
+  if (!this->mrmlTableViewNode() || !this->mrmlScene())
+  {
     return;
-    }
+  }
 
-  vtkMRMLTableNode *tableNode
-    = vtkMRMLTableNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->TableViewNode->GetTableNodeID()));
+  d->ViewLabel->setText(this->mrmlTableViewNode()->GetLayoutLabel());
+
+  vtkMRMLTableNode* tableNode = vtkMRMLTableNode::SafeDownCast(this->mrmlScene()->GetNodeByID(this->mrmlTableViewNode()->GetTableNodeID()));
 
   // TableNode selector
   d->tableComboBox->setCurrentNodeID(tableNode ? tableNode->GetID() : nullptr);
@@ -364,34 +359,34 @@ void qMRMLTableViewControllerWidget::updateWidgetFromMRML()
   d->EditControlsFrame->setEnabled(editableNode);
 
   if (!tableNode)
-    {
+  {
     return;
-    }
+  }
 
   if (tableNode->GetLocked())
-    {
+  {
     d->LockTableButton->setIcon(QIcon(":Icons/Medium/SlicerLock.png"));
-    d->LockTableButton->setToolTip(QString("Click to unlock this table so that values can be modified"));
-    }
+    d->LockTableButton->setToolTip(tr("Click to unlock this table so that values can be modified"));
+  }
   else
-    {
+  {
     d->LockTableButton->setIcon(QIcon(":Icons/Medium/SlicerUnlock.png"));
-    d->LockTableButton->setToolTip(QString("Click to lock this table to prevent modification of the values in the user interface"));
-    }
+    d->LockTableButton->setToolTip(tr("Click to lock this table to prevent modification of the values in the user interface"));
+  }
 
-  if (tableNode->GetUseColumnNameAsColumnHeader() != d->LockFirstRowButton->isChecked())
-    {
+  if (tableNode->GetUseColumnTitleAsColumnHeader() != d->LockFirstRowButton->isChecked())
+  {
     bool wasBlocked = d->LockFirstRowButton->blockSignals(true);
-    d->LockFirstRowButton->setChecked(tableNode->GetUseColumnNameAsColumnHeader());
+    d->LockFirstRowButton->setChecked(tableNode->GetUseColumnTitleAsColumnHeader());
     d->LockFirstRowButton->blockSignals(wasBlocked);
-    }
+  }
 
   if (tableNode->GetUseFirstColumnAsRowHeader() != d->LockFirstColumnButton->isChecked())
-    {
+  {
     bool wasBlocked = d->LockFirstColumnButton->blockSignals(true);
     d->LockFirstColumnButton->setChecked(tableNode->GetUseFirstColumnAsRowHeader());
     d->LockFirstColumnButton->blockSignals(wasBlocked);
-    }
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -400,26 +395,32 @@ void qMRMLTableViewControllerWidget::setMRMLScene(vtkMRMLScene* newScene)
   Q_D(qMRMLTableViewControllerWidget);
 
   if (this->mrmlScene() == newScene)
-    {
+  {
     return;
-    }
+  }
 
-   d->qvtkReconnect(this->mrmlScene(), newScene, vtkMRMLScene::EndBatchProcessEvent,
-                    this, SLOT(updateWidgetFromMRML()));
+  d->qvtkReconnect(this->mrmlScene(), newScene, vtkMRMLScene::EndBatchProcessEvent, this, SLOT(updateWidgetFromMRML()));
 
   // Disable the node selectors as they would fire signal currentIndexChanged(0)
   // meaning that there is no current node anymore. It's not true, it just means
   // that the current node was not in the combo box list menu before
   bool tableBlockSignals = d->tableComboBox->blockSignals(true);
-  //bool arrayBlockSignals = d->arrayComboBox->blockSignals(true);
+  // bool arrayBlockSignals = d->arrayComboBox->blockSignals(true);
 
   this->Superclass::setMRMLScene(newScene);
 
   d->tableComboBox->blockSignals(tableBlockSignals);
-  //d->arrayComboBox->blockSignals(arrayBlockSignals);
+  // d->arrayComboBox->blockSignals(arrayBlockSignals);
 
   if (this->mrmlScene())
-    {
+  {
     this->updateWidgetFromMRML();
-    }
+  }
+}
+
+// --------------------------------------------------------------------------
+void qMRMLTableViewControllerWidget::updateWidgetFromMRMLView()
+{
+  Superclass::updateWidgetFromMRMLView();
+  this->updateWidgetFromMRML();
 }

@@ -42,8 +42,10 @@
 class qMRMLCoordinatesWidgetPrivate
 {
   Q_DECLARE_PUBLIC(qMRMLCoordinatesWidget);
+
 protected:
   qMRMLCoordinatesWidget* const q_ptr;
+
 public:
   qMRMLCoordinatesWidgetPrivate(qMRMLCoordinatesWidget& object);
   ~qMRMLCoordinatesWidgetPrivate();
@@ -59,15 +61,13 @@ public:
 };
 
 // --------------------------------------------------------------------------
-qMRMLCoordinatesWidgetPrivate
-::qMRMLCoordinatesWidgetPrivate(qMRMLCoordinatesWidget& object)
+qMRMLCoordinatesWidgetPrivate::qMRMLCoordinatesWidgetPrivate(qMRMLCoordinatesWidget& object)
   : q_ptr(&object)
 {
   this->MRMLScene = nullptr;
   this->SelectionNode = nullptr;
-  this->Flags = qMRMLCoordinatesWidget::Prefix | qMRMLCoordinatesWidget::Suffix
-    | qMRMLCoordinatesWidget::Precision | qMRMLCoordinatesWidget::MinimumValue
-    | qMRMLCoordinatesWidget::MaximumValue;
+  this->Flags = qMRMLCoordinatesWidget::Prefix | qMRMLCoordinatesWidget::Suffix | qMRMLCoordinatesWidget::Precision | qMRMLCoordinatesWidget::MinimumValue
+                | qMRMLCoordinatesWidget::MaximumValue;
   this->Proxy = new ctkLinearValueProxy;
 }
 
@@ -84,14 +84,11 @@ void qMRMLCoordinatesWidgetPrivate::setAndObserveSelectionNode()
 
   vtkMRMLSelectionNode* selectionNode = nullptr;
   if (this->MRMLScene)
-    {
-    selectionNode = vtkMRMLSelectionNode::SafeDownCast(
-      this->MRMLScene->GetNodeByID("vtkMRMLSelectionNodeSingleton"));
-    }
+  {
+    selectionNode = vtkMRMLSelectionNode::SafeDownCast(this->MRMLScene->GetNodeByID("vtkMRMLSelectionNodeSingleton"));
+  }
 
-  q->qvtkReconnect(this->SelectionNode, selectionNode,
-    vtkMRMLSelectionNode::UnitModifiedEvent,
-    q, SLOT(updateWidgetFromUnitNode()));
+  q->qvtkReconnect(this->SelectionNode, selectionNode, vtkMRMLSelectionNode::UnitModifiedEvent, q, SLOT(updateWidgetFromUnitNode()));
   this->SelectionNode = selectionNode;
   q->updateWidgetFromUnitNode();
 }
@@ -101,12 +98,12 @@ void qMRMLCoordinatesWidgetPrivate::updateValueProxy(vtkMRMLUnitNode* unitNode)
 {
   Q_Q(qMRMLCoordinatesWidget);
   if (!unitNode)
-    {
+  {
     q->setValueProxy(nullptr);
     this->Proxy->setCoefficient(1.0);
     this->Proxy->setOffset(0.0);
     return;
-    }
+  }
 
   this->Proxy->setOffset(unitNode->GetDisplayOffset());
   this->Proxy->setCoefficient(unitNode->GetDisplayCoefficient());
@@ -118,7 +115,8 @@ void qMRMLCoordinatesWidgetPrivate::updateValueProxy(vtkMRMLUnitNode* unitNode)
 
 //------------------------------------------------------------------------------
 qMRMLCoordinatesWidget::qMRMLCoordinatesWidget(QWidget* _parent)
-: Superclass(_parent), d_ptr(new qMRMLCoordinatesWidgetPrivate(*this))
+  : Superclass(_parent)
+  , d_ptr(new qMRMLCoordinatesWidgetPrivate(*this))
 {
 }
 
@@ -130,23 +128,23 @@ void qMRMLCoordinatesWidget::setQuantity(const QString& quantity)
 {
   Q_D(qMRMLCoordinatesWidget);
   if (quantity == d->Quantity)
-    {
+  {
     return;
-    }
+  }
 
   d->Quantity = quantity;
   this->updateWidgetFromUnitNode();
 }
 
 //-----------------------------------------------------------------------------
-QString qMRMLCoordinatesWidget::quantity()const
+QString qMRMLCoordinatesWidget::quantity() const
 {
   Q_D(const qMRMLCoordinatesWidget);
   return d->Quantity;
 }
 
 // --------------------------------------------------------------------------
-vtkMRMLScene* qMRMLCoordinatesWidget::mrmlScene()const
+vtkMRMLScene* qMRMLCoordinatesWidget::mrmlScene() const
 {
   Q_D(const qMRMLCoordinatesWidget);
   return d->MRMLScene;
@@ -158,31 +156,29 @@ void qMRMLCoordinatesWidget::setMRMLScene(vtkMRMLScene* scene)
   Q_D(qMRMLCoordinatesWidget);
 
   if (this->mrmlScene() == scene)
-    {
+  {
     return;
-    }
+  }
 
   d->MRMLScene = scene;
   d->setAndObserveSelectionNode();
 }
 
 // --------------------------------------------------------------------------
-qMRMLCoordinatesWidget::UnitAwareProperties
-qMRMLCoordinatesWidget::unitAwareProperties()const
+qMRMLCoordinatesWidget::UnitAwareProperties qMRMLCoordinatesWidget::unitAwareProperties() const
 {
   Q_D(const qMRMLCoordinatesWidget);
   return d->Flags;
 }
 
 // --------------------------------------------------------------------------
-void qMRMLCoordinatesWidget
-::setUnitAwareProperties(UnitAwareProperties newFlags)
+void qMRMLCoordinatesWidget::setUnitAwareProperties(UnitAwareProperties newFlags)
 {
   Q_D(qMRMLCoordinatesWidget);
   if (newFlags == d->Flags)
-    {
+  {
     return;
-    }
+  }
 
   d->Flags = newFlags;
 }
@@ -193,47 +189,45 @@ void qMRMLCoordinatesWidget::updateWidgetFromUnitNode()
   Q_D(qMRMLCoordinatesWidget);
 
   if (d->SelectionNode)
-    {
-    vtkMRMLUnitNode* unitNode =
-      vtkMRMLUnitNode::SafeDownCast(d->MRMLScene->GetNodeByID(
-        d->SelectionNode->GetUnitNodeID(d->Quantity.toUtf8())));
+  {
+    vtkMRMLUnitNode* unitNode = vtkMRMLUnitNode::SafeDownCast(d->MRMLScene->GetNodeByID(d->SelectionNode->GetUnitNodeID(d->Quantity.toUtf8())));
 
     if (unitNode)
-      {
+    {
       if (d->Flags.testFlag(qMRMLCoordinatesWidget::Scaling))
-        {
+      {
         d->updateValueProxy(unitNode);
-        }
+      }
 
       if (d->Flags.testFlag(qMRMLCoordinatesWidget::Precision))
-        {
+      {
         this->setDecimals(unitNode->GetPrecision());
         this->setSingleStep(pow(10.0, -unitNode->GetPrecision()));
-        }
-      if (d->Flags.testFlag(qMRMLCoordinatesWidget::MinimumValue) &&
+      }
+      if (d->Flags.testFlag(qMRMLCoordinatesWidget::MinimumValue) && //
           d->Flags.testFlag(qMRMLCoordinatesWidget::MaximumValue))
-        {
+      {
         this->setRange(unitNode->GetMinimumValue(), unitNode->GetMaximumValue());
-        }
+      }
       else if (d->Flags.testFlag(qMRMLCoordinatesWidget::MinimumValue))
-        {
+      {
         this->setMinimum(unitNode->GetMinimumValue());
-        }
+      }
       else if (d->Flags.testFlag(qMRMLCoordinatesWidget::MaximumValue))
-        {
+      {
         this->setMaximum(unitNode->GetMaximumValue());
-        }
+      }
       for (int i = 0; i < this->dimension(); ++i)
-        {
+      {
         if (d->Flags.testFlag(qMRMLCoordinatesWidget::Prefix))
-          {
+        {
           this->spinBox(i)->setPrefix(unitNode->GetPrefix());
-          }
+        }
         if (d->Flags.testFlag(qMRMLCoordinatesWidget::Suffix))
-          {
+        {
           this->spinBox(i)->setSuffix(unitNode->GetSuffix());
-          }
         }
       }
     }
+  }
 }

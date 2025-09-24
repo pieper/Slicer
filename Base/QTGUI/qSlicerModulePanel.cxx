@@ -35,7 +35,7 @@
 #include "qSlicerUtils.h"
 
 //---------------------------------------------------------------------------
-class qSlicerModulePanelPrivate: public Ui_qSlicerModulePanel
+class qSlicerModulePanelPrivate : public Ui_qSlicerModulePanel
 {
 public:
   void setupUi(qSlicerWidget* widget);
@@ -45,7 +45,7 @@ public:
 
 //---------------------------------------------------------------------------
 qSlicerModulePanel::qSlicerModulePanel(QWidget* _parent, Qt::WindowFlags f)
-  :qSlicerAbstractModulePanel(_parent, f)
+  : qSlicerAbstractModulePanel(_parent, f)
   , d_ptr(new qSlicerModulePanelPrivate)
 {
   Q_D(qSlicerModulePanel);
@@ -60,22 +60,20 @@ qSlicerModulePanel::~qSlicerModulePanel()
 }
 
 //---------------------------------------------------------------------------
-qSlicerAbstractCoreModule* qSlicerModulePanel::currentModule()const
+qSlicerAbstractCoreModule* qSlicerModulePanel::currentModule() const
 {
   Q_D(const qSlicerModulePanel);
-  QBoxLayout* scrollAreaLayout =
-    qobject_cast<QBoxLayout*>(d->ScrollArea->widget()->layout());
+  QBoxLayout* scrollAreaLayout = qobject_cast<QBoxLayout*>(d->ScrollArea->widget()->layout());
 
   QLayoutItem* item = scrollAreaLayout->itemAt(1);
 
-  qSlicerAbstractModuleWidget* currentModuleWidget =
-    item ? qobject_cast<qSlicerAbstractModuleWidget*>(item->widget()) : 0;
+  qSlicerAbstractModuleWidget* currentModuleWidget = item ? qobject_cast<qSlicerAbstractModuleWidget*>(item->widget()) : 0;
 
   return currentModuleWidget ? currentModuleWidget->module() : nullptr;
 }
 
 //---------------------------------------------------------------------------
-QString qSlicerModulePanel::currentModuleName()const
+QString qSlicerModulePanel::currentModuleName() const
 {
   qSlicerAbstractCoreModule* module = this->currentModule();
   return module ? module->name() : QString();
@@ -85,20 +83,20 @@ QString qSlicerModulePanel::currentModuleName()const
 void qSlicerModulePanel::setModule(const QString& moduleName)
 {
   if (!this->moduleManager())
-    {
+  {
     return;
-    }
+  }
 
   // Log when the user switches between modules so that if the application crashed
   // we knew which module was active.
   qDebug() << "Switch to module: " << moduleName;
 
-  qSlicerAbstractCoreModule * module = nullptr;
+  qSlicerAbstractCoreModule* module = nullptr;
   if (!moduleName.isEmpty())
-    {
+  {
     module = this->moduleManager()->module(moduleName);
     Q_ASSERT(module);
-    }
+  }
   this->setModule(module);
 }
 
@@ -108,25 +106,25 @@ void qSlicerModulePanel::setModule(qSlicerAbstractCoreModule* module)
   // Retrieve current module associated with the module panel
   qSlicerAbstractCoreModule* oldModule = this->currentModule();
   if (module == oldModule)
-    {
+  {
     return;
-    }
+  }
 
   if (oldModule)
-    {
+  {
     // Remove the current module
     this->removeModule(oldModule);
-    }
+  }
 
   if (module)
-    {
+  {
     // Add the new module
     this->addModule(module);
-    }
+  }
   else
-    {
-    //d->HelpLabel->setHtml("");
-    }
+  {
+    // d->HelpLabel->setHtml("");
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -134,14 +132,13 @@ void qSlicerModulePanel::addModule(qSlicerAbstractCoreModule* module)
 {
   Q_ASSERT(module);
 
-  qSlicerAbstractModuleWidget* moduleWidget =
-    dynamic_cast<qSlicerAbstractModuleWidget*>(module->widgetRepresentation());
+  qSlicerAbstractModuleWidget* moduleWidget = dynamic_cast<qSlicerAbstractModuleWidget*>(module->widgetRepresentation());
   if (moduleWidget == nullptr)
-    {
-    qDebug() << "Warning, there is no UI for the module"<< module->name();
+  {
+    qDebug() << "Warning, there is no UI for the module" << module->name();
     emit moduleAdded(module->name());
     return;
-    }
+  }
 
   Q_ASSERT(!moduleWidget->moduleName().isEmpty());
 
@@ -149,20 +146,19 @@ void qSlicerModulePanel::addModule(qSlicerAbstractCoreModule* module)
 
   // Update module layout
   if (moduleWidget->layout())
-    {
+  {
     moduleWidget->layout()->setContentsMargins(0, 0, 0, 0);
-    }
+  }
   else
-    {
+  {
     qWarning() << moduleWidget->moduleName() << "widget doesn't have a top-level layout.";
-    }
+  }
 
   QWidget* scrollAreaContents = d->ScrollArea->widget();
   // Insert module in the panel
-  QBoxLayout* scrollAreaLayout =
-    qobject_cast<QBoxLayout*>(scrollAreaContents->layout());
+  QBoxLayout* scrollAreaLayout = qobject_cast<QBoxLayout*>(scrollAreaContents->layout());
   Q_ASSERT(scrollAreaLayout);
-  scrollAreaLayout->insertWidget(1, moduleWidget,1);
+  scrollAreaLayout->insertWidget(1, moduleWidget, 1);
 
   moduleWidget->setSizePolicy(QSizePolicy::Minimum, moduleWidget->sizePolicy().verticalPolicy());
   moduleWidget->setVisible(true);
@@ -171,36 +167,29 @@ void qSlicerModulePanel::addModule(qSlicerAbstractCoreModule* module)
 
   qSlicerCoreApplication* app = qSlicerCoreApplication::application();
   if (app)
-    {
-    QString wikiVersion = "Nightly";
-    if (app->releaseType() == "Stable")
-      {
-      wikiVersion = QString("%1.%2").arg(app->majorVersion()).arg(app->minorVersion());
-      }
-    help = qSlicerUtils::replaceWikiUrlVersion(module->helpText(), wikiVersion);
-    }
+  {
+    help = qSlicerUtils::replaceDocumentationUrlVersion(module->helpText(), QUrl(app->documentationBaseUrl()).host(), app->documentationVersion());
+  }
   help.replace("\\n", "<br>");
 
   d->HelpCollapsibleButton->setVisible(this->isHelpAndAcknowledgmentVisible() && !help.isEmpty());
   d->HelpLabel->setHtml(help);
-  //d->HelpLabel->load(QString("http://www.slicer.org/slicerWiki/index.php?title=Modules:Transforms-Documentation-3.4&useskin=chick"));
   d->AcknowledgementLabel->clear();
   qSlicerAbstractModule* guiModule = qobject_cast<qSlicerAbstractModule*>(module);
   if (guiModule && !guiModule->logo().isNull())
-    {
-    d->AcknowledgementLabel->document()->addResource(QTextDocument::ImageResource,
-      QUrl("module://logo.png"), QVariant(guiModule->logo()));
-    d->AcknowledgementLabel->append(
-      QString("<center><img src=\"module://logo.png\"/></center><br>"));
-    }
+  {
+    d->AcknowledgementLabel->document()->addResource(QTextDocument::ImageResource, QUrl("module://logo.png"), QVariant(guiModule->logo()));
+    d->AcknowledgementLabel->append(QString("<center><img src=\"module://logo.png\"/></center><br>"));
+  }
   QString acknowledgement = module->acknowledgementText();
   d->AcknowledgementLabel->insertHtml(acknowledgement);
   if (!module->contributors().isEmpty())
-    {
+  {
     QString contributors = module->contributors().join(", ");
-    QString contributorsText = QString("<br/><u>Contributors:</u> <i>") + contributors + "</i><br/>";
+    QString contributorsText = QString("<br/><u>%1</u> <i>").arg(tr("Contributors:"));
+    contributorsText += contributors + "</i><br/>";
     d->AcknowledgementLabel->append(contributorsText);
-    }
+  }
 
   moduleWidget->installEventFilter(this);
   this->updateGeometry();
@@ -215,39 +204,37 @@ void qSlicerModulePanel::removeModule(qSlicerAbstractCoreModule* module)
 {
   Q_ASSERT(module);
 
-  qSlicerAbstractModuleWidget * moduleWidget =
-    dynamic_cast<qSlicerAbstractModuleWidget*>(module->widgetRepresentation());
+  qSlicerAbstractModuleWidget* moduleWidget = dynamic_cast<qSlicerAbstractModuleWidget*>(module->widgetRepresentation());
   Q_ASSERT(moduleWidget);
 
   Q_D(qSlicerModulePanel);
 
-  QBoxLayout* scrollAreaLayout =
-    qobject_cast<QBoxLayout*>(d->ScrollArea->widget()->layout());
+  QBoxLayout* scrollAreaLayout = qobject_cast<QBoxLayout*>(d->ScrollArea->widget()->layout());
   Q_ASSERT(scrollAreaLayout);
   int index = scrollAreaLayout->indexOf(moduleWidget);
   if (index == -1)
-    {
+  {
     return;
-    }
+  }
 
   moduleWidget->exit();
   moduleWidget->removeEventFilter(this);
 
-  //emit moduleAboutToBeRemoved(moduleWidget->module());
+  // emit moduleAboutToBeRemoved(moduleWidget->module());
 
   // Remove widget from layout
-  //d->Layout->removeWidget(module);
+  // d->Layout->removeWidget(module);
   scrollAreaLayout->takeAt(index);
 
   moduleWidget->setVisible(false);
   moduleWidget->setParent(nullptr);
 
   // if nobody took ownership of the module, make sure it both lost its parent and is hidden
-//   if (moduleWidget->parent() == d->Layout->parentWidget())
-//     {
-//     moduleWidget->setVisible(false);
-//     moduleWidget->setParent(0);
-//     }
+  //   if (moduleWidget->parent() == d->Layout->parentWidget())
+  //     {
+  //     moduleWidget->setVisible(false);
+  //     moduleWidget->setParent(0);
+  //     }
 
   emit moduleRemoved(module->name());
 }
@@ -264,20 +251,20 @@ void qSlicerModulePanel::setHelpAndAcknowledgmentVisible(bool value)
   Q_D(qSlicerModulePanel);
   d->HelpAndAcknowledgmentVisible = value;
   if (value)
-    {
+  {
     if (!d->HelpLabel->toHtml().isEmpty())
-      {
-      d->HelpCollapsibleButton->setVisible(true);
-      }
-    }
-  else
     {
-    d->HelpCollapsibleButton->setVisible(false);
+      d->HelpCollapsibleButton->setVisible(true);
     }
+  }
+  else
+  {
+    d->HelpCollapsibleButton->setVisible(false);
+  }
 }
 
 //---------------------------------------------------------------------------
-bool qSlicerModulePanel::isHelpAndAcknowledgmentVisible()const
+bool qSlicerModulePanel::isHelpAndAcknowledgmentVisible() const
 {
   Q_D(const qSlicerModulePanel);
   return d->HelpAndAcknowledgmentVisible;
@@ -288,24 +275,22 @@ bool qSlicerModulePanel::eventFilter(QObject* watchedModule, QEvent* event)
 {
   Q_UNUSED(watchedModule);
   if (event->type() == QEvent::Resize)
-    {
+  {
     // The module has a new size, that means the module panel should probably
     // be resized as well.
     this->updateGeometry();
-    }
+  }
   return false;
 }
 
 //---------------------------------------------------------------------------
-QSize qSlicerModulePanel::minimumSizeHint()const
+QSize qSlicerModulePanel::minimumSizeHint() const
 {
   Q_D(const qSlicerModulePanel);
   // QScrollArea::minumumSizeHint is wrong. QScrollArea are not meant to
   // be resized. The minimumSizeHint is actually the width of the module
   // representation.
-  QSize size = QSize(d->ScrollArea->widget()->minimumSizeHint().width() +
-                  d->ScrollArea->horizontalScrollBar()->sizeHint().width(),
-                  this->Superclass::minimumSizeHint().height());
+  QSize size = QSize(d->ScrollArea->widget()->minimumSizeHint().width() + d->ScrollArea->horizontalScrollBar()->sizeHint().width(), this->Superclass::minimumSizeHint().height());
   return size;
 }
 
@@ -313,7 +298,7 @@ QSize qSlicerModulePanel::minimumSizeHint()const
 // qSlicerModulePanelPrivate methods
 
 //---------------------------------------------------------------------------
-void qSlicerModulePanelPrivate::setupUi(qSlicerWidget * widget)
+void qSlicerModulePanelPrivate::setupUi(qSlicerWidget* widget)
 {
   this->Ui_qSlicerModulePanel::setupUi(widget);
   this->HelpLabel->setOpenExternalLinks(true);

@@ -2,7 +2,7 @@ project(qMRMLWidgets)
 
 
 #-----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 #-----------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -59,26 +59,23 @@ configure_file(
 # Sources
 #
 set(MRMLWidgets_SRCS
-  qMRMLCaptureToolBar.cxx
-  qMRMLCaptureToolBar.h
+  qMRMLAbstractViewWidget.cxx
+  qMRMLAbstractViewWidget.h
   qMRMLCheckableNodeComboBox.cxx
   qMRMLCheckableNodeComboBox.h
   qMRMLClipNodeWidget.cxx
   qMRMLClipNodeWidget.h
+  qMRMLClipNodeDisplayWidget.cxx
+  qMRMLClipNodeDisplayWidget.h
   qMRMLCollapsibleButton.cxx
   qMRMLCollapsibleButton.h
-  qMRMLColors.cxx
-  qMRMLColors.h
-  qMRMLColorListView.cxx
-  qMRMLColorListView.h
   qMRMLColorModel.cxx
   qMRMLColorModel.h
-  qMRMLColorPickerWidget.cxx
-  qMRMLColorPickerWidget.h
+  qMRMLColorModel_p.h
+  qMRMLColors.cxx
+  qMRMLColors.h
   qMRMLColorTableComboBox.cxx
   qMRMLColorTableComboBox.h
-  qMRMLColorTableView.cxx
-  qMRMLColorTableView.h
   qMRMLCoordinatesWidget.cxx
   qMRMLCoordinatesWidget.h
   qMRMLDisplayNodeWidget.cxx
@@ -141,6 +138,8 @@ set(MRMLWidgets_SRCS
   qMRMLROIWidget.h
   qMRMLScalarInvariantComboBox.cxx
   qMRMLScalarInvariantComboBox.h
+  qMRMLScalarsDisplayWidget.cxx
+  qMRMLScalarsDisplayWidget.h
   qMRMLSceneCategoryModel.cxx
   qMRMLSceneCategoryModel.h
   qMRMLSceneColorTableModel.cxx
@@ -149,9 +148,6 @@ set(MRMLWidgets_SRCS
   qMRMLSceneFactoryWidget.h
   qMRMLSceneModel.cxx
   qMRMLSceneModel.h
-  qMRMLSceneViewMenu.cxx
-  qMRMLSceneViewMenu.h
-  qMRMLSceneViewMenu_p.h
   qMRMLSceneTransformModel.cxx
   qMRMLSceneTransformModel.h
   qMRMLSceneHierarchyModel.cxx
@@ -168,6 +164,8 @@ set(MRMLWidgets_SRCS
   qMRMLSliceInformationWidget.cxx
   qMRMLSliceInformationWidget.h
   qMRMLSliceInformationWidget_p.h
+  qMRMLSliceVerticalControllerWidget.cxx
+  qMRMLSliceVerticalControllerWidget.h
   qMRMLSliceView.cxx
   qMRMLSliceView.h
   qMRMLSliceView_p.h
@@ -176,6 +174,8 @@ set(MRMLWidgets_SRCS
   qMRMLSliceWidget_p.h
   qMRMLSliderWidget.cxx
   qMRMLSliderWidget.h
+  qMRMLSortFilterColorProxyModel.cxx
+  qMRMLSortFilterColorProxyModel.h
   qMRMLSortFilterHierarchyProxyModel.cxx
   qMRMLSortFilterHierarchyProxyModel.h
   qMRMLSortFilterProxyModel.cxx
@@ -227,14 +227,6 @@ set(MRMLWidgets_SRCS
 
 if(MRML_WIDGETS_HAVE_WEBENGINE_SUPPORT)
   list(APPEND MRMLWidgets_SRCS
-    qMRMLChartView.cxx
-    qMRMLChartView.h
-    qMRMLChartView_p.h
-    qMRMLChartViewControllerWidget.cxx
-    qMRMLChartViewControllerWidget.h
-    qMRMLChartViewControllerWidget_p.h
-    qMRMLChartWidget.cxx
-    qMRMLChartWidget.h
     qMRMLExpandingWebView.cxx
     qMRMLExpandingWebView.h
     qMRMLExpandingWebView_p.h
@@ -243,15 +235,13 @@ endif()
 
 # Headers that should run through moc
 set(MRMLWidgets_MOC_SRCS
-  qMRMLCaptureToolBar.h
+  qMRMLAbstractViewWidget.h
   qMRMLCheckableNodeComboBox.h
   qMRMLClipNodeWidget.h
+  qMRMLClipNodeDisplayWidget.h
   qMRMLCollapsibleButton.h
-  qMRMLColorListView.h
-  qMRMLColorPickerWidget.h
-  qMRMLColorTableComboBox.h
-  qMRMLColorTableView.h
   qMRMLColorModel.h
+  qMRMLColorTableComboBox.h
   qMRMLCoordinatesWidget.h
   qMRMLDisplayNodeViewComboBox.h
   qMRMLDisplayNodeWidget.h
@@ -284,12 +274,11 @@ set(MRMLWidgets_MOC_SRCS
   qMRMLRangeWidget.h
   qMRMLROIWidget.h
   qMRMLScalarInvariantComboBox.h
+  qMRMLScalarsDisplayWidget.h
   qMRMLSceneCategoryModel.h
   qMRMLSceneColorTableModel.h
   qMRMLSceneFactoryWidget.h
   qMRMLSceneModel.h
-  qMRMLSceneViewMenu.h
-  qMRMLSceneViewMenu_p.h
   qMRMLSceneTransformModel.h
   qMRMLSceneHierarchyModel.h
   qMRMLSceneDisplayableModel.h
@@ -299,11 +288,13 @@ set(MRMLWidgets_MOC_SRCS
   qMRMLSliceControllerWidget_p.h
   qMRMLSliceInformationWidget.h
   qMRMLSliceInformationWidget_p.h
+  qMRMLSliceVerticalControllerWidget.h
   qMRMLSliceView.h
   qMRMLSliceView_p.h
   qMRMLSliceWidget.h
   qMRMLSliceWidget_p.h
   qMRMLSliderWidget.h
+  qMRMLSortFilterColorProxyModel.h
   qMRMLSortFilterHierarchyProxyModel.h
   qMRMLSortFilterProxyModel.h
   qMRMLSpinBox.h
@@ -334,11 +325,6 @@ set(MRMLWidgets_MOC_SRCS
 
 if(MRML_WIDGETS_HAVE_WEBENGINE_SUPPORT)
   list(APPEND MRMLWidgets_MOC_SRCS
-    qMRMLChartView.h
-    qMRMLChartView_p.h
-    qMRMLChartViewControllerWidget.h
-    qMRMLChartViewControllerWidget_p.h
-    qMRMLChartWidget.h
     qMRMLExpandingWebView.h
     qMRMLExpandingWebView_p.h
     )
@@ -347,7 +333,7 @@ endif()
 # UI files
 set(MRMLWidgets_UI_SRCS
   Resources/UI/qMRMLClipNodeWidget.ui
-  Resources/UI/qMRMLColorPickerWidget.ui
+  Resources/UI/qMRMLClipNodeDisplayWidget.ui
   Resources/UI/qMRMLDisplayNodeWidget.ui
   Resources/UI/qMRMLEventLoggerWidget.ui
   Resources/UI/qMRMLModelInfoWidget.ui
@@ -355,11 +341,13 @@ set(MRMLWidgets_UI_SRCS
   Resources/UI/qMRMLNodeAttributeTableWidget.ui
   Resources/UI/qMRMLPlotViewControllerWidget.ui
   Resources/UI/qMRMLROIWidget.ui
+  Resources/UI/qMRMLScalarsDisplayWidget.ui
   Resources/UI/qMRMLSceneFactoryWidget.ui
   Resources/UI/qMRMLScreenShotDialog.ui
   Resources/UI/qMRMLSegmentSelectorWidget.ui
   Resources/UI/qMRMLSliceControllerWidget.ui
   Resources/UI/qMRMLSliceInformationWidget.ui
+  Resources/UI/qMRMLSliceVerticalControllerWidget.ui
   Resources/UI/qMRMLSliceWidget.ui
   Resources/UI/qMRMLTableViewControllerWidget.ui
   Resources/UI/qMRMLThreeDViewControllerWidget.ui
@@ -370,22 +358,9 @@ set(MRMLWidgets_UI_SRCS
   Resources/UI/qMRMLWindowLevelWidget.ui
   )
 
-if(MRML_WIDGETS_HAVE_WEBENGINE_SUPPORT)
-  list(APPEND MRMLWidgets_UI_SRCS
-    Resources/UI/qMRMLChartViewControllerWidget.ui
-    )
-endif()
-
 set(MRMLWidgets_QRC_SRCS
   Resources/qMRMLWidgets.qrc
   )
-
-if(MRML_WIDGETS_HAVE_WEBENGINE_SUPPORT)
-  configure_file(Resources/jqPlot.qrc.in ${qMRMLWidgets_BINARY_DIR}/Resources/jqPlot.qrc)
-  list(APPEND MRMLWidgets_QRC_SRCS
-    ${qMRMLWidgets_BINARY_DIR}/Resources/jqPlot.qrc
-    )
-endif()
 
 if(Slicer_USE_QtTesting)
   list(APPEND MRMLWidgets_SRCS
@@ -461,7 +436,6 @@ endif()
     set(TS_DIR
       "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Translations/"
     )
-    get_property(Slicer_LANGUAGES GLOBAL PROPERTY Slicer_LANGUAGES)
 
     include(SlicerMacroTranslation)
     SlicerMacroTranslation(
@@ -498,11 +472,8 @@ set(MRMLWidgets_LIBRARIES
   ${CTK_LIBRARIES}
   MRMLLogic
   MRMLDisplayableManager
+  VTK::RenderingQt
   )
-list(APPEND MRMLWidgets_LIBRARIES
-  vtkRenderingQt
-  )
-
 
 target_link_libraries(${lib_name} ${MRMLWidgets_LIBRARIES})
 

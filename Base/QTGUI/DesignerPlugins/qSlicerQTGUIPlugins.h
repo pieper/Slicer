@@ -42,16 +42,15 @@ class Q_SLICER_DESIGNER_PLUGINS_EXPORT qSlicerQTGUIPlugins
 
 public:
   QList<QDesignerCustomWidgetInterface*> customWidgets() const override
-    {
-    QList<QDesignerCustomWidgetInterface *> plugins;
+  {
+    QList<QDesignerCustomWidgetInterface*> plugins;
     plugins << new qSlicerWidgetPlugin;
     plugins << new qSlicerDirectoryListViewPlugin;
     plugins << new qSlicerModulePanelPlugin;
     plugins << new qSlicerModulesListViewPlugin;
     plugins << new qSlicerMouseModeToolBarPlugin;
     return plugins;
-    }
+  }
 };
 
 #endif
-

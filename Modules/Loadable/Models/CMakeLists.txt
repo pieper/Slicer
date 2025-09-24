@@ -1,7 +1,6 @@
 
 #-----------------------------------------------------------------------------
 set(MODULE_NAME Models)
-set(MODULE_TITLE "${MODULE_NAME}")
 
 string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
 
@@ -23,6 +22,9 @@ set(MODULE_INCLUDE_DIRECTORIES
   ${qSlicerSubjectHierarchyModuleWidgets_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/Widgets
   ${CMAKE_CURRENT_BINARY_DIR}/Widgets
+  ${qSlicerColorsModuleWidgets_INCLUDE_DIRS}
+  ${vtkSlicerColorsModuleMRML_INCLUDE_DIRS}
+  ${vtkSlicerColorsModuleLogic_INCLUDE_DIRS}
   )
 
 set(MODULE_SRCS
@@ -52,6 +54,9 @@ set(MODULE_TARGET_LIBRARIES
   qSlicer${MODULE_NAME}ModuleWidgets
   vtkSlicer${MODULE_NAME}ModuleLogic
   qSlicer${MODULE_NAME}SubjectHierarchyPlugins
+  qSlicerColorsModuleWidgets
+  vtkSlicerColorsModuleLogic
+  vtkSlicerColorsModuleMRML
   )
 
 set(MODULE_RESOURCES
@@ -61,7 +66,6 @@ set(MODULE_RESOURCES
 #-----------------------------------------------------------------------------
 slicerMacroBuildLoadableModule(
   NAME ${MODULE_NAME}
-  TITLE ${MODULE_TITLE}
   EXPORT_DIRECTIVE ${MODULE_EXPORT_DIRECTIVE}
   INCLUDE_DIRECTORIES ${MODULE_INCLUDE_DIRECTORIES}
   SRCS ${MODULE_SRCS}

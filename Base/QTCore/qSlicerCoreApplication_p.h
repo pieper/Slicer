@@ -56,15 +56,24 @@ class vtkMRMLRemoteIOLogic;
 class Q_SLICER_BASE_QTCORE_EXPORT qSlicerCoreApplicationPrivate
 {
   Q_DECLARE_PUBLIC(qSlicerCoreApplication);
+
 protected:
   qSlicerCoreApplication* q_ptr;
+
 public:
   typedef qSlicerCoreApplicationPrivate Self;
 
-  qSlicerCoreApplicationPrivate(qSlicerCoreApplication& object,
-                                qSlicerCoreCommandOptions * coreCommandOptions,
-                                qSlicerCoreIOManager * coreIOManager);
+  qSlicerCoreApplicationPrivate(qSlicerCoreApplication& object, qSlicerCoreCommandOptions* coreCommandOptions, qSlicerCoreIOManager* coreIOManager);
   virtual ~qSlicerCoreApplicationPrivate();
+
+  // Initialize process environment as early as possible.
+  //
+  // Reads launcher settings (.ini) and discovers Slicer home to populate
+  // environment variables needed by early subsystems (notably Python).
+  // Must run before parseArguments() and any Python initialization to
+  // avoid incomplete interpreter state (e.g., import failures on macOS
+  // installers).
+  virtual void initializeEnvironmentFromLauncher();
 
   virtual void init();
 
@@ -81,7 +90,7 @@ public:
   QSettings* instantiateSettings(bool useTmp);
 
   /// Return true is this instance of Slicer is running from an installed directory
-  bool isInstalled(const QString& slicerHome)const;
+  bool isInstalled(const QString& slicerHome) const;
 
   /// Given the program name, should return Slicer Home Directory
   QString discoverSlicerHomeDirectory();
@@ -90,13 +99,8 @@ public:
   void setPythonOsEnviron(const QString& key, const QString& value);
 #endif
 
-#ifdef Q_WS_WIN
-  void updatePythonOsEnviron();
-#endif
-
   /// Prepend or append value to environment variable using \a separator
-  void updateEnvironmentVariable(
-    const QString& key, const QString& value, QChar separator, bool prepend = false);
+  void updateEnvironmentVariable(const QString& key, const QString& value, QChar separator, bool prepend = false);
 
   /// If it successfully obtains 'applicationDirPath()', returns Slicer binary directory
   /// \note SlicerBin doesn't contain Debug/Release/... (see IntDir)
@@ -104,7 +108,7 @@ public:
   QString discoverSlicerBinDirectory();
 
 #ifdef Slicer_BUILD_EXTENSIONMANAGER_SUPPORT
-  QString defaultExtensionsInstallPathForMacOSX()const;
+  QString defaultExtensionsInstallPathForMacOSX() const;
 #endif
 
   /// \brief Return true if application was started using CTKAppLauncher
@@ -114,10 +118,10 @@ public:
   ///         | Build tree | Install tree
   /// --------| -----------|---------------
   /// Linux   |  true      |  true
-  /// MacOSX  |  true      |  false
+  /// macOS   |  true      |  false
   /// Windows |  true      |  true
   ///
-  bool isUsingLauncher()const;
+  bool isUsingLauncher() const;
 
   /// Convenient function used to create a \a path.
   /// If it fails, print an error message using given \a description
@@ -126,43 +130,60 @@ public:
   /// Parse arguments
   void parseArguments();
 
+  /// \brief Returns list of translation files contained in given \a dir for the input \a settingsLanguage
+  ///
+  /// If \a settingsLanguage is empty returns an empty list (application default language)
+  /// If \a settingsLanguage is not empty try to find the translation files from specific extension to generic extension
+  /// For example when \a settingsLanguage = "en_US", translation files ending with "en_US.qm" will be searched first
+  /// if no files are found then files ending with "en.qm" will be searched.
+  static QStringList findTranslationFiles(const QString& dir, const QString& settingsLanguage);
+
+  /// \brief Returns list of translation files contained in given \a dir for the input \a languageExtension
+  static QStringList findTranslationFilesWithLanguageExtension(const QString& dir, const QString& languageExtension);
+
 public:
   /// MRMLScene and AppLogic pointers
-  vtkSmartPointer<vtkMRMLScene>               MRMLScene;
-  vtkSmartPointer<vtkSlicerApplicationLogic>  AppLogic;
-  vtkSmartPointer<vtkMRMLRemoteIOLogic>       MRMLRemoteIOLogic;
+  vtkSmartPointer<vtkMRMLScene> MRMLScene;
+  vtkSmartPointer<vtkSlicerApplicationLogic> AppLogic;
+  vtkSmartPointer<vtkMRMLRemoteIOLogic> MRMLRemoteIOLogic;
 
   /// Data manager
-  vtkSmartPointer<vtkDataIOManagerLogic>      DataIOManagerLogic;
+  vtkSmartPointer<vtkDataIOManagerLogic> DataIOManagerLogic;
 
-  QString                                     SlicerHome;
+  QString SlicerHome;
   /// On windows platform, after the method 'discoverSlicerBinDirectory' has been called,
   /// IntDir should be set to either Debug,
   /// Release, RelWithDebInfo, MinSizeRel or any other custom build type.
-  QString                                     IntDir;
+  QString IntDir;
 
-  QSettings*                                  DefaultSettings;
-  QSettings*                                  UserSettings;
-  QSettings*                                  RevisionUserSettings;
+  /// Current working directory at the time the application was started.
+  QString StartupWorkingPath;
+
+  QSettings* DefaultSettings;
+  QSettings* UserSettings;
+  QSettings* RevisionUserSettings;
 
   /// ModuleManager - It should exist only one instance of the factory
-  QSharedPointer<qSlicerModuleManager>        ModuleManager;
+  QSharedPointer<qSlicerModuleManager> ModuleManager;
 
   /// CoreIOManager - It should exist only one instance of the IOManager
-  QSharedPointer<qSlicerCoreIOManager>        CoreIOManager;
+  QSharedPointer<qSlicerCoreIOManager> CoreIOManager;
 
   /// CoreCommandOptions - It should exist only one instance of the CoreCommandOptions
-  QSharedPointer<qSlicerCoreCommandOptions>   CoreCommandOptions;
+  QSharedPointer<qSlicerCoreCommandOptions> CoreCommandOptions;
+
+  /// Post-startup default handling of URI arguments
+  bool URIArgumentHandlingEnabled;
 
   /// ErrorLogModel - It should exist only one instance of the ErrorLogModel
   QSharedPointer<ctkErrorLogAbstractModel> ErrorLogModel;
 
   /// ReturnCode flag
-  int                                         ReturnCode;
+  int ReturnCode;
 
 #ifdef Slicer_USE_PYTHONQT
   /// CorePythonManager - It should exist only one instance of the CorePythonManager
-  QSharedPointer<qSlicerCorePythonManager>    CorePythonManager;
+  QSharedPointer<qSlicerCorePythonManager> CorePythonManager;
   QPointer<ctkPythonConsole> PythonConsole; // it may be owned by a widget, so we cannot refer to it by a strong pointer
 #endif
 
@@ -170,15 +191,24 @@ public:
   QSharedPointer<qSlicerExtensionsManagerModel> ExtensionsManagerModel;
 #endif
 
-  QProcessEnvironment                         Environment;
+#ifdef Slicer_BUILD_APPLICATIONUPDATE_SUPPORT
+  QSharedPointer<qSlicerApplicationUpdateManager> ApplicationUpdateManager;
+#endif
+
+  bool EnvironmentInitializedFromLauncher{ false };
+
+  QProcessEnvironment Environment;
+
+  QLocale ApplicationLocale;
+  QString ApplicationLocaleName;
 
 #ifdef Slicer_BUILD_DICOM_SUPPORT
   /// Application-wide database instance
-  QSharedPointer<ctkDICOMDatabase>            DICOMDatabase;
+  QSharedPointer<ctkDICOMDatabase> DICOMDatabase;
 #endif
 
-  QHash<int, QByteArray>                      LoadedResources;
-  int                                         NextResourceHandle;
+  QHash<int, QByteArray> LoadedResources;
+  int NextResourceHandle;
 
   /// Associated modules for each node type.
   /// Key: node class name; values: module names.
@@ -186,4 +216,3 @@ public:
 };
 
 #endif
-

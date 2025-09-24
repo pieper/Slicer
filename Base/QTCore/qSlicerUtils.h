@@ -61,17 +61,17 @@ public:
   static bool isTestingModule(qSlicerAbstractCoreModule* module);
 
   /// Look for target file in build intermediate directory.
-  /// On windows, the intermediate directory includes: . Debug RelWithDebInfo Release MinSizeRel
+  /// On Windows, the intermediate directory includes: . Debug RelWithDebInfo Release MinSizeRel
   /// And it return the first matched directory
-  /// On the other plateform, this function just return the directory passed as a first argument
+  /// On other platforms, this function just returns the directory passed as a first argument
   static QString searchTargetInIntDir(const QString& directory, const QString& target);
 
-  /// This function returns an empty string on all plateform expected windows
+  /// This function returns an empty string on all platforms except Windows,
   /// where it returns ".exe"
   static QString executableExtension();
 
   /// This function returns ".dll. on windows, ".so" on linux and ".dylib" on Mac
-  //static QString libraryExtension();
+  // static QString libraryExtension();
 
   /// Extract module name given a library name
   /// For example:
@@ -80,7 +80,7 @@ public:
   ///  on windows, ThresholdLib.dll -> Threshold
   static QString extractModuleNameFromLibraryName(const QString& libraryName);
 
-  /// Extract module name givew a \a className
+  /// Extract module name given a \a className
   /// For example:
   ///  qSlicerThresholdModule -> Threshold
   static QString extractModuleNameFromClassName(const QString& className);
@@ -92,11 +92,11 @@ public:
   static bool isPluginInstalled(const QString& filePath, const QString& applicationHomeDir);
 
   /// Return \a true if the plugin identified with its \a filePath is a built-in Slicer module.
-  static bool isPluginBuiltIn(const QString& filePath, const QString& applicationHomeDir);
+  static bool isPluginBuiltIn(const QString& filePath, const QString& applicationHomeDir, const QString& applicationRevision);
 
   /// Return the path without the intermediate directory or return \a path if there is no
   /// expected "IntDir".
-  /// \a subDirWithoutIntDir corresponds to N last compononent of the path excluding
+  /// \a subDirWithoutIntDir corresponds to N last component of the path excluding
   /// the "IntDir".
   ///
   /// <table border="1">
@@ -173,7 +173,6 @@ public:
   /// Return \a true if the \a inputPath ends with \a path
   static bool pathEndsWith(const QString& inputPath, const QString& path);
 
-
   /// Set permissions of \a path. If \a path is a directory, permissions will be set to all its descendant.
   /// While recursively traversing the tree structure, if \a path or one of its descendant
   /// is a file, \a filePermissions will be set otherwise \a directoryPermissions will be set.
@@ -181,12 +180,15 @@ public:
   /// traversing will be aborted and the permission already set won't be reverted.
   /// \return \c true on success, \c false otherwise.
   /// \sa QFile::setPermissions()
-  static bool setPermissionsRecursively(const QString &path,
-                                        QFile::Permissions directoryPermissions,
-                                        QFile::Permissions filePermissions);
+  static bool setPermissionsRecursively(const QString& path, QFile::Permissions directoryPermissions, QFile::Permissions filePermissions);
 
   /// \brief Return an updated \a text where Slicer wiki URL version is replaced
-  /// with the provided one.
+  /// with the provided one. It is now deprecated as the Slicer wiki is no longer
+  /// recommended for storing documentation. Instead Slicer core documentation
+  /// is hosted on ReadTheDocs (and versioning can be implemented using replaceDocumentationUrlVersion)
+  /// and extension documentation is expected to be hosted in each extension's repository
+  /// (and modules in extensions can create versioned links for their documentation using
+  /// qSlicerCoreApplication::documentationVersion()).
   ///
   /// Any URL containing `Documentation/<VERSION>/` will be updated.
   ///
@@ -195,7 +197,7 @@ public:
   /// the provided \a version. If there are multiple
   /// "Documentation" path elements then only the first one is considered.
   ///
-  /// \note The "path element" term is defined in this rfc: http://tools.ietf.org/html/rfc3986
+  /// \note The "path element" term is defined in this rfc: https://tools.ietf.org/html/rfc3986
   /// "A path consists of a sequence of path segments separated by a slash
   /// ("/") character."
   ///
@@ -206,11 +208,30 @@ public:
   /// \snippet qSlicerUtilsTest1.cxx replaceWikiUrlVersion example4
   static QString replaceWikiUrlVersion(const QString& text, const QString& version);
 
+  /// \brief Return an updated \a text where Slicer documentation URL version is replaced
+  /// with the provided one.
+  ///
+  /// Any URL that contains `/<VERSION>/` and with URL host name that contains the provided hostname
+  /// string will be updated.
+  ///
+  /// Following readthedocs versioning conventions, `<VERSION>` can be
+  /// `<major>.<minor>`, `v<major>.<minor>`, `latest`, or `stable`.
+  ///
+  /// Only the first occurrence of version is replaced (to keep file or directory names that have
+  /// a name that matches accepted version patterns unchanged).
+  /// For example, in `https://slicer.readthedocs.io/en/latest/user_guide/schema/1.0/something.html`
+  /// the `1.0` folder name will not be changed (only `latest` will be set to the actual version).
+  ///
+  /// Limitations:
+  /// - language code is not updated (the language specified in the original URL will be used)
+  /// - extensions that have versioned documentation maintained in their own repository have to
+  ///   generate their versioned links (for example, using qSlicerCoreApplication::documentationVersion()).
+  static QString replaceDocumentationUrlVersion(const QString& text, const QString& hostname, const QString& version);
+
 private:
   /// Not implemented
   qSlicerUtils() = default;
   virtual ~qSlicerUtils() = default;
-
 };
 
 #endif

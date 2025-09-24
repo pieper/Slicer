@@ -30,59 +30,62 @@ class vtkFloatArray;
 class vtkUnsignedLongArray;
 
 #ifndef vtkObjectPointer
-#define vtkObjectPointer(xx) (reinterpret_cast <vtkObject **>( (xx) ))
+# define vtkObjectPointer(xx) (reinterpret_cast<vtkObject**>((xx)))
 #endif
 
-/// \brief Manages adding and deleting of obserevers with events.
+/// \brief Manages adding and deleting of observers with events.
 ///
-/// Class that manages adding and deleting of obserevers with events
-/// This class keeps track of obserevers and events added to each vtk object
-/// it caches tags returned by AddObserver method so that obserevers can be removed properly.
+/// Class that manages adding and deleting of observers with events
+/// This class keeps track of observers and events added to each vtk object
+/// it caches tags returned by AddObserver method so that observers can be removed properly.
 class VTK_MRML_EXPORT vtkObserverManager : public vtkObject
 {
-  public:
-
+public:
   /// The Usual vtk class functions
-  static vtkObserverManager *New();
-  vtkTypeMacro(vtkObserverManager,vtkObject);
+  static vtkObserverManager* New();
+  vtkTypeMacro(vtkObserverManager, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// set vtkObject to a specified pointer and remove all observers for all events
-  void SetObject(vtkObject **nodePtr, vtkObject *node);
+  void SetObject(vtkObject** nodePtr, vtkObject* node);
 
   /// set vtkObject to a specified pointer, remove all observers for all events, add observer for Modify event
-  void SetAndObserveObject(vtkObject **nodePtr, vtkObject *node, float priority=0.0, bool logWarningIfSameObservationExists=true);
+  void SetAndObserveObject(vtkObject** nodePtr, vtkObject* node, float priority = 0.0, bool logWarningIfSameObservationExists = true);
 
   /// set vtkObject to a specified pointer, remove all observers for all events, add observers for specified events
-  void SetAndObserveObjectEvents(vtkObject **nodePtr, vtkObject *node, vtkIntArray *events, vtkFloatArray *priorities=nullptr, bool logWarningIfSameObservationExists=true);
+  void SetAndObserveObjectEvents(vtkObject** nodePtr, vtkObject* node, vtkIntArray* events, vtkFloatArray* priorities = nullptr, bool logWarningIfSameObservationExists = true);
 
   /// remove all observers for all events
-  void RemoveObjectEvents(vtkObject *nodePtr);
+  void RemoveObjectEvents(vtkObject* nodePtr);
 
   /// get a list of all observed events and priorities for the selected node
-  void GetObjectEvents(vtkObject *nodePtr, vtkIntArray *events, vtkFloatArray *priorities);
+  void GetObjectEvents(vtkObject* nodePtr, vtkIntArray* events, vtkFloatArray* priorities);
 
-  /// Observe ModifiedEvent on the object
-  void ObserveObject(vtkObject *node, float priority=0.0);
+  /// observe ModifiedEvent on the object (convenience method that calls AddObjectEvent with ModifiedEvent)
+  void ObserveObject(vtkObject* node, float priority = 0.0, bool logWarningIfSameObservationExists = true);
 
   /// add observers for specified events
-  void AddObjectEvents(vtkObject *nodePtr, vtkIntArray *events, vtkFloatArray *priorities=nullptr);
+  void AddObjectEvent(vtkObject* node, unsigned long event, float priority = 0.0, bool logWarningIfSameObservationExists = true);
+
+  /// add observers for specified events
+  void AddObjectEvents(vtkObject* nodePtr, vtkIntArray* events, vtkFloatArray* priorities = nullptr, bool logWarningIfSameObservationExists = true);
 
   /// accessors for the owner class
   /// - note we do not hold a registered pointer to the owner
   ///   to avoid reference loops
   /// - the owner must be careful to always clean up the
   ///   ObserverManager in the destructor (this is the standard use case)
-  vtkGetObjectMacro (Owner, vtkObject);
-  void AssignOwner (vtkObject *owner) { this->Owner = owner; };
+  vtkGetObjectMacro(Owner, vtkObject);
+  void AssignOwner(vtkObject* owner) { this->Owner = owner; };
   /// Returns the owner if any, otherwise returns the manager itself
   vtkObject* GetObserver();
 
-  vtkGetObjectMacro (CallbackCommand, vtkCallbackCommand);
+  vtkGetObjectMacro(CallbackCommand, vtkCallbackCommand);
 
   /// Return the number of observations by the manager on the node.
   /// If event is != 0 , only observations matching the events are counted
   int GetObservationsCount(vtkObject* nodePtr, unsigned long event = 0);
+
 protected:
   vtkObserverManager();
   ~vtkObserverManager() override;
@@ -91,14 +94,13 @@ protected:
 
   ///
   /// The owner of the observer manager (e.g. the vtkMRMLNode)
-  vtkObject *Owner;
+  vtkObject* Owner;
 
   ///
   /// Holder for callback
-  vtkCallbackCommand *CallbackCommand;
+  vtkCallbackCommand* CallbackCommand;
 
-  std::map< vtkObject*, vtkUnsignedLongArray* > ObserverTags;
-
+  std::map<vtkObject*, vtkUnsignedLongArray*> ObserverTags;
 };
 
 #endif

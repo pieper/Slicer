@@ -32,11 +32,11 @@
 // MRML includes
 #include "vtkMRMLSubjectHierarchyNode.h"
 
+class QDir;
+class QItemSelection;
 class qSlicerDICOMExportDialogPrivate;
 class vtkMRMLScene;
-class QItemSelection;
 
-/// \ingroup Slicer_QtModules_SubjectHierarchy_Widgets
 class Q_SLICER_MODULE_DICOMLIB_WIDGETS_EXPORT qSlicerDICOMExportDialog : public QObject
 {
 public:
@@ -50,14 +50,13 @@ public:
 public:
   /// Show dialog
   /// \param nodeToSelect Node is selected in the tree if given
-  virtual bool exec(vtkIdType itemToSelect=vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID);
+  virtual bool exec(vtkIdType itemToSelect = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID);
 
   /// Set MRML scene
   Q_INVOKABLE void setMRMLScene(vtkMRMLScene* scene);
 
   /// Python compatibility function for showing dialog (calls \a exec)
-  Q_INVOKABLE bool execDialog(vtkIdType itemToSelect=vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID)
-    { return this->exec(itemToSelect); };
+  Q_INVOKABLE bool execDialog(vtkIdType itemToSelect = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID) { return this->exec(itemToSelect); };
 
   /// Show DICOM browser and update database to show new items
   Q_INVOKABLE void showUpdatedDICOMBrowser();
@@ -66,9 +65,6 @@ protected slots:
   /// Make selections in the shown dialog, including select the item that was
   /// passed with \sa exec() in subject hierarchy tree
   void makeDialogSelections();
-
-  /// Handles change of export series or entire scene radio button selection
-  void onExportSeriesRadioButtonToggled(bool);
 
   /// Triggers examining item when selection changes
   void onCurrentItemChanged(vtkIdType itemID);
@@ -89,14 +85,14 @@ protected slots:
   void onSaveTagsCheckBoxToggled(bool);
 
   /// Handle import exported dataset checkbox toggles
-  void onImportExportedDatasetCheckBoxToggled(bool);
+  void onExportToFolderCheckBoxToggled(bool);
 
 protected:
   /// Export selected node based on the selected exportable
-  void exportSeries();
+  bool exportSeries(const QDir& outputFolder);
 
   /// Export entire scene as a secondary capture containing an MRB
-  void exportEntireScene();
+  bool exportEntireScene(const QDir& outputFolder);
 
 protected:
   QScopedPointer<qSlicerDICOMExportDialogPrivate> d_ptr;

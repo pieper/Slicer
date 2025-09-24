@@ -52,15 +52,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLScalarInvariantComboBox* widget = reinterpret_cast<qMRMLScalarInvariantComboBox*>(data);
 
   CTKCOMPARE(widget->scalarInvariant(), vtkMRMLDiffusionTensorDisplayPropertiesNode::SphericalMeasure);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLScalarInvariantComboBoxEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLScalarInvariantComboBoxEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -80,17 +80,14 @@ int qMRMLScalarInvariantComboBoxEventTranslatorPlayerTest1(int argc, char * argv
 
   widget->setDisplayPropertiesNode(displayPropertiesNode.GetPointer());
 
-  etpWidget.addTestCase(widget,
-                        xmlDirectory + "qMRMLScalarInvariantComboBoxEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(widget, xmlDirectory + "qMRMLScalarInvariantComboBoxEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

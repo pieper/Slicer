@@ -18,12 +18,37 @@
 #
 ################################################################################
 
-set(UNITTEST_LIB_PATHS
-  "--additional-module-paths"
-  ${CMAKE_BINARY_DIR}/${Slicer_QTSCRIPTEDMODULES_LIB_DIR}
-  ${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_LIB_DIR}
-  ${CMAKE_BINARY_DIR}/${Slicer_QTLOADABLEMODULES_LIB_DIR}
-  )
+# Setting this policy to NEW avoids error due to use of IN_LIST in build-system
+# of Slicer extension specifying a minimum required version older than 3.3.
+cmake_policy(SET CMP0057 NEW)
+
+# When called from an extension build-system, this function updates the given
+# list of arguments by appending appending "--additional-module-paths" along
+# with the loadable, scripted loadable and CLI module paths if not explicitly
+# disabled passing options like "--disable-modules" or "--disable-<module_type>-modules"
+function(_slicer_python_test_append_module_paths arguments_var)
+  if(DEFINED Slicer_SOURCE_DIR)
+    return()
+  endif()
+  if("--disable-modules" IN_LIST "${arguments_var}")
+    return()
+  endif()
+  set(module_paths)
+  if(NOT "--disable-scripted-loadable-modules" IN_LIST "${arguments_var}" )
+    list(APPEND module_paths ${CMAKE_BINARY_DIR}/${Slicer_QTSCRIPTEDMODULES_LIB_DIR})
+  endif()
+  if(NOT "--disable-cli-modules" IN_LIST "${arguments_var}" )
+    list(APPEND module_paths ${CMAKE_BINARY_DIR}/${Slicer_CLIMODULES_LIB_DIR})
+  endif()
+  if(NOT "--disable-loadable-modules" IN_LIST "${arguments_var}" )
+    list(APPEND module_paths ${CMAKE_BINARY_DIR}/${Slicer_QTLOADABLEMODULES_LIB_DIR})
+  endif()
+  if(module_paths)
+    list(INSERT module_paths 0 "--additional-module-paths")
+  endif()
+  list(APPEND ${arguments_var} ${module_paths})
+  set(${arguments_var} ${${arguments_var}} PARENT_SCOPE)
+endfunction()
 
 macro(slicer_add_python_test)
   set(options)
@@ -34,13 +59,13 @@ macro(slicer_add_python_test)
   if(NOT IS_ABSOLUTE ${MY_SCRIPT})
     set(MY_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/${MY_SCRIPT}")
   endif()
+  _slicer_python_test_append_module_paths(MY_SLICER_ARGS)
   ExternalData_add_test(${Slicer_ExternalData_DATA_MANAGEMENT_TARGET}
     NAME py_${MY_TESTNAME_PREFIX}${test_name}
     COMMAND ${Slicer_LAUNCHER_EXECUTABLE}
     --no-splash
     --testing
     ${Slicer_ADDITIONAL_LAUNCHER_SETTINGS}
-    ${UNITTEST_LIB_PATHS}
     ${MY_SLICER_ARGS}
     --python-script ${MY_SCRIPT} ${MY_SCRIPT_ARGS}
     )
@@ -57,6 +82,7 @@ macro(slicer_add_python_unittest)
   if("${_script_source_dir}" STREQUAL "")
     set(_script_source_dir ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
+  _slicer_python_test_append_module_paths(MY_SLICER_ARGS)
   ExternalData_add_test(${Slicer_ExternalData_DATA_MANAGEMENT_TARGET}
     NAME py_${MY_TESTNAME_PREFIX}${test_name}
     COMMAND ${Slicer_LAUNCHER_EXECUTABLE}
@@ -64,7 +90,6 @@ macro(slicer_add_python_unittest)
     --testing
     ${Slicer_ADDITIONAL_LAUNCHER_SETTINGS}
     ${MY_SLICER_ARGS}
-    ${UNITTEST_LIB_PATHS}
     --python-code "import slicer.testing\\; slicer.testing.runUnitTest(['${CMAKE_CURRENT_BINARY_DIR}', '${_script_source_dir}'], '${test_name}')"
     )
   set_property(TEST py_${MY_TESTNAME_PREFIX}${test_name} PROPERTY RUN_SERIAL TRUE)

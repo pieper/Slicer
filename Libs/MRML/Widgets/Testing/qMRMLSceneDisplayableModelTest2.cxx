@@ -36,21 +36,21 @@
 #include <vtkNew.h>
 #include "qMRMLWidget.h"
 
-int qMRMLSceneDisplayableModelTest2(int argc, char * argv [] )
+int qMRMLSceneDisplayableModelTest2(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
-  if( argc < 2 )
-    {
+  if (argc < 2)
+  {
     std::cerr << "Error: missing arguments" << std::endl;
     std::cerr << "Usage: " << std::endl;
     std::cerr << argv[0] << "  inputURL_scene.mrml " << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   try
-    {
+  {
     qMRMLSceneDisplayableModel model;
     qMRMLSortFilterProxyModel sort;
     sort.setSourceModel(&model);
@@ -67,13 +67,11 @@ int qMRMLSceneDisplayableModelTest2(int argc, char * argv [] )
     std::cout << std::endl << "Loaded twice" << std::endl;
 
     scene->Delete();
-
-    }
+  }
   catch (const char* error)
-    {
+  {
     std::cerr << error << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   return EXIT_SUCCESS;
 }
-

@@ -14,8 +14,25 @@ set(${KIT}_SRCS
   qMRML${MODULE_NAME}DisplayNodeWidget.h
   qMRML${MODULE_NAME}FiducialProjectionPropertyWidget.cxx
   qMRML${MODULE_NAME}FiducialProjectionPropertyWidget.h
-  qSlicerMarkupsPlaceWidget.cxx
-  qSlicerMarkupsPlaceWidget.h
+  qMRML${MODULE_NAME}InteractionHandleWidget.cxx
+  qMRML${MODULE_NAME}InteractionHandleWidget.h
+  qMRML${MODULE_NAME}ToolBar.cxx
+  qMRML${MODULE_NAME}ToolBar.h
+  qMRML${MODULE_NAME}ToolBar_p.h
+  qMRML${MODULE_NAME}PlaneWidget.cxx
+  qMRML${MODULE_NAME}PlaneWidget.h
+  qMRML${MODULE_NAME}ROIWidget.cxx
+  qMRML${MODULE_NAME}ROIWidget.h
+  qMRML${MODULE_NAME}AbstractOptionsWidget.cxx
+  qMRML${MODULE_NAME}AbstractOptionsWidget.h
+  qMRML${MODULE_NAME}AngleMeasurementsWidget.h
+  qMRML${MODULE_NAME}AngleMeasurementsWidget.cxx
+  qMRML${MODULE_NAME}CurveSettingsWidget.h
+  qMRML${MODULE_NAME}CurveSettingsWidget.cxx
+  qMRML${MODULE_NAME}OptionsWidgetsFactory.h
+  qMRML${MODULE_NAME}OptionsWidgetsFactory.cxx
+  qSlicer${MODULE_NAME}PlaceWidget.cxx
+  qSlicer${MODULE_NAME}PlaceWidget.h
   qSlicerSimpleMarkupsWidget.cxx
   qSlicerSimpleMarkupsWidget.h
   )
@@ -23,14 +40,28 @@ set(${KIT}_SRCS
 set(${KIT}_MOC_SRCS
   qMRML${MODULE_NAME}DisplayNodeWidget.h
   qMRML${MODULE_NAME}FiducialProjectionPropertyWidget.h
-  qSlicerMarkupsPlaceWidget.h
+  qMRML${MODULE_NAME}InteractionHandleWidget.h
+  qMRML${MODULE_NAME}ToolBar.h
+  qMRML${MODULE_NAME}ToolBar_p.h
+  qMRML${MODULE_NAME}PlaneWidget.h
+  qMRML${MODULE_NAME}ROIWidget.h
+  qMRML${MODULE_NAME}AbstractOptionsWidget.h
+  qMRML${MODULE_NAME}AngleMeasurementsWidget.h
+  qMRML${MODULE_NAME}CurveSettingsWidget.h
+  qMRML${MODULE_NAME}OptionsWidgetsFactory.h
+  qSlicer${MODULE_NAME}PlaceWidget.h
   qSlicerSimpleMarkupsWidget.h
   )
 
 set(${KIT}_UI_SRCS
   Resources/UI/qMRML${MODULE_NAME}DisplayNodeWidget.ui
   Resources/UI/qMRML${MODULE_NAME}FiducialProjectionPropertyWidget.ui
-  Resources/UI/qSlicerMarkupsPlaceWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}InteractionHandleWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}PlaneWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}ROIWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}AngleMeasurementsWidget.ui
+  Resources/UI/qMRML${MODULE_NAME}CurveSettingsWidget.ui
+  Resources/UI/qSlicer${MODULE_NAME}PlaceWidget.ui
   Resources/UI/qSlicerSimpleMarkupsWidget.ui
   )
 

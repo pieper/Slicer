@@ -34,7 +34,7 @@
 #include <vtkSmartPointer.h>
 
 // ----------------------------------------------------------------------------
-class qMRMLNodeAttributeTableWidgetTester: public QObject
+class qMRMLNodeAttributeTableWidgetTester : public QObject
 {
   Q_OBJECT
   qMRMLNodeAttributeTableWidget* NodeAttributeTableWidget;
@@ -47,7 +47,6 @@ private slots:
   void testSetNode();
 };
 
-
 // ----------------------------------------------------------------------------
 void qMRMLNodeAttributeTableWidgetTester::init()
 {
@@ -58,11 +57,11 @@ void qMRMLNodeAttributeTableWidgetTester::init()
 void qMRMLNodeAttributeTableWidgetTester::cleanup()
 {
   if (this->NodeAttributeTableWidget != nullptr)
-    {
+  {
     this->NodeAttributeTableWidget->setMRMLNode(nullptr);
     delete this->NodeAttributeTableWidget;
     this->NodeAttributeTableWidget = nullptr;
-    }
+  }
 }
 
 // ----------------------------------------------------------------------------

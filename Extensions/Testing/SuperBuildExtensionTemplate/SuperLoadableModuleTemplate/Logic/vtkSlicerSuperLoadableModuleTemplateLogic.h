@@ -20,7 +20,6 @@
 // This class manages the logic associated with reading, saving,
 // and changing propertied of the volumes
 
-
 #ifndef __vtkSlicerSuperLoadableModuleTemplateLogic_h
 #define __vtkSlicerSuperLoadableModuleTemplateLogic_h
 
@@ -34,31 +33,27 @@
 
 #include "vtkSlicerSuperLoadableModuleTemplateModuleLogicExport.h"
 
-
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_SUPERLOADABLEMODULETEMPLATE_MODULE_LOGIC_EXPORT vtkSlicerSuperLoadableModuleTemplateLogic :
-  public vtkSlicerModuleLogic
+class VTK_SLICER_SUPERLOADABLEMODULETEMPLATE_MODULE_LOGIC_EXPORT vtkSlicerSuperLoadableModuleTemplateLogic : public vtkSlicerModuleLogic
 {
 public:
-
-  static vtkSlicerSuperLoadableModuleTemplateLogic *New();
+  static vtkSlicerSuperLoadableModuleTemplateLogic* New();
   vtkTypeMacro(vtkSlicerSuperLoadableModuleTemplateLogic, vtkSlicerModuleLogic);
-  void PrintSelf(ostream& os, vtkIndent indent);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
 protected:
   vtkSlicerSuperLoadableModuleTemplateLogic();
-  virtual ~vtkSlicerSuperLoadableModuleTemplateLogic();
+  ~vtkSlicerSuperLoadableModuleTemplateLogic() override;
 
-  virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
+  void SetMRMLSceneInternal(vtkMRMLScene* newScene) override;
   /// Register MRML Node classes to Scene. Gets called automatically when the MRMLScene is attached to this logic class.
-  virtual void RegisterNodes();
-  virtual void UpdateFromMRMLScene();
-  virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node);
-  virtual void OnMRMLSceneNodeRemoved(vtkMRMLNode* node);
-private:
+  void RegisterNodes() override;
+  void UpdateFromMRMLScene() override;
+  void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
+  void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
 
+private:
   vtkSlicerSuperLoadableModuleTemplateLogic(const vtkSlicerSuperLoadableModuleTemplateLogic&); // Not implemented
-  void operator=(const vtkSlicerSuperLoadableModuleTemplateLogic&); // Not implemented
+  void operator=(const vtkSlicerSuperLoadableModuleTemplateLogic&);                            // Not implemented
 };
 
 #endif

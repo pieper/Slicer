@@ -17,24 +17,26 @@
 
 #include "vtkMRMLNode.h"
 
+class vtkMRMLModelNode;
+class vtkMRMLSliceDisplayNode;
+class vtkMRMLVolumeNode;
+
 /// \brief MRML node for storing a slice through RAS space.
 ///
-/// This node stores the information about how to composite two
+/// This node stores the information about how to composite N
 /// vtkMRMLVolumes into a single display image.
 class VTK_MRML_EXPORT vtkMRMLSliceCompositeNode : public vtkMRMLNode
 {
-  public:
-  static vtkMRMLSliceCompositeNode *New();
-  vtkTypeMacro(vtkMRMLSliceCompositeNode,vtkMRMLNode);
+public:
+  static vtkMRMLSliceCompositeNode* New();
+  vtkTypeMacro(vtkMRMLSliceCompositeNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
 
-  ///
   /// Set node attributes
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
-  ///
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
 
@@ -42,151 +44,153 @@ class VTK_MRML_EXPORT vtkMRMLSliceCompositeNode : public vtkMRMLNode
   /// \sa vtkMRMLNode::CopyContent
   vtkMRMLCopyContentMacro(vtkMRMLSliceCompositeNode);
 
-  ///
   /// Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "SliceComposite";}
+  const char* GetNodeTagName() override { return "SliceComposite"; }
 
-  /// Set the volumes as reference in the scene
-  void SetSceneReferences() override;
-
-  ///
-  /// Updates this node if it depends on other nodes
-  /// when the node is deleted in the scene
-  void UpdateReferences() override;
-
-  ///
-  /// Update the stored reference to another node in the scene
-  void UpdateReferenceID(const char *oldID, const char *newID) override;
-
-  ///
+  /// @{
   /// the ID of a MRMLVolumeNode
-  vtkGetStringMacro (BackgroundVolumeID);
+  /// \sa GetNthLayerVolumeID
+  const char* GetBackgroundVolumeID();
   void SetBackgroundVolumeID(const char* id);
-  void SetReferenceBackgroundVolumeID(const char *id) { this->SetBackgroundVolumeID(id); }
+  void SetReferenceBackgroundVolumeID(const char* id) { this->SetBackgroundVolumeID(id); }
+  /// @}
 
-  ///
+  /// @{
   /// the ID of a MRMLVolumeNode
-  /// TODO: make this an arbitrary list of layers
-  vtkGetStringMacro (ForegroundVolumeID);
+  /// \sa GetNthLayerVolumeID
+  const char* GetForegroundVolumeID();
   void SetForegroundVolumeID(const char* id);
-  void SetReferenceForegroundVolumeID(const char *id) { this->SetForegroundVolumeID(id); }
+  void SetReferenceForegroundVolumeID(const char* id) { this->SetForegroundVolumeID(id); }
+  /// @}
 
-  ///
+  /// @{
   /// the ID of a MRMLVolumeNode
-  /// TODO: make this an arbitrary list of layers
-  vtkGetStringMacro (LabelVolumeID);
+  /// \sa GetNthLayerVolumeID
+  const char* GetLabelVolumeID();
   void SetLabelVolumeID(const char* id);
-  void SetReferenceLabelVolumeID(const char *id) { this->SetLabelVolumeID(id); }
+  void SetReferenceLabelVolumeID(const char* id) { this->SetLabelVolumeID(id); }
+  /// @}
 
-  ///
+  enum
+  {
+    LayerNone = -1,
+    LayerBackground = 0,
+    LayerForeground = 1,
+    LayerLabel = 2,
+    Layer_Last // must be last
+  };
+
+  int GetNumberOfAdditionalLayers();
+
+  /// @{
+  /// \sa GetNthLayerVolumeID, SetNthLayerVolumeID
+  vtkMRMLVolumeNode* GetNthLayerVolume(int layerIndex);
+  void SetNthLayerVolume(int layerIndex, vtkMRMLVolumeNode* volumeNode);
+  /// @}
+
+  /// @{
+  /// \sa GetNthLayerVolume, SetNthLayerVolume
+  const char* GetNthLayerVolumeID(int layerIndex);
+  void SetNthLayerVolumeID(int layerIndex, const char* volumeNodeID);
+  /// @}
+
+  /// @{
   /// Compositing mode for foreground and background can be alpha
   /// blending, reverse alpha blending, addition, or subtraction
-  vtkGetMacro (Compositing, int);
-  vtkSetMacro (Compositing, int);
+  vtkGetMacro(Compositing, int);
+  vtkSetMacro(Compositing, int);
+  /// @}
 
-  ///
+  /// @{
+  /// Configures the behavior for blending layers.
+  /// The default value is true, indicating that the layers will be clipped to fit the background.
+  vtkGetMacro(ClipToBackgroundVolume, bool);
+  vtkSetMacro(ClipToBackgroundVolume, bool);
+  /// @}
+
+  /// @{
+  /// Opacity of layer N over layer N-1
+  /// \note Only Foreground and Label opacity are saved into the MRML Scene
+  double GetNthLayerOpacity(int layerIndex);
+  void SetNthLayerOpacity(int layerIndex, double value);
+  /// @}
+
+  /// @{
   /// opacity of the Foreground for rendering over background
-  /// TODO: make this an arbitrary list of layers
   /// TODO: make different composite types (checkerboard, etc)
-  vtkGetMacro (ForegroundOpacity, double);
-  vtkSetMacro (ForegroundOpacity, double);
+  /// \sa GetNthLayerOpacity, SetNthLayerOpacity
+  double GetForegroundOpacity();
+  void SetForegroundOpacity(double value);
+  /// @}
 
-  ///
+  /// @{
   /// opacity of the Label for rendering over background
-  /// TODO: make this an arbitrary list of layers
   /// TODO: make different composite types (checkerboard, etc)
-  vtkGetMacro (LabelOpacity, double);
-  vtkSetMacro (LabelOpacity, double);
+  /// \sa GetNthLayerOpacity, SetNthLayerOpacity
+  double GetLabelOpacity();
+  void SetLabelOpacity(double value);
+  /// @}
 
-  ///
+  /// @{
   /// toggle that gangs control of slice viewers
-  vtkGetMacro (LinkedControl, int );
-  vtkSetMacro (LinkedControl, int );
+  vtkGetMacro(LinkedControl, int);
+  vtkSetMacro(LinkedControl, int);
   vtkBooleanMacro(LinkedControl, int);
+  /// @}
 
-  ///
+  /// @{
   /// toggle for whether linked behavior is immediate or waits until
   /// an interaction is finished
-  vtkGetMacro (HotLinkedControl, int );
-  vtkSetMacro (HotLinkedControl, int );
+  vtkGetMacro(HotLinkedControl, int);
+  vtkSetMacro(HotLinkedControl, int);
   vtkBooleanMacro(HotLinkedControl, int);
+  /// @}
 
-  ///
+  /// @{
   /// toggles fiducial visibility in the slice viewer
-  vtkGetMacro (FiducialVisibility, int );
-  vtkSetMacro (FiducialVisibility, int );
-  vtkGetMacro (FiducialLabelVisibility, int );
-  vtkSetMacro (FiducialLabelVisibility, int );
+  vtkGetMacro(FiducialVisibility, int);
+  vtkSetMacro(FiducialVisibility, int);
+  vtkGetMacro(FiducialLabelVisibility, int);
+  vtkSetMacro(FiducialLabelVisibility, int);
+  /// @}
 
-  ///
-  /// toggles visibility of intersections of other slices in the slice viewer
-  vtkGetMacro (SliceIntersectionVisibility, int );
-  vtkSetMacro (SliceIntersectionVisibility, int );
+  /// @{
+  /// This method is deprecated. Instead of this method use
+  /// SetIntersectingSlicesVisibility() and GetIntersectingSlicesVisibility()
+  /// of vtkMRMLSliceDisplayNode.
+  int GetSliceIntersectionVisibility();
+  void SetSliceIntersectionVisibility(int visibility);
+  /// @}
 
-  /// Get annotation space.
-  vtkGetMacro ( AnnotationSpace, int );
-
-  /// Set annotation space.
-  /// Space could be either XYZ, IJK or RAS
-  /// \sa GetAnnotationSpace, AnnotationSpace
-  vtkSetMacro ( AnnotationSpace, int );
-
-  /// Get annotation mode
-  vtkGetMacro ( AnnotationMode, int );
-
-  /// Set annotation mode
-  /// Mode could be either NoAnnotation, All, LabelValuesOnly or LabelAndVoxelValuesOnly
-  /// \sa GetAnnotationMode, AnnotationMode
-  vtkSetMacro ( AnnotationMode, int );
-
-  ///
+  /// @{
   /// configures the behavior of PropagateVolumeSelection():
   /// if set to false, the background/label for slice views
   /// will not be reset. Default value is true
-  vtkSetMacro (DoPropagateVolumeSelection, bool );
-  vtkGetMacro (DoPropagateVolumeSelection, bool );
+  vtkSetMacro(DoPropagateVolumeSelection, bool);
+  vtkGetMacro(DoPropagateVolumeSelection, bool);
+  /// @}
 
-  ///
+  /// @{
   /// Name of the layout. Must be unique between all the slice composite
   /// nodes because it is used as a singleton tag.
   /// Must be the same than the slice node.
   /// No name (i.e. "") by default. Typical names are colors:
   /// "Red", "Green", "Yellow"... to uniquely define the slice node
   /// \sa vtkMRMLSliceNode::SetLayoutName
-  void SetLayoutName(const char *layoutName) {
-    this->SetSingletonTag(layoutName);
-  }
-  char *GetLayoutName() {
-    return this->GetSingletonTag();
-  }
-
-  /// Annotation space
-  enum AnnotationSpace
-    {
-      XYZ = 0,
-      IJK,
-      RAS,
-      IJKAndRAS
-    };
-
-  /// Annotation mode
-  enum AnnotationMode
-    {
-      NoAnnotation = 0,
-      All,
-      LabelValuesOnly,
-      LabelAndVoxelValuesOnly
-    };
+  void SetLayoutName(const char* layoutName) { this->SetSingletonTag(layoutName); }
+  char* GetLayoutName() { return this->GetSingletonTag(); }
+  /// @}
 
   /// Modes for compositing
   enum
-    {
-      Alpha = 0,
-      ReverseAlpha,
-      Add,
-      Subtract
-    };
+  {
+    Alpha = 0,
+    ReverseAlpha,
+    Add,
+    Subtract
+  };
 
+  /// @{
   /// Get/Set a flag indicating whether this node is actively being
   /// manipulated (usually) by a user interface. This flag is used by
   /// logic classes to determine whether state changes should be
@@ -195,6 +199,7 @@ class VTK_MRML_EXPORT vtkMRMLSliceCompositeNode : public vtkMRMLNode
   void SetInteracting(int);
   vtkGetMacro(Interacting, int);
   vtkBooleanMacro(Interacting, int);
+  /// @}
 
   /// Enum identifying the parameters being manipulated with calls to
   /// InteractionOn() and InteractionOff(). Identifiers are powers of
@@ -215,14 +220,17 @@ class VTK_MRML_EXPORT vtkMRMLSliceCompositeNode : public vtkMRMLNode
     // Next one needs to be 32
   };
 
+  /// @{
   /// Get/Set a flag indicating what parameters are being manipulated
   /// within calls to InteractingOn() and InteractingOff(). These
   /// fields are used to propagate linked behaviors. This flag is a
-  /// bitfield, with multiple parameters OR'd to composte the
+  /// bitfield, with multiple parameters OR'd to compose the
   /// flag. Does not mark the node as Modified.
   void SetInteractionFlags(unsigned int);
   vtkGetMacro(InteractionFlags, unsigned int);
+  /// @}
 
+  /// @{
   /// Get/Set a flag indicating how the linking behavior should be modified.
   /// InteractionFlags modifier uses bits defined by InteractionFlagType enum
   /// that by default are all set and result in the default behavior. If a
@@ -230,12 +238,12 @@ class VTK_MRML_EXPORT vtkMRMLSliceCompositeNode : public vtkMRMLNode
   /// not broadcast.
   void SetInteractionFlagsModifier(unsigned int);
   vtkGetMacro(InteractionFlagsModifier, unsigned int);
+  /// @}
 
   /// Set all bits of the modifier to 1, resulting in the default linking
   /// behavior (selection of foreground, background and label volumes being
   /// broadcast when composite slice nodes are linked).
   void ResetInteractionFlagsModifier();
-
 
 protected:
   vtkMRMLSliceCompositeNode();
@@ -243,30 +251,34 @@ protected:
   vtkMRMLSliceCompositeNode(const vtkMRMLSliceCompositeNode&);
   void operator=(const vtkMRMLSliceCompositeNode&);
 
-  char *BackgroundVolumeID;
-  char *ForegroundVolumeID;
-  char *LabelVolumeID;
-  double ForegroundOpacity;
+  // Helper functions for deprecated SetSliceIntersectionVisibility/GetSliceIntersectionVisibility methods.
+  vtkMRMLSliceDisplayNode* GetSliceDisplayNode();
+  std::string GetCompositeNodeIDFromSliceModelNode(vtkMRMLModelNode* sliceModelNode);
 
-  int Compositing;
+  // Cached value of last found displayable node (it is expensive to determine it)
+  vtkWeakPointer<vtkMRMLSliceDisplayNode> LastFoundSliceDisplayNode;
 
-  double LabelOpacity;
-  int LinkedControl;
-  int HotLinkedControl;
+  std::vector<double> LayerOpacities = {
+    1.0, // Layer N (Background)
+    0.0, // Layer N (Foreground) over layer N-1 (Background): Start by showing only the background volume
+    1.0, // Layer N (Label) over layer N-1 (Foreground): Show the label if there is one
+  };
 
-  int FiducialVisibility;
-  int FiducialLabelVisibility;
+  int Compositing{ Alpha };
 
-  int SliceIntersectionVisibility;
+  bool ClipToBackgroundVolume{ true };
 
-  int AnnotationSpace;
-  int AnnotationMode;
+  int LinkedControl{ 0 };
+  int HotLinkedControl{ 0 };
 
-  bool DoPropagateVolumeSelection;
+  int FiducialVisibility{ 1 };
+  int FiducialLabelVisibility{ 1 };
 
-  int Interacting;
-  unsigned int InteractionFlags;
-  unsigned int InteractionFlagsModifier;
+  bool DoPropagateVolumeSelection{ true };
+
+  int Interacting{ 0 };
+  unsigned int InteractionFlags{ 0 };
+  unsigned int InteractionFlagsModifier{ (unsigned int)-1 };
 };
 
 #endif

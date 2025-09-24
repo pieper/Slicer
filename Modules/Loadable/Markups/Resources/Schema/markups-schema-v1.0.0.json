@@ -1,6 +1,6 @@
     {
         "$schema": "http://json-schema.org/draft-07/schema",
-        "$id": "https://raw.githubusercontent.com/slicer/slicer/master/Modules/Loadable/Markups/Resources/Schema/markups-v1.0.0-schema.json#",
+        "$id": "https://raw.githubusercontent.com/Slicer/Slicer/main/Modules/Loadable/Markups/Resources/Schema/markups-v1.0.0-schema.json#",
         "type": "object",
         "title": "Schema for storing one or more markups",
         "description": "Stores points, lines, curves, etc.",
@@ -218,6 +218,16 @@
                                             "minItems": 3,
                                             "maxItems": 3
                                         },
+                                        "activeColor": {
+                                            "$id": "#display/activeColor",
+                                            "title": "Markup active color",
+                                            "description": "Overall RGB color of active points in the markup.",
+                                            "default": [0.4, 1.0, 0.0],
+                                            "additionalItems": false,
+                                            "items": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+                                            "minItems": 3,
+                                            "maxItems": 3
+                                        },
                                         "propertiesLabelVisibility": {
                                             "$id": "#display/propertiesLabelVisibility",
                                             "type": "boolean",
@@ -284,7 +294,7 @@
                                             "$id": "#display/sliceProjectionUseFiducialColor",
                                             "type": "boolean",
                                             "title": "Use fiducial color for slice projection",
-                                            "description": "Choose between projetion color or fiducial color for projections.",
+                                            "description": "Choose between projection color or fiducial color for projections.",
                                             "default": true
                                         },
                                         "sliceProjectionOutlinedBehindSlicePlane": {

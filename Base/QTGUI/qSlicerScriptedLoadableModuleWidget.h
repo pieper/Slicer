@@ -33,19 +33,20 @@ typedef _object PyObject;
 #endif
 class qSlicerScriptedLoadableModuleWidgetPrivate;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerScriptedLoadableModuleWidget
-  :public qSlicerAbstractModuleWidget
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerScriptedLoadableModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
   Q_PROPERTY(QString moduleName READ moduleName)
 public:
   typedef qSlicerAbstractModuleWidget Superclass;
   typedef qSlicerScriptedLoadableModuleWidgetPrivate Pimpl;
-  qSlicerScriptedLoadableModuleWidget(QWidget * parentWidget=nullptr);
+  qSlicerScriptedLoadableModuleWidget(QWidget* parentWidget = nullptr);
   ~qSlicerScriptedLoadableModuleWidget() override;
 
-  QString pythonSource()const;
-  bool setPythonSource(const QString& newPythonSource, const QString& className = QLatin1String(""));
+  QString pythonSource() const;
+  bool setPythonSource(const QString& filePath, const QString& className = QLatin1String(""));
+
+  Q_INVOKABLE void reload();
 
   /// Convenience method allowing to retrieve the associated scripted instance
   Q_INVOKABLE PyObject* self() const;

@@ -21,7 +21,6 @@
 // Qt includes
 #include <QDebug>
 
-
 // Slicer includes
 #include "qMRMLUnitWidget.h"
 #include "ui_qMRMLUnitWidget.h"
@@ -30,10 +29,10 @@
 #include "vtkMRMLUnitNode.h"
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class qMRMLUnitWidgetPrivate: public Ui_qMRMLUnitWidget
+class qMRMLUnitWidgetPrivate : public Ui_qMRMLUnitWidget
 {
   Q_DECLARE_PUBLIC(qMRMLUnitWidget);
+
 protected:
   qMRMLUnitWidget* const q_ptr;
 
@@ -53,8 +52,7 @@ public:
 // qMRMLUnitWidgetPrivate methods
 
 //-----------------------------------------------------------------------------
-qMRMLUnitWidgetPrivate::qMRMLUnitWidgetPrivate(
-  qMRMLUnitWidget& object)
+qMRMLUnitWidgetPrivate::qMRMLUnitWidgetPrivate(qMRMLUnitWidget& object)
   : q_ptr(&object)
 {
   this->CurrentUnitNode = nullptr;
@@ -68,50 +66,30 @@ void qMRMLUnitWidgetPrivate::setupUi(qMRMLUnitWidget* q)
 {
   this->Ui_qMRMLUnitWidget::setupUi(q);
 
-  QObject::connect(this->NameLineEdit, SIGNAL(textChanged(QString)),
-    q, SLOT(setName(QString)));
-  QObject::connect(this->NameLineEdit, SIGNAL(textChanged(QString)),
-    q, SIGNAL(nameChanged(QString)));
-  QObject::connect(this->QuantityLineEdit, SIGNAL(textChanged(QString)),
-    q, SLOT(setQuantity(QString)));
-  QObject::connect(this->QuantityLineEdit, SIGNAL(textChanged(QString)),
-    q, SIGNAL(quantityChanged(QString)));
+  QObject::connect(this->NameLineEdit, SIGNAL(textChanged(QString)), q, SLOT(setName(QString)));
+  QObject::connect(this->NameLineEdit, SIGNAL(textChanged(QString)), q, SIGNAL(nameChanged(QString)));
+  QObject::connect(this->QuantityLineEdit, SIGNAL(textChanged(QString)), q, SLOT(setQuantity(QString)));
+  QObject::connect(this->QuantityLineEdit, SIGNAL(textChanged(QString)), q, SIGNAL(quantityChanged(QString)));
 
-  QObject::connect(this->PrefixLineEdit, SIGNAL(textChanged(QString)),
-    q, SLOT(setPrefix(QString)));
-  QObject::connect(this->PrefixLineEdit, SIGNAL(textChanged(QString)),
-    q, SIGNAL(prefixChanged(QString)));
-  QObject::connect(this->SuffixLineEdit, SIGNAL(textChanged(QString)),
-    q, SLOT(setSuffix(QString)));
-  QObject::connect(this->SuffixLineEdit, SIGNAL(textChanged(QString)),
-    q, SIGNAL(suffixChanged(QString)));
+  QObject::connect(this->PrefixLineEdit, SIGNAL(textChanged(QString)), q, SLOT(setPrefix(QString)));
+  QObject::connect(this->PrefixLineEdit, SIGNAL(textChanged(QString)), q, SIGNAL(prefixChanged(QString)));
+  QObject::connect(this->SuffixLineEdit, SIGNAL(textChanged(QString)), q, SLOT(setSuffix(QString)));
+  QObject::connect(this->SuffixLineEdit, SIGNAL(textChanged(QString)), q, SIGNAL(suffixChanged(QString)));
 
-  QObject::connect(this->PrecisionSpinBox, SIGNAL(valueChanged(int)),
-    q, SLOT(setPrecision(int)));
-  QObject::connect(this->PrecisionSpinBox, SIGNAL(valueChanged(int)),
-    q, SIGNAL(precisionChanged(int)));
+  QObject::connect(this->PrecisionSpinBox, SIGNAL(valueChanged(int)), q, SLOT(setPrecision(int)));
+  QObject::connect(this->PrecisionSpinBox, SIGNAL(valueChanged(int)), q, SIGNAL(precisionChanged(int)));
 
-  QObject::connect(this->MinimumSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setMinimum(double)));
-  QObject::connect(this->MinimumSpinBox, SIGNAL(valueChanged(double)),
-    q, SIGNAL(minimumChanged(double)));
-  QObject::connect(this->MaximumSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setMaximum(double)));
-  QObject::connect(this->MaximumSpinBox, SIGNAL(valueChanged(double)),
-    q, SIGNAL(maximumChanged(double)));
+  QObject::connect(this->MinimumSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setMinimum(double)));
+  QObject::connect(this->MinimumSpinBox, SIGNAL(valueChanged(double)), q, SIGNAL(minimumChanged(double)));
+  QObject::connect(this->MaximumSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setMaximum(double)));
+  QObject::connect(this->MaximumSpinBox, SIGNAL(valueChanged(double)), q, SIGNAL(maximumChanged(double)));
 
-  QObject::connect(this->CoefficientSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setCoefficient(double)));
-  QObject::connect(this->CoefficientSpinBox, SIGNAL(valueChanged(double)),
-    q, SIGNAL(coefficientChanged(double)));
-  QObject::connect(this->OffsetSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setOffset(double)));
-  QObject::connect(this->OffsetSpinBox, SIGNAL(valueChanged(double)),
-    q, SIGNAL(offsetChanged(double)));
+  QObject::connect(this->CoefficientSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setCoefficient(double)));
+  QObject::connect(this->CoefficientSpinBox, SIGNAL(valueChanged(double)), q, SIGNAL(coefficientChanged(double)));
+  QObject::connect(this->OffsetSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setOffset(double)));
+  QObject::connect(this->OffsetSpinBox, SIGNAL(valueChanged(double)), q, SIGNAL(offsetChanged(double)));
 
-  QObject::connect(this->PresetNodeComboBox,
-    SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    q, SLOT(setUnitFromPreset(vtkMRMLNode*)));
+  QObject::connect(this->PresetNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SLOT(setUnitFromPreset(vtkMRMLNode*)));
   this->updatePropertyWidgets();
 }
 
@@ -132,99 +110,58 @@ void qMRMLUnitWidgetPrivate::clear()
 //-----------------------------------------------------------------------------
 void qMRMLUnitWidgetPrivate::updatePropertyWidgets()
 {
-  this->PresetNodeComboBox->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Preset));
-  this->PresetNodeComboBox->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Preset));
-  this->PresetLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Preset));
-  this->PresetLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Preset));
+  this->PresetNodeComboBox->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Preset));
+  this->PresetNodeComboBox->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Preset));
+  this->PresetLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Preset));
+  this->PresetLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Preset));
 
-  this->SeparationLine->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Preset)
-    && this->DisplayFlags > qMRMLUnitWidget::Preset);
+  this->SeparationLine->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Preset) //
+                                   && this->DisplayFlags > qMRMLUnitWidget::Preset);
 
-  this->NameLineEdit->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Name));
-  this->NameLineEdit->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Name));
-  this->NameLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Name));
-  this->NameLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Name));
+  this->NameLineEdit->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Name));
+  this->NameLineEdit->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Name));
+  this->NameLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Name));
+  this->NameLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Name));
 
-  this->QuantityLineEdit->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Quantity));
-  this->QuantityLineEdit->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Quantity));
-  this->QuantityLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Quantity));
-  this->QuantityLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Quantity));
+  this->QuantityLineEdit->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Quantity));
+  this->QuantityLineEdit->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Quantity));
+  this->QuantityLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Quantity));
+  this->QuantityLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Quantity));
 
-  this->PrefixLineEdit->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Prefix));
-  this->PrefixLineEdit->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Prefix));
-  this->PrefixLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Prefix));
-  this->PrefixLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Prefix));
+  this->PrefixLineEdit->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Prefix));
+  this->PrefixLineEdit->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Prefix));
+  this->PrefixLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Prefix));
+  this->PrefixLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Prefix));
 
-  this->SuffixLineEdit->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Suffix));
-  this->SuffixLineEdit->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Suffix));
-  this->SuffixLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Suffix));
-  this->SuffixLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Suffix));
+  this->SuffixLineEdit->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Suffix));
+  this->SuffixLineEdit->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Suffix));
+  this->SuffixLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Suffix));
+  this->SuffixLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Suffix));
 
-  this->PrecisionSpinBox->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Precision));
-  this->PrecisionSpinBox->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Precision));
-  this->PrecisionLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Precision));
-  this->PrecisionLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Precision));
+  this->PrecisionSpinBox->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Precision));
+  this->PrecisionSpinBox->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Precision));
+  this->PrecisionLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Precision));
+  this->PrecisionLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Precision));
 
-  this->MinimumSpinBox->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Minimum));
-  this->MinimumSpinBox->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Minimum));
-  this->MinimumValueLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Minimum));
-  this->MinimumValueLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Minimum));
+  this->MinimumSpinBox->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Minimum));
+  this->MinimumSpinBox->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Minimum));
+  this->MinimumValueLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Minimum));
+  this->MinimumValueLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Minimum));
 
-  this->MaximumSpinBox->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Maximum));
-  this->MaximumSpinBox->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Maximum));
-  this->MaximumValueLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Maximum));
-  this->MaximumValueLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Maximum));
+  this->MaximumSpinBox->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Maximum));
+  this->MaximumSpinBox->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Maximum));
+  this->MaximumValueLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Maximum));
+  this->MaximumValueLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Maximum));
 
-  this->CoefficientSpinBox->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Coefficient));
-  this->CoefficientSpinBox->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Coefficient));
-  this->CoefficientLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Coefficient));
-  this->CoefficientLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Coefficient));
+  this->CoefficientSpinBox->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Coefficient));
+  this->CoefficientSpinBox->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Coefficient));
+  this->CoefficientLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Coefficient));
+  this->CoefficientLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Coefficient));
 
-   this->OffsetSpinBox->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Offset));
-  this->OffsetSpinBox->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Offset));
-  this->OffsetLabel->setVisible(
-    this->DisplayFlags.testFlag(qMRMLUnitWidget::Offset));
-  this->OffsetLabel->setEnabled(
-    this->EditableProperties.testFlag(qMRMLUnitWidget::Offset));
+  this->OffsetSpinBox->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Offset));
+  this->OffsetSpinBox->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Offset));
+  this->OffsetLabel->setVisible(this->DisplayFlags.testFlag(qMRMLUnitWidget::Offset));
+  this->OffsetLabel->setEnabled(this->EditableProperties.testFlag(qMRMLUnitWidget::Offset));
 }
 
 //-----------------------------------------------------------------------------
@@ -232,8 +169,8 @@ void qMRMLUnitWidgetPrivate::updatePropertyWidgets()
 
 //-----------------------------------------------------------------------------
 qMRMLUnitWidget::qMRMLUnitWidget(QWidget* _parent)
-  : Superclass( _parent )
-  , d_ptr( new qMRMLUnitWidgetPrivate(*this) )
+  : Superclass(_parent)
+  , d_ptr(new qMRMLUnitWidgetPrivate(*this))
 {
   Q_D(qMRMLUnitWidget);
   d->setupUi(this);
@@ -275,8 +212,7 @@ void qMRMLUnitWidget::setCurrentNode(vtkMRMLNode* node)
   Q_D(qMRMLUnitWidget);
 
   vtkMRMLUnitNode* unitNode = vtkMRMLUnitNode::SafeDownCast(node);
-  this->qvtkReconnect(d->CurrentUnitNode, unitNode,
-    vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromNode()));
+  this->qvtkReconnect(d->CurrentUnitNode, unitNode, vtkCommand::ModifiedEvent, this, SLOT(updateWidgetFromNode()));
   d->CurrentUnitNode = unitNode;
 
   this->updateWidgetFromNode();
@@ -298,15 +234,14 @@ void qMRMLUnitWidget::updateWidgetFromNode()
   d->OffsetSpinBox->setEnabled(d->CurrentUnitNode != nullptr);
 
   if (!d->CurrentUnitNode)
-    {
+  {
     d->clear();
     return;
-    }
+  }
 
   // Preset
   bool modifying = d->PresetNodeComboBox->blockSignals(true);
-  d->PresetNodeComboBox->addAttribute(
-    "vtkMRMLUnitNode", "Quantity", d->CurrentUnitNode->GetQuantity());
+  d->PresetNodeComboBox->addAttribute("vtkMRMLUnitNode", "Quantity", d->CurrentUnitNode->GetQuantity());
   d->PresetNodeComboBox->setMRMLScene(this->mrmlScene());
   d->PresetNodeComboBox->setCurrentNode(nullptr);
   d->PresetNodeComboBox->blockSignals(modifying);
@@ -335,9 +270,9 @@ void qMRMLUnitWidget::setName(const QString& newName)
   Q_D(qMRMLUnitWidget);
 
   if (d->CurrentUnitNode)
-    {
+  {
     d->CurrentUnitNode->SetName(newName.toUtf8());
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -353,9 +288,9 @@ void qMRMLUnitWidget::setQuantity(const QString& newQuantity)
   Q_D(qMRMLUnitWidget);
 
   if (d->CurrentUnitNode)
-    {
+  {
     d->CurrentUnitNode->SetQuantity(newQuantity.toUtf8());
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -371,9 +306,9 @@ void qMRMLUnitWidget::setPrefix(const QString& newPrefix)
   Q_D(qMRMLUnitWidget);
 
   if (d->CurrentUnitNode)
-    {
+  {
     d->CurrentUnitNode->SetPrefix(newPrefix.toUtf8());
-    }
+  }
   d->MaximumSpinBox->setPrefix(newPrefix);
   d->MinimumSpinBox->setPrefix(newPrefix);
 }
@@ -391,9 +326,9 @@ void qMRMLUnitWidget::setSuffix(const QString& newSuffix)
   Q_D(qMRMLUnitWidget);
 
   if (d->CurrentUnitNode)
-    {
+  {
     d->CurrentUnitNode->SetSuffix(newSuffix.toUtf8());
-    }
+  }
   d->MaximumSpinBox->setSuffix(newSuffix);
   d->MinimumSpinBox->setSuffix(newSuffix);
 }
@@ -411,9 +346,9 @@ void qMRMLUnitWidget::setPrecision(int newPrecision)
   Q_D(qMRMLUnitWidget);
 
   if (d->CurrentUnitNode)
-    {
+  {
     d->CurrentUnitNode->SetPrecision(newPrecision);
-    }
+  }
   d->MaximumSpinBox->setDecimals(newPrecision);
   d->MinimumSpinBox->setDecimals(newPrecision);
 
@@ -434,9 +369,9 @@ void qMRMLUnitWidget::setMinimum(double newMin)
   Q_D(qMRMLUnitWidget);
 
   if (!d->CurrentUnitNode)
-    {
+  {
     return;
-    }
+  }
 
   d->CurrentUnitNode->SetMinimumValue(newMin);
 }
@@ -454,9 +389,9 @@ void qMRMLUnitWidget::setMaximum(double newMax)
   Q_D(qMRMLUnitWidget);
 
   if (!d->CurrentUnitNode)
-    {
+  {
     return;
-    }
+  }
 
   d->CurrentUnitNode->SetMaximumValue(newMax);
 }
@@ -474,9 +409,9 @@ void qMRMLUnitWidget::setCoefficient(double newCoeff)
   Q_D(qMRMLUnitWidget);
 
   if (!d->CurrentUnitNode)
-    {
+  {
     return;
-    }
+  }
 
   d->CurrentUnitNode->SetDisplayCoefficient(newCoeff);
 }
@@ -494,9 +429,9 @@ void qMRMLUnitWidget::setOffset(double newOffset)
   Q_D(qMRMLUnitWidget);
 
   if (!d->CurrentUnitNode)
-    {
+  {
     return;
-    }
+  }
 
   d->CurrentUnitNode->SetDisplayOffset(newOffset);
 }
@@ -506,11 +441,11 @@ void qMRMLUnitWidget::setUnitFromPreset(vtkMRMLNode* presetNode)
 {
   Q_D(qMRMLUnitWidget);
 
-  vtkMRMLUnitNode *presetUnitNode = vtkMRMLUnitNode::SafeDownCast(presetNode);
+  vtkMRMLUnitNode* presetUnitNode = vtkMRMLUnitNode::SafeDownCast(presetNode);
   if (!presetUnitNode || !d->CurrentUnitNode)
-    {
+  {
     return;
-    }
+  }
 
   int disabledModify = d->CurrentUnitNode->StartModify();
   d->CurrentUnitNode->SetQuantity(presetUnitNode->GetQuantity());
@@ -519,39 +454,35 @@ void qMRMLUnitWidget::setUnitFromPreset(vtkMRMLNode* presetNode)
   d->CurrentUnitNode->SetPrecision(presetUnitNode->GetPrecision());
   d->CurrentUnitNode->SetMinimumValue(presetUnitNode->GetMinimumValue());
   d->CurrentUnitNode->SetMaximumValue(presetUnitNode->GetMaximumValue());
-  d->CurrentUnitNode->SetDisplayCoefficient(
-    presetUnitNode->GetDisplayCoefficient());
+  d->CurrentUnitNode->SetDisplayCoefficient(presetUnitNode->GetDisplayCoefficient());
   d->CurrentUnitNode->SetDisplayOffset(presetUnitNode->GetDisplayOffset());
   d->CurrentUnitNode->EndModify(disabledModify);
 }
 
 //-----------------------------------------------------------------------------
-void qMRMLUnitWidget
-::setDisplayedProperties(qMRMLUnitWidget::UnitProperties flag)
+void qMRMLUnitWidget::setDisplayedProperties(qMRMLUnitWidget::UnitProperties flag)
 {
   Q_D(qMRMLUnitWidget);
 
   if (d->DisplayFlags == flag)
-    {
+  {
     return;
-    }
+  }
 
   d->DisplayFlags = flag;
   d->updatePropertyWidgets();
 }
 
 //-----------------------------------------------------------------------------
-void qMRMLUnitWidget
-::setEditableProperties(qMRMLUnitWidget::UnitProperties properties)
+void qMRMLUnitWidget::setEditableProperties(qMRMLUnitWidget::UnitProperties properties)
 {
   Q_D(qMRMLUnitWidget);
 
   if (d->EditableProperties == properties)
-    {
+  {
     return;
-    }
+  }
 
   d->EditableProperties = properties;
   d->updatePropertyWidgets();
 }
-

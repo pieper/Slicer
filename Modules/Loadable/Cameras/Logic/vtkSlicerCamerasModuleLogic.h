@@ -31,12 +31,15 @@
 class vtkMRMLCameraNode;
 class vtkMRMLViewNode;
 
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_CAMERAS_LOGIC_EXPORT vtkSlicerCamerasModuleLogic
-  : public vtkSlicerModuleLogic
+///
+/// Properties of the scene-to-import camera nodes are always
+/// copied into the existing nodes having the same name. This is done
+/// when a camera node is about to be added to the scene.
+///
+class VTK_SLICER_CAMERAS_LOGIC_EXPORT vtkSlicerCamerasModuleLogic : public vtkSlicerModuleLogic
 {
 public:
-  static vtkSlicerCamerasModuleLogic *New();
+  static vtkSlicerCamerasModuleLogic* New();
   vtkTypeMacro(vtkSlicerCamerasModuleLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -44,23 +47,9 @@ public:
   /// in the view.
   vtkMRMLCameraNode* GetViewActiveCameraNode(vtkMRMLViewNode* view);
 
-  /// CopyImportedCameras controls whether the logic copies the properties of
-  /// the scene-to-import camera nodes into the existing nodes having the same
-  /// name. If true, this is done when a camera node is about to be added to
-  /// the scene.
-  /// True by default.
-  /// \sa vtkMRMLScene::Import, vtkMRMLScene::Connect
-  vtkSetMacro(CopyImportedCameras, bool);
-  vtkGetMacro(CopyImportedCameras, bool);
-
 protected:
   vtkSlicerCamerasModuleLogic();
   ~vtkSlicerCamerasModuleLogic() override;
-
-  void SetMRMLSceneInternal(vtkMRMLScene* newScene) override;
-  void ProcessMRMLSceneEvents(vtkObject *, unsigned long, void *) override;
-
-  bool CopyImportedCameras;
 
 private:
   vtkSlicerCamerasModuleLogic(const vtkSlicerCamerasModuleLogic&) = delete;

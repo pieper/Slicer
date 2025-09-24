@@ -20,7 +20,7 @@
 
 ==============================================================================*/
 
-// DoubleArrays logic
+// Tables logic
 #include "vtkSlicerTablesLogic.h"
 
 // MRML includes
@@ -30,6 +30,7 @@
 // VTK includes
 #include <vtkNew.h>
 #include <vtkPolyData.h>
+#include <vtkStringArray.h>
 #include <vtkTable.h>
 
 #include "vtkTestingOutputWindow.h"
@@ -40,7 +41,7 @@ int testAddInvalidFile(const char* filePath);
 int testAddFile(const char* filePath);
 
 //-----------------------------------------------------------------------------
-int vtkSlicerTablesLogicAddFileTest( int argc, char * argv[] )
+int vtkSlicerTablesLogicAddFileTest(int argc, char* argv[])
 {
   bool res = true;
   TESTING_OUTPUT_ASSERT_ERRORS_BEGIN();
@@ -60,14 +61,14 @@ int vtkSlicerTablesLogicAddFileTest( int argc, char * argv[] )
   TESTING_OUTPUT_ASSERT_ERRORS_END();
 
   if (argc > 1)
-    {
+  {
     CHECK_EXIT_SUCCESS(testAddFile(argv[1]));
-    }
+  }
   return res ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 //-----------------------------------------------------------------------------
-int testAddInvalidFile(const char * filePath)
+int testAddInvalidFile(const char* filePath)
 {
   std::cout << "Test loading of invalid file: " << (filePath ? filePath : "(none)") << ". Errors are expected.";
 
@@ -85,7 +86,7 @@ int testAddInvalidFile(const char * filePath)
 }
 
 //-----------------------------------------------------------------------------
-int testAddFile(const char * filePath)
+int testAddFile(const char* filePath)
 {
   vtkNew<vtkSlicerTablesLogic> tablesLogic;
   TESTING_OUTPUT_ASSERT_ERRORS_BEGIN();
@@ -120,6 +121,10 @@ int testAddFile(const char * filePath)
   CHECK_INT(table->GetColumnByName("TestInt")->GetDataType(), VTK_INT);
   CHECK_INT(table->GetColumnByName("TestDouble")->GetDataType(), VTK_DOUBLE);
   CHECK_INT(table->GetColumnByName("TestFloat")->GetDataType(), VTK_FLOAT);
+
+  // Verify that files that contain backslsh are read correctly
+  vtkStringArray* stringArray = vtkStringArray::SafeDownCast(table->GetColumnByName("TestString"));
+  CHECK_STRING(stringArray->GetValue(4).c_str(), "some\\escape\\characters\\n\\t");
 
   std::cout << "Test passed." << std::endl;
   return EXIT_SUCCESS;

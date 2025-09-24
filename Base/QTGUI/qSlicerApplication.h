@@ -22,9 +22,10 @@
 #define __qSlicerApplication_h
 
 // Qt includes
-#include <QPalette>
+class QPalette;
 
 // CTK includes
+#include <ctkErrorLogModel.h>
 #include <ctkPimpl.h>
 #include <ctkSettingsDialog.h>
 
@@ -60,9 +61,8 @@ class Q_SLICER_BASE_QTGUI_EXPORT qSlicerApplication : public qSlicerCoreApplicat
 {
   Q_OBJECT
 public:
-
   typedef qSlicerCoreApplication Superclass;
-  qSlicerApplication(int &argc, char **argv);
+  qSlicerApplication(int& argc, char** argv);
   ~qSlicerApplication() override;
 
   /// Return a reference to the application singleton
@@ -77,46 +77,53 @@ public:
   ///
   /// so we follow the pattern suggested here:
   ///
-  /// http://stackoverflow.com/questions/13878373/where-am-i-supposed-to-reimplement-qapplicationnotify-function
+  /// https://stackoverflow.com/questions/13878373/where-am-i-supposed-to-reimplement-qapplicationnotify-function
   ///
-  bool notify(QObject * receiver, QEvent * event) override;
+  bool notify(QObject* receiver, QEvent* event) override;
 
   /// Get commandOptions
-  Q_INVOKABLE qSlicerCommandOptions* commandOptions()const;
+  Q_INVOKABLE qSlicerCommandOptions* commandOptions() const;
 
   /// Get IO Manager
   Q_INVOKABLE qSlicerIOManager* ioManager();
 
 #ifdef Slicer_USE_PYTHONQT
   /// Get Python Manager
-  Q_INVOKABLE qSlicerPythonManager * pythonManager();
-  Q_INVOKABLE ctkPythonConsole * pythonConsole();
+  Q_INVOKABLE qSlicerPythonManager* pythonManager();
+  Q_INVOKABLE ctkPythonConsole* pythonConsole();
+  /// Log messages at this or higher level will be displayed in the Python console.
+  Q_INVOKABLE ctkErrorLogLevel::LogLevel pythonConsoleLogLevel() const;
 #endif
 
-  #ifdef Slicer_USE_QtTesting
+#ifdef Slicer_USE_QtTesting
   /// Get test utility
   Q_INVOKABLE ctkQtTestingUtility* testingUtility();
-  #endif
+#endif
 
   /// Set/Get layout manager
-  Q_INVOKABLE qSlicerLayoutManager* layoutManager()const;
+  Q_INVOKABLE qSlicerLayoutManager* layoutManager() const;
   Q_INVOKABLE void setLayoutManager(qSlicerLayoutManager* layoutManager);
 
   /// Return a pointer on the main window of the application if any.
-  QMainWindow* mainWindow()const;
+  QMainWindow* mainWindow() const;
 
   /// TODO
   /// See http://doc.trolltech.com/4.6/qapplication.html#commitData
   /// and http://doc.trolltech.com/4.6/qsessionmanager.html#allowsInteraction
-  //virtual void commitData(QSessionManager & manager);
+  // virtual void commitData(QSessionManager& manager);
 
   /// Enable/Disable tooltips
   void setToolTipsEnabled(bool enable);
 
   /// Return the module name that is most suitable for editing the specified node.
-  QString nodeModule(vtkMRMLNode* node)const;
+  /// If a valid pointer is provided for confidence then the confidence value for the
+  /// found module is returned. Confidence value = 0 means that the found module can
+  /// probably not do much with that node, while 1.0 means that the found module is certainly
+  /// the best module to manage than node.
+  QString nodeModule(vtkMRMLNode* node, double* confidence = nullptr) const;
 
-  Q_INVOKABLE ctkSettingsDialog* settingsDialog()const;
+  Q_INVOKABLE ctkSettingsDialog* settingsDialog() const;
+  Q_INVOKABLE void openSettingsDialog(const QString& settingsPanel = QString());
 
   /// Log application information.
   ///
@@ -128,7 +135,6 @@ public:
   ///   - Memory
   ///   - CPU
   ///   - Developer mode enabled
-  ///   - Prefer executable CLI
   ///   - Additional module paths
   ///
   /// \note Starting the application with `--application-information` will
@@ -162,7 +168,7 @@ public slots:
   /// \note qSlicerApplication is a temporary host for the function as it should be
   /// moved into a DataManager where module can register new node
   /// types/modules
-  void openNodeModule(vtkMRMLNode* node);
+  void openNodeModule(vtkMRMLNode* node, QString role = QString(), QString context = QString());
 
   /// Popup a dialog asking the user if the application should be restarted.
   /// If no \a reason is given, the text will default to ""Are you sure you want to restart?"
@@ -173,7 +179,16 @@ public slots:
   bool launchDesigner(const QStringList& args = QStringList());
 
 #ifdef Slicer_BUILD_EXTENSIONMANAGER_SUPPORT
+  /// Opens the Extensions Manager model popup window for installing, updating, uninstalling extensions.
   void openExtensionsManagerDialog();
+
+  /// Opens the Extensions Catalog website in the systems default web browser.
+  void openExtensionsCatalogWebsite();
+#endif
+
+#ifdef Slicer_BUILD_APPLICATIONUPDATE_SUPPORT
+  /// Opens the Application Download website in the systems default web browser.
+  void openApplicationDownloadWebsite();
 #endif
 
   /// Number of recent log files to keep. Older log files are deleted automatically.
@@ -184,7 +199,7 @@ public slots:
 
   /// Path of the current log file
   /// \sa recentLogFiles(), setupFileLogging()
-  QString currentLogFile()const;
+  QString currentLogFile() const;
 
   /// When turning on OpenGL and using the full screen mode, menus and tooltips
   /// are no longer visible. By enabling hasBorderInFullScreen, a one-pixel border
@@ -209,6 +224,14 @@ public slots:
   /// \sa setRenderPaused
   void resumeRender() override;
 
+  /// Override the qSlicerCoreApplication implementation to also show error messages in a popup window.
+  bool loadFiles(const QStringList& filePaths, vtkMRMLMessageCollection* userMessages = nullptr) override;
+
+#ifdef Slicer_USE_PYTHONQT
+  /// Log messages at this or higher level will be displayed in the Python console.
+  void setPythonConsoleLogLevel(ctkErrorLogLevel::LogLevel logLevel);
+#endif
+
 signals:
 
   /// Emitted when the startup phase has been completed.
@@ -216,7 +239,7 @@ signals:
   /// Startup is complete when all the modules have been
   /// initialized and the main window is shown to the user.
   ///
-  /// \note If the application is started without the mainwindow,
+  /// \note If the application is started without the mainWindow,
   /// the signal is emitted after the modules are initialized.
   ///
   /// \sa qSlicerAppMainWindow::initialWindowShown()
@@ -232,6 +255,16 @@ protected slots:
 
   /// Request editing of a MRML node
   void editNode(vtkObject*, void*, unsigned long) override;
+
+#ifdef Slicer_USE_PYTHONQT
+  /// Add log message to Python console
+  void logToPythonConsole(const QDateTime& currentDateTime,
+                          const QString& threadId,
+                          ctkErrorLogLevel::LogLevel logLevel,
+                          const QString& origin,
+                          const ctkErrorLogContext& context,
+                          const QString& text);
+#endif
 
 protected:
   /// Reimplemented from qSlicerCoreApplication
@@ -250,7 +283,7 @@ private:
 
 /// Apply the Slicer palette to the \c palette
 /// Note also that the palette parameter is passed by reference and will be
-/// updated using the native paletter and applying Slicer specific properties.
-void  Q_SLICER_BASE_QTGUI_EXPORT qSlicerApplyPalette(QPalette& palette);
+/// updated using the native palette and applying Slicer specific properties.
+void Q_SLICER_BASE_QTGUI_EXPORT qSlicerApplyPalette(QPalette& palette);
 
 #endif

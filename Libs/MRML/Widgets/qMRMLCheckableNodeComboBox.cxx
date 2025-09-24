@@ -34,12 +34,14 @@
 #include <vtkMRMLNode.h>
 
 // -----------------------------------------------------------------------------
-class qMRMLCheckableNodeComboBoxPrivate: public qMRMLNodeComboBoxPrivate
+class qMRMLCheckableNodeComboBoxPrivate : public qMRMLNodeComboBoxPrivate
 {
   Q_DECLARE_PUBLIC(qMRMLCheckableNodeComboBox);
+
 protected:
   qMRMLCheckableNodeComboBox* const q_ptr;
   void setModel(QAbstractItemModel* model) override;
+
 public:
   qMRMLCheckableNodeComboBoxPrivate(qMRMLCheckableNodeComboBox& object);
   ~qMRMLCheckableNodeComboBoxPrivate() override;
@@ -47,8 +49,7 @@ public:
 };
 
 // -----------------------------------------------------------------------------
-qMRMLCheckableNodeComboBoxPrivate
-::qMRMLCheckableNodeComboBoxPrivate(qMRMLCheckableNodeComboBox& object)
+qMRMLCheckableNodeComboBoxPrivate::qMRMLCheckableNodeComboBoxPrivate(qMRMLCheckableNodeComboBox& object)
   : qMRMLNodeComboBoxPrivate(object)
   , q_ptr(&object)
 {
@@ -69,16 +70,15 @@ void qMRMLCheckableNodeComboBoxPrivate::init(QAbstractItemModel* model)
   q->setRemoveEnabled(false);
   q->setEditEnabled(false);
   q->setRenameEnabled(false);
-
 }
 
 // --------------------------------------------------------------------------
 void qMRMLCheckableNodeComboBoxPrivate::setModel(QAbstractItemModel* model)
 {
   if (model)
-    {
+  {
     qobject_cast<ctkCheckableComboBox*>(this->ComboBox)->setCheckableModel(model);
-    }
+  }
   this->qMRMLNodeComboBoxPrivate::setModel(model);
 }
 
@@ -92,74 +92,67 @@ qMRMLCheckableNodeComboBox::qMRMLCheckableNodeComboBox(QWidget* parentWidget)
   Q_D(qMRMLCheckableNodeComboBox);
   // Can't be done in XXXPrivate::init() because XXX is not constructed at that
   // time.
-  this->connect(d->ComboBox, SIGNAL(checkedIndexesChanged()),
-                this, SIGNAL(checkedNodesChanged()));
-
+  this->connect(d->ComboBox, SIGNAL(checkedIndexesChanged()), this, SIGNAL(checkedNodesChanged()));
 }
 
 // --------------------------------------------------------------------------
 qMRMLCheckableNodeComboBox::~qMRMLCheckableNodeComboBox() = default;
 
 // --------------------------------------------------------------------------
-QList<vtkMRMLNode*> qMRMLCheckableNodeComboBox::checkedNodes()const
+QList<vtkMRMLNode*> qMRMLCheckableNodeComboBox::checkedNodes() const
 {
   Q_D(const qMRMLCheckableNodeComboBox);
   QList<vtkMRMLNode*> res;
-  const ctkCheckableComboBox* checkableComboBox =
-    qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
-  foreach(const QModelIndex& checkedIndex, checkableComboBox->checkedIndexes())
-    {
+  const ctkCheckableComboBox* checkableComboBox = qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
+  for (const QModelIndex& checkedIndex : checkableComboBox->checkedIndexes())
+  {
     vtkMRMLNode* checkedNode = d->mrmlNodeFromIndex(checkedIndex);
     // MRMLScene or extra items could be checked, we don't want them
     if (checkedNode)
-      {
+    {
       res << checkedNode;
-      }
     }
+  }
   return res;
 }
 
 // --------------------------------------------------------------------------
-QList<vtkMRMLNode*> qMRMLCheckableNodeComboBox::uncheckedNodes()const
+QList<vtkMRMLNode*> qMRMLCheckableNodeComboBox::uncheckedNodes() const
 {
   QList<vtkMRMLNode*> res = this->nodes();
-  foreach(vtkMRMLNode* checkedNode, this->checkedNodes())
-    {
+  for (vtkMRMLNode* const checkedNode : this->checkedNodes())
+  {
     res.removeAll(checkedNode);
-    }
+  }
   return res;
 }
 
 // --------------------------------------------------------------------------
-bool qMRMLCheckableNodeComboBox::allChecked()const
+bool qMRMLCheckableNodeComboBox::allChecked() const
 {
   Q_D(const qMRMLCheckableNodeComboBox);
-  const ctkCheckableComboBox* checkableComboBox =
-    qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
+  const ctkCheckableComboBox* checkableComboBox = qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
   return checkableComboBox->allChecked();
 }
 
 // --------------------------------------------------------------------------
-bool qMRMLCheckableNodeComboBox::noneChecked()const
+bool qMRMLCheckableNodeComboBox::noneChecked() const
 {
   Q_D(const qMRMLCheckableNodeComboBox);
-  const ctkCheckableComboBox* checkableComboBox =
-    qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
+  const ctkCheckableComboBox* checkableComboBox = qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
   return checkableComboBox->noneChecked();
 }
 
 // --------------------------------------------------------------------------
-Qt::CheckState qMRMLCheckableNodeComboBox::checkState(vtkMRMLNode* node)const
+Qt::CheckState qMRMLCheckableNodeComboBox::checkState(vtkMRMLNode* node) const
 {
   Q_D(const qMRMLCheckableNodeComboBox);
-  const ctkCheckableComboBox* checkableComboBox =
-    qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
-  QModelIndexList indexes =
-    d->indexesFromMRMLNodeID(node ? node->GetID() : QString());
+  const ctkCheckableComboBox* checkableComboBox = qobject_cast<const ctkCheckableComboBox*>(d->ComboBox);
+  QModelIndexList indexes = d->indexesFromMRMLNodeID(node ? node->GetID() : QString());
   if (indexes.size() == 0)
-    {
+  {
     return Qt::Unchecked;
-    }
+  }
   return checkableComboBox->checkState(indexes[0]);
 }
 
@@ -167,15 +160,13 @@ Qt::CheckState qMRMLCheckableNodeComboBox::checkState(vtkMRMLNode* node)const
 void qMRMLCheckableNodeComboBox::setCheckState(vtkMRMLNode* node, Qt::CheckState check)
 {
   Q_D(qMRMLCheckableNodeComboBox);
-  ctkCheckableComboBox* checkableComboBox =
-    qobject_cast<ctkCheckableComboBox*>(d->ComboBox);
-  QModelIndexList indexes =
-    d->indexesFromMRMLNodeID(node ? node->GetID(): QString());
-  if (indexes.count() == 0)
-    {
+  ctkCheckableComboBox* checkableComboBox = qobject_cast<ctkCheckableComboBox*>(d->ComboBox);
+  QModelIndexList indexes = d->indexesFromMRMLNodeID(node ? node->GetID() : QString());
+  if (indexes.count() < 1)
+  {
     return;
-    }
-  return checkableComboBox->setCheckState(indexes[0], check);
+  }
+  checkableComboBox->setCheckState(indexes[0], check);
 }
 
 // --------------------------------------------------------------------------
@@ -183,14 +174,14 @@ void qMRMLCheckableNodeComboBox::setUserCheckable(vtkMRMLNode* node, bool userCh
 {
   QStandardItem* nodeItem = this->sceneModel()->itemFromNode(node);
   if (nodeItem)
-    {
+  {
     if (userCheckable)
-      {
+    {
       nodeItem->setFlags(nodeItem->flags() | Qt::ItemIsUserCheckable);
-      }
-    else
-      {
-      nodeItem->setFlags(nodeItem->flags() & ~Qt::ItemIsUserCheckable);
-      }
     }
+    else
+    {
+      nodeItem->setFlags(nodeItem->flags() & ~Qt::ItemIsUserCheckable);
+    }
+  }
 }

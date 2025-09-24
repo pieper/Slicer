@@ -71,7 +71,11 @@ set(SLICER_LIBRARY_PATHS_BUILD
   )
 
 if(NOT Slicer_USE_SYSTEM_QT)
-  list(APPEND SLICER_LIBRARY_PATHS_BUILD ${QT_LIBRARY_DIR})
+  if(WIN32)
+    list(APPEND SLICER_LIBRARY_PATHS_BUILD ${QT_BINARY_DIR})
+  else()
+    list(APPEND SLICER_LIBRARY_PATHS_BUILD ${QT_LIBRARY_DIR})
+  endif()
 endif()
 
 # The following lines allow Slicer to load a CLI module extension that depends
@@ -81,7 +85,7 @@ if(CMAKE_CONFIGURATION_TYPES)
   list(APPEND SLICER_LIBRARY_PATHS_BUILD ../${Slicer_QTLOADABLEMODULES_LIB_DIR}/<CMAKE_CFG_INTDIR>)
 endif()
 
-if(Slicer_BUILD_CLI_SUPPORT AND Slicer_BUILD_CLI)
+if(Slicer_BUILD_CLI)
   list(APPEND SLICER_LIBRARY_PATHS_BUILD
     <APPLAUNCHER_SETTINGS_DIR>/${Slicer_CLIMODULES_LIB_DIR}/<CMAKE_CFG_INTDIR>
     )
@@ -110,7 +114,7 @@ if(NOT Slicer_USE_SYSTEM_QT)
     )
 endif()
 
-if(Slicer_BUILD_CLI_SUPPORT AND Slicer_BUILD_CLI)
+if(Slicer_BUILD_CLI)
   list(APPEND SLICER_PATHS_BUILD
     <APPLAUNCHER_SETTINGS_DIR>/${Slicer_CLIMODULES_BIN_DIR}/<CMAKE_CFG_INTDIR>
     )
@@ -136,6 +140,13 @@ endif()
 if(Slicer_USE_PYTHONQT_WITH_OPENSSL)
   list(APPEND SLICER_ENVVARS_BUILD
     "SSL_CERT_FILE=<APPLAUNCHER_SETTINGS_DIR>/${Slicer_SHARE_DIR}/Slicer.crt"
+    )
+endif()
+if(UNIX AND NOT APPLE)
+  # Disable Chromium Sandboxing on Linux because not all systems support it
+  # (see https://github.com/Slicer/Slicer/issues/6577)
+  list(APPEND SLICER_ENVVARS_BUILD
+    "QTWEBENGINE_DISABLE_SANDBOX=1"
     )
 endif()
 
@@ -193,6 +204,9 @@ if(Slicer_USE_PYTHONQT)
   # External projects - path environment variables
   list(APPEND SLICER_ADDITIONAL_PATH_ENVVARS_BUILD
     "PYTHONPATH"
+    # Ensures "slicer_dll_directories.add()" can add relevant directories.
+    # See SuperBuild/python_configure_python_launcher.cmake
+    "LibraryPaths"
     )
 
 endif()
@@ -209,7 +223,7 @@ endif()
 #  Do not use Slicer_INSTALL_* variables
 #  -------------------------------------
 #
-#  Indeed, on MacOSX, since Slicer_INSTALL_* variables already includes
+#  Indeed, on macOS, since Slicer_INSTALL_* variables already includes
 #  Slicer_BUNDLE_LOCATION (<appname>.app/Contents) they can *NOT*
 #  be used to reference paths from <APPLAUNCHER_SETTINGS_DIR> which is itself
 #  set to /path/to/<appname>.app/Contents/bin.
@@ -270,6 +284,13 @@ if(Slicer_USE_PYTHONQT_WITH_OPENSSL)
     "SSL_CERT_FILE=<APPLAUNCHER_SETTINGS_DIR>/../${Slicer_SHARE_DIR}/Slicer.crt"
     )
 endif()
+if(UNIX AND NOT APPLE)
+  # Disable Chromium Sandboxing on Linux because not all systems support it
+  # (see https://github.com/Slicer/Slicer/issues/6577)
+  list(APPEND SLICER_ENVVARS_INSTALLED
+    "QTWEBENGINE_DISABLE_SANDBOX=1"
+    )
+endif()
 
 # External projects - environment variables
 foreach(varname IN LISTS Slicer_EP_LABEL_ENVVARS_LAUNCHER_INSTALLED)
@@ -307,6 +328,9 @@ if(Slicer_USE_PYTHONQT)
   # External projects - path environment variables
   list(APPEND SLICER_ADDITIONAL_PATH_ENVVARS_INSTALLED
     "PYTHONPATH"
+    # Ensures "slicer_dll_directories.add()" can add relevant directories.
+    # See SuperBuild/python_configure_python_launcher.cmake
+    "LibraryPaths"
     )
 
 endif()

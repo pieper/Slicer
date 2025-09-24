@@ -12,7 +12,6 @@ Version:   $Revision: 1.14 $
 
 =========================================================================auto=*/
 
-
 // MRML includes
 #include "vtkMRMLDiffusionTensorVolumeDisplayNode.h"
 #include "vtkMRMLDiffusionTensorVolumeNode.h"
@@ -29,20 +28,21 @@ vtkMRMLNodeNewMacro(vtkMRMLDiffusionTensorVolumeNode);
 //----------------------------------------------------------------------------
 vtkMRMLDiffusionTensorVolumeNode::vtkMRMLDiffusionTensorVolumeNode()
 {
-  this->Order = 2; //Second order Tensor
+  this->TypeDisplayName = vtkMRMLTr("vtkMRMLDiffusionTensorVolumeNode", "Diffusion Tensor Volume");
+
+  this->Order = 2; // Second order Tensor
 }
 
 //----------------------------------------------------------------------------
-void vtkMRMLDiffusionTensorVolumeNode::SetAndObserveDisplayNodeID(const char *displayNodeID)
+void vtkMRMLDiffusionTensorVolumeNode::SetAndObserveDisplayNodeID(const char* displayNodeID)
 {
   this->Superclass::SetAndObserveDisplayNodeID(displayNodeID);
   // Make sure the node added is a DiffusionTensorVolumeDisplayNode
-  vtkMRMLNode* displayNode =  this->GetDisplayNode();
+  vtkMRMLNode* displayNode = this->GetDisplayNode();
   if (displayNode && !vtkMRMLDiffusionTensorVolumeDisplayNode::SafeDownCast(displayNode))
-    {
-    vtkWarningMacro("SetAndObserveDisplayNodeID: The node to display "
-                    << displayNodeID << " can NOT display diffusion tensors");
-    }
+  {
+    vtkWarningMacro("SetAndObserveDisplayNodeID: The node to display " << displayNodeID << " can NOT display diffusion tensors");
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -51,12 +51,11 @@ vtkMRMLDiffusionTensorVolumeNode::~vtkMRMLDiffusionTensorVolumeNode() = default;
 //----------------------------------------------------------------------------
 void vtkMRMLDiffusionTensorVolumeNode::PrintSelf(ostream& os, vtkIndent indent)
 {
-  Superclass::PrintSelf(os,indent);
+  Superclass::PrintSelf(os, indent);
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLDiffusionTensorVolumeDisplayNode* vtkMRMLDiffusionTensorVolumeNode
-::GetDiffusionTensorVolumeDisplayNode()
+vtkMRMLDiffusionTensorVolumeDisplayNode* vtkMRMLDiffusionTensorVolumeNode::GetDiffusionTensorVolumeDisplayNode()
 {
   return vtkMRMLDiffusionTensorVolumeDisplayNode::SafeDownCast(this->GetDisplayNode());
 }
@@ -66,31 +65,30 @@ vtkMRMLStorageNode* vtkMRMLDiffusionTensorVolumeNode::CreateDefaultStorageNode()
 {
   vtkMRMLScene* scene = this->GetScene();
   if (scene == nullptr)
-    {
+  {
     vtkErrorMacro("CreateDefaultStorageNode failed: scene is invalid");
     return nullptr;
-    }
-  return vtkMRMLStorageNode::SafeDownCast(
-    scene->CreateNodeByClass("vtkMRMLNRRDStorageNode"));
+  }
+  return vtkMRMLStorageNode::SafeDownCast(scene->CreateNodeByClass("vtkMRMLNRRDStorageNode"));
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLDiffusionTensorVolumeNode::CreateDefaultDisplayNodes()
 {
-  if (vtkMRMLDiffusionTensorVolumeDisplayNode::SafeDownCast(this->GetDisplayNode())!=nullptr)
-    {
+  if (vtkMRMLDiffusionTensorVolumeDisplayNode::SafeDownCast(this->GetDisplayNode()) != nullptr)
+  {
     // display node already exists
     return;
-    }
-  if (this->GetScene()==nullptr)
-    {
+  }
+  if (this->GetScene() == nullptr)
+  {
     vtkErrorMacro("vtkMRMLDiffusionTensorVolumeNode::CreateDefaultDisplayNodes failed: scene is invalid");
     return;
-    }
-  vtkMRMLDiffusionTensorVolumeDisplayNode* dispNode = vtkMRMLDiffusionTensorVolumeDisplayNode::SafeDownCast(
-    this->GetScene()->AddNewNodeByClass("vtkMRMLDiffusionTensorVolumeDisplayNode") );
+  }
+  vtkMRMLDiffusionTensorVolumeDisplayNode* dispNode =
+    vtkMRMLDiffusionTensorVolumeDisplayNode::SafeDownCast(this->GetScene()->AddNewNodeByClass("vtkMRMLDiffusionTensorVolumeDisplayNode"));
   dispNode->SetDefaultColorMap();
   this->SetAndObserveDisplayNodeID(dispNode->GetID());
   // add slice display nodes
-  dispNode->AddSliceGlyphDisplayNodes( this );
+  dispNode->AddSliceGlyphDisplayNodes(this);
 }

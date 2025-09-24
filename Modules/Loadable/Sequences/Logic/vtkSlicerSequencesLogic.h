@@ -20,7 +20,6 @@
 // This class manages the logic associated with reading, saving,
 // and changing propertied of the volumes
 
-
 #ifndef __vtkSlicerSequencesLogic_h
 #define __vtkSlicerSequencesLogic_h
 
@@ -34,25 +33,25 @@
 
 #include "vtkSlicerSequencesModuleLogicExport.h"
 
+class vtkMRMLMessageCollection;
 class vtkMRMLNode;
 class vtkMRMLSequenceNode;
 class vtkMRMLSequenceBrowserNode;
 
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_SEQUENCES_MODULE_LOGIC_EXPORT vtkSlicerSequencesLogic :
-  public vtkSlicerModuleLogic
+class VTK_SLICER_SEQUENCES_MODULE_LOGIC_EXPORT vtkSlicerSequencesLogic : public vtkSlicerModuleLogic
 {
 public:
-
-  static vtkSlicerSequencesLogic *New();
+  static vtkSlicerSequencesLogic* New();
   vtkTypeMacro(vtkSlicerSequencesLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   ///
   /// Add into the scene a new mrml sequence node and
-  /// read its data from a specified file
-  /// A storage node is also added into the scene
-  vtkMRMLSequenceNode* AddSequence(const char* filename);
+  /// read its data from a specified file.
+  /// A storage node is also added into the scene.
+  /// User-displayable warning or error messages can be received if userMessages object is
+  /// specified.
+  vtkMRMLSequenceNode* AddSequence(const char* filename, vtkMRMLMessageCollection* userMessages = nullptr);
 
   /// Refreshes the output of all the active browser nodes. Called regularly by a timer.
   void UpdateAllProxyNodes();
@@ -65,16 +64,15 @@ public:
 
   /// Deprecated method!
   void UpdateVirtualOutputNodes(vtkMRMLSequenceBrowserNode* browserNode)
-    {
+  {
     static bool warningLogged = false;
     if (!warningLogged)
-      {
-      vtkWarningMacro("vtkSlicerSequenceBrowserLogic::UpdateVirtualOutputNodes is deprecated,"
-        << " use vtkSlicerSequenceBrowserLogic::UpdateProxyNodes method instead");
+    {
+      vtkWarningMacro("vtkSlicerSequenceBrowserLogic::UpdateVirtualOutputNodes is deprecated," << " use vtkSlicerSequenceBrowserLogic::UpdateProxyNodes method instead");
       warningLogged = true;
-      }
-    this->UpdateProxyNodesFromSequences(browserNode);
     }
+    this->UpdateProxyNodesFromSequences(browserNode);
+  }
 
   /// Add a synchronized sequence node and virtual output node pair to the browser node for playback/recording
   /// \param sequenceNode Sequence node to add. If nullptr, then a new node is created.
@@ -94,6 +92,14 @@ public:
   /// use GetBrowserNodesForSequenceNode instead.
   vtkMRMLSequenceBrowserNode* GetFirstBrowserNodeForSequenceNode(vtkMRMLSequenceNode* sequenceNode);
 
+  /// Get collection of browser nodes that use a specific proxy node.
+  void GetBrowserNodesForProxyNode(vtkMRMLNode* proxyNode, vtkCollection* foundBrowserNodes);
+
+  /// Get first browser node that use a specific proxy node. This is a convenience method for
+  /// cases when it is known that a proxy node is only used in one browser node. In general case,
+  /// use GetBrowserNodesForProxyNode instead.
+  vtkMRMLSequenceBrowserNode* GetFirstBrowserNodeForProxyNode(vtkMRMLNode* proxyNode);
+
 protected:
   vtkSlicerSequencesLogic();
   ~vtkSlicerSequencesLogic() override;
@@ -104,20 +110,19 @@ protected:
   void UpdateFromMRMLScene() override;
   void OnMRMLSceneNodeAdded(vtkMRMLNode* node) override;
   void OnMRMLSceneNodeRemoved(vtkMRMLNode* node) override;
-  void ProcessMRMLNodesEvents(vtkObject *caller, unsigned long event, void *callData) override;
+  void ProcessMRMLNodesEvents(vtkObject* caller, unsigned long event, void* callData) override;
 
   bool IsDataConnectorNode(vtkMRMLNode*);
 
   // Time of the last update of each browser node (in universal time)
-  std::map< vtkMRMLSequenceBrowserNode*, double > LastSequenceBrowserUpdateTimeSec;
+  std::map<vtkMRMLSequenceBrowserNode*, double> LastSequenceBrowserUpdateTimeSec;
 
 private:
-
-  bool UpdateProxyNodesFromSequencesInProgress{false};
-  bool UpdateSequencesFromProxyNodesInProgress{false};
+  std::set<vtkMRMLSequenceBrowserNode*> UpdateProxyNodesFromSequencesInProgress;
+  std::set<vtkMRMLSequenceBrowserNode*> UpdateSequencesFromProxyNodesInProgress;
 
   vtkSlicerSequencesLogic(const vtkSlicerSequencesLogic&); // Not implemented
-  void operator=(const vtkSlicerSequencesLogic&);               // Not implemented
+  void operator=(const vtkSlicerSequencesLogic&);          // Not implemented
 };
 
 #endif

@@ -15,20 +15,16 @@ set(${KIT}_SRCS
   qMRMLWidgetsPlugin.cxx
   qMRMLWidgetsPlugin.h
 
-  qMRMLCaptureToolBarPlugin.h
-  qMRMLCaptureToolBarPlugin.cxx
   qMRMLCheckableNodeComboBoxPlugin.cxx
   qMRMLCheckableNodeComboBoxPlugin.h
+  qMRMLClipNodeDisplayWidgetPlugin.cxx
+  qMRMLClipNodeDisplayWidgetPlugin.h
   qMRMLClipNodeWidgetPlugin.cxx
   qMRMLClipNodeWidgetPlugin.h
   qMRMLCollapsibleButtonPlugin.cxx
   qMRMLCollapsibleButtonPlugin.h
-  qMRMLColorListViewPlugin.cxx
-  qMRMLColorListViewPlugin.h
   qMRMLColorTableComboBoxPlugin.cxx
   qMRMLColorTableComboBoxPlugin.h
-  qMRMLColorTableViewPlugin.cxx
-  qMRMLColorTableViewPlugin.h
   qMRMLCoordinatesWidgetPlugin.cxx
   qMRMLCoordinatesWidgetPlugin.h
   qMRMLDisplayNodeViewComboBoxPlugin.cxx
@@ -67,12 +63,16 @@ set(${KIT}_SRCS
   qMRMLROIWidgetPlugin.h
   qMRMLScalarInvariantComboBoxPlugin.cxx
   qMRMLScalarInvariantComboBoxPlugin.h
+  qMRMLScalarsDisplayWidgetPlugin.cxx
+  qMRMLScalarsDisplayWidgetPlugin.h
   qMRMLSceneFactoryWidgetPlugin.cxx
   qMRMLSceneFactoryWidgetPlugin.h
   qMRMLSliceControllerWidgetPlugin.cxx
   qMRMLSliceControllerWidgetPlugin.h
   qMRMLSliceInformationWidgetPlugin.cxx
   qMRMLSliceInformationWidgetPlugin.h
+  qMRMLSliceVerticalControllerWidgetPlugin.cxx
+  qMRMLSliceVerticalControllerWidgetPlugin.h
   qMRMLSliceWidgetPlugin.cxx
   qMRMLSliceWidgetPlugin.h
   qMRMLSliderWidgetPlugin.cxx
@@ -110,13 +110,11 @@ endif()
 set(${KIT}_MOC_SRCS
   qMRMLWidgetsPlugin.h
 
-  qMRMLCaptureToolBarPlugin.h
   qMRMLCheckableNodeComboBoxPlugin.h
+  qMRMLClipNodeDisplayWidgetPlugin.h
   qMRMLClipNodeWidgetPlugin.h
   qMRMLCollapsibleButtonPlugin.h
-  qMRMLColorListViewPlugin.h
   qMRMLColorTableComboBoxPlugin.h
-  qMRMLColorTableViewPlugin.h
   qMRMLCoordinatesWidgetPlugin.h
   qMRMLDisplayNodeViewComboBoxPlugin.h
   qMRMLDisplayNodeWidgetPlugin.h
@@ -136,9 +134,11 @@ set(${KIT}_MOC_SRCS
   qMRMLRangeWidgetPlugin.h
   qMRMLROIWidgetPlugin.h
   qMRMLScalarInvariantComboBoxPlugin.h
+  qMRMLScalarsDisplayWidgetPlugin.h
   qMRMLSceneFactoryWidgetPlugin.h
   qMRMLSliceControllerWidgetPlugin.h
   qMRMLSliceInformationWidgetPlugin.h
+  qMRMLSliceVerticalControllerWidgetPlugin.h
   qMRMLSliceWidgetPlugin.h
   qMRMLSliderWidgetPlugin.h
   qMRMLSpinBoxPlugin.h

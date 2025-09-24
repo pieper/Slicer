@@ -33,13 +33,13 @@ class vtkTagTable;
 class VTK_MRML_EXPORT vtkMRMLStorableNode : public vtkMRMLNode
 {
 public:
-  vtkTypeMacro(vtkMRMLStorableNode,vtkMRMLNode);
+  vtkTypeMacro(vtkMRMLStorableNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   //--------------------------------------------------------------------------
   /// Methods for user-specified metadata
   //--------------------------------------------------------------------------
-  vtkGetObjectMacro ( UserTagTable, vtkTagTable );
+  vtkGetObjectMacro(UserTagTable, vtkTagTable);
 
   //--------------------------------------------------------------------------
   /// MRMLNode methods
@@ -51,11 +51,15 @@ public:
 
   ///
   /// Read node attributes from XML file
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   ///
   /// Write this node's information to a MRML file in XML format.
   void WriteXML(ostream& of, int indent) override;
+
+  /// \brief Copy node contents from another node of the same type.
+  /// Reimplemented to copy default sequence storage node class.
+  void Copy(vtkMRMLNode* node) override;
 
   /// Copy node content (excludes basic data, such as name and node references).
   /// \sa vtkMRMLNode::CopyContent
@@ -63,19 +67,17 @@ public:
 
   ///
   /// Finds the storage node and read the data
-  void UpdateScene(vtkMRMLScene *scene) override;
+  void UpdateScene(vtkMRMLScene* scene) override;
 
   ///
   /// alternative method to propagate events generated in Storage nodes
-  void ProcessMRMLEvents ( vtkObject * /*caller*/,
-                                   unsigned long /*event*/,
-                                   void * /*callData*/ ) override;
+  void ProcessMRMLEvents(vtkObject* /*caller*/, unsigned long /*event*/, void* /*callData*/) override;
 
   ///
   /// String ID of the storage MRML node
-  void SetAndObserveStorageNodeID(const char *storageNodeID);
-  void AddAndObserveStorageNodeID(const char *storageNodeID);
-  void SetAndObserveNthStorageNodeID(int n, const char *storageNodeID);
+  void SetAndObserveStorageNodeID(const char* storageNodeID);
+  void AddAndObserveStorageNodeID(const char* storageNodeID);
+  void SetAndObserveNthStorageNodeID(int n, const char* storageNodeID);
 
   ///
   /// Return true if storageNodeID is in the storage node ID list.
@@ -89,12 +91,12 @@ public:
   /// nodes are created. The method gets applied to any storable data that
   /// should be saved with, and loaded with the scene, including nodes that
   /// are hidden from editors like scalar overlays.
-  void SetSlicerDataType ( const char *type );
-  const char *GetSlicerDataType ();
+  void SetSlicerDataType(const char* type);
+  const char* GetSlicerDataType();
 
   int GetNumberOfStorageNodes();
-  const char *GetNthStorageNodeID(int n);
-  const char *GetStorageNodeID();
+  const char* GetNthStorageNodeID(int n);
+  const char* GetStorageNodeID();
 
   ///
   /// Get associated display MRML node
@@ -117,6 +119,14 @@ public:
   /// Returns true on success. If storage node is not needed then
   /// storage node is not created and the method returns with true.
   virtual bool AddDefaultStorageNode(const char* filename = nullptr);
+
+  /// Class name of the default sequence storage node that is instantiated by CreateDefaultSequenceStorageNode
+  /// The value is not stored in the scene but it has to be set manually
+  /// (for example, in the corresponding default node in the scene).
+  /// Default value: "vtkMRMLSequenceStorageNode"
+  /// \sa CreateDefaultSequenceStorageNode
+  vtkSetMacro(DefaultSequenceStorageNodeClassName, std::string);
+  vtkGetMacro(DefaultSequenceStorageNodeClassName, std::string);
 
   /// Creates the most appropriate storage node class for storing a sequence of these nodes.
   /// The caller owns the returned object and responsible for deleting it.
@@ -144,7 +154,7 @@ public:
   /// \sa GetStoredTime() StorableModifiedTime Modified() GetModifiedSinceRead()
   virtual void StorableModified();
 
- protected:
+protected:
   vtkMRMLStorableNode();
   ~vtkMRMLStorableNode() override;
   vtkMRMLStorableNode(const vtkMRMLStorableNode&);
@@ -156,12 +166,14 @@ public:
   virtual const char* GetStorageNodeReferenceRole();
   virtual const char* GetStorageNodeReferenceMRMLAttributeName();
 
-  vtkTagTable *UserTagTable;
+  vtkTagTable* UserTagTable;
 
   ///
   /// SlicerDataType records the kind of storage node that
   /// holds the data. Set in each subclass.
   std::string SlicerDataType;
+
+  std::string DefaultSequenceStorageNodeClassName;
 
   /// Compute when the storable node was read/written for the last time.
   /// This information is used by GetModifiedSinceRead() to know if the node

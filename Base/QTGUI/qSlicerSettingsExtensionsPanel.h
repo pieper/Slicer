@@ -33,8 +33,7 @@
 class QSettings;
 class qSlicerSettingsExtensionsPanelPrivate;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsExtensionsPanel
-  : public ctkSettingsPanel
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsExtensionsPanel : public ctkSettingsPanel
 {
   Q_OBJECT
 public:
@@ -49,11 +48,14 @@ public:
 
 signals:
   void extensionsServerUrlChanged(const QString& url);
+  void extensionsFrontendServerUrlChanged(const QString& url);
+  void extensionsAutoUpdateSettingsChanged();
 
 protected slots:
   void onExtensionsManagerEnabled(bool value);
   /// \todo This slot does nothing.
-  void onExensionsPathChanged(const QString& path);
+  void onExtensionsPathChanged(const QString& path);
+  void updateAutoUpdateWidgetsFromModel();
 
 protected:
   QScopedPointer<qSlicerSettingsExtensionsPanelPrivate> d_ptr;

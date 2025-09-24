@@ -29,8 +29,10 @@
 #include <QToolButton>
 
 // CTK includes
-#include <ctkLogger.h>
 #include <ctkPopupWidget.h>
+
+// MRML includes
+#include <vtkMRMLTableViewNode.h>
 
 // qMRML includes
 #include "qMRMLTableViewControllerWidget.h"
@@ -38,27 +40,23 @@
 #include "qMRMLTableWidget.h"
 
 //--------------------------------------------------------------------------
-static ctkLogger logger("org.slicer.libs.qmrmlwidgets.qMRMLTableWidget");
-//--------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------
 // qMRMLTableWidgetPrivate
-class qMRMLTableWidgetPrivate
-  : public QObject
+class qMRMLTableWidgetPrivate : public QObject
 {
   Q_DECLARE_PUBLIC(qMRMLTableWidget);
+
 protected:
   qMRMLTableWidget* const q_ptr;
+
 public:
   qMRMLTableWidgetPrivate(qMRMLTableWidget& object);
   ~qMRMLTableWidgetPrivate() override;
 
   void init();
 
-  qMRMLTableView*       TableView;
+  qMRMLTableView* TableView;
   qMRMLTableViewControllerWidget* TableController;
 };
-
 
 //---------------------------------------------------------------------------
 qMRMLTableWidgetPrivate::qMRMLTableWidgetPrivate(qMRMLTableWidget& object)
@@ -88,10 +86,8 @@ void qMRMLTableWidgetPrivate::init()
 
   this->TableController->setTableView(this->TableView);
 
-  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)),
-                   this->TableView, SLOT(setMRMLScene(vtkMRMLScene*)));
-  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)),
-                   this->TableController, SLOT(setMRMLScene(vtkMRMLScene*)));
+  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)), this->TableView, SLOT(setMRMLScene(vtkMRMLScene*)));
+  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)), this->TableController, SLOT(setMRMLScene(vtkMRMLScene*)));
 }
 
 // --------------------------------------------------------------------------
@@ -114,7 +110,6 @@ qMRMLTableWidget::~qMRMLTableWidget()
   d->TableController->setMRMLScene(nullptr);
 }
 
-
 // --------------------------------------------------------------------------
 void qMRMLTableWidget::setMRMLTableViewNode(vtkMRMLTableViewNode* newTableViewNode)
 {
@@ -124,36 +119,55 @@ void qMRMLTableWidget::setMRMLTableViewNode(vtkMRMLTableViewNode* newTableViewNo
 }
 
 // --------------------------------------------------------------------------
-vtkMRMLTableViewNode* qMRMLTableWidget::mrmlTableViewNode()const
+void qMRMLTableWidget::setMRMLAbstractViewNode(vtkMRMLAbstractViewNode* newViewNode)
+{
+  Q_D(qMRMLTableWidget);
+  vtkMRMLTableViewNode* tableViewNode = vtkMRMLTableViewNode::SafeDownCast(newViewNode);
+  if (newViewNode && !tableViewNode)
+  {
+    qWarning() << Q_FUNC_INFO << " failed: Invalid view node type " << newViewNode->GetClassName() << ". Expected node type: vtkMRMLTableViewNode";
+  }
+  this->setMRMLTableViewNode(tableViewNode);
+}
+
+// --------------------------------------------------------------------------
+vtkMRMLTableViewNode* qMRMLTableWidget::mrmlTableViewNode() const
 {
   Q_D(const qMRMLTableWidget);
   return d->TableView->mrmlTableViewNode();
 }
 
 // --------------------------------------------------------------------------
-qMRMLTableView* qMRMLTableWidget::tableView()const
+vtkMRMLAbstractViewNode* qMRMLTableWidget::mrmlAbstractViewNode() const
+{
+  Q_D(const qMRMLTableWidget);
+  return this->mrmlTableViewNode();
+}
+
+// --------------------------------------------------------------------------
+qMRMLTableView* qMRMLTableWidget::tableView() const
 {
   Q_D(const qMRMLTableWidget);
   return d->TableView;
 }
 
 // --------------------------------------------------------------------------
-qMRMLTableViewControllerWidget* qMRMLTableWidget::tableController()const
+QWidget* qMRMLTableWidget::viewWidget() const
+{
+  Q_D(const qMRMLTableWidget);
+  return this->tableView();
+}
+
+// --------------------------------------------------------------------------
+qMRMLTableViewControllerWidget* qMRMLTableWidget::tableController() const
 {
   Q_D(const qMRMLTableWidget);
   return d->TableController;
 }
 
-//---------------------------------------------------------------------------
-void qMRMLTableWidget::setViewLabel(const QString& newTableViewLabel)
-{
-  Q_D(qMRMLTableWidget);
-  d->TableController->setViewLabel(newTableViewLabel);
-}
-
-//---------------------------------------------------------------------------
-QString qMRMLTableWidget::viewLabel()const
+// --------------------------------------------------------------------------
+qMRMLViewControllerBar* qMRMLTableWidget::controllerWidget() const
 {
   Q_D(const qMRMLTableWidget);
-  return d->TableController->viewLabel();
+  return this->tableController();
 }

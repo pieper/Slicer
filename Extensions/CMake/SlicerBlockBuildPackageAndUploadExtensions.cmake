@@ -24,7 +24,6 @@ set(expected_existing_vars
   Slicer_DIR
   Slicer_EXTENSION_DESCRIPTION_DIR
   Slicer_LOCAL_EXTENSIONS_DIR
-  Subversion_SVN_EXECUTABLE
   )
 foreach(var ${expected_existing_vars})
   if(NOT EXISTS "${${var}}")
@@ -49,17 +48,17 @@ include(SlicerFunctionExtractExtensionDescription)
 include(SlicerBlockUploadExtensionPrerequisites) # Common to all extensions
 
 #-----------------------------------------------------------------------------
-# Collect extension description file (*.s4ext)
+# Collect extension description file (*.json)
 #-----------------------------------------------------------------------------
-file(GLOB s4extfiles "${Slicer_EXTENSION_DESCRIPTION_DIR}/*.s4ext")
+file(GLOB catalog_entry_files "${Slicer_EXTENSION_DESCRIPTION_DIR}/*.json")
 
 # Get the dependency information of each extension
 set(EXTENSION_LIST)
-foreach(file ${s4extfiles})
+foreach(file ${catalog_entry_files})
   message(STATUS "Extension:${file}")
 
   # Extract extension description info
-  slicerFunctionExtractExtensionDescription(EXTENSION_FILE ${file} VAR_PREFIX EXTENSION)
+  slicerFunctionExtractExtensionDescriptionFromJson(EXTENSION_FILE ${file} VAR_PREFIX EXTENSION)
 
   # Extract file basename
   get_filename_component(EXTENSION_NAME ${file} NAME_WE)
@@ -67,31 +66,22 @@ foreach(file ${s4extfiles})
     message(WARNING "Failed to extract extension name associated with file: ${file}")
   else()
     list(APPEND EXTENSION_LIST ${EXTENSION_NAME})
-    string(REGEX REPLACE "^NA$" "" EXTENSION_EXT_DEPENDS "${EXTENSION_EXT_DEPENDS}")
-    set(EXTENSION_${EXTENSION_NAME}_DEPENDS ${EXTENSION_EXT_DEPENDS})
+    set(EXTENSION_${EXTENSION_NAME}_BUILD_DEPENDENCIES ${EXTENSION_EXT_BUILD_DEPENDENCIES})
     set(${EXTENSION_NAME}_BUILD_SUBDIRECTORY ${EXTENSION_FILE_BUILD_SUBDIRECTORY})
   endif()
 endforeach()
 
 # Sort extensions
 include(TopologicalSort)
-topological_sort(EXTENSION_LIST "EXTENSION_" "_DEPENDS")
+topological_sort(EXTENSION_LIST "EXTENSION_" "_BUILD_DEPENDENCIES")
 
 foreach(EXTENSION_NAME ${EXTENSION_LIST})
   # Set extension description filename using EXTENSION_NAME
-  set(file ${Slicer_EXTENSION_DESCRIPTION_DIR}/${EXTENSION_NAME}.s4ext)
+  set(file ${Slicer_EXTENSION_DESCRIPTION_DIR}/${EXTENSION_NAME}.json)
 
-  # Extract extension description info
-  slicerFunctionExtractExtensionDescription(EXTENSION_FILE ${file} VAR_PREFIX EXTENSION)
-  set(EXTENSION_CATEGORY ${EXTENSION_EXT_CATEGORY})
-  set(EXTENSION_STATUS ${EXTENSION_EXT_STATUS})
-  set(EXTENSION_ICONURL ${EXTENSION_EXT_ICONURL})
-  set(EXTENSION_CONTRIBUTORS ${EXTENSION_EXT_CONTRIBUTORS})
-  set(EXTENSION_DESCRIPTION ${EXTENSION_EXT_DESCRIPTION})
-  set(EXTENSION_HOMEPAGE ${EXTENSION_EXT_HOMEPAGE})
-  set(EXTENSION_SCREENSHOTURLS ${EXTENSION_EXT_SCREENSHOTURLS})
-  set(EXTENSION_ENABLED ${EXTENSION_EXT_ENABLED})
-  set(EXTENSION_DEPENDS ${EXTENSION_EXT_DEPENDS})
+  # Extract extension catalog entry fields setting "EXTENSION_EXT_*" variables
+  # in the current scope.
+  slicerFunctionExtractExtensionDescriptionFromJson(EXTENSION_FILE ${file} VAR_PREFIX EXTENSION)
 
   # Ensure extensions depending on this extension can lookup the corresponding
   # _DIR and _BUILD_SUBDIRECTORY variables.
@@ -99,7 +89,7 @@ foreach(EXTENSION_NAME ${EXTENSION_LIST})
   set(${EXTENSION_NAME}_BUILD_SUBDIRECTORY ${EXTENSION_EXT_BUILD_SUBDIRECTORY})
 
   message(STATUS "Configuring extension: ${EXTENSION_NAME}")
-  if("${EXTENSION_EXT_SCM}" STREQUAL "" AND "${EXTENSION_EXT_SCMURL}" STREQUAL "")
+  if("${EXTENSION_EXT_SCM_TYPE}" STREQUAL "" AND "${EXTENSION_EXT_SCM_URL}" STREQUAL "")
     message(WARNING "Failed to extract extension information associated to file: ${file}")
     continue()
   endif()
@@ -109,48 +99,30 @@ foreach(EXTENSION_NAME ${EXTENSION_LIST})
 
   # Set external project DEPENDS parameter
   set(EP_ARG_EXTENSION_DEPENDS)
-  if(Slicer_SOURCE_DIR)
-    set(EXTENSIONEP_ARG_EXTENSION_DEPENDS DEPENDS Slicer ${EXTENSION_DEPENDS})
-  else()
-    if(NOT "${EXTENSION_DEPENDS}" STREQUAL "")
-      set(EP_ARG_EXTENSION_DEPENDS DEPENDS ${EXTENSION_DEPENDS})
-    endif()
+  if(NOT "${EXTENSION_EXT_BUILD_DEPENDENCIES}" STREQUAL "")
+    set(EP_ARG_EXTENSION_DEPENDS DEPENDS ${EXTENSION_EXT_BUILD_DEPENDENCIES})
   endif()
 
   #-----------------------------------------------------------------------------
   # Configure extension source download wrapper script
   #-----------------------------------------------------------------------------
   set(ext_ep_options_repository)
-  set(ext_revision ${EXTENSION_EXT_SCMREVISION})
-  if("${EXTENSION_EXT_SCM}" STREQUAL "git")
+  set(ext_revision ${EXTENSION_EXT_SCM_REVISION})
+  if("${EXTENSION_EXT_SCM_TYPE}" STREQUAL "git")
     set(EXTENSION_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXTENSION_NAME})
     if("${ext_revision}" STREQUAL "")
-      set(ext_revision "origin/master")
+      set(ext_revision "origin/main")
     endif()
     set(ext_ep_options_repository
-      GIT_REPOSITORY ${EXTENSION_EXT_SCMURL} GIT_TAG ${ext_revision})
-  elseif("${EXTENSION_EXT_SCM}" STREQUAL "svn")
-    set(EXTENSION_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/${EXTENSION_NAME})
-    if("${ext_revision}" STREQUAL "")
-      set(ext_revision "HEAD")
-    endif()
-    set(ext_ep_options_repository
-      SVN_REPOSITORY ${EXTENSION_EXT_SCMURL} SVN_REVISION -r ${ext_revision})
-    if(NOT ${EXTENSION_EXT_SVNUSERNAME} STREQUAL "")
-       list(APPEND ext_ep_options_repository
-         SVN_USERNAME "${EXTENSION_EXT_SVNUSERNAME}"
-         SVN_PASSWORD "${EXTENSION_EXT_SVNPASSWORD}"
-         SVN_TRUST_CERT 1
-         )
-    endif()
-  elseif("${EXTENSION_EXT_SCM}" STREQUAL "local")
-    set(EXTENSION_SOURCE_DIR ${EXTENSION_EXT_SCMURL})
+      GIT_REPOSITORY ${EXTENSION_EXT_SCM_URL} GIT_TAG ${ext_revision})
+  elseif("${EXTENSION_EXT_SCM_TYPE}" STREQUAL "local")
+    set(EXTENSION_SOURCE_DIR ${EXTENSION_EXT_SCM_URL})
     if(NOT IS_ABSOLUTE ${EXTENSION_SOURCE_DIR})
       set(EXTENSION_SOURCE_DIR ${Slicer_LOCAL_EXTENSIONS_DIR}/${EXTENSION_SOURCE_DIR})
     endif()
     set(ext_ep_download_command DOWNLOAD_COMMAND "")
   else()
-    message(WARNING "Unknown type of SCM [${EXTENSION_EXT_SCM}] associated with extension named ${EXTENSION_NAME} - See file ${file}")
+    message(WARNING "Unknown type of SCM [${EXTENSION_EXT_SCM_TYPE}] associated with extension named ${EXTENSION_NAME} - See file ${file}")
     continue()
   endif()
   if(NOT "${ext_ep_options_repository}" STREQUAL "")
@@ -174,8 +146,10 @@ foreach(EXTENSION_NAME ${EXTENSION_LIST})
       ${CMAKE_CURRENT_BINARY_DIR}/download_${proj}_wrapper_script.cmake)
     #message(STATUS "Configuring extension download wrapper script: ${download_extension_wrapper_script}")
     file(WRITE ${download_extension_wrapper_script} "
+      # command is a semicolon-separated string that cannot be used as COMMAND directly, because arguments may contain spaces
+      set(command_list \"${command}\")
       execute_process(
-        COMMAND ${command}
+        COMMAND \${command_list}
         WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\"
         RESULT_VARIABLE result
         ERROR_VARIABLE error
@@ -183,12 +157,12 @@ foreach(EXTENSION_NAME ${EXTENSION_LIST})
       # Sanitize error string to prevent false positive by Visual Studio
       set(sanitized_error \"\${error}\")
       string(REPLACE \"error:\" \"error \" sanitized_error \"\${sanitized_error}\")
-      message(STATUS \"download_${proj}_wrapper_script: Ignoring result \${result}\")
+      message(STATUS \"download_${proj}_wrapper_script: Ignoring result '\${result}'\")
       if(NOT result EQUAL 0)
         message(STATUS \"Generating '${EXTENSION_SOURCE_DIR}/CMakeLists.txt'\")
         file(MAKE_DIRECTORY \"${EXTENSION_SOURCE_DIR}\")
         file(WRITE \"${EXTENSION_SOURCE_DIR}/CMakeLists.txt\"
-          \"cmake_minimum_required(VERSION 3.13.4)
+          \"cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
           project(${proj} NONE)
           message(FATAL_ERROR \\\"Failed to download extension using ${ext_ep_options_repository}\\n\${sanitized_error}\\\")
           \"
@@ -205,9 +179,11 @@ foreach(EXTENSION_NAME ${EXTENSION_LIST})
   #-----------------------------------------------------------------------------
   set(EXTENSION_SUPERBUILD_BINARY_DIR ${${EXTENSION_NAME}_BINARY_DIR})
   set(EXTENSION_BUILD_SUBDIRECTORY ${${EXTENSION_NAME}_BUILD_SUBDIRECTORY})
+  set(EXTENSION_BUILD_DEPENDENCIES "${EXTENSION_EXT_BUILD_DEPENDENCIES}")
   if(NOT DEFINED CTEST_MODEL)
     set(CTEST_MODEL "Experimental")
   endif()
+  set(EXTENSION_CATALOG_ENTRY_FILE ${file})
   include(SlicerBlockUploadExtension)
   if(Slicer_UPLOAD_EXTENSIONS)
     set(wrapper_command ${EXTENSION_UPLOAD_WRAPPER_COMMAND})
@@ -232,17 +208,25 @@ foreach(EXTENSION_NAME ${EXTENSION_LIST})
   set(build_error_file "${CMAKE_CURRENT_BINARY_DIR}/build_${proj}_error.txt")
   #message(STATUS "Configuring extension upload wrapper script: ${build_extension_wrapper_script}")
   file(WRITE ${build_extension_wrapper_script} "
+    # wrapper_command is a semicolon-separated string that cannot be used as COMMAND directly, because arguments may contain spaces
+    set(wrapper_command_list \"${wrapper_command}\")
     execute_process(
-      COMMAND ${wrapper_command}
+      COMMAND \${wrapper_command_list}
       WORKING_DIR \"${EXTENSION_SUPERBUILD_BINARY_DIR}\"
       OUTPUT_FILE \"${build_output_file}\"
       ERROR_FILE \"${build_error_file}\"
       RESULT_VARIABLE result
       )
-    message(STATUS \"build_${proj}_wrapper_script: Ignoring result \${result}\")
+    message(STATUS \"build_${proj}_wrapper_script: Ignoring result '\${result}'\")
     message(STATUS \"build_${proj}_output_file: ${build_output_file}\")
     message(STATUS \"build_${proj}_error_file: ${build_error_file}\")
     ")
+
+  if(CMAKE_VERSION GREATER_EQUAL "3.28")
+    set(maybe_BUILD_JOB_SERVER_AWARE BUILD_JOB_SERVER_AWARE 1)
+  else()
+    set(maybe_BUILD_JOB_SERVER_AWARE "")
+  endif()
 
   # Add extension external project
   #message("ext_ep_download_command:${ext_ep_download_command}")
@@ -251,8 +235,9 @@ foreach(EXTENSION_NAME ${EXTENSION_LIST})
     SOURCE_DIR ${EXTENSION_SOURCE_DIR}
     BINARY_DIR ${EXTENSION_SUPERBUILD_BINARY_DIR}
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND ${CMAKE_COMMAND} -DCTEST_BUILD_CONFIGURATION=${CTEST_BUILD_CONFIGURATION} -P ${build_extension_wrapper_script}
+    BUILD_COMMAND ${CMAKE_COMMAND} -DCTEST_BUILD_CONFIGURATION=$<CONFIG> -P ${build_extension_wrapper_script}
     INSTALL_COMMAND ""
+    ${maybe_BUILD_JOB_SERVER_AWARE}
     ${EP_ARG_EXTENSION_DEPENDS}
     )
   # This custom external project step forces the build and later

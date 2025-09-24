@@ -14,7 +14,7 @@
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
   and was supported through CANARIE's Research Software Program, Cancer
-  Care Ontario, OpenAnatomy, and Brigham and Women’s Hospital through NIH grant R01MH112748.
+  Care Ontario, OpenAnatomy, and Brigham and Women's Hospital through NIH grant R01MH112748.
 
 ==============================================================================*/
 
@@ -27,19 +27,21 @@
  * for details.
  * @sa
  * vtkSlicerMarkupsWidgetRepresentation2D vtkMRMLAbstractWidget
-*/
+ */
 
 #ifndef vtkSlicerPlaneRepresentation2D_h
 #define vtkSlicerPlaneRepresentation2D_h
 
 #include "vtkSlicerMarkupsModuleVTKWidgetsExport.h"
 #include "vtkSlicerMarkupsWidgetRepresentation2D.h"
+#include "vtkSlicerPlaneRepresentation3D.h"
+#include "vtkGlyphSource2D.h"
 
 class vtkAppendPolyData;
 class vtkClipPolyData;
-class vtkCompositeDataGeometryFilter;
 class vtkDiscretizableColorTransferFunction;
 class vtkFeatureEdges;
+class vtkGeometryFilter;
 class vtkMRMLInteractionEventData;
 class vtkPlaneCutter;
 class vtkPlaneSource;
@@ -49,40 +51,35 @@ class VTK_SLICER_MARKUPS_MODULE_VTKWIDGETS_EXPORT vtkSlicerPlaneRepresentation2D
 {
 public:
   /// Instantiate this class.
-  static vtkSlicerPlaneRepresentation2D *New();
+  static vtkSlicerPlaneRepresentation2D* New();
 
   /// Standard methods for instances of this class.
-  vtkTypeMacro(vtkSlicerPlaneRepresentation2D,vtkSlicerMarkupsWidgetRepresentation2D);
+  vtkTypeMacro(vtkSlicerPlaneRepresentation2D, vtkSlicerMarkupsWidgetRepresentation2D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Subclasses of vtkContourCurveRepresentation must implement these methods. These
   /// are the methods that the widget and its representation use to
   /// communicate with each other.
-  void UpdateFromMRML(vtkMRMLNode* caller, unsigned long event, void *callData = nullptr) override;
+  void UpdateFromMRMLInternal(vtkMRMLNode* caller, unsigned long event, void* callData = nullptr) override;
 
   /// Methods to make this class behave as a vtkProp.
-  void GetActors(vtkPropCollection *) override;
-  void ReleaseGraphicsResources(vtkWindow *) override;
-  int RenderOverlay(vtkViewport *viewport) override;
-  int RenderOpaqueGeometry(vtkViewport *viewport) override;
-  int RenderTranslucentPolygonalGeometry(vtkViewport *viewport) override;
+  void GetActors(vtkPropCollection*) override;
+  void ReleaseGraphicsResources(vtkWindow*) override;
+  int RenderOverlay(vtkViewport* viewport) override;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
 
   /// Return the bounds of the representation
-  double *GetBounds() override;
+  double* GetBounds() VTK_SIZEHINT(6) override;
 
-  void CanInteract(vtkMRMLInteractionEventData* interactionEventData,
-    int &foundComponentType, int &foundComponentIndex, double &closestDistance2) override;
+  void CanInteract(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2) override;
 
-  void CanInteractWithPlane(vtkMRMLInteractionEventData* interactionEventData,
-    int& foundComponentType, int& foundComponentIndex, double& closestDistance2);
+  void CanInteractWithPlane(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2);
 
   bool GetTransformationReferencePoint(double referencePointWorld[3]) override;
 
   void BuildPlane();
-
-  // Update visibility of interaction handles for representation
-  void UpdateInteractionPipeline() override;
 
 protected:
   vtkSlicerPlaneRepresentation2D();
@@ -100,7 +97,7 @@ protected:
   vtkNew<vtkClipPolyData> PlaneClipperStartFadeFar;
   vtkNew<vtkClipPolyData> PlaneClipperEndFadeFar;
 
-  vtkNew<vtkCompositeDataGeometryFilter> PlaneCompositeFilter;
+  vtkNew<vtkGeometryFilter> PlaneGeometryFilter;
   vtkNew<vtkAppendPolyData> PlaneAppend;
   vtkNew<vtkTransformPolyDataFilter> PlaneWorldToSliceTransformer;
   vtkNew<vtkPolyDataMapper2D> PlaneFillMapper;
@@ -112,7 +109,9 @@ protected:
   vtkNew<vtkPolyDataMapper2D> PlaneOutlineMapper;
   vtkNew<vtkActor2D> PlaneOutlineActor;
 
-  vtkNew<vtkMarkupsGlyphSource2D> ArrowFilter;
+  vtkNew<vtkAppendPolyData> PlanePickingAppend;
+
+  vtkNew<vtkGlyphSource2D> ArrowFilter;
   vtkNew<vtkGlyph2D> ArrowGlypher;
   vtkNew<vtkPolyDataMapper2D> ArrowMapper;
   vtkNew<vtkActor2D> ArrowActor;

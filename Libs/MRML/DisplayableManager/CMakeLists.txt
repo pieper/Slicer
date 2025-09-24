@@ -1,7 +1,7 @@
 project(MRMLDisplayableManager)
 
 #-----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 #-----------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -75,6 +75,7 @@ set(DisplayableManager_SRCS
   vtkMRMLModelDisplayableManager.cxx
   vtkMRMLViewDisplayableManager.cxx
   vtkMRMLThreeDReformatDisplayableManager.cxx
+  vtkMRMLThreeDSliceEdgeDisplayableManager.cxx
 
   # DisplayableManager associated with SliceView
   vtkMRMLCrosshairDisplayableManager.cxx
@@ -94,8 +95,6 @@ set(KIT_SRCS
   vtkMRMLDisplayableManagerGroup.cxx
   vtkMRMLDisplayableManagerFactory.cxx
 
-  vtkMRMLInteractionEventData.cxx
-
   # ThreeDView factory and DisplayableManager
   vtkMRMLAbstractThreeDViewDisplayableManager.cxx
   vtkMRMLThreeDViewDisplayableManagerFactory.cxx
@@ -112,8 +111,13 @@ set(KIT_SRCS
   vtkMRMLAbstractWidget.cxx
   vtkMRMLAbstractWidgetRepresentation.cxx
   vtkMRMLCameraWidget.cxx
+  vtkMRMLInteractionWidget.cxx
+  vtkMRMLInteractionWidgetRepresentation.cxx
+  vtkMRMLSliceEdgeWidgetRepresentation.cxx
   vtkMRMLSliceIntersectionWidget.cxx
   vtkMRMLSliceIntersectionRepresentation2D.cxx
+  vtkMRMLSliceIntersectionInteractionRepresentation.cxx
+  vtkMRMLSliceIntersectionInteractionRepresentationHelper.cxx
   vtkMRMLRubberBandWidgetRepresentation.cxx
   vtkMRMLWindowLevelWidget.cxx
 
@@ -168,7 +172,7 @@ set(libs
 
 if(MRMLDisplayableManager_USE_PYTHON)
   set(VTK_COMMON_PYTHON_LIBRARY
-    vtkWrappingPythonCore # For vtkPythonUtil
+    VTK::WrappingPythonCore # For vtkPythonUtil
     )
   list(APPEND libs
     ${VTK_COMMON_PYTHON_LIBRARY} # For vtkPythonUtils
@@ -230,19 +234,20 @@ install(TARGETS ${lib_name}
 if(MRMLDisplayableManager_USE_PYTHON)
   include(vtkMacroKitPythonWrap)
 
+  set(_python_wrapped_libraries)
+
   vtkMacroKitPythonWrap(
     KIT_NAME ${lib_name}
     KIT_SRCS ${KIT_SRCS}
-    KIT_PYTHON_LIBRARIES MRMLLogicPythonD
+    KIT_PYTHON_LIBRARIES ${_python_wrapped_libraries}
     KIT_INSTALL_BIN_DIR ${${PROJECT_NAME}_INSTALL_BIN_DIR}
     KIT_INSTALL_LIB_DIR ${${PROJECT_NAME}_INSTALL_LIB_DIR}
     )
   # Export target
-  export(TARGETS ${lib_name}Python ${lib_name}PythonD APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
+  export(TARGETS ${lib_name}Python APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
   # Folder
   if(NOT "${${PROJECT_NAME}_FOLDER}" STREQUAL "")
     set_target_properties(${lib_name}Python PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
-    set_target_properties(${lib_name}PythonD PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     if(TARGET ${lib_name}Hierarchy)
       set_target_properties(${lib_name}Hierarchy PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     endif()

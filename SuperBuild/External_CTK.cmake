@@ -29,11 +29,25 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
     set(_wrap_qtwebkit 0)
 
+  set(_wrap_qtmultimedia 0)
+  if(Slicer_BUILD_MULTIMEDIA_SUPPORT AND Slicer_USE_PYTHONQT)
+    set(_wrap_qtmultimedia 1)
+  endif()
+
   if(Slicer_USE_PYTHONQT)
     list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
       -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
       -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
       -DPYTHON_EXECUTABLE:FILEPATH=${PYTHON_EXECUTABLE}
+      )
+    list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
+      # Required by FindPython3 CMake module used by VTK
+      -DPython3_ROOT_DIR:PATH=${Python3_ROOT_DIR}
+      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR}
+      -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY}
+      -DPython3_LIBRARY_DEBUG:FILEPATH=${Python3_LIBRARY_DEBUG}
+      -DPython3_LIBRARY_RELEASE:FILEPATH=${Python3_LIBRARY_RELEASE}
+      -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
       )
   endif()
 
@@ -57,7 +71,7 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   ExternalProject_SetIfNotDefined(
     Slicer_${proj}_GIT_TAG
-    "0e3f5d0139dd505e616397e97096a783690f9868"
+    "833ae56e69d403bd0c83f2c331a32a8fd9c70285"
     QUIET
     )
 
@@ -85,7 +99,8 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
       -DCTK_INSTALL_BIN_DIR:STRING=${Slicer_INSTALL_BIN_DIR}
       -DCTK_INSTALL_LIB_DIR:STRING=${Slicer_INSTALL_LIB_DIR}
       -DCTK_INSTALL_QTPLUGIN_DIR:STRING=${Slicer_INSTALL_QtPlugins_DIR}
-      -DCTK_USE_GIT_PROTOCOL:BOOL=${Slicer_USE_GIT_PROTOCOL}
+      # turn off git protocol, as it is not supported by GitHub
+      -DCTK_USE_GIT_PROTOCOL:BOOL=OFF
       -DCTK_USE_SYSTEM_VTK:BOOL=${CTK_USE_SYSTEM_VTK}
       -DVTK_DIR:PATH=${VTK_DIR}
       -DCTK_USE_SYSTEM_ITK:BOOL=${CTK_USE_SYSTEM_ITK}
@@ -108,6 +123,7 @@ if(NOT DEFINED CTK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTGUI:BOOL=${Slicer_USE_PYTHONQT}
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTUITOOLS:BOOL=${Slicer_USE_PYTHONQT}
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTNETWORK:BOOL=${Slicer_USE_PYTHONQT}
+      -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTMULTIMEDIA:BOOL=${_wrap_qtmultimedia}
       -DCTK_LIB_Scripting/Python/Core_PYTHONQT_WRAP_QTWEBKIT:BOOL=${_wrap_qtwebkit}
       -DCTK_LIB_Scripting/Python/Widgets:BOOL=${Slicer_USE_PYTHONQT}
       -DCTK_ENABLE_Python_Wrapping:BOOL=${Slicer_USE_PYTHONQT}

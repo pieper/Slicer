@@ -19,7 +19,7 @@
 #define __qMRMLSequenceBrowserToolBar_h
 
 // Qt includes
-//#include <QSignalMapper>
+// #include <QSignalMapper>
 #include <QToolBar>
 
 // CTK includes
@@ -50,6 +50,8 @@ public:
   qMRMLSequenceBrowserToolBar(const QString& title, QWidget* parent = 0);
   qMRMLSequenceBrowserToolBar(QWidget* parent = 0);
   ~qMRMLSequenceBrowserToolBar() override;
+
+  Q_INVOKABLE vtkMRMLSequenceBrowserNode* activeBrowserNode();
 
 public slots:
   virtual void setMRMLScene(vtkMRMLScene* newScene);

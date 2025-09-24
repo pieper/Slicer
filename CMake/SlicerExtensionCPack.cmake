@@ -41,6 +41,11 @@ if(Slicer_SOURCE_DIR)
   return()
 endif()
 
+if(NOT "${EXTENSION_NAME}" STREQUAL "${PROJECT_NAME}")
+  message(STATUS "Skipping extension packaging: ${PROJECT_NAME} - EXTENSION_NAME [${EXTENSION_NAME}] different from PROJECT_NAME [${PROJECT_NAME}]")
+  return()
+endif()
+
 set(expected_existing_vars EXTENSION_README_FILE EXTENSION_LICENSE_FILE)
 foreach(var ${expected_existing_vars})
   if(NOT EXISTS ${${var}})
@@ -55,6 +60,14 @@ include(SlicerMacroExtractRepositoryInfo)
 SlicerMacroExtractRepositoryInfo(VAR_PREFIX ${EXTENSION_NAME})
 
 #-----------------------------------------------------------------------------
+# Set extension revision
+#-----------------------------------------------------------------------------
+if(NOT "${${EXTENSION_NAME}_FORCED_WC_REVISION}" STREQUAL "")
+  set(${EXTENSION_NAME}_WC_REVISION "${${EXTENSION_NAME}_FORCED_WC_REVISION}")
+endif()
+message(STATUS "Configuring ${EXTENSION_NAME} revision [${${EXTENSION_NAME}_FORCED_WC_REVISION}]")
+
+#-----------------------------------------------------------------------------
 # Generate extension description
 #-----------------------------------------------------------------------------
 if(NOT "${Slicer_CPACK_SKIP_GENERATE_EXTENSION_DESCRIPTION}")
@@ -66,7 +79,7 @@ if(NOT "${Slicer_CPACK_SKIP_GENERATE_EXTENSION_DESCRIPTION}")
   if(${${EXTENSION_NAME}_WC_TYPE} STREQUAL "git")
     if(${${EXTENSION_NAME}_WC_READONLY_URL} MATCHES "^git@")
       string(REPLACE ":" "/" ${EXTENSION_NAME}_WC_READONLY_URL ${${EXTENSION_NAME}_WC_READONLY_URL})
-      string(REPLACE "git@" "git://" ${EXTENSION_NAME}_WC_READONLY_URL ${${EXTENSION_NAME}_WC_READONLY_URL})
+      string(REPLACE "git@" "https://" ${EXTENSION_NAME}_WC_READONLY_URL ${${EXTENSION_NAME}_WC_READONLY_URL})
     endif()
     set(${EXTENSION_NAME}_WC_READONLY_ROOT ${${EXTENSION_NAME}_WC_READONLY_URL})
   endif()
@@ -118,7 +131,7 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${EXTENSION_DESCRIPTION}")
 set(CPACK_MONOLITHIC_INSTALL ON)
 
 set(CMAKE_PROJECT_NAME ${EXTENSION_NAME})
-set(CPACK_PACKAGE_VENDOR "NA-MIC")
+set(CPACK_PACKAGE_VENDOR "${Slicer_ORGANIZATION_NAME}")
 set(CPACK_PACKAGE_DESCRIPTION_FILE "${EXTENSION_README_FILE}")
 set(CPACK_RESOURCE_FILE_LICENSE "${EXTENSION_LICENSE_FILE}")
 string(CONCAT CPACK_PACKAGE_FILE_NAME
@@ -180,7 +193,7 @@ else()
 endif()
 
 #------------------------------------------------------------------------------
-# macOS specific configuration used by the "fix-up" script
+# macOS specific configuration used by the "fixup" script
 #------------------------------------------------------------------------------
 if(APPLE)
   set(fixup_path @rpath)
@@ -189,13 +202,79 @@ if(APPLE)
   set(EXTENSION_SUPERBUILD_DIR ${EXTENSION_SUPERBUILD_BINARY_DIR})
   get_filename_component(Slicer_SUPERBUILD_DIR ${Slicer_DIR}/.. ABSOLUTE)
 
+  # If any, resolve synthetic firmlink  (e.g from "/D/P/A" to "/Users/svc-dashboard/D/P/A")
+  #
+  # Since the output of "otool -L" reports paths with synthetic firmlinks resolved
+  # (see GetPrerequisitesWithRPath), we are using REAL_PATH below to also resolve
+  # Slicer_SUPERBUILD_DIR and ensure that the test in "SlicerExtensionCPackBundleFixup.cmake.in"
+  # checking if "${key}_ITEM" is a library built in Slicer itself work as expected.
+  file(REAL_PATH ${Slicer_SUPERBUILD_DIR} Slicer_SUPERBUILD_DIR)
+
+  #------------------------------------------------------------------------------
+  # <ExtensionName>_FIXUP_BUNDLE_CANDIDATES_PATTERNS
+  #------------------------------------------------------------------------------
+
+  #
+  # Extensions can define this variable in their CMakeLists.txt to specify
+  # additional glob patterns used by the "fixup" script to locate libraries
+  # that should be processed (e.g., to update rpaths or install names).
+  #
+  # The variable must be set as a CACHE entry to be visible during packaging.
+  # Each pattern should be relative to the extension’s install prefix.
+  #
+
+  set(dollar "$")
+  set(ext_dir "${dollar}{CMAKE_INSTALL_PREFIX}")
+
+  set(EXTENSION_FIXUP_BUNDLE_CANDIDATES_PATTERNS)
+
+  if(DEFINED ${EXTENSION_NAME}_FIXUP_BUNDLE_CANDIDATES_PATTERNS)
+    foreach(candidates_pattern IN LISTS ${EXTENSION_NAME}_FIXUP_BUNDLE_CANDIDATES_PATTERNS)
+      message(STATUS "Using fixup candidates pattern [${candidates_pattern}]")
+      set(candidates_pattern "${ext_dir}/${candidates_pattern}")
+      list(APPEND EXTENSION_FIXUP_BUNDLE_CANDIDATES_PATTERNS ${candidates_pattern})
+    endforeach()
+  endif()
+
+  #------------------------------------------------------------------------------
+  # <ExtensionName>_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES
+  #------------------------------------------------------------------------------
+
+  #
+  # Extensions can define this variable in their CMakeLists.txt to override
+  # how the `install_name_tool` sets the install name (`id`) and resolves
+  # references (`@rpath`) for libraries or executables.
+  #
+  # The value should be a list of entries in the format:
+  #
+  #   "<regex>|<relative_path>"
+  #
+  # - <regex>: A regular expression used to match a given library or executable path.
+  # - <relative_path>: The relative destination path under the bundle, used both
+  #   to compute the relocated path and to define the corresponding `@rpath` entry.
+  #
+  # The relocation behavior is context-aware: it takes into account whether the
+  # fixup is happening as part of the application or extension packaging process.
+  #
+  # This variable must be set as a CACHE entry to be picked up during packaging.
+  #
+
+  set(EXTENSION_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES)
+
+  if(DEFINED ${EXTENSION_NAME}_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES)
+    foreach(embedded_path_override IN LISTS ${EXTENSION_NAME}_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES)
+      message(STATUS "Using fixup embedded path override [${embedded_path_override}]")
+      list(APPEND EXTENSION_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES ${embedded_path_override})
+    endforeach()
+  endif()
+
   #------------------------------------------------------------------------------
   # <ExtensionName>_FIXUP_BUNDLE_LIBRARY_DIRECTORIES
   #------------------------------------------------------------------------------
 
   #
   # Setting this variable in the CMakeLists.txt of an extension allows to update
-  # the list of directories used by the "fix-up" script to look up libraries
+  # the list of directories used by the "fixup" script to look up libraries
   # that should be copied into the extension package.
   #
   # To ensure the extension can be bundled, the variable should be set as a CACHE
@@ -210,12 +289,13 @@ if(APPLE)
           OR lib_path MATCHES "^(/System/Library|/usr/lib)")
         continue()
       endif()
+      message(STATUS "Using fixup library directory [${lib_path}]")
       list(APPEND EXTENSION_FIXUP_BUNDLE_LIBRARY_DIRECTORIES ${lib_path})
     endforeach()
   endif()
 
   #------------------------------------------------------------------------------
-  # Configure "fix-up" script
+  # Configure "fixup" script
   #------------------------------------------------------------------------------
   configure_file(
     ${Slicer_EXTENSION_CPACK_BUNDLE_FIXUP}
@@ -223,7 +303,7 @@ if(APPLE)
     @ONLY)
 
   #------------------------------------------------------------------------------
-  # Add install rule ensuring the "fix-up" script is executed at packaging time
+  # Add install rule ensuring the "fixup" script is executed at packaging time
   #------------------------------------------------------------------------------
   if(NOT _has_cpack_cmake_install_projects)
 
@@ -243,7 +323,7 @@ if(APPLE)
     # for SuperBuild extensions.
 
     file(WRITE ${slicer_extension_cpack_bundle_fixup_directory}/CMakeLists.txt
-    "cmake_minimum_required(VERSION 3.13.4)
+    "cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 project(SlicerExtensionCPackBundleFixup)
 install(SCRIPT \"${slicer_extension_cpack_bundle_fixup_directory}/SlicerExtensionCPackBundleFixup.cmake\")")
     set(source_dir "${slicer_extension_cpack_bundle_fixup_directory}")

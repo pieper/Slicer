@@ -39,7 +39,6 @@ class QStringList;
 
 /// \brief Qt widget for selecting a single segment from a segmentation.
 ///   If multiple segments are needed, then use \sa qMRMLSegmentsTableView instead in SimpleListMode
-/// \ingroup SlicerRt_QtModules_Segmentations_Widgets
 class QMRML_WIDGETS_EXPORT qMRMLSegmentSelectorWidget : public qMRMLWidget
 {
   Q_OBJECT
@@ -74,37 +73,43 @@ public:
   /// Returns empty string in case of single selection (when \sa multiSelection is false)
   Q_INVOKABLE QStringList selectedSegmentIDs();
 
+  /// Get all segment IDs that this widget displays.
+  /// This list may differ from the list of segments in the segmentation node
+  /// during adding/removing of segments, because the segment list in the widget is only
+  /// updated when the segmentation node modification event is invoked.
+  Q_INVOKABLE QStringList segmentIDs();
+
   /// Return true if the "none" is in the segmentation node comboBox list, false otherwise.
   /// \sa noneEnabled, setNoneEnabled()
-  bool noneEnabled()const;
+  bool noneEnabled() const;
   /// Set whether the "none" item should be in the segmentation node comboBox list or not.
   /// \sa noneEnabled, noneEnabled()
   void setNoneEnabled(bool enable);
 
   /// Return true if the edit option is enabled in the segmentation node combobox
   /// \sa noneEnabled, setEditEnabled()
-  bool editEnabled()const;
+  bool editEnabled() const;
   /// Set whether the edit option is enabled in the segmentation node combobox
   /// \sa editEnabled, editEnabled()
   void setEditEnabled(bool enable);
 
   /// Return whether segmentation node selector combobox is visible
   /// \sa segmentationNodeSelectorVisible, setSegmentationNodeSelectorVisible()
-  bool segmentationNodeSelectorVisible()const;
+  bool segmentationNodeSelectorVisible() const;
   /// Set whether segmentation node selector combobox is visible
   /// \sa segmentationNodeSelectorVisible, segmentationNodeSelectorVisible()
   void setSegmentationNodeSelectorVisible(bool visible);
 
   /// Return true if the multi-selection of segments is enabled, false otherwise.
   /// \sa multiSelection, setMultiSelection()
-  bool multiSelection()const;
+  bool multiSelection() const;
   /// Set whether multi-selection of segments is enabled or not. Off by default (single-selection)
   /// \sa multiSelection, multiSelection()
   void setMultiSelection(bool multi);
 
   /// Return true if the current layout is horizontal
   /// \sa horizontalLayout, setHorizontalLayout()
-  bool horizontalLayout()const;
+  bool horizontalLayout() const;
   /// Set whether the widget layout is horizontal (everything in one row) or vertical. False by default
   /// \sa horizontalLayout, horizontalLayout()
   void setHorizontalLayout(bool horizontal);
@@ -112,7 +117,7 @@ public:
   /// if true, when the user create a node using "Add node", the node will be
   /// automatically selected. It doesn't apply if the node is programmatically
   /// added (when the combobox is populated by the scene).
-  bool selectNodeUponCreation()const;
+  bool selectNodeUponCreation() const;
   void setSelectNodeUponCreation(bool value);
 
 public slots:

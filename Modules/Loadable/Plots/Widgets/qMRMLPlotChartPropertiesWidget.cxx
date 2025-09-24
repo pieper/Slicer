@@ -26,6 +26,7 @@
 // qMRML includes
 #include "qMRMLPlotChartPropertiesWidget.h"
 #include "qMRMLPlotChartPropertiesWidget_p.h"
+#include "ui_qMRMLPlotChartPropertiesWidget.h"
 
 // MRML includes
 #include <vtkMRMLColorNode.h>
@@ -64,46 +65,28 @@ void qMRMLPlotChartPropertiesWidgetPrivate::setupUi(qMRMLWidget* widget)
   this->Ui_qMRMLPlotChartPropertiesWidget::setupUi(widget);
 
   // PlotChart Properties
-  this->connect(this->fontTypeComboBox, SIGNAL(currentIndexChanged(const QString&)),
-    q, SLOT(setFontType(const QString&)));
-  this->connect(this->titleFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setTitleFontSize(double)));
-  this->connect(this->legendFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setLegendFontSize(double)));
-  this->connect(this->axisTitleFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setAxisTitleFontSize(double)));
-  this->connect(this->axisLabelFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setAxisLabelFontSize(double)));
+  this->connect(this->fontTypeComboBox, SIGNAL(currentIndexChanged(const QString&)), q, SLOT(setFontType(const QString&)));
+  this->connect(this->titleFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setTitleFontSize(double)));
+  this->connect(this->legendFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setLegendFontSize(double)));
+  this->connect(this->axisTitleFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setAxisTitleFontSize(double)));
+  this->connect(this->axisLabelFontSizeDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setAxisLabelFontSize(double)));
 
-  QObject::connect(this->titleLineEdit, SIGNAL(textEdited(const QString&)),
-    q, SLOT(setTitle(const QString&)));
-  QObject::connect(this->xAxisLabelLineEdit, SIGNAL(textEdited(const QString&)),
-    q, SLOT(setXAxisLabel(const QString&)));
-  QObject::connect(this->yAxisLabelLineEdit, SIGNAL(textEdited(const QString&)),
-    q, SLOT(setYAxisLabel(const QString&)));
-  this->connect(this->legendVisibleCheckBox, SIGNAL(toggled(bool)),
-    q, SLOT(setLegendVisibility(bool)));
-  this->connect(this->gridVisibleCheckBox, SIGNAL(toggled(bool)),
-    q, SLOT(setGridVisibility(bool)));
+  QObject::connect(this->titleLineEdit, SIGNAL(textEdited(const QString&)), q, SLOT(setTitle(const QString&)));
+  QObject::connect(this->xAxisLabelLineEdit, SIGNAL(textEdited(const QString&)), q, SLOT(setXAxisLabel(const QString&)));
+  QObject::connect(this->yAxisLabelLineEdit, SIGNAL(textEdited(const QString&)), q, SLOT(setYAxisLabel(const QString&)));
+  this->connect(this->legendVisibleCheckBox, SIGNAL(toggled(bool)), q, SLOT(setLegendVisibility(bool)));
+  this->connect(this->gridVisibleCheckBox, SIGNAL(toggled(bool)), q, SLOT(setGridVisibility(bool)));
 
-  this->connect(this->xAxisManualRangeCheckBox, SIGNAL(toggled(bool)),
-    q, SLOT(setXAxisManualRangeEnabled(bool)));
-  this->connect(this->xAxisRangeMinDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setXAxisRangeMin(double)));
-  this->connect(this->xAxisRangeMaxDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setXAxisRangeMax(double)));
+  this->connect(this->xAxisManualRangeCheckBox, SIGNAL(toggled(bool)), q, SLOT(setXAxisManualRangeEnabled(bool)));
+  this->connect(this->xAxisRangeMinDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setXAxisRangeMin(double)));
+  this->connect(this->xAxisRangeMaxDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setXAxisRangeMax(double)));
 
-  this->connect(this->yAxisManualRangeCheckBox, SIGNAL(toggled(bool)),
-    q, SLOT(setYAxisManualRangeEnabled(bool)));
-  this->connect(this->yAxisRangeMinDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setYAxisRangeMin(double)));
-  this->connect(this->yAxisRangeMaxDoubleSpinBox, SIGNAL(valueChanged(double)),
-    q, SLOT(setYAxisRangeMax(double)));
+  this->connect(this->yAxisManualRangeCheckBox, SIGNAL(toggled(bool)), q, SLOT(setYAxisManualRangeEnabled(bool)));
+  this->connect(this->yAxisRangeMinDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setYAxisRangeMin(double)));
+  this->connect(this->yAxisRangeMaxDoubleSpinBox, SIGNAL(valueChanged(double)), q, SLOT(setYAxisRangeMax(double)));
 
-  this->connect(this->xAxisLogScaleCheckBox, SIGNAL(toggled(bool)),
-    q, SLOT(setXAxisLogScale(bool)));
-  this->connect(this->yAxisLogScaleCheckBox, SIGNAL(toggled(bool)),
-    q, SLOT(setYAxisLogScale(bool)));
+  this->connect(this->xAxisLogScaleCheckBox, SIGNAL(toggled(bool)), q, SLOT(setXAxisLogScale(bool)));
+  this->connect(this->yAxisLogScaleCheckBox, SIGNAL(toggled(bool)), q, SLOT(setYAxisLogScale(bool)));
 
   this->connect(this->plotSeriesComboBox, SIGNAL(checkedNodesChanged()), this, SLOT(onPlotSeriesNodesSelected()));
   this->connect(this->plotSeriesComboBox, SIGNAL(nodeAddedByUser(vtkMRMLNode*)), this, SLOT(onPlotSeriesNodeAdded(vtkMRMLNode*)));
@@ -119,7 +102,7 @@ void qMRMLPlotChartPropertiesWidgetPrivate::updateWidgetFromMRML()
   q->setEnabled(this->PlotChartNode != nullptr && q->mrmlScene() != nullptr);
 
   if (!this->PlotChartNode || !q->mrmlScene())
-    {
+  {
     this->titleLineEdit->clear();
     this->xAxisLabelLineEdit->clear();
     this->yAxisLabelLineEdit->clear();
@@ -143,47 +126,47 @@ void qMRMLPlotChartPropertiesWidgetPrivate::updateWidgetFromMRML()
 
     bool plotBlockSignals = this->plotSeriesComboBox->blockSignals(true);
     for (int idx = 0; idx < this->plotSeriesComboBox->nodeCount(); idx++)
-      {
+    {
       this->plotSeriesComboBox->setCheckState(this->plotSeriesComboBox->nodeFromIndex(idx), Qt::Unchecked);
-      }
+    }
     this->plotSeriesComboBox->blockSignals(plotBlockSignals);
 
     return;
-    }
+  }
 
   this->xAxisManualRangeCheckBox->setChecked(!this->PlotChartNode->GetXAxisRangeAuto());
   if (!this->PlotChartNode->GetXAxisRangeAuto())
-    {
+  {
     double* range = this->PlotChartNode->GetXAxisRange();
     this->xAxisRangeMinDoubleSpinBox->setValue(range[0]);
     this->xAxisRangeMaxDoubleSpinBox->setValue(range[1]);
-    }
+  }
   else
-    {
+  {
     bool wasBlocked = this->xAxisRangeMinDoubleSpinBox->blockSignals(true);
     this->xAxisRangeMinDoubleSpinBox->setValue(0);
     this->xAxisRangeMinDoubleSpinBox->blockSignals(wasBlocked);
     wasBlocked = this->xAxisRangeMaxDoubleSpinBox->blockSignals(true);
     this->xAxisRangeMaxDoubleSpinBox->setValue(0);
     this->xAxisRangeMaxDoubleSpinBox->blockSignals(wasBlocked);
-    }
+  }
 
   this->yAxisManualRangeCheckBox->setChecked(!this->PlotChartNode->GetYAxisRangeAuto());
   if (!this->PlotChartNode->GetYAxisRangeAuto())
-    {
+  {
     double* range = this->PlotChartNode->GetYAxisRange();
     this->yAxisRangeMinDoubleSpinBox->setValue(range[0]);
     this->yAxisRangeMaxDoubleSpinBox->setValue(range[1]);
-    }
+  }
   else
-    {
+  {
     bool wasBlocked = this->yAxisRangeMinDoubleSpinBox->blockSignals(true);
     this->yAxisRangeMinDoubleSpinBox->setValue(0);
     this->yAxisRangeMinDoubleSpinBox->blockSignals(wasBlocked);
     wasBlocked = this->yAxisRangeMaxDoubleSpinBox->blockSignals(true);
     this->yAxisRangeMaxDoubleSpinBox->setValue(0);
     this->yAxisRangeMaxDoubleSpinBox->blockSignals(wasBlocked);
-    }
+  }
 
   bool blockedLogScale = this->xAxisLogScaleCheckBox->blockSignals(true);
   this->xAxisLogScaleCheckBox->setChecked(this->PlotChartNode->GetXAxisLogScale());
@@ -192,9 +175,7 @@ void qMRMLPlotChartPropertiesWidgetPrivate::updateWidgetFromMRML()
   this->yAxisLogScaleCheckBox->setChecked(this->PlotChartNode->GetYAxisLogScale());
   this->yAxisLogScaleCheckBox->blockSignals(blockedLogScale);
 
-
-  this->fontTypeComboBox->setCurrentIndex(this->fontTypeComboBox->findText(
-    this->PlotChartNode->GetFontType() ? this->PlotChartNode->GetFontType() : ""));
+  this->fontTypeComboBox->setCurrentIndex(this->fontTypeComboBox->findText(this->PlotChartNode->GetFontType() ? this->PlotChartNode->GetFontType() : ""));
 
   this->titleFontSizeDoubleSpinBox->setValue(this->PlotChartNode->GetTitleFontSize());
   this->legendFontSizeDoubleSpinBox->setValue(this->PlotChartNode->GetLegendFontSize());
@@ -209,38 +190,35 @@ void qMRMLPlotChartPropertiesWidgetPrivate::updateWidgetFromMRML()
   this->legendVisibleCheckBox->setChecked(this->PlotChartNode->GetLegendVisibility());
   this->gridVisibleCheckBox->setChecked(this->PlotChartNode->GetGridVisibility());
 
-    // Plot series selector
+  // Plot series selector
   bool plotBlockSignals = this->plotSeriesComboBox->blockSignals(true);
   for (int idx = 0; idx < this->plotSeriesComboBox->nodeCount(); idx++)
-    {
+  {
     vtkMRMLNode* node = this->plotSeriesComboBox->nodeFromIndex(idx);
     this->plotSeriesComboBox->setCheckState(node, Qt::Unchecked);
-    }
+  }
   std::vector<std::string> plotSeriesNodesIDs;
   this->PlotChartNode->GetPlotSeriesNodeIDs(plotSeriesNodesIDs);
-  for (std::vector<std::string>::iterator it = plotSeriesNodesIDs.begin();
-    it != plotSeriesNodesIDs.end(); ++it)
-    {
-    vtkMRMLPlotSeriesNode *plotSeriesNode = vtkMRMLPlotSeriesNode::SafeDownCast
-      (q->mrmlScene()->GetNodeByID((*it).c_str()));
+  for (std::vector<std::string>::iterator it = plotSeriesNodesIDs.begin(); it != plotSeriesNodesIDs.end(); ++it)
+  {
+    vtkMRMLPlotSeriesNode* plotSeriesNode = vtkMRMLPlotSeriesNode::SafeDownCast(q->mrmlScene()->GetNodeByID(it->c_str()));
     if (plotSeriesNode == nullptr)
-      {
+    {
       continue;
-      }
-    this->plotSeriesComboBox->setCheckState(plotSeriesNode, Qt::Checked);
     }
+    this->plotSeriesComboBox->setCheckState(plotSeriesNode, Qt::Checked);
+  }
   this->plotSeriesComboBox->blockSignals(plotBlockSignals);
-
 }
 
 // --------------------------------------------------------------------------
-void qMRMLPlotChartPropertiesWidget::setFontType(const QString &type)
+void qMRMLPlotChartPropertiesWidget::setFontType(const QString& type)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetFontType(type.toStdString().c_str());
 }
 
@@ -249,9 +227,9 @@ void qMRMLPlotChartPropertiesWidget::setTitleFontSize(double size)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetTitleFontSize(size);
 }
 
@@ -260,9 +238,9 @@ void qMRMLPlotChartPropertiesWidget::setLegendFontSize(double size)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetLegendFontSize(size);
 }
 
@@ -271,9 +249,9 @@ void qMRMLPlotChartPropertiesWidget::setAxisTitleFontSize(double size)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetAxisTitleFontSize(size);
 }
 
@@ -282,9 +260,9 @@ void qMRMLPlotChartPropertiesWidget::setAxisLabelFontSize(double size)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetAxisLabelFontSize(size);
 }
 
@@ -292,17 +270,17 @@ void qMRMLPlotChartPropertiesWidget::setAxisLabelFontSize(double size)
 void qMRMLPlotChartPropertiesWidgetPrivate::onPlotSeriesNodesSelected()
 {
   if (!this->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
 
   std::vector<std::string> plotSeriesNodesIDs;
   this->PlotChartNode->GetPlotSeriesNodeIDs(plotSeriesNodesIDs);
 
   // loop over arrays in the widget
   for (int idx = 0; idx < this->plotSeriesComboBox->nodeCount(); idx++)
-    {
-    vtkMRMLPlotSeriesNode *dn = vtkMRMLPlotSeriesNode::SafeDownCast(this->plotSeriesComboBox->nodeFromIndex(idx));
+  {
+    vtkMRMLPlotSeriesNode* dn = vtkMRMLPlotSeriesNode::SafeDownCast(this->plotSeriesComboBox->nodeFromIndex(idx));
 
     bool checked = (this->plotSeriesComboBox->checkState(dn) == Qt::Checked);
 
@@ -310,43 +288,43 @@ void qMRMLPlotChartPropertiesWidgetPrivate::onPlotSeriesNodesSelected()
     bool found = false;
     std::vector<std::string>::iterator it = plotSeriesNodesIDs.begin();
     for (; it != plotSeriesNodesIDs.end(); ++it)
+    {
+      if (!strcmp(dn->GetID(), it->c_str()))
       {
-      if (!strcmp(dn->GetID(), (*it).c_str()))
-        {
         if (!checked)
-          {
+        {
           // plot is not checked but currently in the LayoutPlot, remove it
           // (might want to cache the old name in case user adds it back)
-          this->PlotChartNode->RemovePlotSeriesNodeID((*it).c_str());
-          }
+          this->PlotChartNode->RemovePlotSeriesNodeID(it->c_str());
+        }
         found = true;
         break;
-        }
       }
+    }
     if (!found)
-      {
+    {
       if (checked)
-        {
+      {
         // plot is checked but not currently in the LayoutPlot, add it
         this->PlotChartNode->AddAndObservePlotSeriesNodeID(dn->GetID());
-        }
       }
+    }
   }
 }
 
 // --------------------------------------------------------------------------
-void qMRMLPlotChartPropertiesWidgetPrivate::onPlotSeriesNodeAdded(vtkMRMLNode *node)
+void qMRMLPlotChartPropertiesWidgetPrivate::onPlotSeriesNodeAdded(vtkMRMLNode* node)
 {
   Q_Q(qMRMLPlotChartPropertiesWidget);
   if (!this->PlotChartNode)
-    {
+  {
     return;
-    }
-  vtkMRMLPlotSeriesNode *plotSeriesNode = vtkMRMLPlotSeriesNode::SafeDownCast(node);
+  }
+  vtkMRMLPlotSeriesNode* plotSeriesNode = vtkMRMLPlotSeriesNode::SafeDownCast(node);
   if (!plotSeriesNode)
-    {
+  {
     return;
-    }
+  }
   // Add the reference of the PlotSeriesNode in the active PlotChartNode
   this->PlotChartNode->AddAndObservePlotSeriesNodeID(plotSeriesNode->GetID());
 
@@ -357,7 +335,8 @@ void qMRMLPlotChartPropertiesWidgetPrivate::onPlotSeriesNodeAdded(vtkMRMLNode *n
 // qMRMLPlotChartPropertiesWidget methods
 
 // --------------------------------------------------------------------------
-qMRMLPlotChartPropertiesWidget::qMRMLPlotChartPropertiesWidget(QWidget* _parent) : Superclass(_parent)
+qMRMLPlotChartPropertiesWidget::qMRMLPlotChartPropertiesWidget(QWidget* _parent)
+  : Superclass(_parent)
   , d_ptr(new qMRMLPlotChartPropertiesWidgetPrivate(*this))
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
@@ -369,7 +348,7 @@ qMRMLPlotChartPropertiesWidget::qMRMLPlotChartPropertiesWidget(QWidget* _parent)
 qMRMLPlotChartPropertiesWidget::~qMRMLPlotChartPropertiesWidget() = default;
 
 //---------------------------------------------------------------------------
- vtkMRMLPlotChartNode* qMRMLPlotChartPropertiesWidget::mrmlPlotChartNode()const
+vtkMRMLPlotChartNode* qMRMLPlotChartPropertiesWidget::mrmlPlotChartNode() const
 {
   Q_D(const qMRMLPlotChartPropertiesWidget);
   return d->PlotChartNode;
@@ -388,9 +367,9 @@ void qMRMLPlotChartPropertiesWidget::setMRMLPlotChartNode(vtkMRMLPlotChartNode* 
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (plotChartNode == d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
 
   d->qvtkReconnect(d->PlotChartNode, plotChartNode, vtkCommand::ModifiedEvent, d, SLOT(updateWidgetFromMRML()));
   d->PlotChartNode = plotChartNode;
@@ -421,7 +400,7 @@ void qMRMLPlotChartPropertiesWidget::setLegendVisibility(bool show)
 }
 
 //---------------------------------------------------------------------------
-void qMRMLPlotChartPropertiesWidget::setTitle(const QString &str)
+void qMRMLPlotChartPropertiesWidget::setTitle(const QString& str)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
@@ -432,7 +411,7 @@ void qMRMLPlotChartPropertiesWidget::setTitle(const QString &str)
 }
 
 //---------------------------------------------------------------------------
-void qMRMLPlotChartPropertiesWidget::setXAxisLabel(const QString &str)
+void qMRMLPlotChartPropertiesWidget::setXAxisLabel(const QString& str)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
@@ -443,7 +422,7 @@ void qMRMLPlotChartPropertiesWidget::setXAxisLabel(const QString &str)
 }
 
 //---------------------------------------------------------------------------
-void qMRMLPlotChartPropertiesWidget::setYAxisLabel(const QString &str)
+void qMRMLPlotChartPropertiesWidget::setYAxisLabel(const QString& str)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
@@ -459,9 +438,9 @@ void qMRMLPlotChartPropertiesWidget::setMRMLScene(vtkMRMLScene* newScene)
   Q_D(qMRMLPlotChartPropertiesWidget);
 
   if (this->mrmlScene() == newScene)
-    {
+  {
     return;
-    }
+  }
 
   // Disable the node selectors as they would fire signal currentIndexChanged(0)
   // meaning that there is no current node anymore. It's not true, it just means
@@ -472,13 +451,12 @@ void qMRMLPlotChartPropertiesWidget::setMRMLScene(vtkMRMLScene* newScene)
 
   Superclass::setMRMLScene(newScene);
 
-   d->qvtkReconnect(this->mrmlScene(), newScene, vtkMRMLScene::EndBatchProcessEvent,
-                    d, SLOT(updateWidgetFromMRML()));
+  d->qvtkReconnect(this->mrmlScene(), newScene, vtkMRMLScene::EndBatchProcessEvent, d, SLOT(updateWidgetFromMRML()));
 
   if (this->mrmlScene())
-    {
+  {
     d->updateWidgetFromMRML();
-    }
+  }
 }
 
 //---------------------------------------------------------------------------
@@ -486,9 +464,9 @@ void qMRMLPlotChartPropertiesWidget::setXAxisManualRangeEnabled(bool manual)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetXAxisRangeAuto(!manual);
 }
 
@@ -497,9 +475,9 @@ void qMRMLPlotChartPropertiesWidget::setXAxisRangeMin(double rangeMin)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   double range[2] = { 0 };
   d->PlotChartNode->GetXAxisRange(range);
   range[0] = rangeMin;
@@ -511,9 +489,9 @@ void qMRMLPlotChartPropertiesWidget::setXAxisRangeMax(double rangeMax)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   double range[2] = { 0 };
   d->PlotChartNode->GetXAxisRange(range);
   range[1] = rangeMax;
@@ -525,9 +503,9 @@ void qMRMLPlotChartPropertiesWidget::setYAxisManualRangeEnabled(bool manual)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetYAxisRangeAuto(!manual);
 }
 
@@ -536,9 +514,9 @@ void qMRMLPlotChartPropertiesWidget::setYAxisRangeMin(double rangeMin)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   double range[2] = { 0 };
   d->PlotChartNode->GetYAxisRange(range);
   range[0] = rangeMin;
@@ -550,9 +528,9 @@ void qMRMLPlotChartPropertiesWidget::setYAxisRangeMax(double rangeMax)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   double range[2] = { 0 };
   d->PlotChartNode->GetYAxisRange(range);
   range[1] = rangeMax;
@@ -564,9 +542,9 @@ void qMRMLPlotChartPropertiesWidget::setXAxisLogScale(bool logScale)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetXAxisLogScale(logScale);
 }
 
@@ -575,8 +553,8 @@ void qMRMLPlotChartPropertiesWidget::setYAxisLogScale(bool logScale)
 {
   Q_D(qMRMLPlotChartPropertiesWidget);
   if (!d->PlotChartNode)
-    {
+  {
     return;
-    }
+  }
   d->PlotChartNode->SetYAxisLogScale(logScale);
 }

@@ -37,7 +37,6 @@ class vtkDataObject;
 class vtkSegment;
 class vtkSegmentation;
 
-/// \ingroup SegmentationCore
 class vtkSegmentationCore_EXPORT vtkSegmentationHistory : public vtkObject
 {
 public:
@@ -52,7 +51,7 @@ public:
   /// Get segmentation that the states will be stored of.
   vtkGetMacro(Segmentation, vtkSegmentation*);
 
-  /// Saves all master representations of the segmentation in its current state.
+  /// Saves all source representations of the segmentation in its current state.
   /// States more recent than the last restored state are removed.
   /// \return Success flag
   bool SaveState();
@@ -104,13 +103,13 @@ protected:
   vtkSegmentationHistory();
   ~vtkSegmentationHistory() override;
 
-  typedef std::map<std::string, vtkSmartPointer<vtkSegment> > SegmentsMap;
+  typedef std::map<std::string, vtkSmartPointer<vtkSegment>> SegmentsMap;
 
   struct SegmentationState
-    {
+  {
     SegmentsMap Segments;
     std::vector<std::string> SegmentIds; // order of segments
-    };
+  };
 
   vtkSegmentation* Segmentation;
   vtkCallbackCommand* SegmentationModifiedCallbackCommand;
@@ -118,7 +117,7 @@ protected:
   unsigned int MaximumNumberOfStates;
 
   // Index of the state in SegmentationStates that was restored last.
-  // If index == size of states then it means that the segmentation has changed
+  // If LastRestoredState == size of states then it means that the segmentation has changed
   // since the last restored state.
   unsigned int LastRestoredState;
 
@@ -129,4 +128,4 @@ private:
   void operator=(const vtkSegmentationHistory&) = delete;
 };
 
-#endif // __vtkSegmentation_h
+#endif

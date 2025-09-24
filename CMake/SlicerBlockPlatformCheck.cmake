@@ -33,43 +33,24 @@ if(NOT DEFINED Slicer_PLATFORM_CHECK)
 endif()
 
 if(Slicer_PLATFORM_CHECK)
-  # See CMake/Modules/Platform/Darwin.cmake)
-  #   6.x == Mac OSX 10.2 (Jaguar)
-  #   7.x == Mac OSX 10.3 (Panther)
-  #   8.x == Mac OSX 10.4 (Tiger)
-  #   9.x == Mac OSX 10.5 (Leopard)
-  #  10.x == Mac OSX 10.6 (Snow Leopard)
-  #  11.x == Mac OSX 10.7 (Lion)
-  #  12.x == Mac OSX 10.8 (Mountain Lion)
-  if(DARWIN_MAJOR_VERSION LESS "9")
-    message(FATAL_ERROR "Only Mac OSX >= 10.5 is supported !")
-  endif()
-
-  if(MSVC)
-    # See http://www.cmake.org/cmake/help/v2.8.10/cmake.html#variable:MSVC_VERSION
+  if(WIN32)
+    # See https://cmake.org/cmake/help/latest/variable/MSVC_VERSION.html
     # and https://en.wikipedia.org/wiki/Microsoft_Visual_Studio#Version_history
-    #   1200 = VS  6.0 (Visual Studio 6.0)
-    #   1300 = VS  7.0 (Visual Studio .NET (2002))
-    #   1310 = VS  7.1 (Visual Studio .NET 2003)
-    #   1400 = VS  8.0 (Visual Studio 2005)
-    #   1500 = VS  9.0 (Visual Studio 2008)
-    #   1600 = VS 10.0 (Visual Studio 2010)
-    #   1700 = VS 11.0 (Visual Studio 2012)
-    if(MSVC_VERSION VERSION_LESS 1500)
-      message(FATAL_ERROR "Visual Studio >= 2008 is required !")
+    # 1920-1929 = VS 16.0 (v142 toolset)
+    # 1930-1949 = VS 17.0 (v143 toolset, see https://devblogs.microsoft.com/cppblog/msvc-toolset-minor-version-number-14-40-in-vs-2022-v17-10/)
+    if(NOT MSVC_VERSION VERSION_GREATER_EQUAL 1920)
+      message(FATAL_ERROR "Microsoft Visual C/C++ toolset 142 or newer is required !")
     endif()
-
-    # See https://github.com/Kitware/CMake/blob/master/Modules/CMakeDetermineVSServicePack.cmake
-    #  14.00.50727.42  - vc80
-    #  14.00.50727.762 - vc80sp1
-    #  15.00.21022.08  - vc90
-    #  15.00.30729.01  - vc90sp1
-    #  16.00.30319.01  - vc100
-    #  16.00.40219.01  - vc100sp1
-    #  17.00.50727.1   - vc110
-    if(MSVC90 AND NOT "${CMAKE_CXX_COMPILER_VERSION}" VERSION_EQUAL "15.00.30729.01")
-      message(FATAL_ERROR "Slicer requires Microsoft Visual Studio 2008 (VS9) SP1 or greater!"
-                          "See http://www.microsoft.com/en-us/download/details.aspx?id=10986" )
+  elseif(APPLE)
+    # See CMake/Modules/Platform/Darwin.cmake)
+    # and https://en.wikipedia.org/wiki/Darwin_(operating_system)#Release_history
+    #  22.x == macOS 13 (Ventura)
+    #  23.x == macOS 14 (Sonoma)
+    #  24.x == macOS 15 (Sequoia)
+    if(NOT DARWIN_MAJOR_VERSION GREATER_EQUAL "22")
+      message(FATAL_ERROR "Only macOS >= 13 is supported !")
     endif()
+  # elseif(UNIX)
+    # No UNIX platform checks currently
   endif()
 endif()

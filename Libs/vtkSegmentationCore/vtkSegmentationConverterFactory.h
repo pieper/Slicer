@@ -33,7 +33,6 @@
 class vtkSegmentationConverterRule;
 class vtkDataObject;
 
-/// \ingroup SegmentationCore
 /// \brief Class that can create vtkSegmentationConverter instances.
 ///
 /// This singleton class is a repository of all segmentation converter rules.
@@ -41,7 +40,7 @@ class vtkDataObject;
 class vtkSegmentationCore_EXPORT vtkSegmentationConverterFactory : public vtkObject
 {
 public:
-  typedef std::vector< vtkSmartPointer<vtkSegmentationConverterRule> > RuleListType;
+  typedef std::vector<vtkSmartPointer<vtkSegmentationConverterRule>> RuleListType;
 
   vtkTypeMacro(vtkSegmentationConverterFactory, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
@@ -49,7 +48,7 @@ public:
   /// Create a copy of all registered converter rules.
   /// The rule argument is overwritten (any previous content is cleared) with rules
   /// copied from the list of all registered rules.
-  void CopyConverterRules(RuleListType &rules);
+  void CopyConverterRules(RuleListType& rules);
 
   /// Add a converter rule.
   /// The factory (and all converter classes it creates) will keep a reference to this rule object,
@@ -118,6 +117,7 @@ public:
 
   vtkSegmentationConverterFactoryInitialize();
   ~vtkSegmentationConverterFactoryInitialize();
+
 private:
   static unsigned int Count;
 };

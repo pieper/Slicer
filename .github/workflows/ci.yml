@@ -1,0 +1,85 @@
+name: CI (Build)
+
+on:
+  # Triggers the workflow on push or pull request events
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "*"
+  # Allows running this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-slicer:
+    name: Build Slicer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      # Filter paths to determine whether to proceed with the build
+      - name: "Filter Paths"
+        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        id: changes
+        with:
+          filters: |
+            paths-to-include:
+              - ".github/actions/slicer-build/**"
+              - "Applications/**"
+              - "Base/**"
+              - "CMake/**"
+              - "Extensions/**"
+              - "Libs/**"
+              - "Modules/**"
+              - "Resources/**"
+              - "Testing/**"
+              - "CMakeLists.txt"
+
+      # Retrieve changes in SuperBuild-related files relative to the 'nightly-main' branch
+      - name: "Detect SuperBuild Changes"
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47.0.0
+        id: superbuild-changes
+        with:
+          files: |
+            SuperBuild/External_*
+          base_sha: nightly-main
+
+      # List any SuperBuild files that were changed
+      - name: "List Changed SuperBuild Files"
+        if: steps.superbuild-changes.outputs.any_changed == 'true'
+        run: |
+          echo "Changed files:"
+          for file in ${ALL_CHANGED_FILES}; do
+            echo " $file"
+          done
+        env:
+          ALL_CHANGED_FILES: ${{ steps.superbuild-changes.outputs.all_changed_files }}
+
+      # Check prerequisites for the build
+      - name: "Check Prerequisites"
+        id: check-prereqisities
+        run: |
+          if [[ $SUPERBUILD_CHANGED == "true" ]]; then
+            echo "::warning ::Skipping Slicer build due to changes in SuperBuild files relative to 'nightly-main' branch."
+          fi
+        env:
+          SUPERBUILD_CHANGED: ${{ steps.superbuild-changes.outputs.any_changed }}
+
+      # Build Slicer if relevant paths were changed and no SuperBuild changes were detected
+      - name: "Build Slicer"
+        id: slicer-build
+        if: ${{ steps.changes.outputs.paths-to-include == 'true' && steps.superbuild-changes.outputs.any_changed == 'false' }}
+        uses: ./.github/actions/slicer-build
+
+      # Upload the Slicer package artifact if the build was successful
+      - name: "Upload Slicer package"
+        if: ${{ steps.slicer-build.outcome == 'success' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: slicer-package
+          path: ${{ github.workspace }}/${{ steps.slicer-build.outputs.package }}
+          retention-days: 1

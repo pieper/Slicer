@@ -18,7 +18,7 @@
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
-  See Copyright.txt or http://www.kitware.com/Copyright.htm for details.
+  See Copyright.txt or https://www.kitware.com/Copyright.htm for details.
 
      This software is distributed WITHOUT ANY WARRANTY; without even
      the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
@@ -36,8 +36,8 @@
 #include "vtkTeemConfigure.h"
 #include "vtkMedicalImageReader2.h"
 
-//#include "vtkDataObject.h"
-//#include "vtkImageData.h"
+// #include "vtkDataObject.h"
+// #include "vtkImageData.h"
 
 #include <vtkMatrix4x4.h>
 #include <vtkPointData.h>
@@ -54,9 +54,9 @@
 class VTK_Teem_EXPORT vtkTeemNRRDReader : public vtkMedicalImageReader2
 {
 public:
-  static vtkTeemNRRDReader *New();
+  static vtkTeemNRRDReader* New();
 
-  vtkTypeMacro(vtkTeemNRRDReader,vtkMedicalImageReader2);
+  vtkTypeMacro(vtkTeemNRRDReader, vtkMedicalImageReader2);
 
   ///
   /// Returns a IJK to RAS transformation matrix
@@ -84,7 +84,7 @@ public:
 
   ///
   /// Get a value given a key in the header
-  const char* GetHeaderValue(const char *key);
+  const char* GetHeaderValue(const char* key);
 
   /// Get label for specified axis
   const char* GetAxisLabel(unsigned int axis);
@@ -98,149 +98,109 @@ public:
   int CanReadFile(const char* filename) override;
 
   ///
-  /// Valid extentsions
-  const char* GetFileExtensions() override
-    {
-      return ".nhdr .nrrd";
-    }
+  /// Valid extensions
+  const char* GetFileExtensions() override { return ".nhdr .nrrd"; }
 
   ///
   /// A descriptive name for this format
-  const char* GetDescriptiveName() override
-    {
-      return "NRRD - Nearly Raw Raster Data";
-    }
+  const char* GetDescriptiveName() override { return "NRRD - Nearly Raw Raster Data"; }
 
-  //Description:
+  // Description:
   /// Report the status of the reading process.
   /// If this is different than zero, there have been some error
   /// parsing the complete header information.
-  vtkGetMacro(ReadStatus,int);
+  vtkGetMacro(ReadStatus, int);
 
   ///
   /// Point data field type
-  vtkSetMacro(PointDataType,int);
-  vtkGetMacro(PointDataType,int);
+  vtkSetMacro(PointDataType, int);
+  vtkGetMacro(PointDataType, int);
 
   ///
   /// Set the data type: int, float....
-  vtkSetMacro(DataType,int);
-  vtkGetMacro(DataType,int);
+  vtkSetMacro(DataType, int);
+  vtkGetMacro(DataType, int);
 
   ///
-  //Number of components
-  vtkSetMacro(NumberOfComponents,int);
-  vtkGetMacro(NumberOfComponents,int);
-
+  // Number of components
+  vtkSetMacro(NumberOfComponents, int);
+  vtkGetMacro(NumberOfComponents, int);
 
   ///
   /// Use image origin from the file
-  void SetUseNativeOriginOn()
-  {
-    UseNativeOrigin = true;
-  }
+  void SetUseNativeOriginOn() { UseNativeOrigin = true; }
 
   ///
   /// Use image center as origin
-  void SetUseNativeOriginOff()
-  {
-    UseNativeOrigin = false;
-  }
+  void SetUseNativeOriginOff() { UseNativeOrigin = false; }
 
-  int NrrdToVTKScalarType( const int nrrdPixelType ) const
+  ///
+  /// Name of the point data array that voxel data will be stored in.
+  /// Setting a custom value may be useful for example when probing the
+  /// image because then the probing result will be stored using this array name.
+  /// Default value is NRRDImage.
+  vtkSetMacro(DataArrayName, std::string);
+  vtkGetMacro(DataArrayName, std::string);
+
+  int NrrdToVTKScalarType(const int nrrdPixelType) const
   {
-  switch( nrrdPixelType )
+    switch (nrrdPixelType)
     {
-    default:
-    case nrrdTypeDefault:
-      return VTK_VOID;
-      break;
-    case nrrdTypeChar:
-      return VTK_CHAR;
-      break;
-    case nrrdTypeUChar:
-      return VTK_UNSIGNED_CHAR;
-      break;
-    case nrrdTypeShort:
-      return VTK_SHORT;
-      break;
-    case nrrdTypeUShort:
-      return VTK_UNSIGNED_SHORT;
-      break;
-      ///    case nrrdTypeLLong:
-      ///      return LONG ;
-      ///      break;
-      ///    case nrrdTypeULong:
-      ///      return ULONG;
-      ///      break;
-    case nrrdTypeInt:
-      return VTK_INT;
-      break;
-    case nrrdTypeUInt:
-      return VTK_UNSIGNED_INT;
-      break;
-    case nrrdTypeFloat:
-      return VTK_FLOAT;
-      break;
-    case nrrdTypeDouble:
-      return VTK_DOUBLE;
-      break;
-    case nrrdTypeBlock:
-      return -1;
-      break;
+      default:
+      case nrrdTypeDefault: return VTK_VOID; break;
+      case nrrdTypeChar: return VTK_CHAR; break;
+      case nrrdTypeUChar: return VTK_UNSIGNED_CHAR; break;
+      case nrrdTypeShort: return VTK_SHORT; break;
+      case nrrdTypeUShort:
+        return VTK_UNSIGNED_SHORT;
+        break;
+        ///    case nrrdTypeLLong:
+        ///      return LONG ;
+        ///      break;
+        ///    case nrrdTypeULong:
+        ///      return ULONG;
+        ///      break;
+      case nrrdTypeInt: return VTK_INT; break;
+      case nrrdTypeUInt: return VTK_UNSIGNED_INT; break;
+      case nrrdTypeFloat: return VTK_FLOAT; break;
+      case nrrdTypeDouble: return VTK_DOUBLE; break;
+      case nrrdTypeBlock: return -1; break;
     }
   }
 
-  int VTKToNrrdPixelType( const int vtkPixelType ) const
+  int VTKToNrrdPixelType(const int vtkPixelType) const
   {
-  switch( vtkPixelType )
+    switch (vtkPixelType)
     {
-    default:
-    case VTK_VOID:
-      return nrrdTypeDefault;
-      break;
-    case VTK_CHAR:
-      return nrrdTypeChar;
-      break;
-    case VTK_UNSIGNED_CHAR:
-      return nrrdTypeUChar;
-      break;
-    case VTK_SHORT:
-      return nrrdTypeShort;
-      break;
-    case VTK_UNSIGNED_SHORT:
-      return nrrdTypeUShort;
-      break;
-      ///    case nrrdTypeLLong:
-      ///      return LONG ;
-      ///      break;
-      ///    case nrrdTypeULong:
-      ///      return ULONG;
-      ///      break;
-    case VTK_INT:
-      return nrrdTypeInt;
-      break;
-    case VTK_UNSIGNED_INT:
-      return nrrdTypeUInt;
-      break;
-    case VTK_FLOAT:
-      return nrrdTypeFloat;
-      break;
-    case VTK_DOUBLE:
-      return nrrdTypeDouble;
-      break;
+      default:
+      case VTK_VOID: return nrrdTypeDefault; break;
+      case VTK_CHAR: return nrrdTypeChar; break;
+      case VTK_UNSIGNED_CHAR: return nrrdTypeUChar; break;
+      case VTK_SHORT: return nrrdTypeShort; break;
+      case VTK_UNSIGNED_SHORT:
+        return nrrdTypeUShort;
+        break;
+        ///    case nrrdTypeLLong:
+        ///      return LONG ;
+        ///      break;
+        ///    case nrrdTypeULong:
+        ///      return ULONG;
+        ///      break;
+      case VTK_INT: return nrrdTypeInt; break;
+      case VTK_UNSIGNED_INT: return nrrdTypeUInt; break;
+      case VTK_FLOAT: return nrrdTypeFloat; break;
+      case VTK_DOUBLE: return nrrdTypeDouble; break;
     }
   }
-vtkImageData * AllocateOutputData(vtkDataObject *out, vtkInformation* outInfo) override;
-void AllocateOutputData(vtkImageData *out, vtkInformation* outInfo, int *uExtent) override
-    { Superclass::AllocateOutputData(out, outInfo, uExtent); }
-void AllocatePointData(vtkImageData *out, vtkInformation* outInfo);
+  vtkImageData* AllocateOutputData(vtkDataObject* out, vtkInformation* outInfo) override;
+  void AllocateOutputData(vtkImageData* out, vtkInformation* outInfo, int* uExtent) override { Superclass::AllocateOutputData(out, outInfo, uExtent); }
+  void AllocatePointData(vtkImageData* out, vtkInformation* outInfo);
 
 protected:
   vtkTeemNRRDReader();
   ~vtkTeemNRRDReader() override;
 
-  static bool GetPointType(Nrrd* nrrdTemp, int& pointDataType, int &numOfComponents);
+  static bool GetPointType(Nrrd* nrrdTemp, int& pointDataType, int& numOfComponents);
 
   vtkSmartPointer<vtkMatrix4x4> RasToIjkMatrix;
   vtkSmartPointer<vtkMatrix4x4> MeasurementFrameMatrix;
@@ -248,7 +208,7 @@ protected:
 
   std::string CurrentFileName;
 
-  Nrrd *nrrd;
+  Nrrd* nrrd;
 
   int ReadStatus;
 
@@ -256,22 +216,22 @@ protected:
   int DataType;
   int NumberOfComponents;
   bool UseNativeOrigin;
+  std::string DataArrayName;
 
-  std::map <std::string, std::string> HeaderKeyValue;
+  std::map<std::string, std::string> HeaderKeyValue;
   std::string HeaderKeys; // buffer for returning key list
 
   std::map<unsigned int, std::string> AxisLabels;
   std::map<unsigned int, std::string> AxisUnits;
 
   void ExecuteInformation() override;
-  void ExecuteDataWithInformation(vtkDataObject *output, vtkInformation* outInfo) override;
+  void ExecuteDataWithInformation(vtkDataObject* output, vtkInformation* outInfo) override;
 
-  int tenSpaceDirectionReduce(Nrrd *nout, const Nrrd *nin, double SD[9]);
+  int tenSpaceDirectionReduce(Nrrd* nout, const Nrrd* nin, double SD[9]);
 
 private:
   vtkTeemNRRDReader(const vtkTeemNRRDReader&) = delete;
   void operator=(const vtkTeemNRRDReader&) = delete;
-
 };
 
 #endif

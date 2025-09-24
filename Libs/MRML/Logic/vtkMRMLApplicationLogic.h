@@ -25,6 +25,7 @@
 #include "vtkMRMLAbstractLogic.h"
 
 #include "vtkMRMLLogicExport.h"
+#include "vtkMRMLSliceCompositeNode.h"
 
 class vtkMRMLColorLogic;
 class vtkMRMLModelDisplayNode;
@@ -34,8 +35,10 @@ class vtkMRMLSelectionNode;
 class vtkMRMLStorableNode;
 class vtkMRMLStorageNode;
 class vtkMRMLInteractionNode;
+class vtkMRMLMessageCollection;
 class vtkMRMLViewLogic;
 class vtkMRMLViewNode;
+class vtkTextProperty;
 
 // VTK includes
 class vtkCollection;
@@ -44,24 +47,22 @@ class vtkImageData;
 // STD includes
 #include <vector>
 
-class VTK_MRML_LOGIC_EXPORT vtkMRMLApplicationLogic
-  : public vtkMRMLAbstractLogic
+class VTK_MRML_LOGIC_EXPORT vtkMRMLApplicationLogic : public vtkMRMLAbstractLogic
 {
 public:
-
-  static vtkMRMLApplicationLogic *New();
+  static vtkMRMLApplicationLogic* New();
   void PrintSelf(ostream& os, vtkIndent indent) override;
   vtkTypeMacro(vtkMRMLApplicationLogic, vtkMRMLAbstractLogic);
 
   /// Get default Selection node
-  vtkMRMLSelectionNode* GetSelectionNode()const;
+  vtkMRMLSelectionNode* GetSelectionNode() const;
 
   /// Get default Interaction node
-  vtkMRMLInteractionNode* GetInteractionNode()const;
+  vtkMRMLInteractionNode* GetInteractionNode() const;
 
   /// All the slice logics in the application
   void SetSliceLogics(vtkCollection* sliceLogics);
-  vtkCollection* GetSliceLogics()const;
+  vtkCollection* GetSliceLogics() const;
   vtkMRMLSliceLogic* GetSliceLogic(vtkMRMLSliceNode* sliceNode) const;
   vtkMRMLSliceLogic* GetSliceLogicByLayoutName(const char* layoutName) const;
   /// Get slice logic from slice model display node
@@ -69,7 +70,7 @@ public:
 
   /// All the view logics in the application
   void SetViewLogics(vtkCollection* viewLogics);
-  vtkCollection* GetViewLogics()const;
+  vtkCollection* GetViewLogics() const;
   vtkMRMLViewLogic* GetViewLogic(vtkMRMLViewNode* viewNode) const;
   vtkMRMLViewLogic* GetViewLogicByLayoutName(const char* layoutName) const;
 
@@ -78,13 +79,13 @@ public:
   /// vtkSlicerColorLogic) that contains default color nodes.
   /// By default, a vtkMRMLColorLogic is instantiated.
   void SetColorLogic(vtkMRMLColorLogic* newColorLogic);
-  vtkMRMLColorLogic* GetColorLogic()const;
+  vtkMRMLColorLogic* GetColorLogic() const;
 
   /// Apply the active volumes in the SelectionNode to the slice composite nodes
   /// Perform the default behavior related to selecting a volume
   /// (in this case, making it the background for all SliceCompositeNodes)
   /// \sa vtkInternal::PropagateVolumeSelection()
-  /// \sa FitSliceToAll()
+  /// \sa FitSliceToBackground()
   /// \sa vtkMRMLSelectionNode::SetActiveVolumeID()
   /// \sa vtkMRMLSelectionNode::SetSecondaryVolumeID()
   /// \sa vtkMRMLSelectionNode::SetActiveLabelVolumeID()
@@ -92,21 +93,21 @@ public:
 
   /// Propagate only active background volume in the SelectionNode to slice composite
   /// nodes
-  /// \sa FitSliceToAll()
+  /// \sa FitSliceToBackground()
   /// \sa vtkMRMLSelectionNode::SetActiveVolumeID()
   /// \sa Layers::BackgroundLayer
   void PropagateBackgroundVolumeSelection(int fit = 1);
 
   /// Propagate only active foreground volume in the SelectionNode to slice composite
   /// nodes
-  /// \sa FitSliceToAll()
+  /// \sa FitSliceToBackground()
   /// \sa vtkMRMLSelectionNode::SetSecondaryVolumeID()
   /// \sa Layers::ForegroundLayer
   void PropagateForegroundVolumeSelection(int fit = 1);
 
   /// Propagate only active label volume in the SelectionNode to slice composite
   /// nodes
-  /// \sa FitSliceToAll()
+  /// \sa FitSliceToBackground()
   /// \sa vtkMRMLSelectionNode::SetActiveLabelVolumeID()
   /// \sa Layers::LabelLayer
   void PropagateLabelVolumeSelection(int fit = 1);
@@ -127,7 +128,17 @@ public:
   /// Fit all the volumes into their views
   /// If onlyIfPropagateVolumeSelectionAllowed is true then field of view will be reset on
   /// only those slices where propagate volume selection is allowed
-  void FitSliceToAll(bool onlyIfPropagateVolumeSelectionAllowed=false);
+  /// If resetOrientation is true then slice orientation can be modified during function call
+  void FitSliceToAll(bool onlyIfPropagateVolumeSelectionAllowed = false, bool resetOrientation = true);
+
+  /// Fit all the visible volumes into their views.
+  /// This is a more advanced version of FitSliceToAll, which takes into account that in case of
+  /// ClipToBackgroundVolume is enabled for the slice then all layers above the background volume
+  /// will be clipped to the background volume's extents.
+  /// If onlyIfPropagateVolumeSelectionAllowed is true then field of view will be reset on
+  /// only those slices where propagate volume selection is allowed
+  /// If resetOrientation is true then slice orientation can be modified during function call
+  void FitSliceToBackground(bool onlyIfPropagateVolumeSelectionAllowed = false, bool resetOrientation = true);
 
   /// Propagate selected table in the SelectionNode to table view nodes.
   void PropagateTableSelection();
@@ -146,11 +157,11 @@ public:
   /// Convert reserved characters into percent notation to avoid issues with filenames
   /// containing things that might be mistaken, for example, for
   /// windows drive letters.  Used internally by SaveSceneToSlicerDataBundleDirectory.
-  /// This is not a general purpose implementation; it preseves commonly used
+  /// This is not a general purpose implementation; it preserves commonly used
   /// characters for filenames but avoids known issue like slashes or colons.
   /// Ideally a version from vtksys
   /// or similar should be used, but nothing seems to be available.
-  /// http://en.wikipedia.org/wiki/Percent-encoding
+  /// https://en.wikipedia.org/wiki/Percent-encoding
   /// See https://github.com/Slicer/Slicer/issues/2605
   static std::string PercentEncode(std::string s);
 
@@ -159,12 +170,12 @@ public:
   /// \sa qSlicerCoreIOManager::saveScene
   /// If screenShot is not null, use it as the screen shot for a scene view
   /// Returns false if the save failed
-  bool SaveSceneToSlicerDataBundleDirectory(const char* sdbDir, vtkImageData* screenShot = nullptr);
+  bool SaveSceneToSlicerDataBundleDirectory(const char* sdbDir, vtkImageData* screenShot = nullptr, vtkMRMLMessageCollection* userMessages = nullptr);
 
   /// Open the file into a temp directory and load the scene file
   /// inside.  Note that the first mrml file found in the extracted
   /// directory will be used.
-  bool OpenSlicerDataBundle(const char* sdbFilePath, const char* temporaryDirectory);
+  bool OpenSlicerDataBundle(const char* sdbFilePath, const char* temporaryDirectory, vtkMRMLMessageCollection* userMessages = nullptr);
 
   /// Unpack the file into a temp directory and return the scene file
   /// inside.  Note that the first mrml file found in the extracted
@@ -173,40 +184,39 @@ public:
 
   /// Load any default parameter sets into the specified scene
   /// Returns the total number of loaded parameter sets
-  static int LoadDefaultParameterSets(vtkMRMLScene* scene,
-                                      const std::vector<std::string>& directories);
+  static int LoadDefaultParameterSets(vtkMRMLScene* scene, const std::vector<std::string>& directories);
 
   /// Creates a unique (non-existent) file name by adding an index after base file name.
   /// knownExtension specifies the extension the index should be inserted before.
   /// It is necessary to provide extension, because there is no reliable way of correctly
   /// determining extension automatically (for example, file extension of some.file.nii.gz
   /// could be gz, nii.gz, or file.nii.gz and only one of them is correct).
-  static std::string CreateUniqueFileName(const std::string &filename, const std::string& knownExtension="");
+  static std::string CreateUniqueFileName(const std::string& filename, const std::string& knownExtension = "");
 
   /// List of custom events fired by the class.
-  enum Events{
+  enum Events
+  {
     RequestInvokeEvent = vtkCommand::UserEvent + 1,
     PauseRenderEvent = vtkCommand::UserEvent + 101,
     ResumeRenderEvent,
-    EditNodeEvent
+    EditNodeEvent,
+    ShowViewContextMenuEvent,
   };
   /// Structure passed as calldata pointer in the RequestEvent invoked event.
-  struct InvokeRequest{
+  struct InvokeRequest
+  {
     InvokeRequest();
     /// 100ms by default.
-    unsigned int Delay{100};
+    unsigned int Delay{ 100 };
     /// the caller to call InvokeEvent() on.
-    vtkObject* Caller{nullptr};
+    vtkObject* Caller{ nullptr };
     /// The event id of InvokeEvent. ModifiedEvent by default.
-    unsigned long EventID{vtkCommand::ModifiedEvent};
+    unsigned long EventID{ vtkCommand::ModifiedEvent };
     /// Optional call data. 0 by default.
-    void* CallData{nullptr};
+    void* CallData{ nullptr };
   };
   /// Conveniently calls an InvokeEvent on an object with a delay.
-  void InvokeEventWithDelay(unsigned int delayInMs,
-                            vtkObject* caller,
-                            unsigned long eventID = vtkCommand::ModifiedEvent,
-                            void* callData = nullptr);
+  void InvokeEventWithDelay(unsigned int delayInMs, vtkObject* caller, unsigned long eventID = vtkCommand::ModifiedEvent, void* callData = nullptr);
 
   /// Return the temporary path that was set by the application
   const char* GetTemporaryPath();
@@ -235,28 +245,97 @@ public:
   /// Requests the application to show user interface for editing a node.
   virtual void EditNode(vtkMRMLNode* node);
 
-protected:
+  /// Sets a module with its corresponding logic to the application logic.
+  /// \param moduleName name of the module.
+  /// \param moduleLogic pointer to logic to be associated to the module. If this
+  /// parameter is nullptr, then the module logic will be removed from the application
+  /// logic.
+  void SetModuleLogic(const char* moduleName, vtkMRMLAbstractLogic* moduleLogic);
 
+  /// Gets a constant pointer to module logic associated with a given module
+  /// \param moduleName name of the module associated to the logic
+  /// \return constant pointer to vtkMRMLAbstractLogic corresponding to the
+  /// logic associated to th logic
+  vtkMRMLAbstractLogic* GetModuleLogic(const char* moduleName) const;
+
+  enum IntersectingSlicesOperation
+  {
+    IntersectingSlicesVisibility,
+    IntersectingSlicesInteractive,
+    IntersectingSlicesTranslation,
+    IntersectingSlicesRotation,
+    IntersectingSlicesThickSlabInteractive,
+  };
+
+  void SetIntersectingSlicesEnabled(IntersectingSlicesOperation operation, bool enabled);
+  bool GetIntersectingSlicesEnabled(IntersectingSlicesOperation operation);
+
+  void SetIntersectingSlicesIntersectionMode(int mode);
+  int GetIntersectingSlicesIntersectionMode();
+
+  void SetIntersectingSlicesLineThicknessMode(int mode);
+  int GetIntersectingSlicesLineThicknessMode();
+
+  /// @{
+  /// Set custom font file name for rendering views.
+  /// fontFamily can be VTK_ARIAL, VTK_COURIER, VTK_TIMES.
+  /// Font file must be in GetFontsDirectory().
+  void SetFontFileName(int fontFamily, const std::string& fontFileName);
+  std::string GetFontFileName(int fontFamily);
+  /// @}
+
+  /// Get full path to custom font file for rendering views from font file name.
+  std::string GetFontFilePath(const std::string& fontFileName);
+
+  /// Get folder where font files are stored ("Fonts" subfolder in application share folder).
+  std::string GetFontsDirectory();
+
+  /// Update text property to use custom font file.
+  /// Font family is set from arial/courier/times font family to custom fontfile.
+  /// Font file path is set to the one specified in FontFileName property in this object.
+  void UseCustomFontFile(vtkTextProperty* textProperty);
+
+  /// @{
+  /// Applications must set this variable to a meaningful value. By default it is empty, this state
+  /// represents the current working directory. This is used by modules to access files.
+  void SetHomeDirectory(const std::string& path);
+  const std::string& GetHomeDirectory() const;
+  /// @}
+
+  /// @{
+  /// Applications must set this variable to a meaningful value.
+  /// This path is relative, modules will generally resolve it from GetHomeDirectory().
+  /// For example, the slicer application will set this to "share/slicer-X-Y".
+  void SetShareDirectory(const std::string& path);
+  const std::string& GetShareDirectory() const;
+  /// @}
+
+protected:
   vtkMRMLApplicationLogic();
   ~vtkMRMLApplicationLogic() override;
 
-  void SetMRMLSceneInternal(vtkMRMLScene *newScene) override;
+  void SetMRMLSceneInternal(vtkMRMLScene* newScene) override;
 
-  void SetSelectionNode(vtkMRMLSelectionNode* );
-  void SetInteractionNode(vtkMRMLInteractionNode* );
+  void SetSelectionNode(vtkMRMLSelectionNode*);
+  void SetInteractionNode(vtkMRMLInteractionNode*);
 
   void ProcessMRMLNodesEvents(vtkObject* caller, unsigned long event, void* callData) override;
 
-private:
+  void FitSliceToContent(bool all, bool onlyIfPropagateVolumeSelectionAllowed = false, bool resetOrientation = true);
 
+  void OnMRMLSceneStartBatchProcess() override;
+  void OnMRMLSceneEndBatchProcess() override;
+  void OnMRMLSceneStartImport() override;
+  void OnMRMLSceneEndImport() override;
+  void OnMRMLSceneStartRestore() override;
+  void OnMRMLSceneEndRestore() override;
+
+private:
   vtkMRMLApplicationLogic(const vtkMRMLApplicationLogic&) = delete;
   void operator=(const vtkMRMLApplicationLogic&) = delete;
 
   class vtkInternal;
   vtkInternal* Internal;
-
 };
 
-
 #endif
-

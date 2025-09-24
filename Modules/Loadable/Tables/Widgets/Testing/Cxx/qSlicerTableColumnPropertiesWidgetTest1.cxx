@@ -42,7 +42,7 @@
 #include <vtkTable.h>
 #include "qMRMLWidget.h"
 
-int qSlicerTableColumnPropertiesWidgetTest1( int argc, char * argv [] )
+int qSlicerTableColumnPropertiesWidgetTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -50,12 +50,12 @@ int qSlicerTableColumnPropertiesWidgetTest1( int argc, char * argv [] )
 
   // Create a table with some points in it...
   vtkNew<vtkTable> table;
-  vtkNew<vtkFloatArray> arrX;
-  arrX->SetName("X Axis");
-  table->AddColumn(arrX.GetPointer());
-  vtkNew<vtkDoubleArray> arrY;
-  arrY->SetName("Y Axis");
-  table->AddColumn(arrY.GetPointer());
+  vtkNew<vtkFloatArray> arrayX;
+  arrayX->SetName("X Axis");
+  table->AddColumn(arrayX.GetPointer());
+  vtkNew<vtkDoubleArray> arrayY;
+  arrayY->SetName("Y Axis");
+  table->AddColumn(arrayY.GetPointer());
   vtkNew<vtkDoubleArray> arrSum;
   arrSum->SetName("Sum");
   table->AddColumn(arrSum.GetPointer());
@@ -63,29 +63,29 @@ int qSlicerTableColumnPropertiesWidgetTest1( int argc, char * argv [] )
   table->SetNumberOfRows(numPoints);
   for (int i = 0; i < numPoints; ++i)
   {
-    table->SetValue(i, 0, i*0.5 - 10);
-    table->SetValue(i, 1, i*1.2 + 12);
+    table->SetValue(i, 0, i * 0.5 - 10);
+    table->SetValue(i, 1, i * 1.2 + 12);
     table->SetValue(i, 2, table->GetValue(i, 0).ToDouble() + table->GetValue(i, 1).ToDouble());
   }
 
   vtkNew<vtkMRMLTableNode> tableNode;
   tableNode->SetAndObserveTable(table.GetPointer());
 
-  tableNode->SetColumnNullValue("X Axis", "-5000");
-  tableNode->SetColumnDescription("X Axis", "this is the x column");
-  tableNode->SetColumnLongName("X Axis", "full name of x column");
-  tableNode->SetColumnUnitLabel("X Axis", "HU");
-  tableNode->SetColumnProperty("X Axis", "unitCodeValue", "[hnsf'U]");
-  tableNode->SetColumnProperty("X Axis", "unitCodingSchemeDesignator", "UCUM");
-  tableNode->SetColumnProperty("X Axis", "unitCodeMeaning", "Hounsfield unit");
+  tableNode->SetColumnNullValue("xaxis", "-5000");
+  tableNode->SetColumnDescription("xaxis", "this is the x column");
+  tableNode->SetColumnTitle("xaxis", "X axis");
+  tableNode->SetColumnUnitLabel("xaxis", "HU");
+  tableNode->SetColumnProperty("xaxis", "unitCodeValue", "[hnsf'U]");
+  tableNode->SetColumnProperty("xaxis", "unitCodingSchemeDesignator", "UCUM");
+  tableNode->SetColumnProperty("xaxis", "unitCodeMeaning", "Hounsfield unit");
 
-  tableNode->SetColumnNullValue("Y Axis", "0.0");
-  tableNode->SetColumnDescription("Y Axis", "this is the y column");
-  tableNode->SetColumnLongName("Y Axis", "full name of y column");
-  tableNode->SetColumnUnitLabel("Y Axis", "mm");
-  tableNode->SetColumnProperty("Y Axis", "unitCodeValue", "1");
-  tableNode->SetColumnProperty("Y Axis", "unitCodingSchemeDesignator", "UCUM");
-  tableNode->SetColumnProperty("Y Axis", "unitCodeMeaning", "no units");
+  tableNode->SetColumnNullValue("yaxis", "0.0");
+  tableNode->SetColumnDescription("yaxis", "this is the y column");
+  tableNode->SetColumnTitle("yaxis", "Y column");
+  tableNode->SetColumnUnitLabel("yaxis", "mm");
+  tableNode->SetColumnProperty("yaxis", "unitCodeValue", "1");
+  tableNode->SetColumnProperty("yaxis", "unitCodingSchemeDesignator", "UCUM");
+  tableNode->SetColumnProperty("yaxis", "unitCodeMeaning", "no units");
 
   //
   // Create a simple gui with non-tranposed and transposed table view
@@ -109,9 +109,9 @@ int qSlicerTableColumnPropertiesWidgetTest1( int argc, char * argv [] )
   parentWidget.raise();
 
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }

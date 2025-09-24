@@ -33,8 +33,7 @@
 class QSettings;
 class qSlicerSettingsGeneralPanelPrivate;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsGeneralPanel
-  : public ctkSettingsPanel
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsGeneralPanel : public ctkSettingsPanel
 {
   Q_OBJECT
 public:
@@ -50,6 +49,10 @@ public:
 public slots:
   void setDefaultScenePath(const QString& path);
   void openSlicerRCFile();
+  void setMaximumFileNameLength(int length);
+
+protected slots:
+  void updateAutoUpdateApplicationFromManager();
 
 protected:
   QScopedPointer<qSlicerSettingsGeneralPanelPrivate> d_ptr;

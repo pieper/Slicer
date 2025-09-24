@@ -30,7 +30,7 @@
 #  Slicer_CMAKE_DIR
 #
 #  Slicer_MAIN_PROJECT_APPLICATION_NAME
-#  <Slicer_MAIN_PROJECT_APPLICATION_NAME>_SOURCE_DIR
+#  Slicer_MAIN_PROJECT_SOURCE_DIR
 #  Slicer_MAIN_PROJECT_VERSION_MAJOR
 #  Slicer_MAIN_PROJECT_VERSION_MINOR
 #  Slicer_MAIN_PROJECT_VERSION_PATCH
@@ -41,8 +41,6 @@
 #  Slicer_VERSION_MAJOR
 #  Slicer_VERSION_MINOR
 #  Slicer_VERSION_PATCH
-#
-#  Subversion_SVN_EXECUTABLE
 #
 # Optionally, these variable can also be set:
 #
@@ -66,7 +64,7 @@ set(expected_defined_vars
   Slicer_CMAKE_DIR
 
   Slicer_MAIN_PROJECT_APPLICATION_NAME # Used by SlicerVersion.cmake
-  ${Slicer_MAIN_PROJECT_APPLICATION_NAME}_SOURCE_DIR
+  Slicer_MAIN_PROJECT_SOURCE_DIR
   Slicer_MAIN_PROJECT_VERSION_MAJOR
   Slicer_MAIN_PROJECT_VERSION_MINOR
   Slicer_MAIN_PROJECT_VERSION_PATCH
@@ -77,8 +75,6 @@ set(expected_defined_vars
   Slicer_VERSION_MAJOR
   Slicer_VERSION_MINOR
   Slicer_VERSION_PATCH
-
-  Subversion_SVN_EXECUTABLE
   )
 foreach(var ${expected_defined_vars})
   if(NOT DEFINED ${var})

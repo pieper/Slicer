@@ -1,9 +1,7 @@
 set(modules
   CropVolumeSequence
   DataProbe
-  Editor
-  EditorLib
-  LabelStatistics
+  ImportItkSnapLabel
   PerformanceTests
   SampleData
   ScreenCapture
@@ -11,16 +9,21 @@ set(modules
   SegmentStatistics
   SelfTests
   VectorToScalarVolume
+  WebServer
   )
 if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
   list(APPEND modules
-    DMRIInstall
     ExtensionWizard
     )
 endif()
 if(Slicer_USE_NUMPY)
   list(APPEND modules
     Endoscopy
+    )
+endif()
+if(Slicer_USE_SCIPY)
+  list(APPEND modules
+    LineProfile
     )
 endif()
 if(Slicer_BUILD_DICOM_SUPPORT)

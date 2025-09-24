@@ -37,7 +37,7 @@
 // VTK includes
 #include <vtkNew.h>
 
-int qMRMLSequenceBrowserWidgetsTest1( int argc, char * argv [] )
+int qMRMLSequenceBrowserWidgetsTest1(int argc, char* argv[])
 {
   QApplication app(argc, argv);
 
@@ -45,21 +45,18 @@ int qMRMLSequenceBrowserWidgetsTest1( int argc, char * argv [] )
 
   vtkNew<vtkMRMLSequenceNode> sequenceNode;
   const int numberOfDataNodes = 135;
-  for (int i=0; i<numberOfDataNodes; i++)
-    {
+  for (int i = 0; i < numberOfDataNodes; i++)
+  {
     vtkNew<vtkMRMLTransformNode> transform;
-    QString indexValue = QString::number(i*1322.345);
+    QString indexValue = QString::number(i * 1322.345);
     sequenceNode->SetDataNodeAtValue(transform.GetPointer(), indexValue.toLatin1().constData());
-    }
+  }
   scene->AddNode(sequenceNode.GetPointer());
 
   vtkNew<vtkMRMLSequenceBrowserNode> browserNode;
   scene->AddNode(browserNode.GetPointer());
   browserNode->SetAndObserveMasterSequenceNodeID(sequenceNode->GetID());
 
-  //
-  // Create a simple gui with non-tranposed and transposed table view
-  //
   QWidget parentWidget;
   parentWidget.setWindowTitle("qMRMLSequenceBrowserWidgetsTest1");
   QVBoxLayout vbox;
@@ -79,9 +76,9 @@ int qMRMLSequenceBrowserWidgetsTest1( int argc, char * argv [] )
   parentWidget.raise();
 
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }

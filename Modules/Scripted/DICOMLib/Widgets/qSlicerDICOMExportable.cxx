@@ -53,7 +53,7 @@ public:
   /// The pseudo-tags are translated into real DICOM tags at the time of export.
   /// It tag is a pair of strings (name, value). When the exportable is created
   /// by the DICOM plugin, value is the default value that is set in the editor widget
-  QMap<QString,QString> Tags;
+  QMap<QString, QString> Tags;
 };
 
 //-----------------------------------------------------------------------------
@@ -70,7 +70,6 @@ qSlicerDICOMExportablePrivate::qSlicerDICOMExportablePrivate()
 
 //-----------------------------------------------------------------------------
 qSlicerDICOMExportablePrivate::~qSlicerDICOMExportablePrivate() = default;
-
 
 //-----------------------------------------------------------------------------
 // qSlicerDICOMExportable methods
@@ -110,13 +109,13 @@ CTK_SET_CPP(qSlicerDICOMExportable, const double, setConfidence, Confidence)
 CTK_GET_CPP(qSlicerDICOMExportable, double, confidence, Confidence)
 
 //-----------------------------------------------------------------------------
-QMap<QString,QString> qSlicerDICOMExportable::tags()const
+QMap<QString, QString> qSlicerDICOMExportable::tags() const
 {
   Q_D(const qSlicerDICOMExportable);
   return d->Tags;
 }
 //-----------------------------------------------------------------------------
-void qSlicerDICOMExportable::setTags(const QMap<QString,QString>& var)
+void qSlicerDICOMExportable::setTags(const QMap<QString, QString>& var)
 {
   Q_D(qSlicerDICOMExportable);
   d->Tags = var;
@@ -142,9 +141,9 @@ void qSlicerDICOMExportable::copyToVtkExportable(vtkSlicerDICOMExportable* vtkEx
   Q_D(qSlicerDICOMExportable);
 
   if (!vtkExportable)
-    {
+  {
     return;
-    }
+  }
 
   vtkExportable->SetName(d->Name.toUtf8().constData());
   vtkExportable->SetTooltip(d->Tooltip.toUtf8().constData());
@@ -153,12 +152,12 @@ void qSlicerDICOMExportable::copyToVtkExportable(vtkSlicerDICOMExportable* vtkEx
   vtkExportable->SetDirectory(d->Directory.toUtf8().constData());
   vtkExportable->SetConfidence(d->Confidence);
 
-  QMapIterator<QString,QString> tagsIt(d->Tags);
+  QMapIterator<QString, QString> tagsIt(d->Tags);
   while (tagsIt.hasNext())
-    {
+  {
     tagsIt.next();
     vtkExportable->SetTag(tagsIt.key().toUtf8().constData(), tagsIt.value().toUtf8().constData());
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -167,9 +166,9 @@ void qSlicerDICOMExportable::copyFromVtkExportable(vtkSlicerDICOMExportable* vtk
   Q_D(qSlicerDICOMExportable);
 
   if (!vtkExportable)
-    {
+  {
     return;
-    }
+  }
 
   d->Name = QString(vtkExportable->GetName());
   d->Tooltip = QString(vtkExportable->GetTooltip());
@@ -179,8 +178,8 @@ void qSlicerDICOMExportable::copyFromVtkExportable(vtkSlicerDICOMExportable* vtk
   d->Confidence = vtkExportable->GetConfidence();
 
   std::map<std::string, std::string> vtkTags = vtkExportable->GetTags();
-  for ( std::map<std::string, std::string>::iterator it=vtkTags.begin(); it != vtkTags.end(); ++it )
-    {
+  for (std::map<std::string, std::string>::iterator it = vtkTags.begin(); it != vtkTags.end(); ++it)
+  {
     this->setTag(it->first.c_str(), it->second.c_str());
-    }
+  }
 }

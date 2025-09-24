@@ -41,8 +41,10 @@
 class qMRMLSpinBoxPrivate
 {
   Q_DECLARE_PUBLIC(qMRMLSpinBox);
+
 protected:
   qMRMLSpinBox* const q_ptr;
+
 public:
   qMRMLSpinBoxPrivate(qMRMLSpinBox& object);
   ~qMRMLSpinBoxPrivate();
@@ -59,14 +61,16 @@ public:
 
 // --------------------------------------------------------------------------
 qMRMLSpinBoxPrivate::qMRMLSpinBoxPrivate(qMRMLSpinBox& object)
-  :q_ptr(&object)
+  : q_ptr(&object)
 {
   this->Quantity = "";
   this->MRMLScene = nullptr;
   this->SelectionNode = nullptr;
-  this->Flags = qMRMLSpinBox::Prefix | qMRMLSpinBox::Suffix
-    | qMRMLSpinBox::Precision
-    | qMRMLSpinBox::MinimumValue | qMRMLSpinBox::MaximumValue;
+  this->Flags = qMRMLSpinBox::Prefix         //
+                | qMRMLSpinBox::Suffix       //
+                | qMRMLSpinBox::Precision    //
+                | qMRMLSpinBox::MinimumValue //
+                | qMRMLSpinBox::MaximumValue;
   this->Proxy = new ctkLinearValueProxy();
 }
 
@@ -83,14 +87,11 @@ void qMRMLSpinBoxPrivate::setAndObserveSelectionNode()
 
   vtkMRMLSelectionNode* selectionNode = nullptr;
   if (this->MRMLScene)
-    {
-    selectionNode = vtkMRMLSelectionNode::SafeDownCast(
-      this->MRMLScene->GetNodeByID("vtkMRMLSelectionNodeSingleton"));
-    }
+  {
+    selectionNode = vtkMRMLSelectionNode::SafeDownCast(this->MRMLScene->GetNodeByID("vtkMRMLSelectionNodeSingleton"));
+  }
 
-  q->qvtkReconnect(this->SelectionNode, selectionNode,
-    vtkMRMLSelectionNode::UnitModifiedEvent,
-    q, SLOT(updateWidgetFromUnitNode()));
+  q->qvtkReconnect(this->SelectionNode, selectionNode, vtkMRMLSelectionNode::UnitModifiedEvent, q, SLOT(updateWidgetFromUnitNode()));
   this->SelectionNode = selectionNode;
   q->updateWidgetFromUnitNode();
 }
@@ -100,12 +101,12 @@ void qMRMLSpinBoxPrivate::updateValueProxy(vtkMRMLUnitNode* unitNode)
 {
   Q_Q(qMRMLSpinBox);
   if (!unitNode)
-    {
+  {
     q->setValueProxy(nullptr);
     this->Proxy->setCoefficient(1.0);
     this->Proxy->setOffset(0.0);
     return;
-    }
+  }
 
   this->Proxy->setOffset(unitNode->GetDisplayOffset());
   q->setValueProxy(this->Proxy);
@@ -130,23 +131,23 @@ void qMRMLSpinBox::setQuantity(const QString& quantity)
 {
   Q_D(qMRMLSpinBox);
   if (quantity == d->Quantity)
-    {
+  {
     return;
-    }
+  }
 
   d->Quantity = quantity;
   this->updateWidgetFromUnitNode();
 }
 
 //-----------------------------------------------------------------------------
-QString qMRMLSpinBox::quantity()const
+QString qMRMLSpinBox::quantity() const
 {
   Q_D(const qMRMLSpinBox);
   return d->Quantity;
 }
 
 // --------------------------------------------------------------------------
-vtkMRMLScene* qMRMLSpinBox::mrmlScene()const
+vtkMRMLScene* qMRMLSpinBox::mrmlScene() const
 {
   Q_D(const qMRMLSpinBox);
   return d->MRMLScene;
@@ -158,9 +159,9 @@ void qMRMLSpinBox::setMRMLScene(vtkMRMLScene* scene)
   Q_D(qMRMLSpinBox);
 
   if (this->mrmlScene() == scene)
-    {
+  {
     return;
-    }
+  }
 
   d->MRMLScene = scene;
   d->setAndObserveSelectionNode();
@@ -169,7 +170,7 @@ void qMRMLSpinBox::setMRMLScene(vtkMRMLScene* scene)
 }
 
 // --------------------------------------------------------------------------
-qMRMLSpinBox::UnitAwareProperties qMRMLSpinBox::unitAwareProperties()const
+qMRMLSpinBox::UnitAwareProperties qMRMLSpinBox::unitAwareProperties() const
 {
   Q_D(const qMRMLSpinBox);
   return d->Flags;
@@ -180,9 +181,9 @@ void qMRMLSpinBox::setUnitAwareProperties(UnitAwareProperties newFlags)
 {
   Q_D(qMRMLSpinBox);
   if (newFlags == d->Flags)
-    {
+  {
     return;
-    }
+  }
 
   d->Flags = newFlags;
 }
@@ -193,38 +194,36 @@ void qMRMLSpinBox::updateWidgetFromUnitNode()
   Q_D(qMRMLSpinBox);
 
   if (d->SelectionNode)
-    {
-    vtkMRMLUnitNode* unitNode =
-      vtkMRMLUnitNode::SafeDownCast(d->MRMLScene->GetNodeByID(
-        d->SelectionNode->GetUnitNodeID(d->Quantity.toUtf8())));
+  {
+    vtkMRMLUnitNode* unitNode = vtkMRMLUnitNode::SafeDownCast(d->MRMLScene->GetNodeByID(d->SelectionNode->GetUnitNodeID(d->Quantity.toUtf8())));
 
     if (unitNode)
-      {
+    {
       if (d->Flags.testFlag(qMRMLSpinBox::Precision))
-        {
+      {
         this->setDecimals(unitNode->GetPrecision());
         this->setSingleStep(pow(10.0, -unitNode->GetPrecision()));
-        }
+      }
       if (d->Flags.testFlag(qMRMLSpinBox::Prefix))
-        {
+      {
         this->setPrefix(unitNode->GetPrefix());
-        }
+      }
       if (d->Flags.testFlag(qMRMLSpinBox::Suffix))
-        {
+      {
         this->setSuffix(unitNode->GetSuffix());
-        }
+      }
       if (d->Flags.testFlag(qMRMLSpinBox::MinimumValue))
-        {
+      {
         this->setMinimum(unitNode->GetMinimumValue());
-        }
+      }
       if (d->Flags.testFlag(qMRMLSpinBox::MaximumValue))
-        {
+      {
         this->setMaximum(unitNode->GetMaximumValue());
-        }
+      }
       if (d->Flags.testFlag(qMRMLSpinBox::Scaling))
-        {
+      {
         d->updateValueProxy(unitNode);
-        }
       }
     }
+  }
 }

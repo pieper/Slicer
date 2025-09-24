@@ -25,7 +25,7 @@
  * for details.
  * @sa
  * vtkSlicerMarkupsWidgetRepresentation3D vtkMRMLAbstractWidget
-*/
+ */
 
 #ifndef vtkSlicerLineRepresentation3D_h
 #define vtkSlicerLineRepresentation3D_h
@@ -44,43 +44,42 @@ class VTK_SLICER_MARKUPS_MODULE_VTKWIDGETS_EXPORT vtkSlicerLineRepresentation3D 
 {
 public:
   /// Instantiate this class.
-  static vtkSlicerLineRepresentation3D *New();
+  static vtkSlicerLineRepresentation3D* New();
 
   /// Standard methods for instances of this class.
-  vtkTypeMacro(vtkSlicerLineRepresentation3D,vtkSlicerMarkupsWidgetRepresentation3D);
+  vtkTypeMacro(vtkSlicerLineRepresentation3D, vtkSlicerMarkupsWidgetRepresentation3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Subclasses of vtkMRMLAbstractWidgetRepresentation must implement these methods. These
   /// are the methods that the widget and its representation use to
   /// communicate with each other.
-  void UpdateFromMRML(vtkMRMLNode* caller, unsigned long event, void *callData=nullptr) override;
+  void UpdateFromMRMLInternal(vtkMRMLNode* caller, unsigned long event, void* callData = nullptr) override;
 
-  void CanInteract(vtkMRMLInteractionEventData* interactionEventData,
-    int &foundComponentType, int &foundComponentIndex, double &closestDistance2) override;
+  void CanInteract(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2) override;
 
   /// Methods to make this class behave as a vtkProp.
-  void GetActors(vtkPropCollection *) override;
-  void ReleaseGraphicsResources(vtkWindow *) override;
-  int RenderOverlay(vtkViewport *viewport) override;
-  int RenderOpaqueGeometry(vtkViewport *viewport) override;
-  int RenderTranslucentPolygonalGeometry(vtkViewport *viewport) override;
+  void GetActors(vtkPropCollection*) override;
+  void ReleaseGraphicsResources(vtkWindow*) override;
+  int RenderOverlay(vtkViewport* viewport) override;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
 
   /// Return the bounds of the representation
-  double *GetBounds() override;
+  double* GetBounds() VTK_SIZEHINT(6) override;
 
 protected:
   vtkSlicerLineRepresentation3D();
   ~vtkSlicerLineRepresentation3D() override;
 
-  /// Update interaction handle visibility for representation
-  void UpdateInteractionPipeline() override;
-
   vtkSmartPointer<vtkPolyData> Line;
-  vtkSmartPointer<vtkPolyDataMapper> LineMapper;
-  vtkSmartPointer<vtkActor> LineActor;
-
   vtkSmartPointer<vtkTubeFilter> TubeFilter;
+
+  vtkSmartPointer<vtkPolyDataMapper> LineMapper;
+  vtkSmartPointer<vtkPolyDataMapper> LineOccludedMapper;
+
+  vtkSmartPointer<vtkActor> LineActor;
+  vtkSmartPointer<vtkActor> LineOccludedActor;
 
 private:
   vtkSlicerLineRepresentation3D(const vtkSlicerLineRepresentation3D&) = delete;

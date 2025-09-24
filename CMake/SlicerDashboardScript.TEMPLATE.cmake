@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 # Two possible approaches to use this script:
 # (1) Copy and adapt to your specific configuration or (2) Use as it is by passing options
 # Either way, the script can be executed using ctest:
@@ -11,15 +11,15 @@ macro(dashboard_set var value)
 endmacro()
 
 dashboard_set(DASHBOARDS_DIR        "$ENV{HOME}/Dashboards/")
-dashboard_set(ORGANIZATION          "Kitware")        # One word, no ponctuation
+dashboard_set(ORGANIZATION          "Kitware")        # One word, no punctuation
 dashboard_set(HOSTNAME              "karakoram")
 dashboard_set(OPERATING_SYSTEM      "Linux")
 dashboard_set(SCRIPT_MODE           "Experimental")   # Experimental, Continuous or Nightly
 dashboard_set(Slicer_RELEASE_TYPE   "Experimental")   # (E)xperimental, (P)review or (S)table
 dashboard_set(WITH_PACKAGES         FALSE)            # Enable to generate packages
-dashboard_set(GIT_TAG               "master")         # Specify a tag for Stable release
+dashboard_set(GIT_TAG               "main")         # Specify a tag for Stable release
 if(APPLE)
-  dashboard_set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
+  dashboard_set(CMAKE_OSX_DEPLOYMENT_TARGET "13.0")
 endif()
 dashboard_set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 dashboard_set(COMPILER              "g++-X.Y.Z")      # Used only to set the build name
@@ -56,7 +56,7 @@ set(ADDITIONAL_CMAKECACHE_OPTION "
 # WARNING: DO NOT EDIT BEYOND THIS POINT #
 ##########################################
 if(NOT DEFINED DRIVER_SCRIPT)
-  set(url https://raw.githubusercontent.com/Slicer/Slicer/master/CMake/SlicerDashboardDriverScript.cmake)
+  set(url https://raw.githubusercontent.com/Slicer/Slicer/main/CMake/SlicerDashboardDriverScript.cmake)
   set(dest ${DASHBOARDS_DIR}/${EXTENSION_DASHBOARD_SUBDIR}/${CTEST_SCRIPT_NAME}.driver)
   file(DOWNLOAD ${url} ${dest} STATUS status)
   if(NOT status MATCHES "0.*")

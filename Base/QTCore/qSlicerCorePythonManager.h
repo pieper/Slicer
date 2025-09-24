@@ -22,7 +22,7 @@
 #define __qSlicerCorePythonManager_h
 
 // CTK includes
-# include <ctkAbstractPythonManager.h>
+#include <ctkAbstractPythonManager.h>
 
 #include "qSlicerBaseQTCoreExport.h"
 
@@ -39,11 +39,11 @@ class Q_SLICER_BASE_QTCORE_EXPORT qSlicerCorePythonManager : public ctkAbstractP
 
 public:
   typedef ctkAbstractPythonManager Superclass;
-  qSlicerCorePythonManager(QObject* parent=nullptr);
+  qSlicerCorePythonManager(QObject* parent = nullptr);
   ~qSlicerCorePythonManager() override;
 
   /// Convenient function allowing to add a VTK object to the interpreter main module
-  Q_INVOKABLE void addVTKObjectToPythonMain(const QString& name, vtkObject * object);
+  Q_INVOKABLE void addVTKObjectToPythonMain(const QString& name, vtkObject* object);
 
   /// Append \a path to \a sys.path
   /// \todo Add these methods to ctkAbstractPythonManager
@@ -60,18 +60,13 @@ public:
   /// Backslash, single-quote characters are escaped
   /// and the string is enclosed between single quotes.
   ///
-  /// Examples:
-  ///   some simple string   => 'some simple string'
-  ///   some " string        => 'some " string'
-  ///   some other ' string  => 'some other \' string'
-  ///   some backslash \ str => 'some backslash \\ str'
+  /// Deprecated. Use ctkAbstractPythonManager::toPythonStringLiteral() method instead.
+  ///
   Q_INVOKABLE static QString toPythonStringLiteral(QString path);
 
 protected:
-
   void preInitialization() override;
   ctkVTKPythonQtWrapperFactory* Factory;
-
 };
 
 #endif

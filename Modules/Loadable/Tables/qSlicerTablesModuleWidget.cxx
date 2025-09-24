@@ -50,22 +50,24 @@
 #include <vtkTable.h>
 
 //-----------------------------------------------------------------------------
-class qSlicerTablesModuleWidgetPrivate: public Ui_qSlicerTablesModuleWidget
+class qSlicerTablesModuleWidgetPrivate : public Ui_qSlicerTablesModuleWidget
 {
   Q_DECLARE_PUBLIC(qSlicerTablesModuleWidget);
+
 protected:
   qSlicerTablesModuleWidget* const q_ptr;
+
 public:
   qSlicerTablesModuleWidgetPrivate(qSlicerTablesModuleWidget& object);
-//  static QList<vtkSmartPointer<vtkMRMLTransformableNode> > getSelectedNodes(qMRMLTreeView* tree);
+  //  static QList<vtkSmartPointer<vtkMRMLTransformableNode>> getSelectedNodes(qMRMLTreeView* tree);
 
-  vtkSlicerTablesLogic*      logic()const;
-  vtkTable* table()const;
+  vtkSlicerTablesLogic* logic() const;
+  vtkTable* table() const;
 
   vtkWeakPointer<vtkMRMLTableNode> MRMLTableNode;
-  QAction*                      CopyAction;
-  QAction*                      PasteAction;
-  QAction*                      PlotAction;
+  QAction* CopyAction;
+  QAction* PasteAction;
+  QAction* PlotAction;
 };
 
 //-----------------------------------------------------------------------------
@@ -78,19 +80,19 @@ qSlicerTablesModuleWidgetPrivate::qSlicerTablesModuleWidgetPrivate(qSlicerTables
   this->PlotAction = nullptr;
 }
 //-----------------------------------------------------------------------------
-vtkSlicerTablesLogic* qSlicerTablesModuleWidgetPrivate::logic()const
+vtkSlicerTablesLogic* qSlicerTablesModuleWidgetPrivate::logic() const
 {
   Q_Q(const qSlicerTablesModuleWidget);
   return vtkSlicerTablesLogic::SafeDownCast(q->logic());
 }
 
 //-----------------------------------------------------------------------------
-vtkTable* qSlicerTablesModuleWidgetPrivate::table()const
+vtkTable* qSlicerTablesModuleWidgetPrivate::table() const
 {
-  if (this->MRMLTableNode.GetPointer()==nullptr)
-    {
+  if (this->MRMLTableNode.GetPointer() == nullptr)
+  {
     return nullptr;
-    }
+  }
   return this->MRMLTableNode->GetTable();
 }
 
@@ -130,8 +132,7 @@ void qSlicerTablesModuleWidget::setup()
   d->PlotAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
   // set CTRL+P shortcut
   d->PlotAction->setShortcuts(QKeySequence::Print);
-  d->PlotAction->setToolTip(tr("Generate an Interactive Plot based on user-selection"
-                               " of the columns of the table."));
+  d->PlotAction->setToolTip(tr("Generate an Interactive Plot based on user-selection of the columns of the table."));
   this->addAction(d->PlotAction);
 
   // Connect node selector with module itself
@@ -197,34 +198,34 @@ void qSlicerTablesModuleWidget::onMRMLTableNodeModified(vtkObject* caller)
   d->EditControlsFrame->setEnabled(editableNode);
 
   if (!d->MRMLTableNode)
-    {
+  {
     return;
-    }
+  }
 
   if (d->MRMLTableNode->GetLocked())
-    {
+  {
     d->LockTableButton->setIcon(QIcon(":Icons/Medium/SlicerLock.png"));
-    d->LockTableButton->setToolTip(QString("Click to unlock this table so that values can be modified"));
-    }
+    d->LockTableButton->setToolTip(tr("Click to unlock this table so that values can be modified"));
+  }
   else
-    {
+  {
     d->LockTableButton->setIcon(QIcon(":Icons/Medium/SlicerUnlock.png"));
-    d->LockTableButton->setToolTip(QString("Click to lock this table to prevent modification of the values in the user interface"));
-    }
+    d->LockTableButton->setToolTip(tr("Click to lock this table to prevent modification of the values in the user interface"));
+  }
 
-  if (d->MRMLTableNode->GetUseColumnNameAsColumnHeader() != d->LockFirstRowButton->isChecked())
-    {
+  if (d->MRMLTableNode->GetUseColumnTitleAsColumnHeader() != d->LockFirstRowButton->isChecked())
+  {
     bool wasBlocked = d->LockFirstRowButton->blockSignals(true);
-    d->LockFirstRowButton->setChecked(d->MRMLTableNode->GetUseColumnNameAsColumnHeader());
+    d->LockFirstRowButton->setChecked(d->MRMLTableNode->GetUseColumnTitleAsColumnHeader());
     d->LockFirstRowButton->blockSignals(wasBlocked);
-    }
+  }
 
   if (d->MRMLTableNode->GetUseFirstColumnAsRowHeader() != d->LockFirstColumnButton->isChecked())
-    {
+  {
     bool wasBlocked = d->LockFirstColumnButton->blockSignals(true);
     d->LockFirstColumnButton->setChecked(d->MRMLTableNode->GetUseFirstColumnAsRowHeader());
     d->LockFirstColumnButton->blockSignals(wasBlocked);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -233,9 +234,9 @@ void qSlicerTablesModuleWidget::onLockTableButtonClicked()
   Q_D(qSlicerTablesModuleWidget);
 
   if (!d->MRMLTableNode)
-    {
+  {
     return;
-    }
+  }
 
   // toggle the lock
   int locked = d->MRMLTableNode->GetLocked();
@@ -250,18 +251,16 @@ void qSlicerTablesModuleWidget::setCurrentTableNode(vtkMRMLNode* tableNode)
 }
 
 //-----------------------------------------------------------
-bool qSlicerTablesModuleWidget::setEditedNode(vtkMRMLNode* node,
-                                              QString role /* = QString()*/,
-                                              QString context /* = QString()*/)
+bool qSlicerTablesModuleWidget::setEditedNode(vtkMRMLNode* node, QString role /* = QString()*/, QString context /* = QString()*/)
 {
   Q_D(qSlicerTablesModuleWidget);
   Q_UNUSED(role);
   Q_UNUSED(context);
 
   if (vtkMRMLTableNode::SafeDownCast(node))
-    {
+  {
     d->TableNodeSelector->setCurrentNode(node);
     return true;
-    }
+  }
   return false;
 }

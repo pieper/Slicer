@@ -34,7 +34,7 @@
 #include <vtkNew.h>
 
 // ----------------------------------------------------------------------------
-class qMRMLCheckableNodeComboBoxTester: public QObject
+class qMRMLCheckableNodeComboBoxTester : public QObject
 {
   Q_OBJECT
   qMRMLCheckableNodeComboBox* ComboBox;
@@ -48,9 +48,7 @@ private slots:
   void testCheck();
   void testRename();
   void testRename_data();
-
 };
-
 
 // ----------------------------------------------------------------------------
 void qMRMLCheckableNodeComboBoxTester::init()
@@ -68,13 +66,13 @@ void qMRMLCheckableNodeComboBoxTester::init()
 void qMRMLCheckableNodeComboBoxTester::cleanup()
 {
   if (this->ComboBox == nullptr)
-    {
+  {
     return;
-    }
+  }
   if (this->ComboBox->mrmlScene())
-    {
+  {
     this->ComboBox->mrmlScene()->Delete();
-    }
+  }
   delete this->ComboBox;
   this->ComboBox = nullptr;
 }
@@ -83,9 +81,9 @@ void qMRMLCheckableNodeComboBoxTester::cleanup()
 vtkMRMLNode* qMRMLCheckableNodeComboBoxTester::node(int index)
 {
   if (this->ComboBox == nullptr)
-    {
+  {
     return nullptr;
-    }
+  }
   vtkMRMLScene* scene = this->ComboBox->mrmlScene();
   return scene->GetNthNodeByClass(index, "vtkMRMLViewNode");
 }

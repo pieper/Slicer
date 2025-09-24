@@ -27,14 +27,16 @@
 
 // CTK includes
 #include <ctkVTKAbstractView.h>
+#include <ctkComboBox.h>
 
 // --------------------------------------------------------------------------
 // qSlicerSettingsViewsPanelPrivate
 
 //-----------------------------------------------------------------------------
-class qSlicerSettingsViewsPanelPrivate: public Ui_qSlicerSettingsViewsPanel
+class qSlicerSettingsViewsPanelPrivate : public Ui_qSlicerSettingsViewsPanel
 {
   Q_DECLARE_PUBLIC(qSlicerSettingsViewsPanel);
+
 protected:
   qSlicerSettingsViewsPanel* const q_ptr;
 
@@ -47,9 +49,8 @@ public:
 // qSlicerSettingsViewsPanelPrivate methods
 
 // --------------------------------------------------------------------------
-qSlicerSettingsViewsPanelPrivate
-::qSlicerSettingsViewsPanelPrivate(qSlicerSettingsViewsPanel& object)
-  :q_ptr(&object)
+qSlicerSettingsViewsPanelPrivate::qSlicerSettingsViewsPanelPrivate(qSlicerSettingsViewsPanel& object)
+  : q_ptr(&object)
 {
 }
 
@@ -73,65 +74,121 @@ void qSlicerSettingsViewsPanelPrivate::init()
   this->MSAAComboBox->setCurrentIndex(this->MSAAComboBox->findText("Off"));
 
   // Actions to propagate to the application when settings are changed
-  QObject::connect(this->MSAAComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SLOT(onMSAAChanged(QString)));
-  QObject::connect(this->MSAAComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SIGNAL(currentMSAAChanged(QString)));
-  q->registerProperty("Views/MSAA", q,
-                      "currentMSAA", SIGNAL(currentMSAAChanged(QString)),
-                      "Multisampling (MSAA)",
+  QObject::connect(this->MSAAComboBox, SIGNAL(currentIndexChanged(QString)), q, SLOT(onMSAAChanged(QString)));
+  QObject::connect(this->MSAAComboBox, SIGNAL(currentIndexChanged(QString)), q, SIGNAL(currentMSAAChanged(QString)));
+  q->registerProperty(
+    "Views/MSAA", q, "currentMSAA", SIGNAL(currentMSAAChanged(QString)), qSlicerSettingsViewsPanel::tr("Multisampling (MSAA)"), ctkSettingsPanel::OptionRequireRestart);
+
+  this->SliceOrientationMarkerTypeComboBox->addItem(qSlicerSettingsViewsPanel::tr("none"), QString(/*no tr*/ "none"));
+  this->SliceOrientationMarkerTypeComboBox->addItem(qSlicerSettingsViewsPanel::tr("cube"), QString(/*no tr*/ "cube"));
+  this->SliceOrientationMarkerTypeComboBox->addItem(qSlicerSettingsViewsPanel::tr("human"), QString(/*no tr*/ "human"));
+  this->SliceOrientationMarkerTypeComboBox->addItem(qSlicerSettingsViewsPanel::tr("axes"), QString(/*no tr*/ "axes"));
+
+  QObject::connect(this->SliceOrientationMarkerTypeComboBox, SIGNAL(currentIndexChanged(QString)), q, SIGNAL(currentSliceOrientationMarkerTypeChanged(QString)));
+  q->registerProperty("DefaultSliceView/OrientationMarkerType",
+                      q,
+                      "sliceOrientationMarkerType",
+                      SIGNAL(currentSliceOrientationMarkerTypeChanged(QString)),
+                      qSlicerSettingsViewsPanel::tr("Slice view orientation marker type"),
+                      ctkSettingsPanel::OptionRequireRestart);
+  QObject::connect(this->SliceOrientationMarkerSizeComboBox, SIGNAL(currentIndexChanged(QString)), q, SIGNAL(currentSliceOrientationMarkerSizeChanged(QString)));
+  q->registerProperty("DefaultSliceView/OrientationMarkerSize",
+                      q,
+                      "sliceOrientationMarkerSize",
+                      SIGNAL(currentSliceOrientationMarkerSizeChanged(QString)),
+                      qSlicerSettingsViewsPanel::tr("Slice view orientation marker size"),
+                      ctkSettingsPanel::OptionRequireRestart);
+  QObject::connect(this->SliceRulerTypeComboBox, SIGNAL(currentIndexChanged(QString)), q, SIGNAL(currentSliceRulerTypeChanged(QString)));
+  q->registerProperty("DefaultSliceView/RulerType",
+                      q,
+                      "sliceRulerType",
+                      SIGNAL(currentSliceRulerTypeChanged(QString)),
+                      qSlicerSettingsViewsPanel::tr("Slice view ruler type"),
                       ctkSettingsPanel::OptionRequireRestart);
 
-  QObject::connect(this->SliceOrientationMarkerTypeComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SIGNAL(currentSliceOrientationMarkerTypeChanged(QString)));
-  q->registerProperty("DefaultSliceView/OrientationMarkerType", q,
-                      "sliceOrientationMarkerType", SIGNAL(currentSliceOrientationMarkerTypeChanged(QString)),
-                      "Slice view orientation marker type",
+  this->SliceViewOrientationComboBox->addItem(qSlicerSettingsViewsPanel::tr("patient right is screen left (default)"), QString("PatientRightIsScreenLeft"));
+  this->SliceViewOrientationComboBox->addItem(qSlicerSettingsViewsPanel::tr("patient right is screen right"), QString("PatientRightIsScreenRight"));
+  q->registerProperty("DefaultSliceView/Orientation",
+                      this->SliceViewOrientationComboBox,
+                      "currentUserDataAsString",
+                      SIGNAL(currentIndexChanged(int)),
+                      qSlicerSettingsViewsPanel::tr("Default slice view orientation"),
                       ctkSettingsPanel::OptionRequireRestart);
-  QObject::connect(this->SliceOrientationMarkerSizeComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SIGNAL(currentSliceOrientationMarkerSizeChanged(QString)));
-  q->registerProperty("DefaultSliceView/OrientationMarkerSize", q,
-                      "sliceOrientationMarkerSize", SIGNAL(currentSliceOrientationMarkerSizeChanged(QString)),
-                      "Slice view orientation marker size",
-                      ctkSettingsPanel::OptionRequireRestart);
-  QObject::connect(this->SliceRulerTypeComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SIGNAL(currentSliceRulerTypeChanged(QString)));
-  q->registerProperty("DefaultSliceView/RulerType", q,
-                      "sliceRulerType", SIGNAL(currentSliceRulerTypeChanged(QString)),
-                      "Slice view ruler type",
+  QObject::connect(this->SliceViewOrientationComboBox, SIGNAL(activated(int)), q, SLOT(sliceViewOrientationChangedByUser()));
+
+  q->registerProperty("DefaultSliceView/SliceEdgeVisibility3D",
+                      this->SliceEdgeVisibility3DCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)),
+                      qSlicerSettingsViewsPanel::tr("Slice edge visibility in 3D views"),
                       ctkSettingsPanel::OptionRequireRestart);
 
-  q->registerProperty("Default3DView/BoxVisibility", this->ThreeDBoxVisibilityCheckBox,
-                      "checked", SIGNAL(toggled(bool)),
-                      "3D view cube visibility");
-  q->registerProperty("Default3DView/AxisLabelsVisibility", this->ThreeDAxisLabelsVisibilityCheckBox,
-                      "checked", SIGNAL(toggled(bool)),
-                      "3D view axis label visibility");
-  QObject::connect(this->ThreeDOrientationMarkerTypeComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SIGNAL(currentThreeDOrientationMarkerTypeChanged(QString)));
-  q->registerProperty("Default3DView/OrientationMarkerType", q,
-                      "threeDOrientationMarkerType", SIGNAL(currentThreeDOrientationMarkerTypeChanged(QString)),
-                      "3D view orientation marker type",
+  q->registerProperty("Default3DView/BoxVisibility",
+                      this->ThreeDBoxVisibilityCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)),
+                      qSlicerSettingsViewsPanel::tr("3D view cube visibility"));
+  q->registerProperty("Default3DView/AxisLabelsVisibility",
+                      this->ThreeDAxisLabelsVisibilityCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)),
+                      qSlicerSettingsViewsPanel::tr("3D view axis label visibility"));
+  QObject::connect(this->ThreeDOrientationMarkerTypeComboBox, SIGNAL(currentIndexChanged(QString)), q, SIGNAL(currentThreeDOrientationMarkerTypeChanged(QString)));
+  q->registerProperty("Default3DView/OrientationMarkerType",
+                      q,
+                      "threeDOrientationMarkerType",
+                      SIGNAL(currentThreeDOrientationMarkerTypeChanged(QString)),
+                      qSlicerSettingsViewsPanel::tr("3D view orientation marker type"),
                       ctkSettingsPanel::OptionRequireRestart);
-  QObject::connect(this->ThreeDOrientationMarkerSizeComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SIGNAL(currentThreeDOrientationMarkerSizeChanged(QString)));
-  q->registerProperty("Default3DView/OrientationMarkerSize", q,
-                      "threeDOrientationMarkerSize", SIGNAL(currentThreeDOrientationMarkerSizeChanged(QString)),
-                      "3D view orientation marker size",
+  QObject::connect(this->ThreeDOrientationMarkerSizeComboBox, SIGNAL(currentIndexChanged(QString)), q, SIGNAL(currentThreeDOrientationMarkerSizeChanged(QString)));
+  q->registerProperty("Default3DView/OrientationMarkerSize",
+                      q,
+                      "threeDOrientationMarkerSize",
+                      SIGNAL(currentThreeDOrientationMarkerSizeChanged(QString)),
+                      qSlicerSettingsViewsPanel::tr("3D view orientation marker size"),
                       ctkSettingsPanel::OptionRequireRestart);
-  QObject::connect(this->ThreeDRulerTypeComboBox, SIGNAL(currentIndexChanged(QString)),
-                   q, SIGNAL(currentThreeDRulerTypeChanged(QString)));
-  q->registerProperty("Default3DView/RulerType", q,
-                      "threeDRulerType", SIGNAL(currentThreeDRulerTypeChanged(QString)),
-                      "3D view ruler type",
+  QObject::connect(this->ThreeDRulerTypeComboBox, SIGNAL(currentIndexChanged(QString)), q, SIGNAL(currentThreeDRulerTypeChanged(QString)));
+  q->registerProperty("Default3DView/RulerType",
+                      q,
+                      "threeDRulerType",
+                      SIGNAL(currentThreeDRulerTypeChanged(QString)),
+                      qSlicerSettingsViewsPanel::tr("3D view ruler type"),
                       ctkSettingsPanel::OptionRequireRestart);
-  q->registerProperty("Default3DView/UseDepthPeeling", this->ThreeDUseDepthPeelingCheckBox,
-                      "checked", SIGNAL(toggled(bool)),
-                      "3D depth peeling");
-  q->registerProperty("Default3DView/UseOrthographicProjection", this->ThreeDUseOrthographicProjectionCheckBox,
-                      "checked", SIGNAL(toggled(bool)),
-                      "Orthographic projection");
-
+  q->registerProperty("Default3DView/UseDepthPeeling",
+                      this->ThreeDUseDepthPeelingCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)),
+                      qSlicerSettingsViewsPanel::tr("3D depth peeling"));
+  q->registerProperty("Default3DView/UseOrthographicProjection",
+                      this->ThreeDUseOrthographicProjectionCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)),
+                      qSlicerSettingsViewsPanel::tr("Orthographic projection"));
+  q->registerProperty("Default3DView/ShadowsVisibility",
+                      this->ThreeDShadowsVisibilityCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)),
+                      qSlicerSettingsViewsPanel::tr("Shadows visibility"));
+  q->registerProperty("Default3DView/AmbientShadowsSizeScale",
+                      this->ThreeDAmbientShadowsSizeScaleSlider,
+                      /*no tr*/ "value",
+                      SIGNAL(valueChanged(double)),
+                      qSlicerSettingsViewsPanel::tr("Ambient shadows size scale"));
+  q->registerProperty("Default3DView/AmbientShadowsVolumeOpacityThreshold",
+                      this->ThreeDAmbientShadowsVolumeOpacityThresholdSlider,
+                      /*no tr*/ "value",
+                      SIGNAL(valueChanged(double)),
+                      qSlicerSettingsViewsPanel::tr("Ambient shadows volume opacity threshold"));
+  q->registerProperty("Default3DView/AmbientShadowsIntensityScale",
+                      this->ThreeDAmbientShadowsIntensityScaleSlider,
+                      /*no tr*/ "value",
+                      SIGNAL(valueChanged(double)),
+                      qSlicerSettingsViewsPanel::tr("Ambient shadows intensity scale"));
+  q->registerProperty("Default3DView/AmbientShadowsIntensityShift",
+                      this->ThreeDAmbientShadowsIntensityShiftSlider,
+                      /*no tr*/ "value",
+                      SIGNAL(valueChanged(double)),
+                      qSlicerSettingsViewsPanel::tr("Ambient shadows intensity shift"));
 }
 
 // --------------------------------------------------------------------------
@@ -230,7 +287,6 @@ void qSlicerSettingsViewsPanel::setSliceRulerType(const QString& text)
   d->SliceRulerTypeComboBox->setCurrentIndex(qMax(d->SliceRulerTypeComboBox->findText(text), 0));
 }
 
-
 // --------------------------------------------------------------------------
 QString qSlicerSettingsViewsPanel::threeDOrientationMarkerType() const
 {
@@ -274,4 +330,20 @@ void qSlicerSettingsViewsPanel::setThreeDRulerType(const QString& text)
   Q_D(qSlicerSettingsViewsPanel);
   // default to first item if conversion fails
   d->ThreeDRulerTypeComboBox->setCurrentIndex(qMax(d->ThreeDRulerTypeComboBox->findText(text), 0));
+}
+
+// --------------------------------------------------------------------------
+void qSlicerSettingsViewsPanel::sliceViewOrientationChangedByUser()
+{
+  Q_D(qSlicerSettingsViewsPanel);
+  if (d->SliceViewOrientationComboBox->currentUserDataAsString() == "PatientRightIsScreenRight")
+  {
+    if (d->SliceOrientationMarkerTypeComboBox->currentData() == /*no tr*/ "none")
+    {
+      // Non-default orientation is chosen and no orientation marker is displayed.
+      // To ensure that there is no accidental mixup of orientations, show the orientation marker.
+      int index = d->SliceOrientationMarkerTypeComboBox->findData(/*no tr*/ "axes");
+      d->SliceOrientationMarkerTypeComboBox->setCurrentIndex(index);
+    }
+  }
 }

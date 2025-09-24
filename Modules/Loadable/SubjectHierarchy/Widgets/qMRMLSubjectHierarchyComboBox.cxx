@@ -28,6 +28,7 @@
 #include <QDesktopWidget>
 #include <QMouseEvent>
 #include <QLabel>
+#include <QScreen>
 
 // SubjectHierarchy includes
 #include "qMRMLSubjectHierarchyComboBox.h"
@@ -43,7 +44,6 @@
 #include <vtkMRMLScene.h>
 
 //------------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_SubjectHierarchy
 class qMRMLSubjectHierarchyComboBoxPrivate
 {
   Q_DECLARE_PUBLIC(qMRMLSubjectHierarchyComboBox);
@@ -58,6 +58,7 @@ public:
 public:
   int MaximumNumberOfShownItems;
   bool AlignPopupVertically;
+  bool ShowCurrentItemParents;
 
   qMRMLSubjectHierarchyTreeView* TreeView;
   QLabel* NoItemLabel;
@@ -68,6 +69,7 @@ qMRMLSubjectHierarchyComboBoxPrivate::qMRMLSubjectHierarchyComboBoxPrivate(qMRML
   : q_ptr(&object)
   , MaximumNumberOfShownItems(20)
   , AlignPopupVertically(true)
+  , ShowCurrentItemParents(true)
   , TreeView(nullptr)
   , NoItemLabel(nullptr)
 {
@@ -92,6 +94,8 @@ void qMRMLSubjectHierarchyComboBoxPrivate::init()
   this->TreeView->setColumnHidden(this->TreeView->model()->idColumn(), true);
   this->TreeView->setHeaderHidden(true);
   this->TreeView->setContextMenuEnabled(false);
+  this->TreeView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  this->TreeView->setDragDropMode(QAbstractItemView::NoDragDrop);
 
   // No item label
   this->NoItemLabel = new QLabel("No items");
@@ -103,14 +107,11 @@ void qMRMLSubjectHierarchyComboBoxPrivate::init()
   container->layout()->addWidget(this->TreeView);
 
   // Make connections
-  QObject::connect(this->TreeView, SIGNAL(currentItemChanged(vtkIdType)),
-                   q, SLOT(updateComboBoxTitleAndIcon(vtkIdType)));
-  QObject::connect(this->TreeView, SIGNAL(currentItemModified(vtkIdType)),
-                   q, SLOT(updateComboBoxTitleAndIcon(vtkIdType)));
-  QObject::connect(this->TreeView, SIGNAL(currentItemChanged(vtkIdType)),
-                   q, SIGNAL(currentItemChanged(vtkIdType)));
-  QObject::connect(this->TreeView, SIGNAL(currentItemModified(vtkIdType)),
-                   q, SIGNAL(currentItemModified(vtkIdType)));
+  QObject::connect(this->TreeView, SIGNAL(currentItemChanged(vtkIdType)), q, SLOT(updateComboBoxTitleAndIcon(vtkIdType)));
+  QObject::connect(this->TreeView, SIGNAL(pressed(QModelIndex)), q, SLOT(hidePopup()));
+  QObject::connect(this->TreeView, SIGNAL(currentItemModified(vtkIdType)), q, SLOT(updateComboBoxTitleAndIcon(vtkIdType)));
+  QObject::connect(this->TreeView, SIGNAL(currentItemChanged(vtkIdType)), q, SIGNAL(currentItemChanged(vtkIdType)));
+  QObject::connect(this->TreeView, SIGNAL(currentItemModified(vtkIdType)), q, SIGNAL(currentItemModified(vtkIdType)));
 }
 
 // --------------------------------------------------------------------------
@@ -129,14 +130,14 @@ qMRMLSubjectHierarchyComboBox::qMRMLSubjectHierarchyComboBox(QWidget* parentWidg
 qMRMLSubjectHierarchyComboBox::~qMRMLSubjectHierarchyComboBox() = default;
 
 //------------------------------------------------------------------------------
-vtkMRMLSubjectHierarchyNode* qMRMLSubjectHierarchyComboBox::subjectHierarchyNode()const
+vtkMRMLSubjectHierarchyNode* qMRMLSubjectHierarchyComboBox::subjectHierarchyNode() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->subjectHierarchyNode();
 }
 
 //------------------------------------------------------------------------------
-vtkMRMLScene* qMRMLSubjectHierarchyComboBox::mrmlScene()const
+vtkMRMLScene* qMRMLSubjectHierarchyComboBox::mrmlScene() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->mrmlScene();
@@ -148,18 +149,21 @@ void qMRMLSubjectHierarchyComboBox::setMRMLScene(vtkMRMLScene* scene)
   Q_D(const qMRMLSubjectHierarchyComboBox);
 
   if (this->mrmlScene() == scene)
-    {
+  {
     return;
-    }
+  }
 
   d->TreeView->setMRMLScene(scene);
 
   vtkMRMLSubjectHierarchyNode* shNode = d->TreeView->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid subject hierarchy";
     return;
-    }
+  }
+
+  // Connect scene events so that title can be updated
+  qvtkReconnect(scene, vtkMRMLScene::EndCloseEvent, this, SLOT(onMRMLSceneCloseEnded(vtkObject*)));
 
   // Set tree root item to be the new scene, and disable showing it
   d->TreeView->setRootItem(shNode->GetSceneItemID());
@@ -170,10 +174,13 @@ void qMRMLSubjectHierarchyComboBox::clearSelection()
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   d->TreeView->clearSelection();
+
+  // Clear title and icon
+  this->updateComboBoxTitleAndIcon(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID);
 }
 
 //------------------------------------------------------------------------------
-vtkIdType qMRMLSubjectHierarchyComboBox::currentItem()const
+vtkIdType qMRMLSubjectHierarchyComboBox::currentItem() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->currentItem();
@@ -186,15 +193,29 @@ void qMRMLSubjectHierarchyComboBox::setCurrentItem(vtkIdType itemID)
   return d->TreeView->setCurrentItem(itemID);
 }
 
+//------------------------------------------------------------------------------
+vtkMRMLNode* qMRMLSubjectHierarchyComboBox::currentNode() const
+{
+  Q_D(const qMRMLSubjectHierarchyComboBox);
+  return d->TreeView->currentNode();
+}
+
+//------------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setCurrentNode(vtkMRMLNode* node)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  d->TreeView->setCurrentNode(node);
+}
+
 //--------------------------------------------------------------------------
-qMRMLSortFilterSubjectHierarchyProxyModel* qMRMLSubjectHierarchyComboBox::sortFilterProxyModel()const
+qMRMLSortFilterSubjectHierarchyProxyModel* qMRMLSubjectHierarchyComboBox::sortFilterProxyModel() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->sortFilterProxyModel();
 }
 
 //--------------------------------------------------------------------------
-qMRMLSubjectHierarchyModel* qMRMLSubjectHierarchyComboBox::model()const
+qMRMLSubjectHierarchyModel* qMRMLSubjectHierarchyComboBox::model() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->model();
@@ -208,7 +229,7 @@ void qMRMLSubjectHierarchyComboBox::setShowRootItem(bool show)
 }
 
 //--------------------------------------------------------------------------
-bool qMRMLSubjectHierarchyComboBox::showRootItem()const
+bool qMRMLSubjectHierarchyComboBox::showRootItem() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->showRootItem();
@@ -222,14 +243,14 @@ void qMRMLSubjectHierarchyComboBox::setRootItem(vtkIdType rootItemID)
 }
 
 //--------------------------------------------------------------------------
-vtkIdType qMRMLSubjectHierarchyComboBox::rootItem()const
+vtkIdType qMRMLSubjectHierarchyComboBox::rootItem() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->rootItem();
 }
 
 //--------------------------------------------------------------------------
-bool qMRMLSubjectHierarchyComboBox::highlightReferencedItems()const
+bool qMRMLSubjectHierarchyComboBox::highlightReferencedItems() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->TreeView->highlightReferencedItems();
@@ -243,17 +264,17 @@ void qMRMLSubjectHierarchyComboBox::setHighlightReferencedItems(bool highlightOn
 }
 
 //--------------------------------------------------------------------------
-void qMRMLSubjectHierarchyComboBox::setPluginWhitelist(QStringList whitelist)
+void qMRMLSubjectHierarchyComboBox::setPluginAllowlist(QStringList allowlist)
 {
   Q_D(qMRMLSubjectHierarchyComboBox);
-  d->TreeView->setPluginWhitelist(whitelist);
+  d->TreeView->setPluginAllowlist(allowlist);
 }
 
 //--------------------------------------------------------------------------
-void qMRMLSubjectHierarchyComboBox::setPluginBlacklist(QStringList blacklist)
+void qMRMLSubjectHierarchyComboBox::setPluginBlocklist(QStringList blocklist)
 {
   Q_D(qMRMLSubjectHierarchyComboBox);
-  d->TreeView->setPluginBlacklist(blacklist);
+  d->TreeView->setPluginBlocklist(blocklist);
 }
 
 //--------------------------------------------------------------------------
@@ -263,22 +284,164 @@ void qMRMLSubjectHierarchyComboBox::disablePlugin(QString plugin)
   d->TreeView->disablePlugin(plugin);
 }
 
-//--------------------------------------------------------------------------
-void qMRMLSubjectHierarchyComboBox::setAttributeFilter(const QString& attributeName, const QVariant& attributeValue/*=QVariant()*/)
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setIncludeItemAttributeNamesFilter(QStringList filter)
 {
   Q_D(qMRMLSubjectHierarchyComboBox);
-  d->TreeView->setAttributeFilter(attributeName, attributeValue);
+  this->sortFilterProxyModel()->setIncludeItemAttributeNamesFilter(filter);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+QStringList qMRMLSubjectHierarchyComboBox::includeItemAttributeNamesFilter() const
+{
+  return this->sortFilterProxyModel()->includeItemAttributeNamesFilter();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setIncludeNodeAttributeNamesFilter(QStringList filter)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->setIncludeNodeAttributeNamesFilter(filter);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+QStringList qMRMLSubjectHierarchyComboBox::includeNodeAttributeNamesFilter() const
+{
+  return this->sortFilterProxyModel()->includeNodeAttributeNamesFilter();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setExcludeItemAttributeNamesFilter(QStringList filter)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->setExcludeItemAttributeNamesFilter(filter);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+QStringList qMRMLSubjectHierarchyComboBox::excludeItemAttributeNamesFilter() const
+{
+  return this->sortFilterProxyModel()->excludeItemAttributeNamesFilter();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setExcludeNodeAttributeNamesFilter(QStringList filter)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->setExcludeNodeAttributeNamesFilter(filter);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+QStringList qMRMLSubjectHierarchyComboBox::excludeNodeAttributeNamesFilter() const
+{
+  return this->sortFilterProxyModel()->excludeNodeAttributeNamesFilter();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setAttributeNameFilter(QString& filter)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->setAttributeNameFilter(filter);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+QString qMRMLSubjectHierarchyComboBox::attributeNameFilter() const
+{
+  return this->sortFilterProxyModel()->attributeNameFilter();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setAttributeValueFilter(QString& filter)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->setAttributeValueFilter(filter);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+QString qMRMLSubjectHierarchyComboBox::attributeValueFilter() const
+{
+  return this->sortFilterProxyModel()->attributeValueFilter();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::addItemAttributeFilter(QString attributeName, QVariant attributeValue /*=QString()*/, bool include /*=true*/)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->addItemAttributeFilter(attributeName, attributeValue, include);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::removeItemAttributeFilter(QString attributeName, QVariant attributeValue, bool include)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->removeItemAttributeFilter(attributeName, attributeValue, include);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::removeItemAttributeFilter(QString attributeName, bool include)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->removeItemAttributeFilter(attributeName, include);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::addNodeAttributeFilter(QString attributeName, QVariant attributeValue /*=QString()*/, bool include /*=true*/, QString className /*=QString()*/)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->addNodeAttributeFilter(attributeName, attributeValue, include, className);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::removeNodeAttributeFilter(QString attributeName, QVariant attributeValue, bool include, QString className)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->removeNodeAttributeFilter(attributeName, attributeValue, include, className);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::removeNodeAttributeFilter(QString attributeName, bool include)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->removeNodeAttributeFilter(attributeName, include);
+
+  // Reset root item, as it may have been corrupted, when tree became empty due to the filter
+  d->TreeView->setRootItem(d->TreeView->rootItem());
 }
 
 //--------------------------------------------------------------------------
-void qMRMLSubjectHierarchyComboBox::removeAttributeFilter()
-{
-  Q_D(qMRMLSubjectHierarchyComboBox);
-  d->TreeView->removeAttributeFilter();
-}
-
-//--------------------------------------------------------------------------
-void qMRMLSubjectHierarchyComboBox::setLevelFilter(QStringList &levelFilter)
+void qMRMLSubjectHierarchyComboBox::setLevelFilter(QStringList& levelFilter)
 {
   Q_D(qMRMLSubjectHierarchyComboBox);
   d->TreeView->setLevelFilter(levelFilter);
@@ -292,6 +455,13 @@ void qMRMLSubjectHierarchyComboBox::setNodeTypes(const QStringList& types)
 }
 
 //--------------------------------------------------------------------------
+QStringList qMRMLSubjectHierarchyComboBox::nodeTypes() const
+{
+  Q_D(const qMRMLSubjectHierarchyComboBox);
+  return d->TreeView->nodeTypes();
+}
+
+//--------------------------------------------------------------------------
 void qMRMLSubjectHierarchyComboBox::setHideChildNodeTypes(const QStringList& types)
 {
   Q_D(qMRMLSubjectHierarchyComboBox);
@@ -299,7 +469,7 @@ void qMRMLSubjectHierarchyComboBox::setHideChildNodeTypes(const QStringList& typ
 }
 
 //--------------------------------------------------------------------------
-int qMRMLSubjectHierarchyComboBox::maximumNumberOfShownItems()const
+int qMRMLSubjectHierarchyComboBox::maximumNumberOfShownItems() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->MaximumNumberOfShownItems;
@@ -313,7 +483,7 @@ void qMRMLSubjectHierarchyComboBox::setMaximumNumberOfShownItems(int maxNumberOf
 }
 
 //--------------------------------------------------------------------------
-bool qMRMLSubjectHierarchyComboBox::alignPopupVertically()const
+bool qMRMLSubjectHierarchyComboBox::alignPopupVertically() const
 {
   Q_D(const qMRMLSubjectHierarchyComboBox);
   return d->AlignPopupVertically;
@@ -326,6 +496,74 @@ void qMRMLSubjectHierarchyComboBox::setAlignPopupVertically(bool align)
   d->AlignPopupVertically = align;
 }
 
+//--------------------------------------------------------------------------
+bool qMRMLSubjectHierarchyComboBox::noneEnabled() const
+{
+  if (!this->model())
+  {
+    return false;
+  }
+  return this->model()->noneEnabled();
+}
+
+//--------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setNoneEnabled(bool enable)
+{
+  if (!this->model())
+  {
+    return;
+  }
+  this->model()->setNoneEnabled(enable);
+}
+
+//--------------------------------------------------------------------------
+QString qMRMLSubjectHierarchyComboBox::noneDisplay() const
+{
+  if (!this->model())
+  {
+    return QString();
+  }
+  return this->model()->noneDisplay();
+}
+
+//--------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setNoneDisplay(const QString& displayName)
+{
+  if (!this->model())
+  {
+    return;
+  }
+  this->model()->setNoneDisplay(displayName);
+}
+
+//--------------------------------------------------------------------------
+bool qMRMLSubjectHierarchyComboBox::showCurrentItemParents() const
+{
+  Q_D(const qMRMLSubjectHierarchyComboBox);
+  return d->ShowCurrentItemParents;
+}
+
+//--------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setShowCurrentItemParents(bool show)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  d->ShowCurrentItemParents = show;
+}
+
+//--------------------------------------------------------------------------
+bool qMRMLSubjectHierarchyComboBox::showEmptyHierarchyItems() const
+{
+  Q_D(const qMRMLSubjectHierarchyComboBox);
+  return this->sortFilterProxyModel()->showEmptyHierarchyItems();
+}
+
+//--------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::setShowEmptyHierarchyItems(bool show)
+{
+  Q_D(qMRMLSubjectHierarchyComboBox);
+  this->sortFilterProxyModel()->setShowEmptyHierarchyItems(show);
+}
+
 //-----------------------------------------------------------------------------
 void qMRMLSubjectHierarchyComboBox::showPopup()
 {
@@ -335,9 +573,12 @@ void qMRMLSubjectHierarchyComboBox::showPopup()
   QStyleOptionComboBox opt;
   this->initStyleOption(&opt);
 
-  QRect listRect(this->style()->subControlRect(QStyle::CC_ComboBox, &opt,
-                                               QStyle::SC_ComboBoxListBoxPopup, this));
+  QRect listRect(this->style()->subControlRect(QStyle::CC_ComboBox, &opt, QStyle::SC_ComboBoxListBoxPopup, this));
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QRect screen = this->screen()->availableGeometry();
+#else
   QRect screen = QApplication::desktop()->availableGeometry(QApplication::desktop()->screenNumber(this));
+#endif
   QPoint below = mapToGlobal(listRect.bottomLeft());
   QPoint above = mapToGlobal(listRect.topLeft());
 
@@ -345,60 +586,67 @@ void qMRMLSubjectHierarchyComboBox::showPopup()
   int popupHeight = 0;
   int displayedItemCount = d->TreeView->displayedItemCount();
   if (displayedItemCount == 0)
-    {
+  {
     // If there is no items, find what message to show instead
     vtkMRMLSubjectHierarchyNode* shNode = d->TreeView->subjectHierarchyNode();
-    vtkIdType rootItem = d->TreeView->rootItem();
-    std::vector<vtkIdType> childItemIDs;
-    shNode->GetItemChildren(rootItem, childItemIDs, false);
-    if (childItemIDs.empty())
-      {
-      if (rootItem!= shNode->GetSceneItemID())
-        {
-        std::string rootName = shNode->GetItemName(rootItem);
-        QString label = QString("No items in branch: ") + QString::fromStdString(rootName);
-        d->NoItemLabel->setText(label);
-        }
-      else
-        {
-        d->NoItemLabel->setText("No items in scene");
-        }
-      }
-    else
-      {
-      d->NoItemLabel->setText("No items accepted by current filters");
-      }
-
-      // Show no item label instead of tree view
-      d->NoItemLabel->show();
-      d->TreeView->hide();
-      popupHeight = d->NoItemLabel->sizeHint().height();
-    }
-  else
+    if (shNode)
     {
+      vtkIdType rootItem = d->TreeView->rootItem();
+      std::vector<vtkIdType> childItemIDs;
+      shNode->GetItemChildren(rootItem, childItemIDs, false);
+      if (childItemIDs.empty())
+      {
+        if (rootItem != shNode->GetSceneItemID())
+        {
+          std::string rootName = shNode->GetItemName(rootItem);
+          QString label = QString("No items in branch: ") + QString::fromStdString(rootName);
+          d->NoItemLabel->setText(label);
+        }
+        else
+        {
+          d->NoItemLabel->setText("No items in scene");
+        }
+      }
+      else
+      {
+        d->NoItemLabel->setText("No items accepted by current filters");
+      }
+    }
+    else
+    {
+      d->NoItemLabel->setText("No subject hierarchy");
+    }
+
+    // Show no item label instead of tree view
+    d->NoItemLabel->show();
+    d->TreeView->hide();
+    popupHeight = d->NoItemLabel->sizeHint().height();
+  }
+  else
+  {
     // Height based on the number of items
-    const int numberOfRows = qMin(displayedItemCount, d->MaximumNumberOfShownItems);
-    popupHeight = numberOfRows * d->TreeView->sizeHintForRow(0);
+    const int numberOfShownShItems = qMin(displayedItemCount, d->MaximumNumberOfShownItems);
+    const int numberOfRows = (this->noneEnabled() ? numberOfShownShItems + 1 : numberOfShownShItems);
+    const int referenceRowHeight = (this->noneEnabled() ? d->TreeView->sizeHintForRow(1) : d->TreeView->sizeHintForRow(0));
+    popupHeight = numberOfRows * referenceRowHeight;
 
     // Add tree view margins for the height
     // NB: not needed for the width as the item labels will be cropped
     // without displaying an horizontal scroll bar
-    int tvMarginLeft, tvMarginTop, tvMarginRight, tvMarginBottom;
-    d->TreeView->getContentsMargins(&tvMarginLeft, &tvMarginTop, &tvMarginRight, &tvMarginBottom);
-    popupHeight += tvMarginTop + tvMarginBottom;
+    QMargins tvMargins = d->TreeView->contentsMargins();
+    popupHeight += tvMargins.top() + tvMargins.bottom();
 
     d->NoItemLabel->hide();
     d->TreeView->show();
-    }
+  }
 
   // Add container margins for the height
-  int marginLeft, marginTop, marginRight, marginBottom;
-  container->getContentsMargins(&marginLeft, &marginTop, &marginRight, &marginBottom);
-  popupHeight += marginTop + marginBottom;
+  QMargins margins = container->contentsMargins();
+  popupHeight += margins.top() + margins.bottom();
 
   // Position of the container
-  if(d->AlignPopupVertically)
-    {
+  if (d->AlignPopupVertically)
+  {
     // Position horizontally
     listRect.moveLeft(above.x());
 
@@ -407,26 +655,26 @@ void qMRMLSubjectHierarchyComboBox::showPopup()
     const int offset = listRect.top() - currentItemRect.top();
     listRect.moveTop(above.y() + offset - listRect.top());
 
-    if (listRect.width() > screen.width() )
-      {
+    if (listRect.width() > screen.width())
+    {
       listRect.setWidth(screen.width());
-      }
+    }
     if (mapToGlobal(listRect.bottomRight()).x() > screen.right())
-      {
+    {
       below.setX(screen.x() + screen.width() - listRect.width());
       above.setX(screen.x() + screen.width() - listRect.width());
-      }
-    if (mapToGlobal(listRect.topLeft()).x() < screen.x() )
-      {
+    }
+    if (mapToGlobal(listRect.topLeft()).x() < screen.x())
+    {
       below.setX(screen.x());
       above.setX(screen.x());
-      }
     }
+  }
   else
-    {
+  {
     // Position below the combobox
     listRect.moveTo(below);
-    }
+  }
 
   container->move(listRect.topLeft());
   container->setFixedHeight(popupHeight);
@@ -435,11 +683,20 @@ void qMRMLSubjectHierarchyComboBox::showPopup()
   container->show();
 
   this->view()->setFocus();
-  this->view()->scrollTo( this->view()->currentIndex(),
-                          this->style()->styleHint(QStyle::SH_ComboBox_Popup, &opt, this)
-                             ? QAbstractItemView::PositionAtCenter
-                             : QAbstractItemView::EnsureVisible );
+  this->view()->scrollTo(this->view()->currentIndex(),
+                         this->style()->styleHint(QStyle::SH_ComboBox_Popup, &opt, this) ? QAbstractItemView::PositionAtCenter : QAbstractItemView::EnsureVisible);
   container->update();
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::hidePopup()
+{
+  // Hide popup
+  QFrame* container = qobject_cast<QFrame*>(this->view()->parentWidget());
+  if (container)
+  {
+    container->hide();
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -447,9 +704,9 @@ void qMRMLSubjectHierarchyComboBox::mousePressEvent(QMouseEvent* e)
 {
   // Disable context menu altogether
   if (e->button() == Qt::RightButton)
-    {
+  {
     return;
-    }
+  }
 
   // Perform default mouse press event (make selections etc.)
   this->Superclass::mousePressEvent(e);
@@ -459,53 +716,75 @@ void qMRMLSubjectHierarchyComboBox::mousePressEvent(QMouseEvent* e)
 void qMRMLSubjectHierarchyComboBox::updateComboBoxTitleAndIcon(vtkIdType selectedShItemID)
 {
   Q_D(qMRMLSubjectHierarchyComboBox);
+
   vtkMRMLSubjectHierarchyNode* shNode = d->TreeView->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     this->setDefaultText("Error: Invalid subject hierarchy");
     this->setDefaultIcon(QIcon());
     return;
-    }
+  }
   if (!selectedShItemID)
+  {
+    if (this->noneEnabled())
     {
-    this->setDefaultText("Select subject hierarchy item");
+      this->setDefaultText(this->noneDisplay());
+    }
+    else
+    {
+      this->setDefaultText("Select subject hierarchy item");
+    }
     this->setDefaultIcon(QIcon());
     return;
-    }
-
-  // Hide popup
-  QFrame* container = qobject_cast<QFrame*>(this->view()->parentWidget());
-  container->hide();
+  }
 
   // Assemble title for selected item
   QString titleText(shNode->GetItemName(selectedShItemID).c_str());
-  vtkIdType parentItemID = shNode->GetItemParent(selectedShItemID);
-  while (parentItemID != shNode->GetSceneItemID() && parentItemID != vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID)
+  if (d->ShowCurrentItemParents)
+  {
+    vtkIdType parentItemID = shNode->GetItemParent(selectedShItemID);
+    while (parentItemID != shNode->GetSceneItemID() && parentItemID != vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID)
     {
-    titleText.prepend(" / ");
-    QString parentItemName(shNode->GetItemName(parentItemID).c_str());
-    if (parentItemName.length() > 21)
+      titleText.prepend(" / ");
+      QString parentItemName(shNode->GetItemName(parentItemID).c_str());
+      if (parentItemName.length() > 21)
       {
-      // Truncate item name if too long
-      parentItemName = parentItemName.left(9) + "..." + parentItemName.right(9);
+        // Truncate item name if too long
+        parentItemName = parentItemName.left(9) + "..." + parentItemName.right(9);
       }
-    titleText.prepend(parentItemName);
-    parentItemID = shNode->GetItemParent(parentItemID);
+      titleText.prepend(parentItemName);
+      parentItemID = shNode->GetItemParent(parentItemID);
     }
+  }
   this->setDefaultText(titleText);
 
   // Get icon for selected item
   std::string ownerPluginName = shNode->GetItemOwnerPluginName(selectedShItemID);
-  qSlicerSubjectHierarchyAbstractPlugin* ownerPlugin =
-    qSlicerSubjectHierarchyPluginHandler::instance()->pluginByName(ownerPluginName.c_str());
+  qSlicerSubjectHierarchyAbstractPlugin* ownerPlugin = qSlicerSubjectHierarchyPluginHandler::instance()->pluginByName(ownerPluginName.c_str());
   if (ownerPlugin)
-    {
+  {
     this->setDefaultIcon(ownerPlugin->icon(selectedShItemID));
-    }
+  }
   else
+  {
+    if (selectedShItemID != shNode->GetSceneItemID())
     {
-    qCritical() << Q_FUNC_INFO << ": No owner plugin for subject hierarchy item " << shNode->GetItemName(selectedShItemID).c_str();
-    this->setDefaultIcon(QIcon());
+      qCritical() << Q_FUNC_INFO << ": No owner plugin for subject hierarchy item " << shNode->GetItemName(selectedShItemID).c_str();
     }
+    this->setDefaultIcon(QIcon());
+  }
+}
+
+//-----------------------------------------------------------------------------
+void qMRMLSubjectHierarchyComboBox::onMRMLSceneCloseEnded(vtkObject* sceneObject)
+{
+  vtkMRMLScene* scene = vtkMRMLScene::SafeDownCast(sceneObject);
+  if (!scene)
+  {
+    return;
+  }
+
+  // Make sure the title generated from previous selection is cleared when closing the scene.
+  this->updateComboBoxTitleAndIcon(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID);
 }

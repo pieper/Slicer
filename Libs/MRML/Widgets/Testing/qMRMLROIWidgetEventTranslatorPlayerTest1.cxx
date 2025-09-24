@@ -52,15 +52,15 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLROIWidget* widget = reinterpret_cast<qMRMLROIWidget*>(data);
 
   Q_UNUSED(widget);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLROIWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLROIWidgetEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -81,17 +81,14 @@ int qMRMLROIWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
 
   widget->setMRMLROINode(roiNode.GetPointer());
 
-  etpWidget.addTestCase(widget,
-                        xmlDirectory + "qMRMLROIWidgetEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(widget, xmlDirectory + "qMRMLROIWidgetEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

@@ -4,37 +4,60 @@
 
 Volume rendering (also known as volume ray casting) is a visualization technique for displaying image volumes as 3D objects directly - without requiring segmentation.
 
-This is accomplished by specifying color and opacity for each voxel, based on its image intensity. Several presets are available for this mapping, for displaying bones,soft tissues, air, fat, etc. on CT and MR images. Users can fine-tune these presets for each image.
+This is accomplished by specifying color and opacity for each voxel, based on its image intensity. Several presets are available for this mapping, for displaying bones, soft tissues, air, fat, etc. on CT and MR images. Users can fine-tune these presets for each image.
 
 ## Use cases
 
 ### Display a CT or MRI volume
 
-- Load a data set (for example, use `Sample Data` module to load `CTChest` data set)
-- Go to `Data` module and right-click on the eye icon, and choose "Show in 3D views as volume rendering"
-- Right-click on the eye icon and choose "Volume rendering options" to switch to edit visualization options in Volume rendering module
-- Choose a different preset in Display section,
-- Adjust "Offset" slider to change what image intensity range is visible
+- Load a data set (for example, use `Sample Data` module to load "CTChest" data set)
+- Go to `Data` module
+- Show volume rendering:
+  - Option A: drag-and-drop the volume in the subject hierarchy tree into a 3D view
+  - Option B: right-click on the eye icon, and choose "Show in 3D views as volume rendering"
+
+To adjust volume rendering settings:
+- Option A: Switch to "Adjust window/level" mouse mode using the toolbar. Click on a displayed volume and click-and-drag to adjust the rendering settings.
+  - Moving the mouse vertically: shifts the opacity and color transfer functions, which changes what range of voxel values are visible in the image (similar to intensity "level" adjustment).
+  - Moving the mouse horizontally: shrinks or stretches the transfer functions (similar to intensity "window" adjustment).
+  - Holding down <kbd>Ctrl</kbd> key while starting the click-and drag and then moving the mouse vertically: adjusts the opacity of the volume.
+- Option B:
+  - Go to `Volume rendering` module and select the volume to be adjusted. This can be achieved by right-click on the eye icon in the `Data` module and choose "Volume rendering settings".
+  - Choose a different preset in Display section.
+  - Adjust "Offset" slider to change what image intensity range is visible.
 
 ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_volumerendering_basic.png)
 
 ### Render different volumes in two views
 
+Switch to a layout with multiple 3D views (for example "Dual 3D") using the toolbar and then use one of the two options below.
+
+Option A:
+- Go to `Data` module and drag-and-drop each volume into the 3D view
+
+Option B:
+- Go to `Volume Rendering` module
 - Open the "Inputs" section
 - Select the first volume
 - Click View list and uncheck "View2" (only "View1" should be checked)
-- Click the eye icon for the volume to show up in View1
+- Click the eye icon for the volume to show up in "View1"
 - Select the second volume
 - Click View list and uncheck "View1" (only "View2" should be checked)
-- Click the eye icon for the volume to show up in View2
+- Click the eye icon for the volume to show up in "View2"
 
 ![](https://github.com/Slicer/Slicer/releases/download/docs-resources/module_volumerendering_multiview.png)
 
-## Limitations
+### Hide certain regions of the volume
 
-- Only single-component scalar volumes can be used for volume rendering. [Vector to Scalar Volume](Module_VectorToScalarVolume) module can convert vector volume to scalar volume.
-- To render multiple overlapping volumes, select "VTK Multi-Volume" rendering in "Display" section. Currently, no cropping can be applied in this mode.
-- To reduce staircase artifacts during rendering, choose enable "Surface smoothing" in Advanced/Techniques/Advanced rendering properties section, or choose "Normal" or "Maximum" as quality.
+It may be necessary to hide certain regions of a volume, for example remove patient table, or remove ribs that would occlude the view of the heart or lungs. If the regions cannot be hidden by adjusting the cropping box (ROI) then an arbitrarily shaped regions can be blanked out from the volume by following these steps:
+
+- Go to the Segment Editor module
+- Use Paint or Scissors effect to specify the region that will be blanked out
+- Use Mask volume effect to fill the region with "empty" values. In CT volume, intensity value is typically set to -1000 (corresponding to HU of air).
+- Hide the volume rendering of the original volume and set up volume rendering for the masked volume
+- If adjusting the rendered region is needed, go back to Segment Editor module, modify the segmentation using Paint, Scissors, or other effects; and update the masked volume using Mask volume effect
+
+See [video demo/tutorial of these steps](https://youtu.be/xZwyW6SaoM4?t=12) for details. It is created on an older Slicer version, so some details may be different but the high-level workflow main workflow is still very similar.
 
 ## Panels and their use
 
@@ -49,16 +72,17 @@ This is accomplished by specifying color and opacity for each voxel, based on it
   - Shift: Move all the inner points (first and last excluded) of the current transfer functions to the right/left (lower/higher). It can be useful when a preset defines a ramp from 0 to 200 but your data requires a ramp from 1000 to 1200.
   - Crop: Simple controls for the cropping box (ROI). More controls are available in the "Advanced..." section. Enable/Disable cropping of the volume. Show/Hide the cropping box. Reset the box ROI to the volume's bounds.
   - Rendering: Select a volume rendering method. A default method can be set in the application settings Volume Rendering panel.
-    - VTK CPU Ray Casting (default): Available on all computers, regardless of capabilities of graphics hardware. The volume rendering is enterily realized on the CPU, therefore it is slower than other options.
-    - VTK GPU Ray Casting: Uses graphics hardware for rendering, typically much faster than CPU volume rendering. This is the recommended method for computers that have sufficiant graphics capabilities. It supports surface smoothing to remove staircase artifacts.
-    - VTK Multi-Volume: Uses graphics hardware for rendering. Can render multiple overlapping volumes. Currently does not support cropping.
+    - VTK CPU Ray Casting: Available on all computers, regardless of capabilities of graphics hardware. The volume rendering is entirely realized on the CPU, therefore it is slower than other options.
+    - VTK GPU Ray Casting (default): Uses graphics hardware for rendering, typically much faster than CPU volume rendering. This is the recommended method for computers that have sufficient graphics capabilities. It supports surface smoothing to remove staircase artifacts.
+    - VTK Multi-Volume: Uses graphics hardware for rendering. Can render multiple overlapping volumes but it has several limitations (see details in [limitations](#limitations) section at the bottom of this page.
 - Advanced: More controls to control the volume rendering. Contains 3 tabs: "Techniques", "Volume Properties" and "ROI"
   - Techniques: Advanced properties of the current volume rendering method.
     - Quality:
-      - Adaptive (default): quality is reduced while interacting with the view (rotating, changing volume rendering settings, etc.).
-        - Interactive speed: Ensure the given frame per second (FPS) is enforced in the views during interaction. The higher the FPS, the lower the resolution of the volume rendering
-      - Normal: fixed rendering quality, should work well for volumes that the renderer can handle without difficulties.
+      - Adaptive: quality is reduced while interacting with the view (rotating, changing volume rendering settings, etc.). This mechanism relies on measuring the current rendering time and adjusting quality (number of casted rays, sampling distances, etc.) for the next rendering request to achieve the requested frame rate. This works very well for CPUs because the computation time is very predictable, but for GPU volume rendering fixed quality ("Normal" setting) may be more suitable.
+        - Interactive speed: Ensure the given frame per second (FPS) is enforced in the views during interaction. The higher the FPS, the lower the resolution of the volume rendering.
+      - Normal (default): fixed rendering quality, should work well for volumes that the renderer can handle without difficulties.
       - Maximum: oversamples the image to achieve higher image quality, at the cost of slowing down the rendering.
+    - Auto-release resources: When a volume is shown using volume rendering then graphics resources are allocated (GPU memory, precomputed gradient and space leaping volumes, etc.). This flag controls if these resources are automatically released when the volume is hidden. Releasing the resources reduces memory usage, but it increases the time required to show the volume again. Default value can be set in application settings Volume Rendering panel.
     - Technique:
       - Composite with shading (default): display as a shaded surface
       - Maximum intensity projection: display brightest voxel value encountered in each projection line
@@ -67,7 +91,7 @@ This is accomplished by specifying color and opacity for each voxel, based on it
   - Volume Properties: Advanced views of the transfer functions.
     - Synchronize with Volumes module: show volume rendering with the same color mapping that is used in slice views
       - Click: Apply once the properties (window/level, threshold, lut) of the Volumes module to the Volume Rendering module.
-      - Checkbox: By clicking on the checkbox, you can toggle the button. When toggled, any modification occuring in the Volumes module is continuously applied to the volume rendering
+      - Checkbox: By clicking on the checkbox, you can toggle the button. When toggled, any modification occurring in the Volumes module is continuously applied to the volume rendering
     - Control point properties: X = scalar value, O = opacity, M = mid-point, S = sharpness
     - Keyboard/mouse shortcuts:
       - Left button click: Set current point or create a new point if no point is under the mouse.
@@ -80,15 +104,39 @@ This is accomplished by specifying color and opacity for each voxel, based on it
       - Backspace key : Delete the current point and set the previous point as current
       - ESC key: Unselect all points.
     - Scalar Opacity Mapping: Opacity transfer function. Threshold mode: enabling threshold controls the transfer function using range sliders in addition to control points.
-    - Scalar Color Mapping: Color transfer function.
+    - Scalar Color Mapping: Color transfer function. This section is not displayed for color (RGB or RGBA) volumes, as no scalar to color mapping is performed in this case (but each voxel's color is used directly).
     - Gradient Opacity: Gradient opacity transfer function. This controls the opacity according to how large a density gradient next to the voxel is.
     - Advanced:
-      - Interpolation: Linear (default for scalar volumes) or nearest neighboor (default for labelmaps) interpolation.
+      - Interpolation: Linear (default for scalar volumes) or nearest neighbor (default for labelmaps) interpolation.
       - Shade: Enable/Disable shading. Shading uses light and material properties. Disable it to display X-ray-like projection.
       - Material: Material properties of the volume to compute shading effect.
   - ROI: More controls for the cropping box.
     - Display Clipping box: Show hide the bounds of the ROI box.
-    - Interactive mode: Control wether the cropping box is instantaneously updated when dragging the sliders or only when the mouse button is released.
+    - Interactive mode: Control whether the cropping box is instantaneously updated when dragging the sliders or only when the mouse button is released.
+
+## Limitations
+
+- To render multiple overlapping volumes, select "VTK Multi-Volume" rendering in "Display" section. This renderer is still experimental and has limitations such as:
+  - Cropping is not supported (cropping ROI is ignored)
+  - RGB volume rendering is not supported (volume does not appear)
+  - Only "Composite with shading" rendering technique is supported (volume does not appear if "Maximum Intensity Projection" or "Minimum Intensity Projection" technique is selected)
+- To reduce staircase artifacts during rendering, choose enable "Surface smoothing" in Advanced/Techniques/Advanced rendering properties section, or choose "Normal" or "Maximum" as quality.
+- The volume must not be under a warping (affine or non-linear) transformation. To render a warped volume, the transform must be hardened on the volume. (see [related issue](https://github.com/Slicer/Slicer/issues/6648))
+- If the application crashes when rotating or zooming a volume: This indicates that you get a TDR error, i.e., the operating system shuts down applications that keep the graphics card busy for too long. This happens because the size of the volume is too large for your GPU to comfortably handle. There are several ways to work around this:
+  - Option A: Run the code snippet in the Python console (<kbd>Ctrl</kbd>-<kbd>3</kbd>) to split the volume to smaller chunks (that way you have a better chance that the graphics card will not be unresponsive for too long).
+    ```python
+    slicer.vtkMRMLVolumeRenderingDisplayableManager.SetMaximum3DTextureSize(400)
+    for vrDisplayNode in getNodesByClass('vtkMRMLVolumeRenderingDisplayNode'):
+        slicer.util.arrayFromVolumeModified(vrDisplayNode.GetVolumeNode())
+    ```
+  - Option B: Crop and downsample your volume using Crop volume and volume render this smaller volume.
+  - Option C: Increase TDR delay value in registry (see details [here](https://docs.microsoft.com/en-us/windows-hardware/drivers/display/tdr-registry-keys))
+  - Option D: Use CPU volume rendering.
+  - Option E: Upgrade your computer with a stronger graphics card.
+
+## Information for developers
+
+See examples and other developer information in [Developer guide](../../developer_guide/modules/volumerendering) and [Script repository](../../developer_guide/script_repository.md#volumes).
 
 ## Contributors
 

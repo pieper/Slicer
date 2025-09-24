@@ -41,7 +41,7 @@
 
 // STD includes
 
-int qMRMLSceneCategoryModelTest1(int argc, char * argv [])
+int qMRMLSceneCategoryModelTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -58,7 +58,7 @@ int qMRMLSceneCategoryModelTest1(int argc, char * argv [])
   nodeFactory.createNode("vtkMRMLViewNode");
   nodeFactory.createNode("vtkMRMLLinearTransformNode");
   nodeFactory.removeAttribute("Category");
-  nodeFactory.createNode("vtkMRMLDoubleArrayNode");
+  nodeFactory.createNode("vtkMRMLTableNode");
   model.setMRMLScene(scene.GetPointer());
   nodeFactory.createNode("vtkMRMLScalarVolumeNode");
   nodeFactory.addAttribute("Category", "Second Category");
@@ -68,19 +68,16 @@ int qMRMLSceneCategoryModelTest1(int argc, char * argv [])
   nodeFactory.createNode("vtkMRMLViewNode");
   nodeFactory.createNode("vtkMRMLViewNode");
 
-  QStringList scenePreItems =
-    QStringList() << "pre 1" << "pre 2" << "separator";
+  QStringList scenePreItems = QStringList() << "pre 1" << "pre 2" << "separator";
   model.setPreItems(scenePreItems, nullptr);
   model.setPreItems(scenePreItems, model.mrmlSceneItem());
 
-  if (model.itemFromCategory("Second Category") == nullptr ||
+  if (model.itemFromCategory("Second Category") == nullptr || //
       model.itemFromCategory("Second Category") == model.mrmlSceneItem())
-    {
-    std::cerr << "Wrong category. Item: "
-              << model.itemFromCategory("Second Category")
-              << " scene item: " << model.mrmlSceneItem() << std::endl;
+  {
+    std::cerr << "Wrong category. Item: " << model.itemFromCategory("Second Category") << " scene item: " << model.mrmlSceneItem() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   model.setPreItems(scenePreItems, model.itemFromCategory("Second Category"));
 
   QTreeView* view = new QTreeView(nullptr);
@@ -88,11 +85,10 @@ int qMRMLSceneCategoryModelTest1(int argc, char * argv [])
   view->show();
   view->resize(500, 800);
 
-  if (argc < 2 || QString(argv[1]) != "-I" )
-    {
+  if (argc < 2 || QString(argv[1]) != "-I")
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }
-

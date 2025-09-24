@@ -1,7 +1,20 @@
 
 set(Slicer_PYTHON_SCRIPTS
   slicer/__init__
+  slicer/cli
+  slicer/i18n
   slicer/logic
+  slicer/parameterNodeWrapper/__init__
+  slicer/parameterNodeWrapper/default
+  slicer/parameterNodeWrapper/guiCreation
+  slicer/parameterNodeWrapper/guiConnectors
+  slicer/parameterNodeWrapper/parameterInfo
+  slicer/parameterNodeWrapper/parameterPack
+  slicer/parameterNodeWrapper/serializers
+  slicer/parameterNodeWrapper/types
+  slicer/parameterNodeWrapper/util
+  slicer/parameterNodeWrapper/validators
+  slicer/parameterNodeWrapper/wrapper
   slicer/ScriptedLoadableModule
   slicer/slicerqt
   slicer/testing
@@ -22,21 +35,10 @@ set(Slicer_PYTHON_MODULES_CONFIG "
 # slicer base libs
 'logic',
 'qSlicerBaseQTCorePythonQt',
+'qSlicerBaseQTCLIPythonQt',
 'qSlicerBaseQTGUIPythonQt',
 'qSlicerBaseQTAppPythonQt'"
   )
-
-if(Slicer_BUILD_CLI_SUPPORT)
-  list(APPEND Slicer_PYTHON_SCRIPTS
-    slicer/cli
-    )
-  set(Slicer_PYTHON_MODULES_CONFIG "${Slicer_PYTHON_MODULES_CONFIG},
-# CLI logic (Slicer_BUILD_CLI_SUPPORT:ON)
-'qSlicerBaseQTCLIPython',
-'qSlicerBaseQTCLIPythonQt',
-"
-  )
-endif()
 
 configure_file(
   slicer/kits.py.in

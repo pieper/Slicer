@@ -31,20 +31,20 @@ class vtkMatrix4x4;
 class vtkMRMLNode;
 class qSlicerTransformsModuleWidgetPrivate;
 
-class Q_SLICER_QTMODULES_TRANSFORMS_EXPORT qSlicerTransformsModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_TRANSFORMS_EXPORT qSlicerTransformsModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerTransformsModuleWidget(QWidget *parent=nullptr);
+  qSlicerTransformsModuleWidget(QWidget* parent = nullptr);
   ~qSlicerTransformsModuleWidget() override;
 
   /// Reimplemented for internal reasons
   void setMRMLScene(vtkMRMLScene* scene) override;
 
+  void enter() override;
+  void exit() override;
   bool setEditedNode(vtkMRMLNode* node, QString role = QString(), QString context = QString()) override;
 
 public slots:
@@ -60,10 +60,13 @@ public slots:
   void split();
 
 protected:
-
   void setup() override;
 
 protected slots:
+
+  /// Called when a subject hierarchy item is modified.
+  /// Updates current item selection to reflect changes in item (such as display node creation)
+  void onSubjectHierarchyItemModified(vtkObject* caller, void* callData);
 
   void onTranslateFirstButtonPressed(bool checked);
   void onNodeSelected(vtkMRMLNode* node);
@@ -71,6 +74,10 @@ protected slots:
 
   void copyTransform();
   void pasteTransform();
+
+  void updateCenterOfTransformationWidgets();
+  void onCenterOfTransformationChanged();
+  void resetCenterOfTransformation();
 
   void transformSelectedNodes();
   void untransformSelectedNodes();
@@ -85,7 +92,7 @@ protected slots:
 protected:
   ///
   /// Convenient method to return the coordinate system currently selected
-  int coordinateReference()const;
+  int coordinateReference() const;
 
 protected:
   QScopedPointer<qSlicerTransformsModuleWidgetPrivate> d_ptr;

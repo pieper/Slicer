@@ -29,9 +29,7 @@ class qSlicerModelsReaderPrivate;
 class vtkSlicerModelsLogic;
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_Models
-class qSlicerModelsReader
-  : public qSlicerFileReader
+class qSlicerModelsReader : public qSlicerFileReader
 {
   Q_OBJECT
 public:
@@ -40,12 +38,18 @@ public:
   ~qSlicerModelsReader() override;
 
   void setModelsLogic(vtkSlicerModelsLogic* modelsLogic);
-  vtkSlicerModelsLogic* modelsLogic()const;
+  vtkSlicerModelsLogic* modelsLogic() const;
 
-  QString description()const override;
-  IOFileType fileType()const override;
-  QStringList extensions()const override;
-  qSlicerIOOptions* options()const override;
+  QString description() const override;
+  IOFileType fileType() const override;
+  QStringList extensions() const override;
+  qSlicerIOOptions* options() const override;
+
+  /// Returns a positive number (>0) if the reader can load this file.
+  /// It uses default confidence value except for .vtk files. For .vtk image files it returns
+  /// lower than default (0.0, because this reader cannot read images) and
+  /// for mesh files it returns higher than default (0.6).
+  double canLoadFileConfidence(const QString& file) const override;
 
   bool load(const IOProperties& properties) override;
 

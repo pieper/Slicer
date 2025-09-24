@@ -58,15 +58,18 @@ function(gp_item_default_embedded_path_override item default_embedded_path_var)
     if(item MATCHES "libpython[^/]+\\.dylib$")
       set(path "@fixup_path@/lib/Python/lib")
     endif()
+    # VTK python modules
+    if(item MATCHES "@CMAKE_BINARY_DIR@/.+/vtkmodules/[^/]+\\.so$")
+      set(path "@fixup_path@/@Slicer_BUNDLE_EXTENSIONS_LOCATION@bin/Python/vtkmodules")
+    elseif(item MATCHES "vtkmodules/[^/]+\\.so$")
+      set(path "@fixup_path@/bin/Python/vtkmodules")
+    endif()
   endif()
 
-  set(Slicer_BUILD_CLI_SUPPORT "@Slicer_BUILD_CLI_SUPPORT@")
-  if(Slicer_BUILD_CLI_SUPPORT)
-    if(item MATCHES "@Slicer_BINARY_INNER_SUBDIR@/@Slicer_CLIMODULES_LIB_DIR@/[^/]+\\.dylib$")
-      set(path "@fixup_path@/@Slicer_CLIMODULES_LIB_DIR@")
-    elseif(item MATCHES "@Slicer_CLIMODULES_LIB_DIR@/[^/]+\\.dylib$")
-      set(path "@fixup_path@/@Slicer_BUNDLE_EXTENSIONS_LOCATION@@Slicer_CLIMODULES_LIB_DIR@")
-    endif()
+  if(item MATCHES "@Slicer_BINARY_INNER_SUBDIR@/@Slicer_CLIMODULES_LIB_DIR@/[^/]+\\.dylib$")
+    set(path "@fixup_path@/@Slicer_CLIMODULES_LIB_DIR@")
+  elseif(item MATCHES "@Slicer_CLIMODULES_LIB_DIR@/[^/]+\\.dylib$")
+    set(path "@fixup_path@/@Slicer_BUNDLE_EXTENSIONS_LOCATION@@Slicer_CLIMODULES_LIB_DIR@")
   endif()
 
   set(Slicer_BUILD_QTLOADABLEMODULES "@Slicer_BUILD_QTLOADABLEMODULES@")
@@ -98,6 +101,24 @@ function(gp_item_default_embedded_path_override item default_embedded_path_var)
       )
     set(path "@fixup_path@/@Slicer_BUNDLE_EXTENSIONS_LOCATION@@Slicer_THIRDPARTY_LIB_DIR@")
   endif()
+
+  set(extension_fixup_embedded_path_overrides "@EXTENSION_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES@")
+  foreach(pair IN LISTS extension_fixup_embedded_path_overrides)
+    string(REPLACE "|" ";" split_pair "${pair}")
+    list(LENGTH split_pair split_len)
+    if(NOT split_len EQUAL 2)
+      message(WARNING "Invalid override pair '${pair}', expected format <regex>|<relative_path>")
+      continue()
+    endif()
+    list(GET split_pair 0 regex)
+    list(GET split_pair 1 relative_path)
+
+    if(item MATCHES "@Slicer_BINARY_INNER_SUBDIR@/${regex}")
+      # Ignore Slicer libraries. They are already expected to be fixed up.
+    elseif(item MATCHES "${regex}")
+      set(path "@fixup_path@/@Slicer_BUNDLE_EXTENSIONS_LOCATION@${relative_path}")
+    endif()
+  endforeach()
 
   math(EXPR lib_current $ENV{FIXUP_LIB_CURRENT}+1)
   set(ENV{FIXUP_LIB_CURRENT} ${lib_current})
@@ -196,9 +217,9 @@ function(fixup_extension ext libs dirs)
   #  get_filename_component(exepath "${executable}" PATH)
     set(exepath "${bundle}/Contents/MacOS")
 
-    # TODO: Extract list of rpath dirs automatically. On MacOSX, the following could be
+    # TODO: Extract list of rpath dirs automatically. On macOS, the following could be
     #       done: otool -l path/to/executable | grep -A 3 LC_RPATH | grep path
-    #       See http://www.mikeash.com/pyblog/friday-qa-2009-11-06-linking-and-install-names.html#comment-87ea054b4839586412727dcfc94c79d2
+    #       See https://www.mikeash.com/pyblog/friday-qa-2009-11-06-linking-and-install-names.html#comment-87ea054b4839586412727dcfc94c79d2
     set(GP_RPATH_DIR ${bundle}/Contents)
     message(STATUS "  GP_RPATH_DIR='${GP_RPATH_DIR}'")
 
@@ -280,7 +301,7 @@ function(fixup_extension ext libs dirs)
           message(STATUS "${i}/${n}: fixing up '${${key}_RESOLVED_EMBEDDED_ITEM}'")
           fixup_bundle_item("${${key}_RESOLVED_EMBEDDED_ITEM}" "${exepath}" "${dirs}")
         else()
-          message(STATUS "${i}/${n}: fix-up not required on this platform '${${key}_RESOLVED_EMBEDDED_ITEM}'")
+          message(STATUS "${i}/${n}: fixup not required on this platform '${${key}_RESOLVED_EMBEDDED_ITEM}'")
         endif()
       endif()
     endforeach()
@@ -313,6 +334,12 @@ function(fixup_slicer_extension)
 
   set(Slicer_USE_PYTHONQT "@Slicer_USE_PYTHONQT@")
 
+  if(Slicer_USE_PYTHONQT)
+    list(APPEND candidates_pattern
+      "${ext_dir}/Contents/@Slicer_BUNDLE_EXTENSIONS_LOCATION@bin/Python/vtkmodules/*.so"
+      )
+  endif()
+
   set(Slicer_BUILD_QTLOADABLEMODULES "@Slicer_BUILD_QTLOADABLEMODULES@")
   if(Slicer_BUILD_QTLOADABLEMODULES)
     list(APPEND candidates_pattern
@@ -324,6 +351,11 @@ function(fixup_slicer_extension)
         "${ext_dir}/Contents/@Slicer_BUNDLE_EXTENSIONS_LOCATION@@Slicer_QTLOADABLEMODULES_LIB_DIR@/qSlicer*PythonQt.so"
         )
     endif()
+  endif()
+
+  set(extension_candidates_patterns "@EXTENSION_FIXUP_BUNDLE_CANDIDATES_PATTERNS@")
+  if(extension_candidates_patterns)
+    list(APPEND candidates_pattern ${extension_candidates_patterns})
   endif()
 
   set(libs "")
@@ -343,10 +375,7 @@ function(fixup_slicer_extension)
   if(Slicer_BUILD_QTLOADABLEMODULES)
     list(APPEND libs_path "@EXTENSION_BINARY_DIR@/@Slicer_QTLOADABLEMODULES_LIB_DIR@")
   endif()
-  set(Slicer_BUILD_CLI_SUPPORT "@Slicer_BUILD_CLI_SUPPORT@")
-  if(Slicer_BUILD_CLI_SUPPORT)
-    list(APPEND libs_path "@EXTENSION_BINARY_DIR@/@Slicer_CLIMODULES_LIB_DIR@")
-  endif()
+  list(APPEND libs_path "@EXTENSION_BINARY_DIR@/@Slicer_CLIMODULES_LIB_DIR@")
 
   set(extension_libs_path "@EXTENSION_FIXUP_BUNDLE_LIBRARY_DIRECTORIES@")
   if(extension_libs_path)
@@ -392,4 +421,3 @@ function(fixup_slicer_extension)
 endfunction()
 
 fixup_slicer_extension()
-

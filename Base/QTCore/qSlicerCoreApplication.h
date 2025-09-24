@@ -51,9 +51,14 @@ class ctkPythonConsole;
 #ifdef Slicer_BUILD_EXTENSIONMANAGER_SUPPORT
 class qSlicerExtensionsManagerModel;
 #endif
+#ifdef Slicer_BUILD_APPLICATIONUPDATE_SUPPORT
+class qSlicerApplicationUpdateManager;
+#endif
 class vtkDataIOManagerLogic;
 class vtkSlicerApplicationLogic;
+class vtkMRMLAbstractLogic;
 class vtkMRMLApplicationLogic;
+class vtkMRMLMessageCollection;
 class vtkMRMLRemoteIOLogic;
 class vtkMRMLScene;
 
@@ -71,6 +76,8 @@ class Q_SLICER_BASE_QTCORE_EXPORT qSlicerCoreApplication : public QApplication
   Q_PROPERTY(QString defaultScenePath READ defaultScenePath WRITE setDefaultScenePath)
   Q_PROPERTY(QString slicerSharePath READ slicerSharePath CONSTANT)
   Q_PROPERTY(QString temporaryPath READ temporaryPath WRITE setTemporaryPath)
+  Q_PROPERTY(QString cachePath READ cachePath WRITE setCachePath)
+  Q_PROPERTY(QString startupWorkingPath READ startupWorkingPath CONSTANT)
   Q_PROPERTY(QString launcherExecutableFilePath READ launcherExecutableFilePath CONSTANT)
   Q_PROPERTY(QString launcherSettingsFilePath READ launcherSettingsFilePath CONSTANT)
   Q_PROPERTY(QString slicerDefaultSettingsFilePath READ slicerDefaultSettingsFilePath CONSTANT)
@@ -86,34 +93,42 @@ class Q_SLICER_BASE_QTCORE_EXPORT qSlicerCoreApplication : public QApplication
   Q_PROPERTY(QString revision READ revision CONSTANT)
   Q_PROPERTY(int majorVersion READ majorVersion CONSTANT)
   Q_PROPERTY(int minorVersion READ minorVersion CONSTANT)
+  Q_PROPERTY(QLocale applicationLocale READ applicationLocale CONSTANT)
+  Q_PROPERTY(QString applicationLocaleName READ applicationLocaleName CONSTANT)
+  Q_PROPERTY(QString documentationBaseUrl READ documentationBaseUrl)
+  Q_PROPERTY(QString documentationVersion READ documentationVersion CONSTANT)
+  Q_PROPERTY(QString documentationLanguage READ documentationLanguage CONSTANT)
   Q_PROPERTY(QString platform READ platform CONSTANT)
   Q_PROPERTY(QString arch READ arch CONSTANT)
   Q_PROPERTY(QString os READ os CONSTANT)
   Q_PROPERTY(bool isCustomMainApplication READ isCustomMainApplication CONSTANT)
   Q_PROPERTY(QString mainApplicationName READ mainApplicationName CONSTANT)
+  Q_PROPERTY(QString mainApplicationDisplayName READ mainApplicationDisplayName CONSTANT)
   Q_PROPERTY(QString mainApplicationRepositoryUrl READ mainApplicationRepositoryUrl CONSTANT)
   Q_PROPERTY(QString mainApplicationRepositoryRevision READ mainApplicationRepositoryRevision CONSTANT)
   Q_PROPERTY(QString mainApplicationRevision READ mainApplicationRevision CONSTANT)
   Q_PROPERTY(int mainApplicationMajorVersion READ mainApplicationMajorVersion CONSTANT)
   Q_PROPERTY(int mainApplicationMinorVersion READ mainApplicationMinorVersion CONSTANT)
   Q_PROPERTY(int mainApplicationPatchVersion READ mainApplicationPatchVersion CONSTANT)
+  Q_PROPERTY(bool isUsageLoggingSupported READ isUsageLoggingSupported CONSTANT)
 
 public:
-
   typedef QApplication Superclass;
-  qSlicerCoreApplication(int &argc, char **argv);
+  qSlicerCoreApplication(int& argc, char** argv);
   ~qSlicerCoreApplication() override;
 
-  /// Return a reference to the application singleton
+  /// Return a reference to the application singleton.
+  /// It returns nullptr if the current application is not based on qSlicerCoreApplication class
+  /// (for example, in Qt Designer executable loads widget plugins).
   static qSlicerCoreApplication* application();
 
   /// Used in addition to existing QCoreApplication attribute.
   /// \sa Qt::ApplicationAttribute
   enum ApplicationAttribute
-    {
+  {
     AA_DisablePython = 1000,
     AA_EnableTesting
-    };
+  };
 
   /// \sa QCoreApplication::setAttribute
   static void setAttribute(qSlicerCoreApplication::ApplicationAttribute attribute, bool on = true);
@@ -139,6 +154,9 @@ public:
   /// \sa environment()
   Q_INVOKABLE QProcessEnvironment startupEnvironment() const;
 
+  /// Current working directory at the time the application was started.
+  QString startupWorkingPath() const;
+
   /// \brief Returns the current environment.
   ///
   /// The returned environment contains all values found in the launcher
@@ -155,24 +173,25 @@ public:
   ///
   /// \note Using this function will ensure that the environment is up-to-date for
   /// processes started using QProcess or other alternative methods.
-  void setEnvironmentVariable(const QString& key, const QString& value);
+  Q_INVOKABLE void setEnvironmentVariable(const QString& key, const QString& value);
 
   /// Returns True if environment variable identified by \a key is set to \a value
-  bool isEnvironmentVariableValueSet(const QString& key, const QString& value);
+  Q_INVOKABLE bool isEnvironmentVariableValueSet(const QString& key, const QString& value);
 
   /// Convenient function allowing to prepend \a value to environment variable identified by
   /// by \a key using \a separator
-  void prependEnvironmentVariable(const QString& key, const QString& value, QChar separator = ';');
+  Q_INVOKABLE void prependEnvironmentVariable(const QString& key, const QString& value, QChar separator = ';');
 
   /// Convenient function allowing to append \a value to environment variable identified by
   /// by \a key using \a separator
-  void appendEnvironmentVariable(const QString& key, const QString& value, QChar separator = ';');
+  Q_INVOKABLE void appendEnvironmentVariable(const QString& key, const QString& value, QChar separator = ';');
 
   /// Parse arguments
   /// \note If exitWhenDone is True, it's your responsibility to exit the application
   void parseArguments(bool& exitWhenDone);
 
-  enum ReturnCode{
+  enum ReturnCode
+  {
     ExitNotRequested = -1,
     ExitSuccess = EXIT_SUCCESS,
     ExitFailure = EXIT_FAILURE
@@ -191,7 +210,7 @@ public:
   /// EXIT_FAILURE (1) if the application failed.
   ///
   /// \sa exec()
-  int returnCode()const;
+  int returnCode() const;
 
   /// Enters the main event loop and waits until exit(), quit() or terminate() is called.
   ///
@@ -203,7 +222,6 @@ public:
   /// cleanup happens only if testing mode is enabled.
   ///
   /// \sa QApplication::exec(), returnCode()
-  /// \sa qSlicerCoreCommandOptions::isTestingEnabled()
   static int exec();
 
   /// Get MRML Scene
@@ -211,6 +229,9 @@ public:
 
   /// Get application logic
   Q_INVOKABLE vtkSlicerApplicationLogic* applicationLogic() const;
+
+  // Convenience method for getting a module logic from the application logic.
+  Q_INVOKABLE vtkMRMLAbstractLogic* moduleLogic(const QString& moduleName) const;
 
   /// Get slicer home directory
   /// \sa slicerHome
@@ -235,7 +256,7 @@ public:
 
   /// Returns True if module identified by \a moduleFileName is a descendant of slicer home.
   /// \sa slicerHome()
-  bool isEmbeddedModule(const QString& moduleFileName)const;
+  bool isEmbeddedModule(const QString& moduleFileName) const;
 
   /// Get slicer default temporary directory
   QString defaultTemporaryPath() const;
@@ -246,26 +267,39 @@ public:
   /// Set slicer temporary directory
   void setTemporaryPath(const QString& path);
 
+  /// Get default cache directory.
+  /// \sa cachePath()
+  QString defaultCachePath() const;
+
+  /// Get cache directory.
+  /// It is a temporary folder that contains files that can be useful to be kept between application sessions.
+  /// For example, files downloaded from network, which may not need to be downloaded again if stored locally.
+  QString cachePath() const;
+
+  /// Set cache directory.
+  /// \sa cachePath()
+  void setCachePath(const QString& path);
+
   /// If any, return slicer launcher executable file path.
-  QString launcherExecutableFilePath()const;
+  QString launcherExecutableFilePath() const;
 
   /// If any, return slicer launcher settings file path.
-  QString launcherSettingsFilePath()const;
+  QString launcherSettingsFilePath() const;
 
   /// If any, return slicer user settings file path specific to a given revision of Slicer.
-  QString launcherRevisionSpecificUserSettingsFilePath()const;
+  QString launcherRevisionSpecificUserSettingsFilePath() const;
 
   /// If any, return slicer default settings file path.
   /// \sa defaultSettings()
-  QString slicerDefaultSettingsFilePath()const;
+  QString slicerDefaultSettingsFilePath() const;
 
   /// Return slicer user settings file path.
   /// \sa userSettings()
-  QString slicerUserSettingsFilePath()const;
+  QString slicerUserSettingsFilePath() const;
 
   /// Return slicer settings file path specific to a given revision of Slicer.
   /// \sa revisionUserSettings()
-  QString slicerRevisionUserSettingsFilePath()const;
+  QString slicerRevisionUserSettingsFilePath() const;
 
   /// Get slicer default extensions path
   QString defaultExtensionsInstallPath() const;
@@ -276,19 +310,17 @@ public:
   /// Set slicer extension directory
   void setExtensionsInstallPath(const QString& path);
 
-  void gatherExtensionsHistoryInformationOnStartup();
-
   /// If any, this method return the build intermediate directory
-  /// See $(IntDir) on http://msdn.microsoft.com/en-us/library/c02as0cs%28VS.71%29.aspx
-  QString intDir()const;
+  /// See $(IntDir) on https://msdn.microsoft.com/en-us/library/c02as0cs%28VS.71%29.aspx
+  QString intDir() const;
 
   /// Return true is this instance of Slicer is running from an installed directory
-  bool isInstalled()const;
+  bool isInstalled() const;
 
   /// \brief Return the release type of this instance of Slicer.
   ///
   /// Release type can be `Experimental`, `Nightly` or `Stable`.
-  QString releaseType()const;
+  QString releaseType() const;
 
   /// Associate a module with a node type.
   /// It is currently only used for determining which module can edit a specific node.
@@ -307,14 +339,14 @@ public:
 
 #ifdef Slicer_USE_PYTHONQT
   /// Get python manager
-  qSlicerCorePythonManager* corePythonManager()const;
+  qSlicerCorePythonManager* corePythonManager() const;
 
   /// Set the IO manager
   /// \note qSlicerCoreApplication takes ownership of the object
   void setCorePythonManager(qSlicerCorePythonManager* pythonManager);
 
   /// Get python console
-  ctkPythonConsole* pythonConsole()const;
+  ctkPythonConsole* pythonConsole() const;
 
   /// Set the python console
   /// \note qSlicerCoreApplication will not take ownership of the object,
@@ -325,29 +357,38 @@ public:
 #endif
 
 #ifdef Slicer_BUILD_EXTENSIONMANAGER_SUPPORT
-  /// Get extension manager model
-  Q_INVOKABLE qSlicerExtensionsManagerModel* extensionsManagerModel()const;
+  /// Get extensions manager model
+  Q_INVOKABLE qSlicerExtensionsManagerModel* extensionsManagerModel() const;
 
-  /// Set the extension manager model
+  /// Set the extensions manager model
   /// \note qSlicerCoreApplication takes ownership of the object
   void setExtensionsManagerModel(qSlicerExtensionsManagerModel* model);
 #endif
 
+#ifdef Slicer_BUILD_APPLICATIONUPDATE_SUPPORT
+  /// Get extensions manager model
+  Q_INVOKABLE qSlicerApplicationUpdateManager* applicationUpdateManager() const;
+
+  /// Set the application updates model
+  /// \note qSlicerCoreApplication takes ownership of the object
+  void setapplicationUpdateManager(qSlicerApplicationUpdateManager* model);
+#endif
+
   /// Get errorLogModel
-  Q_INVOKABLE ctkErrorLogAbstractModel* errorLogModel()const;
+  Q_INVOKABLE ctkErrorLogAbstractModel* errorLogModel() const;
 
   /// Get the module manager
-  Q_INVOKABLE qSlicerModuleManager* moduleManager()const;
+  Q_INVOKABLE qSlicerModuleManager* moduleManager() const;
 
   /// Get the IO manager
-  Q_INVOKABLE qSlicerCoreIOManager* coreIOManager()const;
+  Q_INVOKABLE qSlicerCoreIOManager* coreIOManager() const;
 
   /// Set the IO manager
   /// \note qSlicerCoreApplication takes ownership of the object
   void setCoreIOManager(qSlicerCoreIOManager* ioManager);
 
   /// Get coreCommandOptions
-  qSlicerCoreCommandOptions* coreCommandOptions()const;
+  qSlicerCoreCommandOptions* coreCommandOptions() const;
 
   /// Set coreCommandOptions
   /// \note qSlicerCoreApplication takes ownership of the object
@@ -355,42 +396,50 @@ public:
 
   /// Get slicer application default settings.
   /// \sa slicerDefaultSettingsFilePath()
-  Q_INVOKABLE QSettings* defaultSettings()const;
+  Q_INVOKABLE QSettings* defaultSettings() const;
 
   /// Get slicer application user settings
   /// \note It will also instantiate a QSettings object if required.
   /// \sa slicerUserSettingsFilePath()
-  Q_INVOKABLE QSettings* userSettings()const;
+  Q_INVOKABLE QSettings* userSettings() const;
 
   /// This function has been deprecated: userSettings() should be used.
   /// \deprecated
   /// \sa userSettings()
-  Q_INVOKABLE QSettings* settings()const;
+  Q_INVOKABLE QSettings* settings() const;
 
   /// Get revision specific slicer application user settings
   /// \note It will also instantiate a QSettings object if required.
   /// \sa slicerRevisionSpecificUserSettingsFilePath()
-  Q_INVOKABLE QSettings* revisionUserSettings()const;
+  Q_INVOKABLE QSettings* revisionUserSettings() const;
 
   /// \brief Return if main application is custom application (not Slicer).
-  bool isCustomMainApplication()const;
+  bool isCustomMainApplication() const;
 
   /// \brief Return the name of the main application.
-  QString mainApplicationName()const;
+  /// This property represents the internal, programmatic name of the application.
+  /// It is primarily used for identifying the application in system contexts.
+  QString mainApplicationName() const;
+
+  /// \brief Return the display name of the main application.
+  /// This property represents the user-visible name of the application.
+  /// It is intended for display in user interfaces, such as window titles,
+  /// taskbar entries, or application menus.
+  QString mainApplicationDisplayName() const;
 
   /// Return the main application's source repository URL associated with this build.
   /// Useful for custom applications.
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString mainApplicationRepositoryUrl()const;
+  QString mainApplicationRepositoryUrl() const;
 
   /// Return the main application's source repository Revision associated with this build.
   /// Useful for custom applications.
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString mainApplicationRepositoryRevision()const;
+  QString mainApplicationRepositoryRevision() const;
 
   /// Return the main application's user-friendly revision identifier.
   /// Useful for custom applications.
-  QString mainApplicationRevision()const;
+  QString mainApplicationRevision() const;
 
   /// Return the main application's major version number.
   /// Useful for custom applications.
@@ -404,29 +453,64 @@ public:
   /// Useful for custom applications.
   int mainApplicationPatchVersion() const;
 
+  /// Return the documentation base URL.
+  /// By default, https://slicer.readthedocs.io/{language}/{version}
+  /// but it can be changed in the application settings (DocumentationBaseURL).
+  /// Use "latest" version for Preview (installed preview release) and Experimental (developer build),
+  /// and use "majorVersion.minorVersion" for Stable release.
+  QString documentationBaseUrl() const;
+
+  /// Return the documentation version that can be used in URLs.
+  /// Returns "latest" version for Preview (installed preview release) and Experimental (developer build),
+  /// and use "majorVersion.minorVersion" for Stable release.
+  QString documentationVersion() const;
+
+  /// Return the documentation language that can be used in URLs.
+  /// Returns "en" if internationalization is disabled.
+  /// Currently, it is always the same as the name of the application locale name.
+  /// \sa applicationLocaleName
+  QString documentationLanguage() const;
+
+  /// Return the locale that is used for displaying localized content to users.
+  /// en_US locale is used if internationalization is disabled.
+  /// \sa applicationLocaleName, QLocale
+  QLocale applicationLocale() const;
+
+  /// Return the locale name that is used for displaying localized content to users.
+  /// en_US locale is used if internationalization is disabled.
+  /// It is different from applicationLocale in that this is just a string (so it cannot be readily
+  /// used for string formatting) and it may specify just a country code without a region.
+  /// \sa applicationLocale, QLocale
+  QString applicationLocaleName() const;
+
+  /// Return the documentation base URL.
+  /// By default, {documentationbaseurl}/user_guide/modules/{lowercasemodulename}.html
+  /// but it can be changed in the application settings (ModuleDocumentationURL).
+  Q_INVOKABLE QString moduleDocumentationUrl(const QString& moduleName) const;
+
   /// Return the copyrights of Slicer
-  virtual QString copyrights()const;
+  virtual QString copyrights() const;
 
   /// Return the acknowledgment text of Slicer
-  virtual QString acknowledgment()const;
+  virtual QString acknowledgment() const;
 
   /// Return the libraries of Slicer
-  virtual QString libraries()const;
+  virtual QString libraries() const;
 
   /// Return the Slicer source repository URL associated with this build
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString repositoryUrl()const;
+  QString repositoryUrl() const;
 
   /// Return the Slicer source repository Branch associated with this build
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString repositoryBranch()const;
+  QString repositoryBranch() const;
 
   /// Return the Slicer source repository Revision associated with this build
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString repositoryRevision()const;
+  QString repositoryRevision() const;
 
   /// Return Slicer's user-friendly revision identifier.
-  QString revision()const;
+  QString revision() const;
 
   /// Return the Slicer major version number
   int majorVersion() const;
@@ -436,15 +520,15 @@ public:
 
   /// Return the \a platform associated to this build
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString platform()const;
+  QString platform() const;
 
   /// Return the \a arch associated to this build
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString arch()const;
+  QString arch() const;
 
   /// Return the \a os associated to this build
   /// \sa qSlicerCoreApplicationPrivate::discoverRepository
-  QString os()const;
+  QString os() const;
 
 #ifdef Slicer_BUILD_DICOM_SUPPORT
   /// Return the application's main DICOM database.
@@ -455,21 +539,97 @@ public:
   QSharedPointer<ctkDICOMDatabase> dicomDatabaseShared() const;
 #endif
 
-  static void loadTranslations(const QString& dir);
+  /// Return list of folders where the application looks for translations (*.qm files)
+  Q_INVOKABLE static QStringList translationFolders();
 
-  static void loadLanguage();
+  /// Load translations from all *.qm files in the specified folders.
+  /// \sa loadLanguage()
+  Q_INVOKABLE static void loadTranslations(const QString& dir);
 
-  /// Load certificates bundled into '<slicerHome>/<SLICER_SHARE_DIR>/Slicer.crt'.
+  /// Load translations from all *.qm files in translation folders.
+  /// \sa translationFolders(), loadTranslations
+  Q_INVOKABLE static void loadLanguage();
+
+  /// Load SSL certificates bundle.
+  /// Path to the certificates bundle file can be retrieved using caCertificatesPath() method.
   /// For more details, see Slicer/Base/QTCore/Resources/Certs/README
-  /// Returns \a False if 'Slicer.crt' failed to be loaded.
+  /// Returns \a False if the certificate failed to be loaded.
   /// \sa QSslSocket::defaultCaCertificates()
-  static bool loadCaCertificates(const QString& slicerHome);
+  Q_INVOKABLE static bool loadCaCertificates(const QString& slicerHome);
+
+  /// Return path of certificates bundle.
+  /// The path is '<slicerHome>/<SLICER_SHARE_DIR>/Slicer.crt'.
+  Q_INVOKABLE static QString caCertificatesPath(const QString& slicerHome);
 
   Q_INVOKABLE int registerResource(const QByteArray& data);
 
   /// Print message on console.
   /// If error is true then the message is printed on stderr, otherwise on stdout.
-  Q_INVOKABLE void showConsoleMessage(QString message, bool error=true) const;
+  Q_INVOKABLE void showConsoleMessage(QString message, bool error = true) const;
+
+  /// Converts relative path to absolute path using slicerHome directory.
+  /// Returns absolute path unchanged.
+  Q_INVOKABLE QString toSlicerHomeAbsolutePath(const QString& path) const;
+
+  /// Converts paths within slicerHome directory to relative paths.
+  /// Leaves other paths unchanged.
+  Q_INVOKABLE QString toSlicerHomeRelativePath(const QString& path) const;
+
+  /// Converts relative path to absolute path using slicerHome directory.
+  /// Returns absolute path unchanged.
+  Q_INVOKABLE QStringList toSlicerHomeAbsolutePaths(const QStringList& path) const;
+
+  /// Converts paths within slicerHome directory to relative paths.
+  /// Leaves other paths unchanged.
+  Q_INVOKABLE QStringList toSlicerHomeRelativePaths(const QStringList& path) const;
+
+  /// This method can be called by Slicer core or extensions to record a software usage event.
+  /// The application does just emits a 'usageEventLogged' signal and it is up to modules to
+  /// use this information, for example to compute software usage statistics.
+  ///
+  /// \param component is 'core' for events logged by Slicer core modules, and the extension name for
+  /// events logged by modules in that extension.
+  /// \param event is the name of the event.
+  /// The event name must be shorter than 50 characters to avoid potential performance degradation.
+  /// The event name must not contain any information about the user or any of the processed data to
+  /// alleviate any privacy concerns when handling software usage data. To make it easier to write
+  /// filtering expressions for processing of usage data, follow these conventions for naming events:
+  /// Use only use lowercase letters, numbers, and underscore and dot characters in event names. Do not use space character.
+  /// Dot character can be used as separator to organized in a hierarchical structure (following conventions
+  /// of logging category names in Qt - see https://doc.qt.io/qt-6/qloggingcategory.html#creating-category-objects).
+  /// For example: 'planning.model_created', 'planning.model_exported', 'segmentation.ct.total', 'segmentation.mr.knee').
+  ///
+  /// For example, an extension can report usage data like this:
+  /// - C++: <code>qSlicerCoreApplication::application()->logUsageEvent("SlicerRT", "dicom.export.sro")</code>
+  /// - Python: <code>slicer.app.logUsageEvent("TotalSegmentator", "segmentation.total")</code>
+  ///
+  /// If the application is built with usage logging disabled then calling this method has no effect.
+  ///
+  /// \sa isUsageLoggingSupported
+  Q_INVOKABLE void logUsageEvent(const QString& component, const QString& event);
+
+  /// Returns true if the application was built with support for usage logging
+  /// (Slicer_BUILD_USAGE_LOGGING_SUPPORT=ON).
+  /// If returns false then calling `logUsageEvent` method has no effect.
+  bool isUsageLoggingSupported() const;
+
+  /// Processes command line arguments specified as file paths or URLs.
+  ///
+  /// This function iterates through the provided list of URIs.
+  /// For each URL in the list, the signal urlReceived() is emitted.
+  /// After processing the URLs, the remaining file paths are loaded using loadFiles().
+  Q_INVOKABLE void handleURIArguments(const QStringList& fileNames);
+
+  ///@{
+  /// Set/Get if post-startup default handling of URI arguments is enabled.
+  ///
+  /// When enabled, the function `handleURIArguments()` will process command-line
+  /// arguments automatically post-startup.
+  ///
+  /// \sa handleURIArguments()
+  bool isURIArgumentHandlingEnabled() const;
+  void setURIArgumentHandlingEnabled(bool enabled);
+  ///}@
 
 public slots:
 
@@ -493,27 +653,36 @@ public slots:
   /// \sa setRenderPaused
   virtual void resumeRender() {};
 
-protected:
+  /// Load files into the application.
+  /// \param userMessages if specified then loading errors are returned via this object.
+  /// \return Returns true on success.
+  virtual bool loadFiles(const QStringList& filePaths, vtkMRMLMessageCollection* userMessages = nullptr);
 
-  /// Process command line arguments **before** the applicaton event loop is started.
+  /// Open URL in the the application.
+  /// Emits urlReceived signal that modules (such as DICOM module) can handle.
+  /// \param url URL string to open
+  virtual void openUrl(const QString& url);
+
+protected:
+  /// Process command line arguments **before** the application event loop is started.
   /// \sa handleCommandLineArguments()
   /// \sa qSlicerApplication::startupCompleted()
   virtual void handlePreApplicationCommandLineArguments();
 
   /// Set MRML Scene
   /// \sa vtkSlicerApplicationLogic::SetMRMLSceneDataIO
-  virtual void setMRMLScene(vtkMRMLScene * scene);
+  virtual void setMRMLScene(vtkMRMLScene* scene);
 
 protected slots:
 
-  /// Process command line arguments **atfer** the applicaton event loop is started.
+  /// Process command line arguments **after** the application event loop is started.
   /// \sa handlePreApplicationCommandLineArguments()
   /// \sa qSlicerApplication::startupCompleted()
   virtual void handleCommandLineArguments();
 
   virtual void onSlicerApplicationLogicModified();
   virtual void onUserInformationModified();
-  void onSlicerApplicationLogicRequest(vtkObject*, void* , unsigned long);
+  void onSlicerApplicationLogicRequest(vtkObject*, void*, unsigned long);
   void processAppLogicModified();
   void processAppLogicReadData();
   void processAppLogicWriteData();
@@ -548,18 +717,19 @@ protected slots:
 signals:
   void mrmlSceneChanged(vtkMRMLScene* mrmlScene);
 
-  /// Signal is emmited when a url argument is processed with the slicer:// protocol
+  /// Signal is emitted when a url argument is processed with the slicer:// protocol
   /// The url string is emitted with the signal.
   /// Modules can connect to this signal to handle url arguments.
   void urlReceived(QString url);
 
   /// Internal method used to move an invocation from a thread to the main thread.
   /// \sa requestInvokeEvent(), scheduleInvokeEvent()
-  void invokeEventRequested(unsigned int delay, void* caller,
-                            unsigned long event, void* callData);
+  void invokeEventRequested(unsigned int delay, void* caller, unsigned long event, void* callData);
+
+  void usageEventLogged(const QString& component, const QString& event);
 
 protected:
-  qSlicerCoreApplication(qSlicerCoreApplicationPrivate* pimpl, int &argc, char **argv);
+  qSlicerCoreApplication(qSlicerCoreApplicationPrivate* pimpl, int& argc, char** argv);
   QScopedPointer<qSlicerCoreApplicationPrivate> d_ptr;
 
 private:
@@ -568,5 +738,33 @@ private:
 };
 
 Q_DECLARE_METATYPE(qSlicerCoreApplication::ReturnCode)
+
+/// \brief Safe replacement of qSlicerCoreApplication::pauseRender/resumeRender.
+///
+/// SlicerRenderBlocker can be used wherever you would otherwise use
+/// a pair of calls to app->pauseRender() and app->resumeRender().
+/// It pauses rendering in its constructor and in the destructor it
+/// restores previous rendering state.
+///
+class Q_SLICER_BASE_QTCORE_EXPORT SlicerRenderBlocker
+{
+public:
+  qSlicerCoreApplication* Application;
+  SlicerRenderBlocker()
+  {
+    this->Application = qSlicerCoreApplication::application();
+    if (this->Application)
+    {
+      this->Application->pauseRender();
+    }
+  };
+  ~SlicerRenderBlocker()
+  {
+    if (this->Application)
+    {
+      this->Application->resumeRender();
+    }
+  }
+};
 
 #endif

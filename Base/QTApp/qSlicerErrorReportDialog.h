@@ -33,18 +33,19 @@
 class qSlicerErrorReportDialogPrivate;
 
 /// Pre-request that a qSlicerApplication has been instanced
-class Q_SLICER_BASE_QTAPP_EXPORT qSlicerErrorReportDialog :
-  public QDialog
+class Q_SLICER_BASE_QTAPP_EXPORT qSlicerErrorReportDialog : public QDialog
 {
   Q_OBJECT
 public:
-  qSlicerErrorReportDialog(QWidget *parentWidget = nullptr);
+  qSlicerErrorReportDialog(QWidget* parentWidget = nullptr);
   ~qSlicerErrorReportDialog() override;
 
 protected slots:
   void onLogFileOpen();
+  void onLogFileLocationOpen();
   void onLogCopy();
   void onLogFileSelectionChanged();
+  void onLogFileEditClicked(bool editable);
 
 protected:
   QScopedPointer<qSlicerErrorReportDialogPrivate> d_ptr;

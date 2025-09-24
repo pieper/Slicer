@@ -34,7 +34,6 @@ class vtkMRMLSegmentationNode;
 class qMRMLSegmentationGeometryDialogPrivate;
 
 /// \brief Qt dialog for changing segmentation labelmap geometry
-/// \ingroup Slicer_QtModules_Segmentations_Widgets
 class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_EXPORT qMRMLSegmentationGeometryDialog : public QObject
 {
 public:
@@ -51,7 +50,7 @@ public:
 
 public:
   typedef QObject Superclass;
-  qMRMLSegmentationGeometryDialog(vtkMRMLSegmentationNode* segmentationNode, QObject* parent=nullptr);
+  qMRMLSegmentationGeometryDialog(vtkMRMLSegmentationNode* segmentationNode, QObject* parent = nullptr);
   ~qMRMLSegmentationGeometryDialog() override;
 
 public:
@@ -63,8 +62,8 @@ public:
   /// Python compatibility function for showing dialog (calls \a exec)
   Q_INVOKABLE bool execDialog() { return this->exec(); };
 
-  bool editEnabled()const;
-  bool resampleLabelmaps()const;
+  bool editEnabled() const;
+  bool resampleLabelmaps() const;
 
 public slots:
   void setEditEnabled(bool aEditEnabled);

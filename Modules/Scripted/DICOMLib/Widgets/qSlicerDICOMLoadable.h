@@ -51,6 +51,8 @@ class Q_SLICER_MODULE_DICOMLIB_WIDGETS_EXPORT qSlicerDICOMLoadable : public QObj
   Q_PROPERTY(QStringList files READ files WRITE setFiles)
   /// Is the object checked for loading by default
   Q_PROPERTY(bool selected READ selected WRITE setSelected)
+  /// Is the object loaded successfully
+  Q_PROPERTY(bool loadSuccess READ loadSuccess WRITE setLoadSuccess)
   /// Confidence - from 0 to 1 where 0 means low chance
   /// that the user actually wants to load their data this
   /// way up to 1, which means that the plugin is very confident
@@ -65,28 +67,31 @@ class Q_SLICER_MODULE_DICOMLIB_WIDGETS_EXPORT qSlicerDICOMLoadable : public QObj
 
 public:
   typedef QObject Superclass;
-  qSlicerDICOMLoadable(QObject *parent = nullptr);
+  qSlicerDICOMLoadable(QObject* parent = nullptr);
   ~qSlicerDICOMLoadable() override;
 
-  virtual QString name()const;
+  virtual QString name() const;
   void setName(const QString& newName);
 
-  virtual QString tooltip()const;
+  virtual QString tooltip() const;
   void setTooltip(const QString& newTooltip);
 
-  virtual QString warning()const;
+  virtual QString warning() const;
   void setWarning(const QString& newWarning);
 
-  virtual QStringList files()const;
+  virtual QStringList files() const;
   void setFiles(const QStringList& newFiles);
 
-  virtual bool selected()const;
+  virtual bool selected() const;
   void setSelected(const bool newSelected);
 
-  virtual double confidence()const;
+  virtual double confidence() const;
   void setConfidence(const double newConfidence);
 
-  virtual QStringList referencedInstanceUIDs()const;
+  virtual bool loadSuccess() const;
+  void setLoadSuccess(const bool newLoadSuccess);
+
+  virtual QStringList referencedInstanceUIDs() const;
   void setReferencedInstanceUIDs(const QStringList& newReferencedInstanceUIDs);
 
   /// Copy values to VTK loadable

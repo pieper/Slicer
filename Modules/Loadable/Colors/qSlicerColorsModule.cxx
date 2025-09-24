@@ -24,6 +24,9 @@
 // CTK includes
 #include <ctkColorDialog.h>
 
+#include <vtkMRMLSliceViewDisplayableManagerFactory.h>
+#include <vtkMRMLThreeDViewDisplayableManagerFactory.h>
+
 // Slicer includes
 #include "qSlicerApplication.h"
 #include "qSlicerCoreIOManager.h"
@@ -41,6 +44,14 @@
 #include <vtkSlicerApplicationLogic.h>
 #include "vtkSlicerColorLogic.h"
 
+// SubjectHierarchy Plugins includes
+#include "qSlicerSubjectHierarchyPluginHandler.h"
+#include "qSlicerSubjectHierarchyColorLegendPlugin.h"
+
+// DisplayableManager initialization
+#include <vtkAutoInit.h>
+VTK_MODULE_INIT(vtkSlicerColorsModuleMRMLDisplayableManager)
+
 //-----------------------------------------------------------------------------
 class qSlicerColorsModulePrivate
 {
@@ -52,8 +63,7 @@ public:
 //-----------------------------------------------------------------------------
 qSlicerColorsModulePrivate::qSlicerColorsModulePrivate()
 {
-  this->ColorDialogPickerWidget =
-    QSharedPointer<qMRMLColorPickerWidget>(new qMRMLColorPickerWidget(nullptr));
+  this->ColorDialogPickerWidget = QSharedPointer<qMRMLColorPickerWidget>(new qMRMLColorPickerWidget(nullptr));
 }
 
 //-----------------------------------------------------------------------------
@@ -67,13 +77,13 @@ qSlicerColorsModule::qSlicerColorsModule(QObject* _parent)
 qSlicerColorsModule::~qSlicerColorsModule() = default;
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerColorsModule::categories()const
+QStringList qSlicerColorsModule::categories() const
 {
-  return QStringList() << "Informatics";
+  return QStringList() << qSlicerAbstractCoreModule::tr("Informatics");
 }
 
 //-----------------------------------------------------------------------------
-QIcon qSlicerColorsModule::icon()const
+QIcon qSlicerColorsModule::icon() const
 {
   return QIcon(":/Icons/Colors.png");
 }
@@ -82,23 +92,27 @@ QIcon qSlicerColorsModule::icon()const
 void qSlicerColorsModule::setup()
 {
   Q_D(qSlicerColorsModule);
-  qSlicerApplication * app = qSlicerApplication::application();
+
+  // DisplayableManager initialization
+  // Register color legend displayable manager for slice and 3D views
+  vtkMRMLThreeDViewDisplayableManagerFactory::GetInstance()->RegisterDisplayableManager("vtkMRMLColorLegendDisplayableManager");
+  vtkMRMLSliceViewDisplayableManagerFactory::GetInstance()->RegisterDisplayableManager("vtkMRMLColorLegendDisplayableManager");
+
+  qSlicerApplication* app = qSlicerApplication::application();
   if (!app)
-    {
+  {
     return;
-    }
+  }
   vtkSlicerColorLogic* colorLogic = vtkSlicerColorLogic::SafeDownCast(this->logic());
   if (this->appLogic() != nullptr)
-    {
+  {
     this->appLogic()->SetColorLogic(colorLogic);
-    }
-  app->coreIOManager()->registerIO(
-    new qSlicerColorsReader(colorLogic, this));
-  app->coreIOManager()->registerIO(new qSlicerNodeWriter(
-    "Colors", QString("ColorTableFile"),
-    QStringList() << "vtkMRMLColorNode", true, this));
+    colorLogic->SetMRMLApplicationLogic(this->appLogic());
+  }
+  app->coreIOManager()->registerIO(new qSlicerColorsReader(colorLogic, this));
+  app->coreIOManager()->registerIO(new qSlicerNodeWriter("Colors", QString("ColorTableFile"), QStringList() << "vtkMRMLColorNode", true, this));
 
-  QStringList paths = app->userSettings()->value("QTCoreModules/Colors/ColorFilePaths").toStringList();
+  QStringList paths = qSlicerCoreApplication::application()->toSlicerHomeAbsolutePaths(app->userSettings()->value("QTCoreModules/Colors/ColorFilePaths").toStringList());
 #ifdef Q_OS_WIN32
   QString joinedPaths = paths.join(";");
 #else
@@ -111,10 +125,11 @@ void qSlicerColorsModule::setup()
 
   // Color picker
   d->ColorDialogPickerWidget->setMRMLColorLogic(colorLogic);
-  ctkColorDialog::addDefaultTab(d->ColorDialogPickerWidget.data(),
-                                "Labels", SIGNAL(colorSelected(QColor)),
-                                SIGNAL(colorNameSelected(QString)));
-  ctkColorDialog::setDefaultTab(1);
+  ctkColorDialog::addDefaultTab(d->ColorDialogPickerWidget.data(), "Labels", SIGNAL(colorSelected(QColor)), SIGNAL(colorNameSelected(QString)));
+
+  // Register Subject Hierarchy core plugins
+  qSlicerSubjectHierarchyColorLegendPlugin* colorLegendPlugin = new qSlicerSubjectHierarchyColorLegendPlugin();
+  qSlicerSubjectHierarchyPluginHandler::instance()->registerPlugin(colorLegendPlugin);
 }
 
 //-----------------------------------------------------------------------------
@@ -127,7 +142,7 @@ void qSlicerColorsModule::setMRMLScene(vtkMRMLScene* scene)
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation * qSlicerColorsModule::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation* qSlicerColorsModule::createWidgetRepresentation()
 {
   return new qSlicerColorsModuleWidget;
 }
@@ -139,50 +154,49 @@ vtkMRMLAbstractLogic* qSlicerColorsModule::createLogic()
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerColorsModule::helpText()const
+QString qSlicerColorsModule::helpText() const
 {
-  QString help =
-    "The <b>Colors Module</b> manages color look up tables.<br>"
-    "For more information see the <a href=\"%1/Documentation/%2.%3/Modules/Colors\">"
-    "online documentation</a><br>"
-    "Tables are used by mappers to translate between an integer and a colour "
-    "value for display of models and volumes.<br>Slicer supports three kinds "
-    "of tables:<br>"
-    "1. Continuous scales, like the greyscale table.<br>"
-    "2. Parametric tables, defined by an equation, such as the FMRIPA table.<br>"
-    "3. Discrete tables, such as those read in from a file.<br><br>"
-    "You can create a duplicate of a color table to allow editing the "
-    "names and values and color by clicking on the folder+ icon.<br>"
-    "You can then save the new color table via the File -> Save interface.<br>"
-    "The color file format is a plain text file with the .txt or .ctbl extension. "
-    "Each line in the file has:<br>"
-    "label\tname\tR\tG\tB\tA<br>label is an integer, name a string, and RGBA are "
-    "0-255.";
-  return help.arg(this->slicerWikiUrl()).arg(Slicer_VERSION_MAJOR).arg(Slicer_VERSION_MINOR);
+  QString help = tr("The <b>Colors Module</b> manages color look up tables, stored in Color nodes.<br>"
+                    "These tables translate between a numeric value and a color "
+                    "for displaying of various data types, such as volumes and models.<br>"
+                    "Two lookup table types are available:<br>"
+                    "<ul>"
+                    "<li>Discrete table: List of named colors are specified (example: GenericAnatomyColors). "
+                    "Discrete tables can be used for continuous mapping as well, in this case the colors "
+                    "are used as samples at equal distance within the specified range, and smoothly "
+                    "interpolating between them (example: Grey).</li>"
+                    "<li>Continuous scale: Color is specified for arbitrarily chosen numerical values "
+                    "and color value can be computed by smoothly interpolating between these values "
+                    "(example: PET-DICOM). No names are specified for colors.</li>"
+                    "All built-in color tables are read-only. To edit colors, create a copy "
+                    "of the color table by clicking on the 'copy' folder icon.<br>");
+  help += this->defaultDocumentationLink();
+  return help;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerColorsModule::acknowledgementText()const
+QString qSlicerColorsModule::acknowledgementText() const
 {
-  QString about =
-    "This work was supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.";
-  return about;
+  return tr("This work was supported by NA-MIC, NAC, BIRN, NCIGT, and the Slicer Community.");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerColorsModule::contributors()const
+QStringList qSlicerColorsModule::contributors() const
 {
   QStringList moduleContributors;
   moduleContributors << QString("Nicole Aucoin (SPL, BWH)");
   moduleContributors << QString("Julien Finet (Kitware)");
   moduleContributors << QString("Ron Kikinis (SPL, BWH)");
+  moduleContributors << QString("Mikhail Polkovnikov (IHEP)");
+  moduleContributors << QString("Csaba Pinter (EBATINCA)");
+  moduleContributors << QString("Andras Lasso (PerkLab, Queen's)");
   return moduleContributors;
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerColorsModule::isHidden()const
+QStringList qSlicerColorsModule::dependencies() const
 {
-  return false;
+  return QStringList() << "Terminologies";
 }
 
 //-----------------------------------------------------------------------------

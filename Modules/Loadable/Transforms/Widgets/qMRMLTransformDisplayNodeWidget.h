@@ -20,7 +20,6 @@
 
 ==============================================================================*/
 
-
 #ifndef __qMRMLTransformDisplayNodeWidget_h
 #define __qMRMLTransformDisplayNodeWidget_h
 
@@ -37,17 +36,14 @@ class qMRMLTransformDisplayNodeWidgetPrivate;
 class vtkMRMLTransformNode;
 class vtkMRMLNode;
 
-/// \ingroup Slicer_QtModules_Transforms
-class Q_SLICER_MODULE_TRANSFORMS_WIDGETS_EXPORT
-qMRMLTransformDisplayNodeWidget
-  : public qMRMLWidget
+class Q_SLICER_MODULE_TRANSFORMS_WIDGETS_EXPORT qMRMLTransformDisplayNodeWidget : public qMRMLWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
 public:
   typedef qMRMLWidget Superclass;
-  qMRMLTransformDisplayNodeWidget(QWidget *newParent = nullptr);
+  qMRMLTransformDisplayNodeWidget(QWidget* newParent = nullptr);
   ~qMRMLTransformDisplayNodeWidget() override;
 
 public slots:
@@ -89,10 +85,24 @@ public slots:
   void setContourOpacityPercent(double opacity);
 
   void setEditorVisibility(bool enabled);
+  void setEditorVisibility3d(bool enabled);
+  void setEditorVisibility2d(bool enabled);
+
   void setEditorTranslationEnabled(bool enabled);
+  void setEditorTranslationSliceEnabled(bool enabled);
+
   void setEditorRotationEnabled(bool enabled);
+  void setEditorRotationSliceEnabled(bool enabled);
+
   void setEditorScalingEnabled(bool enabled);
+  void setEditorScalingSliceEnabled(bool enabled);
+
   void updateEditorBounds();
+
+  void updateTranslationComponentVisibility();
+  void updateRotationComponentVisibility();
+  void updateScalingComponentVisibility();
+  void updateInteractionHandleScale();
 
   void setColorTableNode(vtkMRMLNode* colorTableNode);
 
@@ -103,13 +113,15 @@ public slots:
 protected slots:
   void updateWidgetFromDisplayNode();
 
+  void updateInteraction3DWidgetsFromDisplayNode();
+  void updateInteractionSliceWidgetsFromDisplayNode();
+
 protected:
   QScopedPointer<qMRMLTransformDisplayNodeWidgetPrivate> d_ptr;
 
 private:
   Q_DECLARE_PRIVATE(qMRMLTransformDisplayNodeWidget);
   Q_DISABLE_COPY(qMRMLTransformDisplayNodeWidget);
-
 };
 
 #endif

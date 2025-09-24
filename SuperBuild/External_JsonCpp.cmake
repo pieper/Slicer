@@ -25,7 +25,7 @@ if(NOT DEFINED ${proj}_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   ExternalProject_SetIfNotDefined(
     Slicer_${proj}_GIT_TAG
-    "73b8e172d6615251ef851d883ef02f163e7075b2" # slicer-v0.10.6-2016-04-22
+    "9000f7710f3d2b6817a2d35cf5feaabd47cb2c81" # slicer-v1.9.6-2024-09-09
     QUIET
     )
 
@@ -54,6 +54,7 @@ if(NOT DEFINED ${proj}_DIR AND NOT Slicer_USE_SYSTEM_${proj})
       -DJSONCPP_WITH_CMAKE_PACKAGE:BOOL=ON
       -DBUILD_SHARED_LIBS:BOOL=ON
       -DBUILD_STATIC_LIBS:BOOL=OFF
+      -DCMAKE_INSTALL_LIBDIR:STRING=lib  # Override value set in GNUInstallDirs CMake module
       -DLIBRARY_INSTALL_DIR:PATH=${Slicer_INSTALL_LIB_DIR}
       -DRUNTIME_INSTALL_DIR:PATH=${Slicer_INSTALL_LIB_DIR}
       -DARCHIVE_INSTALL_DIR:PATH=${Slicer_INSTALL_LIB_DIR}
@@ -75,12 +76,21 @@ if(NOT DEFINED ${proj}_DIR AND NOT Slicer_USE_SYSTEM_${proj})
     set(lib_prefix "lib")
     set(lib_ext "so")
   endif()
-  set(${proj}_LIBRARY ${${proj}_DIR}/src/lib_json/${CMAKE_CFG_INTDIR}/${lib_prefix}jsoncpp.${lib_ext})
+  if(DEFINED CMAKE_CONFIGURATION_TYPES)
+    set(lib_cfg_dir "$<CONFIG>")
+  else()
+    set(lib_cfg_dir ".")
+  endif()
+  set(${proj}_LIBRARY ${${proj}_DIR}/lib/${lib_cfg_dir}/${lib_prefix}jsoncpp.${lib_ext})
 
   #-----------------------------------------------------------------------------
   # Launcher setting specific to build tree
 
-  set(${proj}_LIBRARY_PATHS_LAUNCHER_BUILD ${JsonCpp_DIR}/src/lib_json/<CMAKE_CFG_INTDIR>)
+  set(_library_output_subdir bin)
+  if(UNIX)
+    set(_library_output_subdir lib)
+  endif()
+  set(${proj}_LIBRARY_PATHS_LAUNCHER_BUILD ${JsonCpp_DIR}/${_library_output_subdir}/<CMAKE_CFG_INTDIR>)
   mark_as_superbuild(
     VARS ${proj}_LIBRARY_PATHS_LAUNCHER_BUILD
     LABELS "LIBRARY_PATHS_LAUNCHER_BUILD"

@@ -69,26 +69,26 @@ vtkIntArray* vtkTopologicalHierarchy::GetOutputLevels()
 bool vtkTopologicalHierarchy::Contains(vtkPolyData* polyOut, vtkPolyData* polyIn)
 {
   if (!polyIn || !polyOut)
-    {
+  {
     vtkErrorMacro("Contains: Empty input parameters!");
     return false;
-    }
+  }
 
-  double extentOut[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
+  double extentOut[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
   polyOut->GetBounds(extentOut);
 
-  double extentIn[6] = {0.0,0.0,0.0,0.0,0.0,0.0};
+  double extentIn[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
   polyIn->GetBounds(extentIn);
 
-  if ( extentOut[0] < extentIn[0] - this->ContainConstraintFactor * (extentOut[1]-extentOut[0])
-    && extentOut[1] > extentIn[1] + this->ContainConstraintFactor * (extentOut[1]-extentOut[0])
-    && extentOut[2] < extentIn[2] - this->ContainConstraintFactor * (extentOut[3]-extentOut[2])
-    && extentOut[3] > extentIn[3] + this->ContainConstraintFactor * (extentOut[3]-extentOut[2])
-    && extentOut[4] < extentIn[4] - this->ContainConstraintFactor * (extentOut[5]-extentOut[4])
-    && extentOut[5] > extentIn[5] + this->ContainConstraintFactor * (extentOut[5]-extentOut[4]) )
-    {
+  if (extentOut[0] < extentIn[0] - this->ContainConstraintFactor * (extentOut[1] - extentOut[0])    //
+      && extentOut[1] > extentIn[1] + this->ContainConstraintFactor * (extentOut[1] - extentOut[0]) //
+      && extentOut[2] < extentIn[2] - this->ContainConstraintFactor * (extentOut[3] - extentOut[2]) //
+      && extentOut[3] > extentIn[3] + this->ContainConstraintFactor * (extentOut[3] - extentOut[2]) //
+      && extentOut[4] < extentIn[4] - this->ContainConstraintFactor * (extentOut[5] - extentOut[4]) //
+      && extentOut[5] > extentIn[5] + this->ContainConstraintFactor * (extentOut[5] - extentOut[4]))
+  {
     return true;
-    }
+  }
 
   return false;
 }
@@ -97,143 +97,139 @@ bool vtkTopologicalHierarchy::Contains(vtkPolyData* polyOut, vtkPolyData* polyIn
 void vtkTopologicalHierarchy::Update()
 {
   if (!this->InputPolyDataCollection || !this->OutputLevels)
-    {
+  {
     vtkErrorMacro("Update: Input poly data collection and output int array have to be initialized!");
     return;
-    }
+  }
 
   this->OutputLevels->Initialize();
   unsigned int numberOfPolyData = this->InputPolyDataCollection->GetNumberOfItems();
 
   // Check input polydata collection
-  for (unsigned int polyOutIndex=0; polyOutIndex<numberOfPolyData; ++polyOutIndex)
-    {
+  for (unsigned int polyOutIndex = 0; polyOutIndex < numberOfPolyData; ++polyOutIndex)
+  {
     vtkPolyData* polyOut = vtkPolyData::SafeDownCast(this->InputPolyDataCollection->GetItemAsObject(polyOutIndex));
     if (!polyOut)
-      {
+    {
       vtkErrorMacro("Update: Input collection contains invalid object at item " << polyOutIndex);
       return;
-      }
     }
+  }
 
-  std::vector<std::vector<unsigned int> > containedPolyData(numberOfPolyData);
+  std::vector<std::vector<unsigned int>> containedPolyData(numberOfPolyData);
   this->OutputLevels->SetNumberOfComponents(1);
   this->OutputLevels->SetNumberOfTuples(numberOfPolyData);
   this->OutputLevels->FillComponent(0, -1);
 
   // Step 1: Set level of polydata containing no other polydata to 0
   this->InputPolyDataCollection->InitTraversal();
-  for (unsigned int polyOutIndex=0; polyOutIndex<numberOfPolyData; ++polyOutIndex)
-    {
+  for (unsigned int polyOutIndex = 0; polyOutIndex < numberOfPolyData; ++polyOutIndex)
+  {
     vtkPolyData* polyOut = vtkPolyData::SafeDownCast(this->InputPolyDataCollection->GetItemAsObject(polyOutIndex));
 
-    for (unsigned int polyInIndex=0; polyInIndex<numberOfPolyData; ++polyInIndex)
+    for (unsigned int polyInIndex = 0; polyInIndex < numberOfPolyData; ++polyInIndex)
+    {
+      if (polyOutIndex == polyInIndex)
       {
-      if (polyOutIndex==polyInIndex)
-        {
         continue;
-        }
+      }
 
       vtkPolyData* polyIn = vtkPolyData::SafeDownCast(this->InputPolyDataCollection->GetItemAsObject(polyInIndex));
 
       if (this->Contains(polyOut, polyIn))
-        {
-        containedPolyData[polyOutIndex].push_back(polyInIndex);
-        }
-      }
-
-    if (containedPolyData[polyOutIndex].size() == 0)
       {
-      this->OutputLevels->SetValue(polyOutIndex, 0);
+        containedPolyData[polyOutIndex].push_back(polyInIndex);
       }
     }
+
+    if (containedPolyData[polyOutIndex].size() == 0)
+    {
+      this->OutputLevels->SetValue(polyOutIndex, 0);
+    }
+  }
 
   // Step 2: Set level of the polydata containing other polydata to one bigger than the highest contained level
   vtkSmartPointer<vtkIntArray> outputLevelsSnapshot = vtkSmartPointer<vtkIntArray>::New();
   unsigned int currentLevel = 1;
   while (this->OutputContainsEmptyLevels() && currentLevel < this->MaximumLevel)
-    {
+  {
     // Creating snapshot of the level array state so that the newly set values don't interfere with the check
     // Without this, the check "does all contained polydata have level values assigned" is corrupted
     outputLevelsSnapshot->DeepCopy(this->OutputLevels);
 
     // Step 3: For all polydata without level value assigned
-    for (unsigned int polyOutIndex=0; polyOutIndex<numberOfPolyData; ++polyOutIndex)
-      {
+    for (unsigned int polyOutIndex = 0; polyOutIndex < numberOfPolyData; ++polyOutIndex)
+    {
       if (this->OutputLevels->GetValue(polyOutIndex) > -1)
-        {
+      {
         continue;
-        }
+      }
 
       // Step 4: If all contained polydata have level values assigned, then set it to the current level value
       //   The level that is to be set cannot be lower than the current level value, because then we would
       //   already have assigned it in the previous iterations.
       bool allContainedPolydataHasLevelValueAssigned = true;
-      for (unsigned int polyInIndex = 0;
-           polyInIndex < numberOfPolyData;
-           ++polyInIndex)
+      for (unsigned int polyInIndex = 0; polyInIndex < numberOfPolyData; ++polyInIndex)
+      {
+        if (polyOutIndex == polyInIndex)
         {
-        if (polyOutIndex==polyInIndex)
-          {
           continue;
-          }
+        }
         bool isContained = false;
-        for (std::vector<unsigned int>::iterator it = containedPolyData[polyOutIndex].begin();
-             it != containedPolyData[polyOutIndex].end();
-             ++it)
-          {
+        for (std::vector<unsigned int>::iterator it = containedPolyData[polyOutIndex].begin(); it != containedPolyData[polyOutIndex].end(); ++it)
+        {
           if ((*it) == polyInIndex)
-            {
+          {
             isContained = true;
             break;
-            }
           }
+        }
         if (!isContained)
-          {
+        {
           continue;
-          }
+        }
 
         if (outputLevelsSnapshot->GetValue(polyInIndex) == -1)
-          {
+        {
           allContainedPolydataHasLevelValueAssigned = false;
           break;
-          }
-        }
-      if (allContainedPolydataHasLevelValueAssigned)
-        {
-        this->OutputLevels->SetValue(polyOutIndex, currentLevel);
         }
       }
+      if (allContainedPolydataHasLevelValueAssigned)
+      {
+        this->OutputLevels->SetValue(polyOutIndex, currentLevel);
+      }
+    }
 
     // Increase current level for the next iteration
     currentLevel++;
-    }
+  }
 
   // Step 5: Set maximum level to all polydata that has no level value assigned
-  for (unsigned int polyOutIndex=0; polyOutIndex<numberOfPolyData; ++polyOutIndex)
-    {
+  for (unsigned int polyOutIndex = 0; polyOutIndex < numberOfPolyData; ++polyOutIndex)
+  {
     if (this->OutputLevels->GetValue(polyOutIndex) == -1)
-      {
+    {
       this->OutputLevels->SetValue(polyOutIndex, this->MaximumLevel);
-      }
     }
+  }
 }
 
 //----------------------------------------------------------------------------
 bool vtkTopologicalHierarchy::OutputContainsEmptyLevels()
 {
   if (!this->OutputLevels)
-    {
+  {
     return false;
-    }
+  }
 
-  for (int i=0; i<this->OutputLevels->GetNumberOfTuples(); ++i)
-    {
+  for (int i = 0; i < this->OutputLevels->GetNumberOfTuples(); ++i)
+  {
     if (this->OutputLevels->GetValue(i) == -1)
-      {
+    {
       return true;
-      }
     }
+  }
 
   return false;
 }

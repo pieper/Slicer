@@ -16,12 +16,13 @@
 
 // VTK includes
 #include <vtkImageData.h>
-#include <vtkStdString.h>
+
+// STD includes
+#include <string>
 
 //-----------------------------------------------------------------------------
-qSlicerAnnotationModuleSnapShotDialog
-::qSlicerAnnotationModuleSnapShotDialog(QWidget* parentWidget)
-  :Superclass(parentWidget)
+qSlicerAnnotationModuleSnapShotDialog::qSlicerAnnotationModuleSnapShotDialog(QWidget* parentWidget)
+  : Superclass(parentWidget)
 {
   this->m_Logic = nullptr;
   this->setLayoutManager(qSlicerApplication::application()->layoutManager());
@@ -32,19 +33,19 @@ qSlicerAnnotationModuleSnapShotDialog
 qSlicerAnnotationModuleSnapShotDialog::~qSlicerAnnotationModuleSnapShotDialog()
 {
   if (this->m_Logic)
-    {
+  {
     this->m_Logic = nullptr;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerAnnotationModuleSnapShotDialog::setLogic(vtkSlicerAnnotationModuleLogic* logic)
 {
   if (!logic)
-    {
+  {
     qErrnoWarning("setLogic: We need the Annotation module logic here!");
     return;
-    }
+  }
 
   this->m_Logic = logic;
 }
@@ -53,22 +54,28 @@ void qSlicerAnnotationModuleSnapShotDialog::setLogic(vtkSlicerAnnotationModuleLo
 void qSlicerAnnotationModuleSnapShotDialog::loadNode(const char* nodeId)
 {
   if (!this->m_Logic || !nodeId)
-    {
+  {
     qErrnoWarning("initialize: We need a logic and a valid node here!");
     return;
-    }
+  }
 
   // Activate the mode "review"
   this->setData(QVariant(nodeId));
 
   // get the name..
-  vtkStdString name = this->m_Logic->GetAnnotationName(nodeId);
+  std::string name;
+  if (this->m_Logic->GetMRMLScene()                         //
+      && this->m_Logic->GetMRMLScene()->GetNodeByID(nodeId) //
+      && this->m_Logic->GetMRMLScene()->GetNodeByID(nodeId)->GetName())
+  {
+    name = this->m_Logic->GetMRMLScene()->GetNodeByID(nodeId)->GetName();
+  }
 
   // ..and set it in the GUI
   this->setNameEdit(QString::fromStdString(name));
 
   // get the description..
-  vtkStdString description = this->m_Logic->GetSnapShotDescription(nodeId);
+  std::string description = this->m_Logic->GetSnapShotDescription(nodeId);
   // ..and set it in the GUI
   this->setDescription(QString::fromStdString(description));
 
@@ -77,13 +84,13 @@ void qSlicerAnnotationModuleSnapShotDialog::loadNode(const char* nodeId)
 
   // ..and set it in the GUI
   // double check that the screen shot type is in range
-  if (screenshotType < qMRMLScreenShotDialog::ThreeD ||
+  if (screenshotType < qMRMLScreenShotDialog::ThreeD || //
       screenshotType > qMRMLScreenShotDialog::FullLayout)
-    {
+  {
     // reset to full layout
     qErrnoWarning("Screen shot type is out of range, resetting to full layout");
     screenshotType = qMRMLScreenShotDialog::FullLayout;
-    }
+  }
   this->setWidgetType((qMRMLScreenShotDialog::WidgetType)screenshotType);
 
   double scaleFactor = this->m_Logic->GetSnapShotScaleFactor(nodeId);
@@ -100,13 +107,12 @@ void qSlicerAnnotationModuleSnapShotDialog::reset()
   // check to see if it's an already used name for a node (redrawing the
   // dialog causes it to reset and calling GetUniqueNameByString increments
   // the number each time).
-  vtkCollection *col =
-    this->m_Logic->GetMRMLScene()->GetNodesByName(name.toUtf8());
+  vtkCollection* col = this->m_Logic->GetMRMLScene()->GetNodesByName(name.toUtf8());
   if (col->GetNumberOfItems() > 0)
-    {
+  {
     // get a new unique name
     name = this->m_Logic->GetMRMLScene()->GetUniqueNameByString(name.toUtf8());
-    }
+  }
 
   this->resetDialog();
   this->setNameEdit(name);
@@ -129,23 +135,14 @@ void qSlicerAnnotationModuleSnapShotDialog::accept()
   int screenshotType = static_cast<int>(this->widgetType());
 
   if (this->data().toString().isEmpty())
-    {
+  {
     // this is a new snapshot
-    this->m_Logic->CreateSnapShot(nameBytes.data(),
-                                  descriptionBytes.data(),
-                                  screenshotType,
-                                  this->scaleFactor(),
-                                  this->imageData());
-    }
+    this->m_Logic->CreateSnapShot(nameBytes.data(), descriptionBytes.data(), screenshotType, this->scaleFactor(), this->imageData());
+  }
   else
-    {
+  {
     // this snapshot already exists
-    this->m_Logic->ModifySnapShot(vtkStdString(this->data().toString().toUtf8()),
-                                  nameBytes.data(),
-                                  descriptionBytes.data(),
-                                  screenshotType,
-                                  this->scaleFactor(),
-                                  this->imageData());
-    }
+    this->m_Logic->ModifySnapShot(std::string(this->data().toString().toUtf8()), nameBytes.data(), descriptionBytes.data(), screenshotType, this->scaleFactor(), this->imageData());
+  }
   this->Superclass::accept();
 }

@@ -59,9 +59,9 @@ vtkMRMLScalarVolumeNode* loadVolume(const char* volume, vtkMRMLScene* scene)
 
   storageNode->SetFileName(volume);
   if (storageNode->SupportedFileType(volume) == 0)
-    {
+  {
     return nullptr;
-    }
+  }
   scalarNode->SetName("foo");
   scalarNode->SetScene(scene);
   displayNode->SetScene(scene);
@@ -82,18 +82,18 @@ vtkMRMLScalarVolumeNode* loadVolume(const char* volume, vtkMRMLScene* scene)
   return scalarNode.GetPointer();
 }
 
-int qMRMLSliceWidgetTest2(int argc, char * argv [] )
+int qMRMLSliceWidgetTest2(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
-  if( argc < 2 )
-    {
+  if (argc < 2)
+  {
     std::cerr << "Error: missing arguments" << std::endl;
     std::cerr << "Usage: " << std::endl;
     std::cerr << argv[0] << "  input_image.nrrd " << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   vtkNew<vtkMRMLScene> scene;
   vtkNew<vtkMRMLApplicationLogic> applicationLogic;
@@ -101,16 +101,17 @@ int qMRMLSliceWidgetTest2(int argc, char * argv [] )
 
   vtkMRMLScalarVolumeNode* scalarNode = loadVolume(argv[1], scene.GetPointer());
   if (scalarNode == nullptr)
-    {
+  {
     std::cerr << "Not a valid volume: " << argv[1] << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   QSize viewSize(256, 256);
   qMRMLSliceWidget sliceWidget;
   sliceWidget.setMRMLScene(scene.GetPointer());
+  sliceWidget.sliceLogic()->AddSliceNode("Red");
 
-  sliceWidget.resize(viewSize.width(), sliceWidget.sliceController()->height() + viewSize.height() );
+  sliceWidget.resize(viewSize.width(), sliceWidget.sliceController()->height() + viewSize.height());
 
   vtkMRMLSliceCompositeNode* sliceCompositeNode = sliceWidget.sliceLogic()->GetSliceCompositeNode();
   sliceCompositeNode->SetBackgroundVolumeID(scalarNode->GetID());
@@ -120,69 +121,64 @@ int qMRMLSliceWidgetTest2(int argc, char * argv [] )
   nodeObject.setProcessEvents(false);
   nodeObject.setMessage("vtkMRMLDisplayNode");
   for (int i = 0; i < 30; ++i)
-    {
+  {
     nodeObject.modify();
-    }
+  }
   nodeObject.setProcessEvents(true);
   nodeObject.setMessage("vtkMRMLDisplayNode + render");
   for (int i = 0; i < 30; ++i)
-    {
+  {
     nodeObject.modify();
-    }
+  }
 
   // test the list of displayable managers
-  QStringList expectedDisplayableManagerClassNames =
-    QStringList() << "vtkMRMLVolumeGlyphSliceDisplayableManager"
-                  << "vtkMRMLModelSliceDisplayableManager"
-                  << "vtkMRMLCrosshairDisplayableManager"
-                  << "vtkMRMLOrientationMarkerDisplayableManager"
-                  << "vtkMRMLRulerDisplayableManager"
-                  << "vtkMRMLScalarBarDisplayableManager";
-  qMRMLSliceView *sliceView = const_cast<qMRMLSliceView*>(sliceWidget.sliceView());
+  QStringList expectedDisplayableManagerClassNames = QStringList() << "vtkMRMLVolumeGlyphSliceDisplayableManager"
+                                                                   << "vtkMRMLModelSliceDisplayableManager"
+                                                                   << "vtkMRMLCrosshairDisplayableManager"
+                                                                   << "vtkMRMLOrientationMarkerDisplayableManager"
+                                                                   << "vtkMRMLRulerDisplayableManager"
+                                                                   << "vtkMRMLScalarBarDisplayableManager";
+  qMRMLSliceView* sliceView = const_cast<qMRMLSliceView*>(sliceWidget.sliceView());
   vtkNew<vtkCollection> collection;
   sliceView->getDisplayableManagers(collection.GetPointer());
   int numManagers = collection->GetNumberOfItems();
-  std::cout << "Slice widget slice view has " << numManagers
-            << " displayable managers." << std::endl;
+  std::cout << "Slice widget slice view has " << numManagers << " displayable managers." << std::endl;
   if (numManagers != expectedDisplayableManagerClassNames.size())
-    {
-    std::cerr << "Incorrect number of displayable managers, expected "
-              << expectedDisplayableManagerClassNames.size()
-              << " but got " << numManagers << std::endl;
+  {
+    std::cerr << "Incorrect number of displayable managers, expected " << expectedDisplayableManagerClassNames.size() << " but got " << numManagers << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   for (int i = 0; i < numManagers; ++i)
-    {
-    vtkMRMLAbstractDisplayableManager *sliceViewDM =
-      vtkMRMLAbstractDisplayableManager::SafeDownCast(collection->GetItemAsObject(i));
+  {
+    vtkMRMLAbstractDisplayableManager* sliceViewDM = vtkMRMLAbstractDisplayableManager::SafeDownCast(collection->GetItemAsObject(i));
     if (sliceViewDM)
-      {
+    {
       std::cout << "\tDisplayable manager " << i << " class name = " << sliceViewDM->GetClassName() << std::endl;
       if (!expectedDisplayableManagerClassNames.contains(sliceViewDM->GetClassName()))
-        {
+      {
         std::cerr << "\t\tnot in expected list!" << std::endl;
         return EXIT_FAILURE;
-        }
       }
+    }
     else
-      {
+    {
       std::cerr << "\tDisplayable manager " << i << " is null." << std::endl;
       return EXIT_FAILURE;
-      }
     }
+  }
   collection->RemoveAllItems();
 
-/*
-  QTimer modifyTimer;
-  modifyTimer.setInterval(0);
-  QObject::connect(&modifyTimer, SIGNAL(timeout()),
-                   &nodeObject, SLOT(modify()));
-  modifyTimer.start();
-*/
-  if (argc < 3 || QString(argv[2]) != "-I" )
-    {
+  /*
+    QTimer modifyTimer;
+    modifyTimer.setInterval(0);
+    QObject::connect(&modifyTimer, SIGNAL(timeout()),
+                     &nodeObject, SLOT(modify()));
+    modifyTimer.start();
+  */
+  if (argc < 3 || QString(argv[2]) != "-I")
+  {
     QTimer::singleShot(1000, &app, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }

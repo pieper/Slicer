@@ -51,7 +51,7 @@ class qMRMLCoordinatesWidgetPrivate;
 /// it listens to the changes made upon the selection node to extract the
 /// unit properties related to its quantity and update accordingly.
 //
-/// To allow even more customisation, one can set which properties of the
+/// To allow even more customization, one can set which properties of the
 /// widget are updated by units and which aren't.
 ///
 /// \sa qMRMLSliderWidget, qMRMLSpinBox
@@ -83,7 +83,7 @@ public:
   ~qMRMLCoordinatesWidget() override;
 
   enum UnitAwareProperty
-    {
+  {
     None = 0x00,
     Prefix = 0x01,
     Suffix = 0x02,
@@ -92,7 +92,7 @@ public:
     MaximumValue = 0x10,
     Scaling = 0x20,
     All = Prefix | Suffix | Precision | MinimumValue | MaximumValue | Scaling
-    };
+  };
   Q_DECLARE_FLAGS(UnitAwareProperties, UnitAwareProperty)
 
   /// Get MRML scene that has been set by setMRMLScene(). Default is no scene.
@@ -101,7 +101,7 @@ public:
 
   QString quantity() const;
 
-  UnitAwareProperties unitAwareProperties()const;
+  UnitAwareProperties unitAwareProperties() const;
 
 public slots:
   void setQuantity(const QString& baseName);

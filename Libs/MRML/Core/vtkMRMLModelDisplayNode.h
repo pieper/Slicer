@@ -36,17 +36,17 @@ class vtkUnstructuredGrid;
 class VTK_MRML_EXPORT vtkMRMLModelDisplayNode : public vtkMRMLDisplayNode
 {
 public:
-  static vtkMRMLModelDisplayNode *New();
-  vtkTypeMacro(vtkMRMLModelDisplayNode,vtkMRMLDisplayNode);
+  static vtkMRMLModelDisplayNode* New();
+  vtkTypeMacro(vtkMRMLModelDisplayNode, vtkMRMLDisplayNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   enum SliceDisplayModeType
-    {
-    SliceDisplayIntersection, ///< Show model in slice view as intersection with slice
-    SliceDisplayProjection, ///< Show full model projected on the slice (similar to MIP view of images)
+  {
+    SliceDisplayIntersection,              ///< Show model in slice view as intersection with slice
+    SliceDisplayProjection,                ///< Show full model projected on the slice (similar to MIP view of images)
     SliceDisplayDistanceEncodedProjection, ///< Show full model projected on the slice, colored by distance from slice plane
-    SliceDisplayMode_Last // placeholder after the last valid value, this must be the last in the list of modes
-    };
+    SliceDisplayMode_Last                  // placeholder after the last valid value, this must be the last in the list of modes
+  };
 
   ///
   /// Read node attributes from XML file
@@ -63,7 +63,7 @@ public:
   vtkMRMLNode* CreateNodeInstance() override;
 
   /// Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "ModelDisplay";}
+  const char* GetNodeTagName() override { return "ModelDisplay"; }
 
   /// Set and observe mesh for this model. It should be the output
   /// mesh connection of the model node.
@@ -87,7 +87,7 @@ public:
   /// This is the mesh that needs to be connected with the mappers.
   /// Return 0 if there is no input mesh but it is required.
   /// GetOutputMesh() should be reimplemented only if the model display
-  /// node doesn't take a mesh as input but produce an oustput mesh.
+  /// node doesn't take a mesh as input but produce an output mesh.
   /// In all other cases, GetOutputMeshConnection() should be reimplemented.
   /// \sa GetOutputMeshConnection()
   virtual vtkPointSet* GetOutputMesh();
@@ -106,41 +106,31 @@ public:
   /// are removed, therefore if a GUI or other component observes the mesh, then it will detect that
   /// the scalar is deleted and so it may deactivate the selected scalar.
   /// \sa SetActiveAttributeLocation()
-  void SetActiveScalarName(const char *scalarName) override;
+  void SetActiveScalarName(const char* scalarName) override;
 
   /// Reimplemented to update pipeline with new value
   /// \sa SetActiveScalarName()
   void SetActiveAttributeLocation(int location) override;
 
-  /// Sets active scalar name and attribute location in one step.
-  /// It is preferable to use this method instead of calling SetActiveScalarName
-  /// and SetActiveAttributeLocation separately, to avoid transient states when
-  /// scalar name and location are temporarily inconsistent.
-  virtual void SetActiveScalar(const char *scalarName, int location);
-
-  /// Reimplemented to update scalar range accordingly
-  /// \sa SetActiveScalarName()
-  void SetScalarRangeFlag(int flag) override;
-
   /// Set whether to threshold the model display node.
   /// \sa ThresholdEnabled, GetThresholdEnabled()
   void SetThresholdEnabled(bool enabled);
-  vtkBooleanMacro(ThresholdEnabled,bool);
+  vtkBooleanMacro(ThresholdEnabled, bool);
 
   /// Get whether to threshold the model display node.
   /// \sa ThresholdEnabled, SetThresholdEnabled(), ThresholdEnabledOn(),
   /// ThresholdEnabledOff()
-  vtkGetMacro(ThresholdEnabled,bool);
+  vtkGetMacro(ThresholdEnabled, bool);
 
   /// Set the threshold range of the model display node.
-  /// \sa GetThresholdMin(), GetTresholdMax()
+  /// \sa GetThresholdMin(), GetThresholdMax()
   void SetThresholdRange(double min, double max);
   void SetThresholdRange(double range[2]);
 
   /// Get the threshold range of the model display node.
   /// \sa SetThresholdRange()
   void GetThresholdRange(double range[2]);
-  double* GetThresholdRange();
+  double* GetThresholdRange() VTK_SIZEHINT(2);
   double GetThresholdMin();
   double GetThresholdMax();
 
@@ -161,20 +151,36 @@ public:
   /// Model that is projected to the slice will be colored based on the
   /// projected point distance from the slice.
   /// \sa GetDistanceEncodedProjectionColorNodeID(), GetDistanceEncodedProjectionColorNode()
-  virtual void SetAndObserveDistanceEncodedProjectionColorNodeID(const char *colorNodeID);
+  virtual void SetAndObserveDistanceEncodedProjectionColorNodeID(const char* colorNodeID);
   /// Get color node for distance encoded slice projection.
   /// \sa SetDistanceEncodedProjectionColorNodeID(), SetDistanceEncodedProjectionColorNode()
   virtual const char* GetDistanceEncodedProjectionColorNodeID();
   virtual vtkMRMLColorNode* GetDistanceEncodedProjectionColorNode();
 
-  /// Returns the current active scalar array (based on active scalar name and location)
-  virtual vtkDataArray* GetActiveScalarArray();
+  /// Get data set containing the scalar arrays for this node type.
+  /// For models it is the input mesh
+  virtual vtkDataSet* GetScalarDataSet() override;
+  /// Return the current active scalar array (based on active scalar name and location)
+  virtual vtkDataArray* GetActiveScalarArray() override;
 
-  ///
-  /// Set color of backface surface as HSV (hue, saturation, brighness) offset compared to node color.
+  /// Set color of backface surface as HSV (hue, saturation, brightness) offset compared to node color.
   /// Values are in [-1, 1] range, 0 value means same as node color.
   vtkSetVector3Macro(BackfaceColorHSVOffset, double);
   vtkGetVector3Macro(BackfaceColorHSVOffset, double);
+
+  vtkSetMacro(ClippingCapSurface, bool);
+  vtkGetMacro(ClippingCapSurface, bool);
+  vtkBooleanMacro(ClippingCapSurface, bool);
+
+  vtkSetMacro(ClippingOutline, bool);
+  vtkGetMacro(ClippingOutline, bool);
+  vtkBooleanMacro(ClippingOutline, bool);
+
+  vtkSetMacro(ClippingCapOpacity, double);
+  vtkGetMacro(ClippingCapOpacity, double);
+
+  vtkSetVector3Macro(ClippingCapColorHSVOffset, double);
+  vtkGetVector3Macro(ClippingCapColorHSVOffset, double);
 
 protected:
   vtkMRMLModelDisplayNode();
@@ -182,20 +188,14 @@ protected:
   vtkMRMLModelDisplayNode(const vtkMRMLModelDisplayNode&);
   void operator=(const vtkMRMLModelDisplayNode&);
 
-  void ProcessMRMLEvents(vtkObject *caller,
-                                 unsigned long event,
-                                 void *callData) override;
+  void ProcessMRMLEvents(vtkObject* caller, unsigned long event, void* callData) override;
 
   /// To be reimplemented in subclasses if the input of the pipeline changes
   virtual void SetInputToMeshPipeline(vtkAlgorithmOutput* meshConnection);
 
   /// Update the AssignAttribute filter based on
   /// its ActiveScalarName and its ActiveAttributeLocation
-  virtual void UpdateAssignedAttribute();
-
-  /// Update the ScalarRange based on the ScalarRangeFlag.
-  /// If UseManualScalarRange is selected then the method has no effect.
-  virtual void UpdateScalarRange();
+  virtual void UpdateAssignedAttribute() override;
 
   /// Filter that changes the active scalar of the input mesh
   /// using the ActiveScalarName and ActiveAttributeLocation properties.
@@ -231,6 +231,11 @@ protected:
   double ThresholdRangeTemp[2];
 
   double BackfaceColorHSVOffset[3];
+
+  bool ClippingCapSurface{ false };
+  double ClippingCapOpacity{ 1.0 };
+  bool ClippingOutline{ false };
+  double ClippingCapColorHSVOffset[3];
 };
 
 #endif

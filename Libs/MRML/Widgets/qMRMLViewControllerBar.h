@@ -26,10 +26,14 @@ class QLabel;
 class QLayout;
 class QToolButton;
 
+// CTK includes
+#include <ctkVTKObject.h>
+
 // qMRMLWidget includes
 #include "qMRMLWidget.h"
 #include "qMRMLWidgetsExport.h"
 class qMRMLViewControllerBarPrivate;
+class vtkMRMLAbstractViewNode;
 
 /// qMRMLViewControllerBar is the base class of all the bars over views.
 /// A controller bar typically contains a pin button, a view label to uniquely
@@ -48,10 +52,12 @@ class qMRMLViewControllerBarPrivate;
 // To add widgets to the "controller" section (when not using a
 // popup), add them to the layout().
 //
-class QMRML_WIDGETS_EXPORT qMRMLViewControllerBar
-  : public qMRMLWidget
+class QMRML_WIDGETS_EXPORT qMRMLViewControllerBar : public qMRMLWidget
 {
   Q_OBJECT
+  QVTK_OBJECT
+  Q_PROPERTY(bool showMaximizeViewButton READ showMaximizeViewButton WRITE setShowMaximizeViewButton)
+
 public:
   /// Superclass typedef
   typedef qMRMLWidget Superclass;
@@ -60,8 +66,9 @@ public:
   explicit qMRMLViewControllerBar(QWidget* parent = nullptr);
   ~qMRMLViewControllerBar() override;
 
-  enum LayoutBehavior {
-    Popup=0,
+  enum LayoutBehavior
+  {
+    Popup = 0,
     Panel
   };
 
@@ -86,9 +93,22 @@ public:
   /// Label that displays the view's name.
   Q_INVOKABLE QLabel* viewLabel();
 
+  bool showMaximizeViewButton() const;
+
+public slots:
+  void maximizeView();
+
+  void setShowMaximizeViewButton(bool show);
+
+protected slots:
+  virtual void updateWidgetFromMRMLView();
+
 protected:
   QScopedPointer<qMRMLViewControllerBarPrivate> d_ptr;
   qMRMLViewControllerBar(qMRMLViewControllerBarPrivate* pimpl, QWidget* parent = nullptr);
+
+  virtual void setMRMLViewNode(vtkMRMLAbstractViewNode* viewNode);
+  virtual vtkMRMLAbstractViewNode* mrmlViewNode() const;
 
 private:
   Q_DECLARE_PRIVATE(qMRMLViewControllerBar);

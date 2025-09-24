@@ -41,16 +41,15 @@ class QItemSelection;
 
 /// \brief Qt widget for selecting a single segment from a segmentation.
 ///   If multiple segments are needed, then use \sa qMRMLSegmentsTableView instead in SimpleListMode
-/// \ingroup Slicer_QtModules_Segmentations_Widgets
 class Q_SLICER_MODULE_SEGMENTATIONS_WIDGETS_EXPORT qMRMLSegmentationFileExportWidget : public qMRMLWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
-    /// Key for storing selected options in application settings.
-    /// If an empty key string is given, then selections are not saved or loaded in settings.
-    /// Empty by default.
-    Q_PROPERTY(QString settingsKey READ settingsKey WRITE setSettingsKey)
+  /// Key for storing selected options in application settings.
+  /// If an empty key string is given, then selections are not saved or loaded in settings.
+  /// Empty by default.
+  Q_PROPERTY(QString settingsKey READ settingsKey WRITE setSettingsKey)
 
 public:
   /// Constructor
@@ -58,7 +57,7 @@ public:
   /// Destructor
   ~qMRMLSegmentationFileExportWidget() override;
 
-  QString settingsKey()const;
+  QString settingsKey() const;
   void setSettingsKey(const QString& key);
 
   /// Get current segmentation node
@@ -85,6 +84,8 @@ public slots:
   void updateSettingsFromWidget();
 
   void updateWidgetFromMRML();
+
+  void onSegmentationReferenceImageGeometryChanged();
 
 protected slots:
 

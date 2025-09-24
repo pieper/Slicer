@@ -33,10 +33,10 @@
 class QSettings;
 class qSlicerSettingsPythonPanelPrivate;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsPythonPanel
-  : public ctkSettingsPanel
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsPythonPanel : public ctkSettingsPanel
 {
   Q_OBJECT
+  Q_PROPERTY(QString consoleLogLevel READ consoleLogLevel WRITE setConsoleLogLevel NOTIFY consoleLogLevelChanged)
 public:
   /// Superclass typedef
   typedef ctkSettingsPanel Superclass;
@@ -47,8 +47,18 @@ public:
   /// Destructor
   ~qSlicerSettingsPythonPanel() override;
 
+  QString consoleLogLevel() const;
+
+public slots:
+  void setConsoleLogLevel(const QString& levelStr);
+  void applySettings() override;
+
 protected slots:
   void onFontChanged(const QFont& font);
+  void onConsoleLogLevelChanged(const QString& levelStr);
+
+signals:
+  void consoleLogLevelChanged(const QString&);
 
 protected:
   QScopedPointer<qSlicerSettingsPythonPanelPrivate> d_ptr;

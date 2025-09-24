@@ -33,10 +33,11 @@
 #include <vtkMRMLSubjectHierarchyConstants.h>
 
 class vtkCallbackCommand;
+class vtkIdList;
 class vtkMRMLDisplayNode;
 class vtkMRMLTransformNode;
+class vtkMRMLAbstractViewNode;
 
-/// \ingroup Slicer_MRML_Core
 /// \brief MRML node to represent a complete subject hierarchy tree
 ///
 ///   There can be only one such node in the scene, as subject hierarchy is to contain all the supported
@@ -72,6 +73,8 @@ public:
     SubjectHierarchyItemDisplayModifiedEvent,
     SubjectHierarchyItemTransformModifiedEvent,
     SubjectHierarchyItemReparentedEvent,
+    /// Event invoked when order of child items of an item is modified.
+    SubjectHierarchyItemChildrenReorderedEvent,
     /// Event invoked when UID is added to subject hierarchy item. Useful when using UIDs
     /// to find related nodes, and the nodes are loaded sequentially in unspecified order.
     SubjectHierarchyItemUIDAddedEvent,
@@ -82,12 +85,26 @@ public:
     /// Event invoked when item resolving starts (e.g. after scene import)
     SubjectHierarchyStartResolveEvent,
     /// Event invoked when item resolving finished (e.g. after scene import)
-    SubjectHierarchyEndResolveEvent
+    SubjectHierarchyEndResolveEvent,
+    /// Event invoked when showing of subject hierarchy items in a specific view is requested
+    /// (processed by the widget classes, by delegating to the owner subject hierarchy plugin).
+    /// For internal use only.
+    /// Use vtkMRMLSubjectHierarchyNode::ShowItemsInView or qSlicerSubjectHierarchyPluginHandler::showItemsInView
+    /// method to request view of subject hierarchy items in a view.
+    SubjectHierarchyItemsShowInViewRequestedEvent,
+  };
+
+  /// Event data used with SubjectHierarchyItemsShowInViewRequestedEvent.
+  /// For internal use only.
+  struct SubjectHierarchyItemsShowInViewRequestedEventData
+  {
+    vtkIdList* itemIDsToShow = nullptr;
+    vtkMRMLAbstractViewNode* viewNode = nullptr;
   };
 
 public:
-  static vtkMRMLSubjectHierarchyNode *New();
-  vtkTypeMacro(vtkMRMLSubjectHierarchyNode,vtkMRMLNode);
+  static vtkMRMLSubjectHierarchyNode* New();
+  vtkTypeMacro(vtkMRMLSubjectHierarchyNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
@@ -100,12 +117,12 @@ public:
   void WriteNodeBodyXML(ostream& of, int indent) override;
 
   /// Copy the node's attributes to this object
-  void Copy(vtkMRMLNode *node) override;
+  void Copy(vtkMRMLNode* node) override;
 
   /// Get node XML tag name (like Volume, Contour)
   const char* GetNodeTagName() override;
 
-// Get/Set methods
+  // Get/Set methods
 public:
   /// Get the (practically) singleton subject hierarchy node from MRML scene.
   /// Merges subject hierarchy nodes if multiple found, and returns the merged one.
@@ -135,9 +152,19 @@ public:
 
   /// Set UID to the subject hierarchy item
   void SetItemUID(vtkIdType itemID, std::string uidName, std::string uidValue);
+  /// Remove UID from subject hierarchy item
+  /// \return True if UID was removed, false if item or UID is not found
+  bool RemoveItemUID(vtkIdType itemID, std::string uidName);
   /// Get a UID with a given name
   /// \return The UID value if exists, empty string if does not
   std::string GetItemUID(vtkIdType itemID, std::string uidName);
+  /// Get UID names for a subject hierarchy item
+  /// \return List of UID names
+  std::vector<std::string> GetItemUIDNames(vtkIdType itemID);
+  /// Determine if a given UID is present in an item.
+  /// Especially useful if need to determine whether a UID value is empty string or the UID is missing
+  /// \return True if UID exists, false if item or UID is not found
+  bool HasItemUID(vtkIdType itemID, std::string uidName);
 
   /// Add attribute to the subject hierarchy item
   void SetItemAttribute(vtkIdType itemID, std::string attributeName, std::string attributeValue);
@@ -177,21 +204,23 @@ public:
   ///   Should never need to call manually!
   void SetItemDataNode(vtkIdType itemID, vtkMRMLNode* dataNode);
 
-// Hierarchy related methods
+  // Hierarchy related methods
 public:
   /// Create subject hierarchy item for a data node.
   /// Can be used to add nodes that were not added automatically (e.g. private scene, HideFromEditors on, or exclude attribute set)
   /// \param parentItemID Parent item under which the created item is inserted. If top-level then use \sa GetSceneItemID
   /// \param dataNode Associated data MRML node
   /// \return ID of the item in the hierarchy that was assigned automatically when adding
-  vtkIdType CreateItem(vtkIdType parentItemID, vtkMRMLNode* dataNode, const char* ownerPluginName=nullptr);
+  vtkIdType CreateItem(vtkIdType parentItemID, vtkMRMLNode* dataNode, const char* ownerPluginName = nullptr);
   /// Generic function to create hierarchy items of given level. Convenience functions are available for frequently used levels
   /// \sa CreateSubjectItem, \sa CreateStudyItem, \sa CreateFolderItem
   /// \param parentItemID Parent item under which the created item is inserted. If top-level then use \sa GetSceneItemID
   /// \param name Name of the item. Only used if there is no data node associated
   /// \param level Level of the hierarchy item. It will be stored as attribute (\sa vtkMRMLSubjectHierarchyConstants)
+  /// \param positionUnderParent Position of the item under the parent item. If set to -1 then it will be appended
+  ///   after the last item under the parent.
   /// \return ID of the item in the hierarchy that was assigned automatically when adding
-  vtkIdType CreateHierarchyItem(vtkIdType parentItemID, std::string name, std::string level);
+  vtkIdType CreateHierarchyItem(vtkIdType parentItemID, std::string name, std::string level, int positionUnderParent = -1);
   /// Convenience function to create subject item in the hierarchy under a specified parent.
   /// \param parentItemID Parent item under which the created item is inserted. If top-level then use \sa GetSceneItemID
   /// \param name Name of the item. Only used if there is no data node associated
@@ -212,21 +241,21 @@ public:
   /// \param itemID Item to remove
   /// \param removeDataNode Flag determining whether to remove associated data node from the scene if any. On by default
   /// \param recursive Flag determining whether to remove children recursively (the whole branch). On by default
-  bool RemoveItem(vtkIdType itemID, bool removeDataNode=true, bool recursive=true);
+  bool RemoveItem(vtkIdType itemID, bool removeDataNode = true, bool recursive = true);
   /// Remove child items of a subject hierarchy item
   /// \param itemID Parent of items to remove
   /// \param removeDataNodes Flag determining whether to remove associated data nodes from the scene if any. On by default
   /// \param recursive Flag determining whether to remove children recursively, or just the direct children. On by default
-  bool RemoveItemChildren(vtkIdType itemID, bool removeDataNodes=true, bool recursive=true);
+  bool RemoveItemChildren(vtkIdType itemID, bool removeDataNodes = true, bool recursive = true);
   /// Remove all items from hierarchy
   /// \param removeDataNode Flag determining whether to remove associated data node from the scene if any. False by default,
   ///   because as opposed to the method \sa RemoveItem that is usually initiated by the user, this method is
   ///   called when subject hierarchy is re-built from the scene
-  void RemoveAllItems(bool removeDataNode=false);
+  void RemoveAllItems(bool removeDataNode = false);
 
   /// Set the parent of a subject hierarchy item
   /// \param enableCircularCheck Option to do a safety check for circular parenthood in performance-critical cases. On by default.
-  void SetItemParent(vtkIdType itemID, vtkIdType parentItemID, bool enableCircularCheck=true);
+  void SetItemParent(vtkIdType itemID, vtkIdType parentItemID, bool enableCircularCheck = true);
   /// Get ID of the parent of a subject hierarchy item
   /// \return Parent item ID, INVALID_ITEM_ID if there is no parent
   vtkIdType GetItemParent(vtkIdType itemID);
@@ -241,9 +270,9 @@ public:
   /// \param childIDs Output vector containing the children. It will not contain the given item itself.
   ///   The order of the items is depth-first, in a way that the child of an item in the vector always comes after the item.
   /// \param recursive If false then collect direct children, if true then the whole branch. False by default
-  void GetItemChildren(vtkIdType itemID, std::vector<vtkIdType>& childIDs, bool recursive=false);
+  void GetItemChildren(vtkIdType itemID, std::vector<vtkIdType>& childIDs, bool recursive = false);
   /// Python accessibility function to get children of a subject hierarchy item
-  void GetItemChildren(vtkIdType itemID, vtkIdList* childIDs, bool recursive=false);
+  void GetItemChildren(vtkIdType itemID, vtkIdList* childIDs, bool recursive = false);
 
   /// Set new parent to a subject hierarchy item under item associated to specified data node
   /// \return Success flag
@@ -253,7 +282,15 @@ public:
   /// \return Success flag
   bool MoveItem(vtkIdType itemID, vtkIdType beforeItemID);
 
-// Item finder methods
+  /// Reorder child items of a subject hierarchy item
+  /// If a child item was under a different parent then the item is moved under the new parent.
+  /// Current children of the parent item that are not listed in childIDs are moved to the end.
+  /// \param itemID Parent item where the children will be moved to, in the specified order.
+  /// \param childIDs New order of the children.
+  /// \return Success flag
+  bool ReorderItemChildren(vtkIdType parentItemID, vtkIdList* childIDs);
+
+  // Item finder methods
 public:
   /// Find subject hierarchy item according to a UID (by exact match)
   /// \param uidName UID string to lookup
@@ -284,28 +321,28 @@ public:
   /// \param contains Flag whether string containment is enough to determine match. True means a substring is searched
   ///   (case insensitive), false means that the name needs to match exactly (case sensitive). False by default.
   /// \return Item ID of the first item found by name using exact match. Warning is logged if more than one found
-  void GetItemsByName(std::string name, vtkIdList* foundItemIds, bool contains=false);
+  void GetItemsByName(std::string name, vtkIdList* foundItemIds, bool contains = false);
 
   /// Get child subject hierarchy item with specific name
   /// \param parent Parent subject hierarchy item to start from
   /// \param name Name to find
   /// \param recursive Flag determining whether search is recursive or not. False by default
   /// \return Child item ID whose name is the same as the given string
-  vtkIdType GetItemChildWithName(vtkIdType parentItemID, std::string name, bool recursive=false);
+  vtkIdType GetItemChildWithName(vtkIdType parentItemID, std::string name, bool recursive = false);
 
   /// Find all associated data nodes of a specified class in a branch of the hierarchy.
   /// \param itemID Parent item of the branch
   /// \param dataNodeCollection Collection updated with the list of data nodes
   /// \param childClass Name of the class we are looking for. nullptr returns associated data nodes of any kind
-  void GetDataNodesInBranch(vtkIdType itemID, vtkCollection* dataNodeCollection, const char* childClass=nullptr);
+  void GetDataNodesInBranch(vtkIdType itemID, vtkCollection* dataNodeCollection, const char* childClass = nullptr);
 
   /// Get data node associated to the parent of the item associated to a data node.
   /// \param recursive Flag determining whether only the direct parent is considered (false), or
   ///   also further up in the tree (true). Default is false
   /// \return Data node associated to the parent of the given data node's item
-  vtkMRMLNode* GetParentDataNode(vtkMRMLNode* dataNode, bool recursive=false);
+  vtkMRMLNode* GetParentDataNode(vtkMRMLNode* dataNode, bool recursive = false);
 
-// Utility functions
+  // Utility functions
 public:
   /// Set subject hierarchy branch visibility
   /// \deprecated Kept only for backward compatibility. \sa SetItemDisplayVisibility
@@ -342,7 +379,7 @@ public:
   ///   (e.g. value of vtkMRMLSubjectHierarchyConstants::GetSubjectHierarchyLevelStudy()).
   ///   If empty, then look all the way up to the subject and return first attribute found with specified name
   /// \return Attribute value from the lowest level ancestor where the attribute can be found
-  std::string GetAttributeFromItemAncestor(vtkIdType itemID, std::string attributeName, std::string level="");
+  std::string GetAttributeFromItemAncestor(vtkIdType itemID, std::string attributeName, std::string level = "");
 
   /// Get ancestor subject hierarchy item at a certain level
   /// \param level Level of the ancestor item we start searching.
@@ -351,7 +388,7 @@ public:
   /// Determine if any of the children of this item is transformed (has a parent transform applied), except for an optionally given node
   /// \param includeParentItem Determine whether the given item (the parent of the branch) should be included in the search. True by default
   /// \param exceptionNode The function returns false if the only applied transform found is this specified node.
-  bool IsAnyNodeInBranchTransformed(vtkIdType itemID, bool includeParentItem=true, vtkMRMLTransformNode* exceptionNode=nullptr);
+  bool IsAnyNodeInBranchTransformed(vtkIdType itemID, bool includeParentItem = true, vtkMRMLTransformNode* exceptionNode = nullptr);
 
   /// Deserialize a UID list string (stored in the UID map) into a vector of UID strings
   static void DeserializeUIDList(std::string uidListString, std::vector<std::string>& deserializedUIDList);
@@ -382,13 +419,16 @@ public:
 
   /// Get number of children for an item
   /// \param recursive If true, then get total number of items in the branch, only direct children otherwise. False by default
-  int GetNumberOfItemChildren(vtkIdType itemID, bool recursive=false);
+  int GetNumberOfItemChildren(vtkIdType itemID, bool recursive = false);
 
   /// Print subject hierarchy item info on stream
   void PrintItem(vtkIdType itemID, ostream& os, vtkIndent indent);
 
   /// Ensure the consistency and validity of the SH node in the scene
   static vtkMRMLSubjectHierarchyNode* ResolveSubjectHierarchy(vtkMRMLScene* scene);
+
+  /// Show items in selected view (used for drag&drop of subject hierarchy items into the viewer)
+  void ShowItemsInView(vtkIdList* itemIDs, vtkMRMLAbstractViewNode* viewNode);
 
 protected:
   /// Callback function for all events from the subject hierarchy items

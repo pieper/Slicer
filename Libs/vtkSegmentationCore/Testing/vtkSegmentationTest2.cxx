@@ -46,38 +46,35 @@ bool TestSharedLabelmapConversion()
 {
   // Generate sphere models
   vtkNew<vtkPolyData> spherePolyData1;
-  double sphereCenter1[3] = { 0,0,0 };
+  double sphereCenter1[3] = { 0, 0, 0 };
   double sphereRadius1 = 1;
   CreateSpherePolyData(spherePolyData1.GetPointer(), sphereCenter1, sphereRadius1);
 
   vtkNew<vtkPolyData> spherePolyData2;
-  double sphereCenter2[3] = { -1,-1,-1 };
+  double sphereCenter2[3] = { -1, -1, -1 };
   double sphereRadius2 = 2;
   CreateSpherePolyData(spherePolyData2.GetPointer(), sphereCenter2, sphereRadius2);
 
   vtkNew<vtkPolyData> spherePolyData3;
-  double sphereCenter3[3] = { 5, 5,5 };
+  double sphereCenter3[3] = { 5, 5, 5 };
   double sphereRadius3 = 2;
   CreateSpherePolyData(spherePolyData3.GetPointer(), sphereCenter3, sphereRadius3);
 
   // Create segments
   vtkNew<vtkSegment> sphereSegment1;
   sphereSegment1->SetName("sphere1");
-  sphereSegment1->AddRepresentation(
-    vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName(), spherePolyData1.GetPointer());
+  sphereSegment1->AddRepresentation(vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName(), spherePolyData1.GetPointer());
 
   vtkNew<vtkSegment> sphereSegment2;
   sphereSegment2->SetName("sphere2");
-  sphereSegment2->AddRepresentation(
-    vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName(), spherePolyData2.GetPointer());
+  sphereSegment2->AddRepresentation(vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName(), spherePolyData2.GetPointer());
 
   vtkNew<vtkSegment> sphereSegment3;
   sphereSegment3->SetName("sphere3");
-  sphereSegment3->AddRepresentation(
-    vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName(), spherePolyData3.GetPointer());
+  sphereSegment3->AddRepresentation(vtkSegmentationConverter::GetSegmentationClosedSurfaceRepresentationName(), spherePolyData3.GetPointer());
 
   vtkNew<vtkSegmentation> segmentation;
-  segmentation->SetMasterRepresentationName(vtkSegmentationConverter::GetClosedSurfaceRepresentationName());
+  segmentation->SetSourceRepresentationName(vtkSegmentationConverter::GetClosedSurfaceRepresentationName());
   segmentation->AddSegment(sphereSegment1);
   segmentation->AddSegment(sphereSegment2);
   segmentation->AddSegment(sphereSegment3);
@@ -85,38 +82,34 @@ bool TestSharedLabelmapConversion()
 
   int numClosedSurfaceLayers = segmentation->GetNumberOfLayers(vtkSegmentationConverter::GetClosedSurfaceRepresentationName());
   if (numClosedSurfaceLayers != 3)
-    {
-    std::cerr << __LINE__ << ": Invalid number of closed surface layers " << numClosedSurfaceLayers
-      << " should be 3" << std::endl;
+  {
+    std::cerr << __LINE__ << ": Invalid number of closed surface layers " << numClosedSurfaceLayers << " should be 3" << std::endl;
     return false;
-    }
+  }
 
   segmentation->CreateRepresentation(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName());
 
   int numBinaryLabelmapLayers = segmentation->GetNumberOfLayers(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName());
   if (numBinaryLabelmapLayers != 2)
-    {
-    std::cerr << __LINE__ << ": Invalid number of binary labelmap layers " << numBinaryLabelmapLayers
-      << " should be 2" << std::endl;
+  {
+    std::cerr << __LINE__ << ": Invalid number of binary labelmap layers " << numBinaryLabelmapLayers << " should be 2" << std::endl;
     return false;
-    }
+  }
 
   std::vector<std::string> sharedSegmentIDs;
   segmentation->GetSegmentIDsSharingBinaryLabelmapRepresentation(segmentation->GetSegmentIdBySegment(sphereSegment1), sharedSegmentIDs, true);
   if (sharedSegmentIDs.size() != 2)
-    {
-    std::cerr << __LINE__ << ": Invalid number of shared labelmaps for segment " << sphereSegment1->GetName()
-      << ": " << sharedSegmentIDs.size() << " should be 2" << std::endl;
+  {
+    std::cerr << __LINE__ << ": Invalid number of shared labelmaps for segment " << sphereSegment1->GetName() << ": " << sharedSegmentIDs.size() << " should be 2" << std::endl;
     return false;
-    }
+  }
 
   segmentation->GetSegmentIDsSharingBinaryLabelmapRepresentation(segmentation->GetSegmentIdBySegment(sphereSegment2), sharedSegmentIDs, true);
   if (sharedSegmentIDs.size() != 1)
-    {
-    std::cerr << __LINE__ << ": Invalid number of shared labelmaps for segment " << sphereSegment2->GetName()
-      << ": " << sharedSegmentIDs.size() << " should be 1" << std::endl;
+  {
+    std::cerr << __LINE__ << ": Invalid number of shared labelmaps for segment " << sphereSegment2->GetName() << ": " << sharedSegmentIDs.size() << " should be 1" << std::endl;
     return false;
-    }
+  }
 
   return true;
 }
@@ -139,6 +132,17 @@ bool TestSharedLabelmapCollapse()
   int extent4[6] = { 3, 5, 3, 5, 3, 5 };
   int imageCount4 = CreateCubeLabelmap(cubeImage4, extent4);
 
+  vtkNew<vtkOrientedImageData> emptyImage1; // 1 pixel, empty label
+  int emptyExtent1[6] = { 0, 0, 0, 0, 0, 0 };
+  emptyImage1->SetExtent(emptyExtent1);
+  emptyImage1->AllocateScalars(VTK_CHAR, 1);
+  emptyImage1->GetPointData()->GetScalars()->Fill(0.0);
+
+  vtkNew<vtkOrientedImageData> emptyImage2; // 0 pixels
+  int emptyExtent2[6] = { 0, -1, 0, -1, 0, -1 };
+  emptyImage2->SetExtent(emptyExtent2);
+  emptyImage2->AllocateScalars(VTK_CHAR, 1);
+
   vtkNew<vtkSegment> segment1;
   segment1->SetName("cube1");
   segment1->AddRepresentation(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName(), cubeImage1);
@@ -155,113 +159,113 @@ bool TestSharedLabelmapCollapse()
   segment4->SetName("cube4");
   segment4->AddRepresentation(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName(), cubeImage4);
 
-  std::vector<vtkSegment*> segments =
-    {
-    segment1,
-    segment2,
-    segment3,
-    segment4,
-    };
+  vtkNew<vtkSegment> segment5;
+  segment5->SetName("empty1");
+  segment5->AddRepresentation(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName(), emptyImage1);
+
+  vtkNew<vtkSegment> segment6;
+  segment6->SetName("empty2");
+  segment6->AddRepresentation(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName(), emptyImage2);
+
+  std::vector<std::pair<vtkSegment*, int>> segments = {
+    { segment1, imageCount1 }, { segment2, imageCount2 }, { segment5, 0 }, { segment3, imageCount3 }, { segment4, imageCount4 }, { segment6, 0 },
+  };
 
   vtkNew<vtkSegmentation> segmentation;
-  segmentation->SetMasterRepresentationName(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName());
-  segmentation->AddSegment(segment1);
-  segmentation->AddSegment(segment2);
-  segmentation->AddSegment(segment3);
-  segmentation->AddSegment(segment4);
+  segmentation->SetSourceRepresentationName(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName());
+  for (auto segment : segments)
+  {
+    segmentation->AddSegment(segment.first);
+  }
 
-  int numberOfLayers = 0;
-
-  numberOfLayers = segmentation->GetNumberOfLayers();
-  if (numberOfLayers != 4)
+  {
+    int expectedNumberOfLayers = segments.size();
+    int numberOfLayers = 0;
+    numberOfLayers = segmentation->GetNumberOfLayers();
+    if (numberOfLayers != expectedNumberOfLayers)
     {
-    std::cerr << "Invalid number of layers " << numberOfLayers << " should be 4" << std::endl;
-    return false;
+      std::cerr << "Invalid number of layers " << numberOfLayers << " should be " << expectedNumberOfLayers << std::endl;
+      return false;
     }
+  }
 
   /////////////////////////////////////
   segmentation->CollapseBinaryLabelmaps(false); // Merge to multiple layers
 
-  numberOfLayers = segmentation->GetNumberOfLayers();
-  if (numberOfLayers != 3)
+  {
+    int expectedNumberOfLayers = 3;
+    int numberOfLayers = segmentation->GetNumberOfLayers();
+    if (numberOfLayers != expectedNumberOfLayers)
     {
-    std::cerr << "Safe merge failed: Invalid number of layers " << numberOfLayers << " should be 3" << std::endl;
-    return false;
+      std::cerr << "Safe merge failed: Invalid number of layers " << numberOfLayers << " should be " << expectedNumberOfLayers << std::endl;
+      return false;
     }
+  }
 
   vtkNew<vtkImageAccumulate> imageAccumulate;
   double frequency = 0.0;
 
-  std::vector<int> expectedResults =
-    {
-    imageCount1,
-    imageCount2,
-    imageCount3,
-    imageCount4,
-    };
   for (size_t i = 0; i < segments.size(); ++i)
-    {
-    vtkSegment* segment = segments[i];
-    int expectedFrequency = expectedResults[i];
+  {
+    vtkSegment* segment = segments[i].first;
+    int expectedFrequency = segments[i].second;
 
-    vtkOrientedImageData* segmentLabelmap = vtkOrientedImageData::SafeDownCast(segment->GetRepresentation(
-      vtkSegmentationConverter::GetBinaryLabelmapRepresentationName()));
+    vtkOrientedImageData* segmentLabelmap = vtkOrientedImageData::SafeDownCast(segment->GetRepresentation(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName()));
     double labelValue = segment->GetLabelValue();
     imageAccumulate->SetInputData(segmentLabelmap);
     imageAccumulate->Update();
     frequency = imageAccumulate->GetOutput()->GetPointData()->GetScalars()->GetTuple1((vtkIdType)labelValue);
     if (frequency != expectedFrequency)
-      {
+    {
       std::cerr << "Invalid number of voxels in " << segment->GetName() << " " << frequency << " should be " << expectedFrequency << std::endl;
       return false;
-      }
     }
+  }
 
   /////////////////////////////////////
   segmentation->CollapseBinaryLabelmaps(true); // Overwrite merge
 
-  numberOfLayers = segmentation->GetNumberOfLayers();
-  if (numberOfLayers != 1)
+  {
+    int expectedNumberOfLayers = 1;
+    int numberOfLayers = segmentation->GetNumberOfLayers();
+    if (numberOfLayers != expectedNumberOfLayers)
     {
-    std::cerr << "Overwrite merge failed: Invalid number of layers " << numberOfLayers << " should be 1" << std::endl;
-    return false;
+      std::cerr << "Overwrite merge failed: Invalid number of layers " << numberOfLayers << " should be " << expectedNumberOfLayers << std::endl;
+      return false;
     }
+  }
 
-
-   expectedResults =
-    {
-    0,
-    imageCount2 - imageCount3,
-    imageCount3,
-    imageCount4,
-    };
+  segments[0] = { segment1, 0 };                         // overlapping segment overwrites full segment
+  segments[1] = { segment2, imageCount2 - imageCount3 }; // overlapping segment removes some voxels
   for (size_t i = 0; i < segments.size(); ++i)
-    {
-    vtkSegment* segment = segments[i];
-    int expectedFrequency = expectedResults[i];
+  {
+    vtkSegment* segment = segments[i].first;
+    int expectedFrequency = segments[i].second;
 
-    vtkOrientedImageData* segmentLabelmap = vtkOrientedImageData::SafeDownCast(segment->GetRepresentation(
-      vtkSegmentationConverter::GetBinaryLabelmapRepresentationName()));
+    vtkOrientedImageData* segmentLabelmap = vtkOrientedImageData::SafeDownCast(segment->GetRepresentation(vtkSegmentationConverter::GetBinaryLabelmapRepresentationName()));
     double labelValue = segment->GetLabelValue();
     imageAccumulate->SetInputData(segmentLabelmap);
     imageAccumulate->Update();
     frequency = imageAccumulate->GetOutput()->GetPointData()->GetScalars()->GetTuple1((vtkIdType)labelValue);
     if (frequency != expectedFrequency)
-      {
+    {
       std::cerr << "Invalid number of voxels in " << segment->GetName() << " " << frequency << " should be " << expectedFrequency << std::endl;
       return false;
-      }
     }
+  }
 
   /////////////////////////////////////
   segmentation->SeparateSegmentLabelmap(segmentation->GetSegmentIdBySegment(segment1));
 
-  numberOfLayers = segmentation->GetNumberOfLayers();
-  if (numberOfLayers != 2)
+  {
+    int expectedNumberOfLayers = 2;
+    int numberOfLayers = segmentation->GetNumberOfLayers();
+    if (numberOfLayers != expectedNumberOfLayers)
     {
-    std::cerr << "Separate segment labelmap failed: Invalid number of layers " << numberOfLayers << " should be 2" << std::endl;
-    return false;
+      std::cerr << "Separate segment labelmap failed: Invalid number of layers " << numberOfLayers << " should be " << expectedNumberOfLayers << std::endl;
+      return false;
     }
+  }
 
   return true;
 }
@@ -281,35 +285,131 @@ bool TestSharedLabelmapCasting()
   segmentation->AddSegment(segment);
 
   if (labelmap->GetScalarType() != VTK_UNSIGNED_CHAR)
-    {
+  {
     std::cerr << "Invalid scalar type " << labelmap->GetScalarType() << " should be " << VTK_UNSIGNED_CHAR << std::endl;
     return false;
-    }
+  }
 
   for (int i = 0; i < 254; ++i)
-    {
+  {
     segmentation->AddEmptySegment();
-    }
+  }
 
   if (labelmap->GetScalarType() != VTK_UNSIGNED_CHAR)
-    {
+  {
     std::cerr << "Invalid scalar type " << labelmap->GetScalarType() << " should be " << VTK_UNSIGNED_CHAR << std::endl;
     return false;
-    }
+  }
 
   segmentation->AddEmptySegment();
   if (labelmap->GetScalarType() != VTK_UNSIGNED_SHORT)
-    {
+  {
     std::cerr << "Invalid scalar type " << labelmap->GetScalarType() << " should be " << VTK_UNSIGNED_SHORT << std::endl;
     return false;
-    }
+  }
 
   vtkOrientedImageDataResample::CastImageForValue(labelmap, VTK_UNSIGNED_SHORT_MAX + 1);
   if (labelmap->GetScalarType() != VTK_UNSIGNED_INT)
-    {
+  {
     std::cerr << "Invalid scalar type " << labelmap->GetScalarType() << " should be " << VTK_UNSIGNED_INT << std::endl;
     return false;
+  }
+
+  return true;
+}
+
+//----------------------------------------------------------------------------
+bool TestLabelmapFloatToIntegerConversion(int scalarType)
+{
+
+  int numberOfValues = 5;
+  double values[5] = { -2.0, -1.0, 0.0, 1.0, 2.0 };
+  int numberOfOffsets = 7;
+  double offsets[7] = { -0.3, -0.1, -0.01, 0.0, 0.01, 0.1, 0.3 };
+
+  vtkNew<vtkOrientedImageData> labelmap;
+  labelmap->SetDimensions(numberOfValues, numberOfOffsets, 1);
+  labelmap->AllocateScalars(scalarType, 1);
+  for (int i = 0; i < numberOfValues; ++i)
+  {
+    for (int j = 0; j < numberOfOffsets; ++j)
+    {
+      labelmap->SetScalarComponentFromDouble(i, j, 0, 0, values[i] + offsets[j]);
     }
+  }
+
+  if (!vtkOrientedImageDataResample::CastSegmentationToSmallestIntegerType(labelmap))
+  {
+    std::cerr << "Unable to convert labelmap of type: " << vtkImageScalarTypeNameMacro(labelmap->GetScalarType()) << " to integer type" << std::endl;
+    return false;
+  }
+
+  for (int i = 0; i < numberOfValues; ++i)
+  {
+    for (int j = 0; j < numberOfOffsets; ++j)
+    {
+      double value = labelmap->GetScalarComponentAsDouble(i, j, 0, 0);
+      double expectedValue = std::trunc(values[i] + offsets[j]); // Casting from float to integer we expect truncation
+      if (value != expectedValue)
+      {
+        std::cerr << "Invalid value at index " << i << ", " << j << std::endl;
+        std::cerr << "\tOriginal value:" << values[i] << std::endl;
+        std::cerr << "\tOffset:" << offsets[j] << std::endl;
+        std::cerr << "\tScalar value: " << value << std::endl;
+        std::cerr << "\tExpected value: " << expectedValue << std::endl;
+        std::cerr << "\tOriginal type: " << vtkImageScalarTypeNameMacro(scalarType) << std::endl;
+        std::cerr << "\tInteger type: " << vtkImageScalarTypeNameMacro(labelmap->GetScalarType()) << std::endl;
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+//----------------------------------------------------------------------------
+bool TestLabelmapValidation()
+{
+  vtkNew<vtkOrientedImageData> labelmap;
+  labelmap->SetDimensions(1, 1, 1);
+
+  int ret = vtkOrientedImageDataResample::TYPE_ERROR;
+
+  labelmap->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  labelmap->SetScalarComponentFromDouble(0, 0, 0, 0, 0.0);
+  ret = vtkOrientedImageDataResample::IsImageScalarTypeValid(labelmap);
+  if (ret != vtkOrientedImageDataResample::TYPE_OK)
+  {
+    std::cerr << "Invalid return value " << ret << " should be " << vtkOrientedImageDataResample::TYPE_OK << std::endl;
+    return false;
+  }
+
+  labelmap->AllocateScalars(VTK_LONG, 1);
+  labelmap->SetScalarComponentFromDouble(0, 0, 0, 0, 0.0);
+  ret = vtkOrientedImageDataResample::IsImageScalarTypeValid(labelmap);
+  if (ret != vtkOrientedImageDataResample::TYPE_CONVERSION_NEEDED)
+  {
+    std::cerr << "Invalid return value " << ret << " should be " << vtkOrientedImageDataResample::TYPE_CONVERSION_NEEDED << std::endl;
+    return false;
+  }
+
+  labelmap->AllocateScalars(VTK_DOUBLE, 1);
+  labelmap->SetScalarComponentFromDouble(0, 0, 0, 0, VTK_DOUBLE_MAX);
+  ret = vtkOrientedImageDataResample::IsImageScalarTypeValid(labelmap);
+  if (ret != vtkOrientedImageDataResample::TYPE_CONVERSION_CLAMPING_NEEDED)
+  {
+    std::cerr << "Invalid return value " << ret << " should be " << vtkOrientedImageDataResample::TYPE_CONVERSION_CLAMPING_NEEDED << std::endl;
+    return false;
+  }
+
+  labelmap->AllocateScalars(VTK_FLOAT, 1);
+  labelmap->SetScalarComponentFromDouble(0, 0, 0, 0, 0.0);
+  ret = vtkOrientedImageDataResample::IsImageScalarTypeValid(labelmap);
+  if (ret != vtkOrientedImageDataResample::TYPE_CONVERSION_TRUNCATION_NEEDED)
+  {
+    std::cerr << "Invalid return value " << ret << " should be " << vtkOrientedImageDataResample::TYPE_CONVERSION_TRUNCATION_NEEDED << std::endl;
+    return false;
+  }
 
   return true;
 }
@@ -318,27 +418,39 @@ bool TestSharedLabelmapCasting()
 int vtkSegmentationTest2(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 {
   // Register converter rules
-  vtkSegmentationConverterFactory::GetInstance()->RegisterConverterRule(
-    vtkSmartPointer<vtkBinaryLabelmapToClosedSurfaceConversionRule>::New() );
-  vtkSegmentationConverterFactory::GetInstance()->RegisterConverterRule(
-    vtkSmartPointer<vtkClosedSurfaceToBinaryLabelmapConversionRule>::New() );
+  vtkSegmentationConverterFactory::GetInstance()->RegisterConverterRule(vtkSmartPointer<vtkBinaryLabelmapToClosedSurfaceConversionRule>::New());
+  vtkSegmentationConverterFactory::GetInstance()->RegisterConverterRule(vtkSmartPointer<vtkClosedSurfaceToBinaryLabelmapConversionRule>::New());
 
   if (!TestSharedLabelmapConversion())
-    {
+  {
     return EXIT_FAILURE;
-    }
+  }
 
   if (!TestSharedLabelmapCollapse())
-    {
+  {
     return EXIT_FAILURE;
-    }
+  }
 
   if (!TestSharedLabelmapCasting())
-    {
+  {
     return EXIT_FAILURE;
-    }
+  }
 
-  std::cout << "Segmentation test 2 passed." << std::endl;
+  if (!TestLabelmapFloatToIntegerConversion(VTK_FLOAT))
+  {
+    return EXIT_FAILURE;
+  }
+
+  if (!TestLabelmapFloatToIntegerConversion(VTK_DOUBLE))
+  {
+    return EXIT_FAILURE;
+  }
+
+  if (!TestLabelmapValidation())
+  {
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
 }
 
@@ -351,10 +463,9 @@ void SetReferenceGeometry(vtkSegmentation* segmentation)
   referenceGeometryMatrix->SetElement(0, 0, 0.1);
   referenceGeometryMatrix->SetElement(1, 1, 0.1);
   referenceGeometryMatrix->SetElement(2, 2, 0.1);
-  int referenceGeometryExtent[6] = { -50,50,-50,50,-50,50 };
+  int referenceGeometryExtent[6] = { -50, 50, -50, 50, -50, 50 };
   std::string referenceGeometryString = vtkSegmentationConverter::SerializeImageGeometry(referenceGeometryMatrix.GetPointer(), referenceGeometryExtent);
-  segmentation->SetConversionParameter(
-    vtkSegmentationConverter::GetReferenceImageGeometryParameterName(), referenceGeometryString);
+  segmentation->SetConversionParameter(vtkSegmentationConverter::GetReferenceImageGeometryParameterName(), referenceGeometryString);
 }
 
 //----------------------------------------------------------------------------
@@ -374,9 +485,10 @@ int CreateCubeLabelmap(vtkOrientedImageData* imageData, int extent[6])
   vtkNew<vtkOrientedImageData> identityImageData;
   imageData->SetExtent(extent);
   imageData->AllocateScalars(VTK_UNSIGNED_CHAR, 1);
+  imageData->GetPointData()->GetScalars()->Fill(0.0);
 
   unsigned char* imagePtr = (unsigned char*)imageData->GetScalarPointer();
   int size = (extent[1] - extent[0] + 1) * (extent[3] - extent[2] + 1) * (extent[5] - extent[4] + 1);
-  memset(imagePtr, 1, ( size * imageData->GetScalarSize() * imageData->GetNumberOfScalarComponents()));
+  memset(imagePtr, 1, (size * imageData->GetScalarSize() * imageData->GetNumberOfScalarComponents()));
   return size;
 }

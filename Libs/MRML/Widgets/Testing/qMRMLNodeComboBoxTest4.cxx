@@ -36,8 +36,7 @@
 #include <vtkNew.h>
 #include "qMRMLWidget.h"
 
-
-int qMRMLNodeComboBoxTest4( int argc, char * argv [] )
+int qMRMLNodeComboBoxTest4(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -52,60 +51,60 @@ int qMRMLNodeComboBoxTest4( int argc, char * argv [] )
 
   vtkMRMLNode* node = nodeSelector.addNode();
   if (nodeSelector.nodeCount() != 1)
-    {
+  {
     std::cerr << __LINE__ << "qMRMLNodeComboBox::addNode is broken" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   node->SetName("foo");
 
   node = nodeSelector.addNode("vtkMRMLScalarVolumeNode");
   if (nodeSelector.nodeCount() != 2)
-    {
+  {
     std::cerr << __LINE__ << "qMRMLNodeComboBox::addNode is broken" << std::endl;
     return EXIT_FAILURE;
-    }
-  if (strcmp(node->GetName(), "SomeBaseName_1")!=0)
-    {
+  }
+  if (strcmp(node->GetName(), "SomeBaseName_1") != 0)
+  {
     std::cerr << __LINE__ << "qMRMLNodeComboBox::addNode is broken" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   node = nodeSelector.addNode("vtkMRMLLabelMapVolumeNode");
   if (nodeSelector.nodeCount() != 3)
-    {
+  {
     std::cerr << __LINE__ << "qMRMLNodeComboBox::addNode is broken" << std::endl;
     return EXIT_FAILURE;
-    }
-  if (strcmp(node->GetName(), "SomeBaseName_2")!=0)
-    {
+  }
+  if (strcmp(node->GetName(), "SomeBaseName_2") != 0)
+  {
     std::cerr << __LINE__ << "qMRMLNodeComboBox::addNode is broken" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Test that we cannot add a node type that is not among the list of allowed node types
   node = nodeSelector.addNode("vtkMRMLModelNode");
   if (nodeSelector.nodeCount() != 3)
-    {
+  {
     std::cerr << __LINE__ << "qMRMLNodeComboBox::addNode is broken" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   // Check if base name of a particular class can be changed
   nodeSelector.setBaseName("DifferentBaseName", "vtkMRMLLabelMapVolumeNode");
   node = nodeSelector.addNode("vtkMRMLLabelMapVolumeNode");
-  if (strcmp(node->GetName(), "DifferentBaseName")!=0)
-    {
+  if (strcmp(node->GetName(), "DifferentBaseName") != 0)
+  {
     std::cerr << __LINE__ << "qMRMLNodeComboBox::addNode is broken" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   nodeSelector.show();
 
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }

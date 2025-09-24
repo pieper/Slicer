@@ -48,7 +48,7 @@ class qMRMLSpinBoxPrivate;
 /// it listens to the changes made upon the selection node to extract the
 /// unit properties related to its quantity and update accordingly.
 ///
-/// To allow even more customisation, one can set which properties of the
+/// To allow even more customization, one can set which properties of the
 /// spinbox are updated by units and which aren't.
 ///
 /// \sa qMRMLSliderWidget, qMRMLCoordinatesWidget
@@ -81,7 +81,7 @@ public:
   ~qMRMLSpinBox() override;
 
   enum UnitAwareProperty
-    {
+  {
     None = 0x00,
     Prefix = 0x01,
     Suffix = 0x02,
@@ -89,16 +89,16 @@ public:
     MinimumValue = 0x08,
     MaximumValue = 0x10,
     Scaling = 0x20,
-    };
+  };
   Q_DECLARE_FLAGS(UnitAwareProperties, UnitAwareProperty)
 
   /// Get MRML scene that has been set by setMRMLScene(). Default is no scene.
   /// \sa setMRMLScene()
-  Q_INVOKABLE vtkMRMLScene* mrmlScene()const;
+  Q_INVOKABLE vtkMRMLScene* mrmlScene() const;
 
-  QString quantity()const;
+  QString quantity() const;
 
-  UnitAwareProperties unitAwareProperties()const;
+  UnitAwareProperties unitAwareProperties() const;
 
 public slots:
   void setQuantity(const QString& baseName);

@@ -23,6 +23,8 @@
 #include <QTimer>
 
 // Slicer includes
+#include "vtkMRMLApplicationLogic.h"
+#include "vtkMRMLColorLogic.h"
 #include "vtkSlicerConfigure.h"
 
 // Volumes includes
@@ -45,7 +47,7 @@
 #include <itkFactoryRegistration.h>
 
 //-----------------------------------------------------------------------------
-int qSlicerDTISliceDisplayWidgetTest2( int argc, char * argv[] )
+int qSlicerDTISliceDisplayWidgetTest2(int argc, char* argv[])
 {
   itk::itkFactoryRegistration();
 
@@ -54,27 +56,38 @@ int qSlicerDTISliceDisplayWidgetTest2( int argc, char * argv[] )
   qMRMLWidget::postInitializeApplication();
 
   if (argc < 2)
-    {
+  {
     std::cerr << "Usage: qSlicerDTISliceDisplayWidgetTest2 dtiFileName" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   std::cout << "file: " << argv[1] << std::endl;
 
-  vtkSmartPointer<vtkMRMLScene> scene = vtkSmartPointer<vtkMRMLScene>::New();
-  vtkSmartPointer<vtkSlicerVolumesLogic> volumesLogic = vtkSmartPointer<vtkSlicerVolumesLogic>::New();
+  vtkNew<vtkMRMLScene> scene;
+
+  vtkNew<vtkSlicerApplicationLogic> appLogic;
+
+  // Add Color logic (used by volumes logic)
+  vtkNew<vtkMRMLColorLogic> colorLogic;
+  colorLogic->SetMRMLScene(scene.GetPointer());
+  colorLogic->SetMRMLApplicationLogic(appLogic);
+  appLogic->SetModuleLogic("Colors", colorLogic);
+
+  // Add Volumes logic
+  vtkNew<vtkSlicerVolumesLogic> volumesLogic;
   volumesLogic->SetMRMLScene(scene);
+  volumesLogic->SetMRMLApplicationLogic(appLogic);
+  appLogic->SetModuleLogic("Volumes", volumesLogic);
+
   vtkMRMLVolumeNode* volumeNode = volumesLogic->AddArchetypeVolume(argv[1], "dti");
   if (!volumeNode)
-    {
+  {
     std::cerr << "Bad DTI file:" << argv[1] << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
-  vtkSmartPointer<vtkMRMLDiffusionTensorDisplayPropertiesNode> propertiesNode =
-    vtkSmartPointer<vtkMRMLDiffusionTensorDisplayPropertiesNode>::New();
+  vtkNew<vtkMRMLDiffusionTensorDisplayPropertiesNode> propertiesNode;
   scene->AddNode(propertiesNode);
-  vtkSmartPointer<vtkMRMLDiffusionTensorVolumeSliceDisplayNode> displayNode =
-    vtkSmartPointer<vtkMRMLDiffusionTensorVolumeSliceDisplayNode>::New();
+  vtkNew<vtkMRMLDiffusionTensorVolumeSliceDisplayNode> displayNode;
   displayNode->SetAndObserveDiffusionTensorDisplayPropertiesNodeID(propertiesNode->GetID());
   scene->AddNode(displayNode);
   volumeNode->AddAndObserveDisplayNodeID(displayNode->GetID());
@@ -88,8 +101,8 @@ int qSlicerDTISliceDisplayWidgetTest2( int argc, char * argv[] )
 
   widget.show();
   if (argc < 3 || QString(argv[2]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
   return app.exec();
 }

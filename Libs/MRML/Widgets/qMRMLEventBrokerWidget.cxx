@@ -44,13 +44,13 @@
 
 namespace
 {
-  enum ColumnType
-  {
-    NameColumn = 0,
-    ElapsedTimeColumn,
-    TotalTimeColumn,
-    CommentColumn
-  };
+enum ColumnType
+{
+  NameColumn = 0,
+  ElapsedTimeColumn,
+  TotalTimeColumn,
+  CommentColumn
+};
 }
 
 //-----------------------------------------------------------------------------
@@ -60,15 +60,15 @@ public:
   qMRMLEventBrokerWidgetPrivate();
   void setupUi(QWidget*);
 
-  vtkObservation* observation(QTreeWidgetItem* item)const;
+  vtkObservation* observation(QTreeWidgetItem* item) const;
 
-  QTreeWidgetItem* itemFromSubject(vtkObject* subject)const;
-  QTreeWidgetItem* itemFromEvent(QTreeWidgetItem* subjectItem, unsigned long long event)const;
-  QTreeWidgetItem* itemFromObservation(vtkObservation* observation)const;
+  QTreeWidgetItem* itemFromSubject(vtkObject* subject) const;
+  QTreeWidgetItem* itemFromEvent(QTreeWidgetItem* subjectItem, unsigned long long event) const;
+  QTreeWidgetItem* itemFromObservation(vtkObservation* observation) const;
 
-  vtkObject* objectFromItem(QTreeWidgetItem*)const;
+  vtkObject* objectFromItem(QTreeWidgetItem*) const;
 
-  void setObjectToItem(QTreeWidgetItem* item, vtkObject* object)const;
+  void setObjectToItem(QTreeWidgetItem* item, vtkObject* object) const;
   void showItem(QTreeWidgetItem* item);
 
   void addObservation(vtkObservation* observation);
@@ -83,47 +83,41 @@ qMRMLEventBrokerWidgetPrivate::qMRMLEventBrokerWidgetPrivate()
 }
 
 //------------------------------------------------------------------------------
-vtkObservation* qMRMLEventBrokerWidgetPrivate::observation(QTreeWidgetItem* item)const
+vtkObservation* qMRMLEventBrokerWidgetPrivate::observation(QTreeWidgetItem* item) const
 {
   if (!item || !item->parent() || !item->parent()->parent())
-    {
+  {
     return nullptr;
-    }
+  }
   QTreeWidgetItem* eventItem = item->parent();
   unsigned long event = eventItem->text(NameColumn).toInt();
 
   QTreeWidgetItem* subjectItem = eventItem->parent();
-  vtkObject* subject = static_cast<vtkObject*>(
-    reinterpret_cast<void *>(
-      subjectItem->data(0, Qt::UserRole).toLongLong()));
+  vtkObject* subject = static_cast<vtkObject*>(reinterpret_cast<void*>(subjectItem->data(0, Qt::UserRole).toLongLong()));
 
-  vtkObject* observer = static_cast<vtkObject*>(
-    reinterpret_cast<void *>(
-      item->data(0, Qt::UserRole).toLongLong()));
+  vtkObject* observer = static_cast<vtkObject*>(reinterpret_cast<void*>(item->data(0, Qt::UserRole).toLongLong()));
 
-  vtkEventBroker::ObservationVector observations =
-    vtkEventBroker::GetInstance()->GetObservations(subject, event, observer, nullptr, 1);
+  vtkEventBroker::ObservationVector observations = vtkEventBroker::GetInstance()->GetObservations(subject, event, observer, nullptr, 1);
   Q_ASSERT(observations.size());
   return observations.size() ? (*observations.begin()) : 0;
 }
 
 //------------------------------------------------------------------------------
-QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromSubject(vtkObject* subject)const
+QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromSubject(vtkObject* subject) const
 {
   if (!subject)
-    {
+  {
     return nullptr;
-    }
+  }
 
   for (int i = 0; i < this->ConnectionsTreeWidget->topLevelItemCount(); ++i)
-    {
+  {
     QTreeWidgetItem* topLevelItem = this->ConnectionsTreeWidget->topLevelItem(i);
-    if (static_cast<vtkObject*>(reinterpret_cast<void *>(
-      topLevelItem->data(0, Qt::UserRole).toLongLong())) == subject)
-      {
+    if (static_cast<vtkObject*>(reinterpret_cast<void*>(topLevelItem->data(0, Qt::UserRole).toLongLong())) == subject)
+    {
       return topLevelItem;
-      }
     }
+  }
   QTreeWidgetItem* subjectItem = new QTreeWidgetItem;
   this->setObjectToItem(subjectItem, subject);
   this->ConnectionsTreeWidget->addTopLevelItem(subjectItem);
@@ -131,23 +125,23 @@ QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromSubject(vtkObject* subje
 }
 
 //------------------------------------------------------------------------------
-QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromEvent(QTreeWidgetItem* subjectItem, unsigned long long event)const
+QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromEvent(QTreeWidgetItem* subjectItem, unsigned long long event) const
 {
   if (!subjectItem)
-    {
+  {
     return nullptr;
-    }
+  }
 
   QString eventString = QString::number(event);
 
   for (int i = 0; i < subjectItem->childCount(); ++i)
-    {
+  {
     QTreeWidgetItem* eventItem = subjectItem->child(i);
     if (eventItem->text(NameColumn) == eventString)
-      {
+    {
       return eventItem;
-      }
     }
+  }
 
   QTreeWidgetItem* eventItem = new QTreeWidgetItem();
   eventItem->setText(NameColumn, eventString);
@@ -157,63 +151,59 @@ QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromEvent(QTreeWidgetItem* s
 }
 
 //------------------------------------------------------------------------------
-QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromObservation(vtkObservation* observation)const
+QTreeWidgetItem* qMRMLEventBrokerWidgetPrivate::itemFromObservation(vtkObservation* observation) const
 {
   if (!observation)
-    {
+  {
     return nullptr;
-    }
+  }
 
-  QTreeWidgetItem* subjectItem  = this->itemFromSubject(observation->GetSubject());
+  QTreeWidgetItem* subjectItem = this->itemFromSubject(observation->GetSubject());
   QTreeWidgetItem* eventItem = this->itemFromEvent(subjectItem, observation->GetEvent());
 
   for (int i = 0; i < eventItem->childCount(); ++i)
-    {
+  {
     QTreeWidgetItem* observationItem = eventItem->child(i);
-    unsigned long long userData = observationItem->data(NameColumn, Qt::UserRole).toLongLong() ;
-    if ((observation->GetScript() && userData == 0 &&
-         observationItem->toolTip(NameColumn) == observation->GetScript()) ||
-        (observation->GetObserver() && userData != 0 &&
-         static_cast<vtkObject*>(reinterpret_cast<void *>(userData)) == observation->GetObserver()))
-      {
+    unsigned long long userData = observationItem->data(NameColumn, Qt::UserRole).toLongLong();
+    if ((observation->GetScript() && userData == 0 && observationItem->toolTip(NameColumn) == observation->GetScript()) || //
+        (observation->GetObserver() && userData != 0 && static_cast<vtkObject*>(reinterpret_cast<void*>(userData)) == observation->GetObserver()))
+    {
       return observationItem;
-      }
     }
+  }
   return nullptr;
 }
 
 //------------------------------------------------------------------------------
-void qMRMLEventBrokerWidgetPrivate::setObjectToItem(QTreeWidgetItem* item, vtkObject* object)const
+void qMRMLEventBrokerWidgetPrivate::setObjectToItem(QTreeWidgetItem* item, vtkObject* object) const
 {
-  item->setData(NameColumn, Qt::UserRole,
-    QVariant::fromValue(reinterpret_cast<long long>(object)));
+  item->setData(NameColumn, Qt::UserRole, QVariant::fromValue(reinterpret_cast<long long>(object)));
   vtkMRMLNode* node = vtkMRMLNode::SafeDownCast(object);
   if (node)
-    {
+  {
     // vtkMRMLNode
     item->setText(NameColumn, node->GetName());
     item->setToolTip(NameColumn, node->GetID());
-    }
+  }
   if (item->text(NameColumn).isEmpty() && object)
-    {
+  {
     // vtkObject
     item->setText(NameColumn, object->GetClassName());
-    }
+  }
   if (item->toolTip(NameColumn).isEmpty() && object)
-    {
+  {
     // vtkObject
-    item->setToolTip(NameColumn,
-      "0x" + QString::number(reinterpret_cast<intptr_t>(object), 16));
-    }
+    item->setToolTip(NameColumn, "0x" + QString::number(reinterpret_cast<intptr_t>(object), 16));
+  }
 }
 
 //------------------------------------------------------------------------------
-vtkObject* qMRMLEventBrokerWidgetPrivate::objectFromItem(QTreeWidgetItem* item)const
+vtkObject* qMRMLEventBrokerWidgetPrivate::objectFromItem(QTreeWidgetItem* item) const
 {
   if (!item)
-    {
+  {
     return nullptr;
-    }
+  }
   return reinterpret_cast<vtkObject*>(item->data(NameColumn, Qt::UserRole).value<long long>());
 }
 
@@ -221,9 +211,9 @@ vtkObject* qMRMLEventBrokerWidgetPrivate::objectFromItem(QTreeWidgetItem* item)c
 void qMRMLEventBrokerWidgetPrivate::showItem(QTreeWidgetItem* item)
 {
   if (!item)
-    {
+  {
     return;
-    }
+  }
   this->ConnectionsTreeWidget->expandItem(item);
   this->showItem(item->parent());
 }
@@ -238,18 +228,17 @@ void qMRMLEventBrokerWidgetPrivate::addObservation(vtkObservation* observation)
   this->setObjectToItem(observationItem, observer);
 
   if (observation->GetScript())
-    {
+  {
     // Script
     observationItem->setText(NameColumn, "Script");
     observationItem->setToolTip(NameColumn, observation->GetScript());
-    }
+  }
   else if (!observation->GetObserver())
-    {
-    ctkVTKConnectionPrivate* connection = reinterpret_cast<ctkVTKConnectionPrivate*>(
-      observation->GetCallbackCommand()->GetClientData());
+  {
+    ctkVTKConnectionPrivate* connection = reinterpret_cast<ctkVTKConnectionPrivate*>(observation->GetCallbackCommand()->GetClientData());
     observationItem->setText(NameColumn, connection->QtObject->metaObject()->className());
     observationItem->setToolTip(NameColumn, "0x" + QString::number(reinterpret_cast<intptr_t>(connection->QtObject), 16));
-    }
+  }
   // Elapsed Time
   observationItem->setText(ElapsedTimeColumn, QString::number(observation->GetLastElapsedTime()) + " s");
   observationItem->setToolTip(ElapsedTimeColumn, QString::number(1. / observation->GetLastElapsedTime()) + " fps");
@@ -261,7 +250,7 @@ void qMRMLEventBrokerWidgetPrivate::addObservation(vtkObservation* observation)
   observationItem->setText(CommentColumn, observation->GetComment());
 
   // Event
-  QTreeWidgetItem* subjectItem  = this->itemFromSubject(observation->GetSubject());
+  QTreeWidgetItem* subjectItem = this->itemFromSubject(observation->GetSubject());
   QTreeWidgetItem* eventItem = this->itemFromEvent(subjectItem, observation->GetEvent());
   eventItem->addChild(observationItem);
 }
@@ -272,19 +261,16 @@ void qMRMLEventBrokerWidgetPrivate::setupUi(QWidget* parentWidget)
   this->ConnectionsTreeWidget = new QTreeWidget;
 
   QStringList headers;
-  headers << "Object/Type"  << "Elapsed" << "Total" << "Comment";
+  headers << "Object/Type" << "Elapsed" << "Total" << "Comment";
   this->ConnectionsTreeWidget->setHeaderLabels(headers);
 
-  QObject::connect(this->ConnectionsTreeWidget, SIGNAL(itemChanged(QTreeWidgetItem*,int)),
-                   parentWidget, SLOT(onItemChanged(QTreeWidgetItem*,int)));
-  QObject::connect(this->ConnectionsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),
-                   parentWidget, SLOT(onCurrentItemChanged(QTreeWidgetItem*)));
+  QObject::connect(this->ConnectionsTreeWidget, SIGNAL(itemChanged(QTreeWidgetItem*, int)), parentWidget, SLOT(onItemChanged(QTreeWidgetItem*, int)));
+  QObject::connect(this->ConnectionsTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)), parentWidget, SLOT(onCurrentItemChanged(QTreeWidgetItem*)));
 
   QVBoxLayout* vBoxLayout = new QVBoxLayout;
   vBoxLayout->addWidget(this->ConnectionsTreeWidget);
   vBoxLayout->setContentsMargins(0, 0, 0, 0);
   parentWidget->setLayout(vBoxLayout);
-
 }
 
 //------------------------------------------------------------------------------
@@ -307,19 +293,19 @@ void qMRMLEventBrokerWidget::refresh()
   d->ConnectionsTreeWidget->clear();
   vtkEventBroker* eventBroker = vtkEventBroker::GetInstance();
   if (!eventBroker)
-    {
+  {
     return;
-    }
+  }
   bool isSortingEnabled = d->ConnectionsTreeWidget->isSortingEnabled();
   d->ConnectionsTreeWidget->setSortingEnabled(false);
 
   for (int i = 0; i < eventBroker->GetNumberOfObservations(); ++i)
-    {
+  {
     vtkObservation* observation = eventBroker->GetNthObservation(i);
     d->addObservation(observation);
-    }
+  }
   d->ConnectionsTreeWidget->setSortingEnabled(isSortingEnabled);
-  //d->ConnectionsTreeWidget->expandAll();
+  // d->ConnectionsTreeWidget->expandAll();
   d->ConnectionsTreeWidget->resizeColumnToContents(0);
 }
 
@@ -329,30 +315,30 @@ void qMRMLEventBrokerWidget::onItemChanged(QTreeWidgetItem* item, int column)
   Q_D(qMRMLEventBrokerWidget);
   vtkObservation* observation = d->observation(item);
   if (!observation)
-    {
+  {
     return;
-    }
+  }
   if (column == TotalTimeColumn || column == ElapsedTimeColumn)
-    {
+  {
     QString newTotalTime = item->text(column);
     if (newTotalTime.endsWith("s"))
-      {
+    {
       newTotalTime.remove(newTotalTime.size() - 1, 1);
-      }
+    }
     bool ok = false;
     double newTotal = newTotalTime.toDouble(&ok);
     if (ok)
+    {
+      if (column == TotalTimeColumn)
       {
-      if ( column == TotalTimeColumn )
-        {
         observation->SetTotalElapsedTime(newTotal);
-        }
-      else if (column == ElapsedTimeColumn )
-        {
+      }
+      else if (column == ElapsedTimeColumn)
+      {
         observation->SetLastElapsedTime(newTotal);
-        }
       }
     }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -367,11 +353,11 @@ void qMRMLEventBrokerWidget::resetElapsedTimes()
 {
   vtkEventBroker* eventBroker = vtkEventBroker::GetInstance();
   for (int i = 0; i < eventBroker->GetNumberOfObservations(); ++i)
-    {
+  {
     vtkObservation* observation = eventBroker->GetNthObservation(i);
     observation->SetTotalElapsedTime(0.);
     observation->SetLastElapsedTime(0.);
-    }
+  }
   this->refresh();
 }
 
@@ -382,12 +368,12 @@ void qMRMLEventBrokerWidget::expandElapsedTimeItems()
   this->refresh();
   vtkEventBroker* eventBroker = vtkEventBroker::GetInstance();
   for (int i = 0; i < eventBroker->GetNumberOfObservations(); ++i)
-    {
+  {
     vtkObservation* observation = eventBroker->GetNthObservation(i);
     if (observation->GetTotalElapsedTime() > 0.0)
-      {
+    {
       QTreeWidgetItem* observationItem = d->itemFromObservation(observation);
       d->showItem(observationItem);
-      }
     }
+  }
 }

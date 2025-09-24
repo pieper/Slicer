@@ -60,6 +60,10 @@ function(gp_item_default_embedded_path_override item default_embedded_path_var)
     if(item MATCHES "lib-dynload/[^/]+\\.so$")
       set(path "@fixup_path@/lib/Python/${PYTHON_STDLIB_SUBDIR}/lib-dynload")
     endif()
+    # VTK python modules
+    if(item MATCHES "vtkmodules/[^/]+\\.so$")
+      set(path "@fixup_path@/bin/Python/vtkmodules")
+    endif()
   endif()
 
   set(Slicer_USE_SimpleITK "@Slicer_USE_SimpleITK@")
@@ -75,17 +79,14 @@ function(gp_item_default_embedded_path_override item default_embedded_path_var)
     set(path "@fixup_path@/@Slicer_ITKFACTORIES_DIR@")
   endif()
 
-  foreach(qt_plugin_dir designer iconengines styles audio imageformats sqldrivers platforms)
+  foreach(qt_plugin_dir designer iconengines styles audio imageformats sqldrivers platforms printsupport)
     if(item MATCHES "@Slicer_QtPlugins_DIR@/${qt_plugin_dir}/[^/]+\\.(so|dylib)$")
       set(path "@fixup_path@/@Slicer_QtPlugins_DIR@/${qt_plugin_dir}")
     endif()
   endforeach()
 
-  set(Slicer_BUILD_CLI_SUPPORT "@Slicer_BUILD_CLI_SUPPORT@")
-  if(Slicer_BUILD_CLI_SUPPORT)
-    if(item MATCHES "@Slicer_CLIMODULES_LIB_DIR@/[^/]+") # Matches library and executable
-      set(path "@fixup_path@/@Slicer_CLIMODULES_LIB_DIR@")
-    endif()
+  if(item MATCHES "@Slicer_CLIMODULES_LIB_DIR@/[^/]+") # Matches library and executable
+    set(path "@fixup_path@/@Slicer_CLIMODULES_LIB_DIR@")
   endif()
 
   set(Slicer_BUILD_QTLOADABLEMODULES "@Slicer_BUILD_QTLOADABLEMODULES@")
@@ -94,6 +95,20 @@ function(gp_item_default_embedded_path_override item default_embedded_path_var)
       set(path "@fixup_path@/@Slicer_QTLOADABLEMODULES_LIB_DIR@")
     endif()
   endif()
+
+  set(extension_fixup_embedded_path_overrides "@EXTENSION_FIXUP_BUNDLE_EMBEDDED_PATH_OVERRIDES@")
+  foreach(pair IN LISTS extension_fixup_embedded_path_overrides)
+    string(REPLACE "|" ";" split_pair "${pair}")
+    list(LENGTH split_pair split_len)
+    if(NOT split_len EQUAL 2)
+      message(WARNING "Invalid override pair '${pair}', expected format <regex>|<relative_path>")
+      continue()
+    endif()
+    list(GET split_pair 0 regex)
+    list(GET split_pair 1 relative_path)
+
+    set(path "@fixup_path@/${relative_path}")
+  endforeach()
 
   math(EXPR lib_current $ENV{FIXUP_LIB_CURRENT}+1)
   set(ENV{FIXUP_LIB_CURRENT} ${lib_current})
@@ -137,9 +152,8 @@ function(fixup_bundle_with_plugins app)
     "${app_dir}/Contents/@Slicer_QtPlugins_DIR@/imageformats/*${suffix}"
     "${app_dir}/Contents/@Slicer_QtPlugins_DIR@/sqldrivers/*${suffix}"
     "${app_dir}/Contents/@Slicer_QtPlugins_DIR@/platforms/*${suffix}"
+    "${app_dir}/Contents/@Slicer_QtPlugins_DIR@/printsupport/*${suffix}"
     )
-
-  set(Slicer_BUILD_CLI_SUPPORT "@Slicer_BUILD_CLI_SUPPORT@")
 
   set(Slicer_USE_PYTHONQT "@Slicer_USE_PYTHONQT@")
 
@@ -167,11 +181,17 @@ function(fixup_bundle_with_plugins app)
       )
   endif()
 
+  if(Slicer_USE_PYTHONQT)
+    list(APPEND candidates_pattern
+      "${app_dir}/Contents/bin/Python/vtkmodules/*.so"
+      )
+  endif()
+
   set(Slicer_USE_PYTHONQT_WITH_OPENSSL "@Slicer_USE_PYTHONQT_WITH_OPENSSL@")
   if(Slicer_USE_PYTHONQT_WITH_OPENSSL)
     list(APPEND candidates_pattern
-      "${app_dir}/Contents/lib/Python/${PYTHON_STDLIB_SUBDIR}/lib-dynload/_hashlib.so"
-      "${app_dir}/Contents/lib/Python/${PYTHON_STDLIB_SUBDIR}/lib-dynload/_ssl.so"
+      "${app_dir}/Contents/lib/Python/${PYTHON_STDLIB_SUBDIR}/lib-dynload/_hashlib*.so"
+      "${app_dir}/Contents/lib/Python/${PYTHON_STDLIB_SUBDIR}/lib-dynload/_ssl*.so"
       )
   endif()
 
@@ -189,6 +209,11 @@ function(fixup_bundle_with_plugins app)
       set(libs ${libs} "${lib}")
     endif()
   endforeach()
+
+  set(extension_candidates_patterns "@EXTENSION_FIXUP_BUNDLE_CANDIDATES_PATTERNS@")
+  if(extension_candidates_patterns)
+    list(APPEND candidates_pattern ${extension_candidates_patterns})
+  endif()
 
   list(REMOVE_DUPLICATES libs)
 
@@ -209,11 +234,9 @@ function(fixup_bundle_with_plugins app)
       _fixup_paths_append(libs_path ${dir})
     endforeach()
   endif()
-  if(Slicer_BUILD_CLI_SUPPORT)
-    foreach(dir "@SlicerExecutionModel_LIBRARY_DIRS@")
-      _fixup_paths_append(libs_path ${dir})
-    endforeach()
-  endif()
+  foreach(dir "@SlicerExecutionModel_LIBRARY_DIRS@")
+    _fixup_paths_append(libs_path ${dir})
+  endforeach()
   set(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT "@Slicer_BUILD_EXTENSIONMANAGER_SUPPORT@")
   if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
     _fixup_paths_append(libs_path "@LibArchive_DIR@/lib")
@@ -222,7 +245,8 @@ function(fixup_bundle_with_plugins app)
     _fixup_paths_append(libs_path "@PYTHON_LIBRARY_PATH@")
   endif()
   set(Slicer_USE_PYTHONQT_WITH_OPENSSL "@Slicer_USE_PYTHONQT_WITH_OPENSSL@")
-  if(Slicer_USE_PYTHONQT_WITH_OPENSSL)
+  set(Slicer_USE_DCMTK_WITH_OPENSSL "@Slicer_USE_PYTHONQT_WITH_OPENSSL@")
+  if(Slicer_USE_PYTHONQT_WITH_OPENSSL OR Slicer_USE_DCMTK_WITH_OPENSSL)
     _fixup_paths_append(libs_path "@OPENSSL_EXPORT_LIBRARY_DIR@")
   endif()
   set(Slicer_BUILD_DICOM_SUPPORT "@Slicer_BUILD_DICOM_SUPPORT@")
@@ -235,9 +259,7 @@ function(fixup_bundle_with_plugins app)
   if(Slicer_BUILD_QTLOADABLEMODULES)
     _fixup_paths_append(libs_path "${Slicer_BUILD_DIR}/@Slicer_QTLOADABLEMODULES_LIB_DIR@")
   endif()
-  if(Slicer_BUILD_CLI_SUPPORT)
-    _fixup_paths_append(libs_path "${Slicer_BUILD_DIR}/@Slicer_CLIMODULES_LIB_DIR@")
-  endif()
+  _fixup_paths_append(libs_path "${Slicer_BUILD_DIR}/@Slicer_CLIMODULES_LIB_DIR@")
   _fixup_paths_append(libs_path "${Slicer_BUILD_DIR}/@Slicer_BIN_DIR@/designer")
   _fixup_paths_append(libs_path "${Slicer_BUILD_DIR}/@Slicer_BIN_DIR@/iconengines")
   _fixup_paths_append(libs_path "${Slicer_BUILD_DIR}/@Slicer_BIN_DIR@/styles")
@@ -308,10 +330,11 @@ function(fixup_bundle_with_plugins app)
     # Since BundleUtilities function do not copy the "Helpers" directory found
     # in frameworks. The following will explicitly copy and fixup
     # QtWebEngineCore.framework/Versions/5/Helpers/QtWebEngineProcess.app
+    set(Slicer_BUILD_WEBENGINE_SUPPORT "@Slicer_BUILD_WEBENGINE_SUPPORT@")
     set(qtwebenginecore_app_subdir "Helpers/QtWebEngineProcess.app")
     set(qtwebenginecore_src_dir "${qt_root_dir}/QtWebEngineCore.framework/${qtwebenginecore_app_subdir}")
     set(qtwebenginecore_dest_dir "${app_dir}/Contents/Frameworks/QtWebEngineCore.framework/Versions/Current/${qtwebenginecore_app_subdir}")
-    if(EXISTS ${qtwebenginecore_src_dir})
+    if(Slicer_BUILD_WEBENGINE_SUPPORT AND EXISTS ${qtwebenginecore_src_dir})
       file(COPY "${qtwebenginecore_src_dir}/Contents" DESTINATION "${qtwebenginecore_dest_dir}/" USE_SOURCE_PERMISSIONS)
       set(qtwebengineprocess_executable "${qtwebenginecore_dest_dir}/Contents/MacOS/QtWebEngineProcess")
       # Collect list of Qt framework dependencies
@@ -345,7 +368,7 @@ function(fixup_bundle_with_plugins app)
         )
     endif()
 
-   # Since BundleUtilities module does not know how to install .app directory withing
+   # Since BundleUtilities module does not know how to install .app directory within
    # an existing app, the following explicitly install the designer application as well
    # as the QtDesignerComponents.framework.
    set(Slicer_BUILD_QT_DESIGNER_PLUGINS "@Slicer_BUILD_QT_DESIGNER_PLUGINS@")
@@ -374,7 +397,7 @@ function(fixup_bundle_with_plugins app)
      endforeach()
      # Update executable
      execute_process(COMMAND install_name_tool
-       -rpath "@executable_path/Frameworks" "@loader_path/../../../../"
+       -rpath "@executable_path/../Frameworks" "@loader_path/../../../../"
        ${changes} "${designer_executable}"
        )
      # Generate qt.conf file to override plugin paths and ensure plugins provided

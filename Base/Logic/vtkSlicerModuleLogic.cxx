@@ -32,7 +32,18 @@ vtkSlicerApplicationLogic* vtkSlicerModuleLogic::GetApplicationLogic()
 }
 
 //----------------------------------------------------------------------------
-std::string vtkSlicerModuleLogic::GetModuleShareDirectory()const
+vtkMRMLAbstractLogic* vtkSlicerModuleLogic::GetModuleLogic(const char* moduleName)
+{
+  vtkMRMLApplicationLogic* appLogic = vtkMRMLApplicationLogic::SafeDownCast(this->GetMRMLApplicationLogic());
+  if (!appLogic)
+  {
+    return nullptr;
+  }
+  return appLogic->GetModuleLogic(moduleName);
+}
+
+//----------------------------------------------------------------------------
+std::string vtkSlicerModuleLogic::GetModuleShareDirectory() const
 {
   return this->ModuleShareDirectory;
 }
@@ -41,10 +52,10 @@ std::string vtkSlicerModuleLogic::GetModuleShareDirectory()const
 void vtkSlicerModuleLogic::SetModuleShareDirectory(const std::string& shareDirectory)
 {
   if (this->ModuleShareDirectory != shareDirectory)
-    {
+  {
     this->ModuleShareDirectory = shareDirectory;
     this->Modified();
-    }
+  }
 }
 
 //----------------------------------------------------------------------------

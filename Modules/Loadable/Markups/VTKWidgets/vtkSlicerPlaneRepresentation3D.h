@@ -14,7 +14,7 @@
 
   This file was originally developed by Kyle Sunderland, PerkLab, Queen's University
   and was supported through CANARIE's Research Software Program, Cancer
-  Care Ontario, OpenAnatomy, and Brigham and Women’s Hospital through NIH grant R01MH112748.
+  Care Ontario, OpenAnatomy, and Brigham and Women's Hospital through NIH grant R01MH112748.
 
 ==============================================================================*/
 
@@ -27,7 +27,7 @@
  * for details.
  * @sa
  * vtkSlicerMarkupsWidgetRepresentation3D vtkMRMLAbstractWidget
-*/
+ */
 
 #ifndef vtkSlicerPlaneRepresentation3D_h
 #define vtkSlicerPlaneRepresentation3D_h
@@ -52,63 +52,60 @@ class VTK_SLICER_MARKUPS_MODULE_VTKWIDGETS_EXPORT vtkSlicerPlaneRepresentation3D
 {
 public:
   /// Instantiate this class.
-  static vtkSlicerPlaneRepresentation3D *New();
+  static vtkSlicerPlaneRepresentation3D* New();
 
   /// Standard methods for instances of this class.
-  vtkTypeMacro(vtkSlicerPlaneRepresentation3D,vtkSlicerMarkupsWidgetRepresentation3D);
+  vtkTypeMacro(vtkSlicerPlaneRepresentation3D, vtkSlicerMarkupsWidgetRepresentation3D);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Subclasses of vtkMRMLAbstractWidgetRepresentation must implement these methods. These
   /// are the methods that the widget and its representation use to
   /// communicate with each other.
-  void UpdateFromMRML(vtkMRMLNode* caller, unsigned long event, void *callData=nullptr) override;
+  void UpdateFromMRMLInternal(vtkMRMLNode* caller, unsigned long event, void* callData = nullptr) override;
 
   /// Methods to make this class behave as a vtkProp.
-  void GetActors(vtkPropCollection *) override;
-  void ReleaseGraphicsResources(vtkWindow *) override;
-  int RenderOverlay(vtkViewport *viewport) override;
-  int RenderOpaqueGeometry(vtkViewport *viewport) override;
-  int RenderTranslucentPolygonalGeometry(vtkViewport *viewport) override;
+  void GetActors(vtkPropCollection*) override;
+  void ReleaseGraphicsResources(vtkWindow*) override;
+  int RenderOverlay(vtkViewport* viewport) override;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
+  int RenderTranslucentPolygonalGeometry(vtkViewport* viewport) override;
   vtkTypeBool HasTranslucentPolygonalGeometry() override;
 
   /// Return the bounds of the representation
-  double *GetBounds() override;
+  double* GetBounds() VTK_SIZEHINT(6) override;
 
   bool GetTransformationReferencePoint(double referencePointWorld[3]) override;
 
-  void CanInteract(vtkMRMLInteractionEventData* interactionEventData,
-    int &foundComponentType, int &foundComponentIndex, double &closestDistance2) override;
+  void CanInteract(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2) override;
 
-  void CanInteractWithPlane(vtkMRMLInteractionEventData* interactionEventData,
-    int& foundComponentType, int& foundComponentIndex, double& closestDistance2);
+  void CanInteractWithPlane(vtkMRMLInteractionEventData* interactionEventData, int& foundComponentType, int& foundComponentIndex, double& closestDistance2);
 
 protected:
   vtkSlicerPlaneRepresentation3D();
   ~vtkSlicerPlaneRepresentation3D() override;
 
-  vtkNew<vtkPlaneSource>     PlaneFillFilter;
-  vtkNew<vtkArrayCalculator> PlaneFillColorFilter;
-
-  vtkNew<vtkArrowSource>     ArrowFilter;
-  vtkNew<vtkGlyph3D>         ArrowGlypher;
+  vtkNew<vtkPlaneSource> PlaneFillFilter;
+  vtkNew<vtkArrowSource> ArrowFilter;
+  vtkNew<vtkGlyph3D> ArrowGlypher;
+  vtkNew<vtkPolyData> PlaneOutlineInputPolyData;
+  vtkNew<vtkTubeFilter> PlaneOutlineFilter;
   vtkNew<vtkArrayCalculator> ArrowColorFilter;
-
-  vtkNew<vtkTubeFilter>      PlaneOutlineFilter;
   vtkNew<vtkArrayCalculator> PlaneOutlineColorFilter;
+  vtkNew<vtkArrayCalculator> PlaneFillColorFilter;
+  vtkNew<vtkAppendPolyData> Append;
 
-  vtkNew<vtkAppendPolyData>  Append;
-  vtkNew<vtkPolyDataMapper>  PlaneMapper;
-  vtkNew<vtkActor>           PlaneActor;
+  vtkNew<vtkActor> PlaneActor;
+  vtkNew<vtkActor> PlaneOccludedActor;
 
-  vtkNew<vtkLookupTable>    PlaneColorLUT;
+  vtkNew<vtkPolyDataMapper> PlaneMapper;
+  vtkNew<vtkPolyDataMapper> PlaneOccludedMapper;
+
+  vtkNew<vtkLookupTable> PlaneColorLUT;
 
   std::string LabelFormat;
 
   // Setup the pipeline for plane display
   void BuildPlane();
-
-  // Update visibility of interaction handles for representation
-  void UpdateInteractionPipeline() override;
 
 private:
   vtkSlicerPlaneRepresentation3D(const vtkSlicerPlaneRepresentation3D&) = delete;

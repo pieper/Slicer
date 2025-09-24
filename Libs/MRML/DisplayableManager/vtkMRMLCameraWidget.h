@@ -25,7 +25,7 @@
  * mouse and keyboard interaction events can be dynamically remapped
  * to camera manipulation actions and to process all kinds of interaction
  * events (camera manipulation, markups manipulation, ...) in a similar way.
-*/
+ */
 
 #ifndef vtkMRMLCameraWidget_h
 #define vtkMRMLCameraWidget_h
@@ -37,14 +37,13 @@
 class vtkSliceIntersectionRepresentation2D;
 class vtkMRMLSegmentationDisplayNode;
 
-
 class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLCameraWidget : public vtkMRMLAbstractWidget
 {
 public:
   /**
    * Instantiate this class.
    */
-  static vtkMRMLCameraWidget *New();
+  static vtkMRMLCameraWidget* New();
 
   //@{
   /**
@@ -63,24 +62,34 @@ public:
   vtkMRMLCameraNode* GetCameraNode();
 
   /// Return true if the widget can process the event.
-  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double &distance2) override;
+  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& distance2) override;
 
   /// Process interaction event.
   bool ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData) override;
 
+  //@{
+  /// Get set tilt lock. It tilt is locked then the view cannot be rotated around the horizontal axis
+  /// (can only be rotated along the vertical axis).
+  bool GetTiltLocked();
+  void SetTiltLocked(bool lockState);
+  //@}
+
   /// Widget states
   enum
-    {
-    WidgetStateFollowCursor = WidgetStateUser,
+  {
+    WidgetStateMoveCrosshair = WidgetStateUser, ///< Move crosshair position, can be used for moving the crosshair with click-and-drag.
     WidgetStateSpin,
-    WidgetStateTouchGesture,
-    };
+    WidgetStateTouchGesture
+  };
 
   /// Widget events
   enum
-    {
+  {
     WidgetEventSpinStart = WidgetEventUser,
     WidgetEventSpinEnd,
+
+    WidgetEventMoveCrosshairStart,
+    WidgetEventMoveCrosshairEnd,
 
     WidgetEventCameraRotateToRight,
     WidgetEventCameraRotateToLeft,
@@ -108,9 +117,12 @@ public:
     WidgetEventCameraWheelZoomIn, // same as WidgetEventCameraZoomIn but with using wheel scaling factor
     WidgetEventCameraWheelZoomOut,
 
+    WidgetEventToggleCameraTiltLock,
+
     WidgetEventCameraReset,
     WidgetEventCameraResetTranslation,
     WidgetEventCameraResetRotation,
+    WidgetEventCameraResetFieldOfView, // VTK's standard camera reset (centers and resets field of view)
 
     WidgetEventCameraRotate,
     WidgetEventCameraPan,
@@ -122,7 +134,9 @@ public:
     WidgetEventTouchPanTranslate,
 
     WidgetEventSetCrosshairPosition,
-    };
+    WidgetEventSetCrosshairPositionBackground, //< set crosshair position without consuming the event (so that other widgets can process the event)
+    WidgetEventMaximizeView,
+  };
 
   /// Defines speed of rotation actions by mouse click-and-drag.
   vtkGetMacro(MotionFactor, double);
@@ -145,12 +159,17 @@ protected:
   bool ProcessScale(vtkMRMLInteractionEventData* eventData);
   bool ProcessSpin(vtkMRMLInteractionEventData* eventData);
   bool ProcessSetCrosshair(vtkMRMLInteractionEventData* eventData);
+  bool ProcessSetCrosshairBackground(vtkMRMLInteractionEventData* eventData);
 
   bool ProcessTouchGestureStart(vtkMRMLInteractionEventData* eventData);
   bool ProcessTouchGestureEnd(vtkMRMLInteractionEventData* eventData);
   bool ProcessTouchCameraSpin(vtkMRMLInteractionEventData* eventData);
   bool ProcessTouchCameraZoom(vtkMRMLInteractionEventData* eventData);
   bool ProcessTouchCameraTranslate(vtkMRMLInteractionEventData* eventData);
+
+  bool ProcessWidgetMenu(vtkMRMLInteractionEventData* eventData);
+
+  bool ProcessMaximizeView(vtkMRMLInteractionEventData* eventData);
 
   bool Dolly(double factor);
   vtkCamera* GetCamera();
@@ -162,6 +181,7 @@ protected:
 
   double MotionFactor;
   double MouseWheelMotionFactor;
+  bool CameraTiltLocked;
 
   vtkWeakPointer<vtkMRMLCameraNode> CameraNode;
 
@@ -169,9 +189,8 @@ protected:
   int PreviousEventPosition[2];
 
   /// Indicates whether the shift key was used during the previous action.
-  /// This is used to require shift-up before returning to default mode.
-  bool ModifierKeyPressedSinceLastMouseButtonRelease;
-
+  /// This is used to require shift-up after a click-and-drag before accepting shift+mousemove.
+  bool ModifierKeyPressedSinceLastClickAndDrag;
 
 private:
   vtkMRMLCameraWidget(const vtkMRMLCameraWidget&) = delete;

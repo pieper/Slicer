@@ -23,7 +23,7 @@
  * @sa
  * vtkMRMLAbstractWidget vtkSlicerWidgetRepresentation vtkSlicerWidgetEventTranslator
  *
-*/
+ */
 
 #ifndef vtkSlicerMarkupsWidget_h
 #define vtkSlicerMarkupsWidget_h
@@ -52,13 +52,15 @@ public:
   /// Create the default widget representation and initializes the widget and representation.
   virtual void CreateDefaultRepresentation(vtkMRMLMarkupsDisplayNode* markupsDisplayNode, vtkMRMLAbstractViewNode* viewNode, vtkRenderer* renderer) = 0;
 
+  /// Create instance of the markups widget
+  virtual vtkSlicerMarkupsWidget* CreateInstance() const = 0;
+
   /// Widget states
   enum
   {
     WidgetStateDefine = WidgetStateUser, // click in empty area will place a new point
-    WidgetStateTranslateControlPoint, // translating the active point by mouse move
-    WidgetStateOnTranslationHandle, // hovering over a translation interaction handle
-    WidgetStateOnRotationHandle, // hovering over a rotation interaction handle
+    WidgetStateTranslateControlPoint,    // translating the active point by mouse move
+    WidgetStateMarkups_Last
   };
 
   /// Widget events
@@ -72,11 +74,16 @@ public:
     WidgetEventControlPointMoveEnd,
     WidgetEventControlPointDelete,
     WidgetEventControlPointInsert,
-    WidgetEventControlPointSnapToSlice
+    WidgetEventControlPointSnapToSlice,
+    WidgetEventReserved, // this events is only to prevent other widgets from processing an event
+    WidgetEventMarkups_Last
   };
 
   // Returns true if one of the markup points are just being previewed and not placed yet.
   bool IsPointPreviewed();
+
+  /// Update a the current index of the point preview being previewed.
+  void UpdatePreviewPointIndex(vtkMRMLInteractionEventData* eventData);
 
   /// Add/update a point preview to the current active Markup at the specified position.
   void UpdatePreviewPoint(vtkMRMLInteractionEventData* eventData, const char* associatedNodeID, int positionStatus);
@@ -88,7 +95,7 @@ public:
   // Places a new markup point.
   // Reuses current preview point, if possible.
   // Returns true if the event is processed.
-  bool PlacePoint(vtkMRMLInteractionEventData* eventData);
+  virtual bool PlacePoint(vtkMRMLInteractionEventData* eventData);
 
   /// Add a point to the current active Markup at input World coordinates.
   virtual int AddPointFromWorldCoordinate(const double worldCoordinates[3]);
@@ -98,7 +105,7 @@ public:
   virtual int AddNodeOnWidget(const int displayPos[2]);
 
   /// Return true if the widget can process the event.
-  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double &distance2) override;
+  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& distance2) override;
 
   /// Process interaction event.
   bool ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData) override;
@@ -120,6 +127,8 @@ public:
   int GetActiveComponentType();
   int GetActiveComponentIndex();
 
+  vtkMRMLSelectionNode* selectionNode();
+
 protected:
   vtkSlicerMarkupsWidget();
   ~vtkSlicerMarkupsWidget() override;
@@ -129,8 +138,6 @@ protected:
 
   virtual void TranslatePoint(double eventPos[2], bool snapToSlice = false);
   virtual void TranslateWidget(double eventPos[2]);
-  virtual void ScaleWidget(double eventPos[2]);
-  virtual void RotateWidget(double eventPos[2]);
 
   bool IsAnyControlPointLocked();
 
@@ -139,8 +146,7 @@ protected:
   // Returns true on success.
   // refWorldPos is an optional reference position: if point distance from camera cannot be determined then
   // depth of this reference position is used.
-  bool ConvertDisplayPositionToWorld(const int displayPos[2], double worldPos[3], double worldOrientationMatrix[9],
-    double* refWorldPos = nullptr);
+  bool ConvertDisplayPositionToWorld(const int displayPos[2], double worldPos[3], double worldOrientationMatrix[9], double* refWorldPos = nullptr);
 
   /// Index of the control point that is currently being previewed (follows the mouse pointer).
   /// If <0 it means that there is currently no point being previewed.
@@ -152,36 +158,52 @@ protected:
   virtual bool ProcessMouseMove(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessWidgetMenu(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessWidgetAction(vtkMRMLInteractionEventData* eventData);
+  virtual bool ProcessWidgetStopPlace(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessControlPointSnapToSlice(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessControlPointDelete(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessControlPointInsert(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessControlPointMoveStart(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessWidgetTranslateStart(vtkMRMLInteractionEventData* eventData);
-  virtual bool ProcessWidgetRotateStart(vtkMRMLInteractionEventData* eventData);
-  virtual bool ProcessWidgetScaleStart(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessEndMouseDrag(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessWidgetReset(vtkMRMLInteractionEventData* eventData);
   virtual bool ProcessWidgetJumpCursor(vtkMRMLInteractionEventData* eventData);
 
-  // Get the closest point on the line defined by the interaction handle axis.
-  // Input coordinates are in display coordinates, while output are in world coordinates.
-  virtual bool GetClosestPointOnInteractionAxis(int type, int index, const double inputDisplay[2], double outputIntersectionWorld[3]);
-
-  // Get the closest point on the plane defined using the interaction handle axis as the plane normal.
-  // Input coordinates are in display coordinates, while output are in world coordinates
-  virtual bool GetIntersectionOnAxisPlane(int type, int index, const double inputDisplay[2], double outputIntersectionWorld[3]);
-
-  // Variables for translate/rotate/scale
+  // Variables for translate
   double LastEventPosition[2];
   double StartEventOffsetPosition[2];
-
-  // True if mouse button pressed since a point was placed.
-  // This is used to filter out "click" events that started before the point was placed.
-  bool MousePressedSinceMarkupPlace;
 
 private:
   vtkSlicerMarkupsWidget(const vtkSlicerMarkupsWidget&) = delete;
   void operator=(const vtkSlicerMarkupsWidget&) = delete;
 };
+
+//----------------------------------------------------------------------
+// CREATE INSTANCE MACRO
+
+#ifdef VTK_HAS_INITIALIZE_OBJECT_BASE
+# define vtkSlicerMarkupsWidgetCreateInstanceMacro(type)       \
+   vtkSlicerMarkupsWidget* CreateInstance() const override     \
+   {                                                           \
+     vtkObject* ret = vtkObjectFactory::CreateInstance(#type); \
+     if (ret)                                                  \
+     {                                                         \
+       return static_cast<type*>(ret);                         \
+     }                                                         \
+     type* result = new type;                                  \
+     result->InitializeObjectBase();                           \
+     return result;                                            \
+   }
+#else
+# define vtkSlicerMarkupsWidgetCreateInstanceMacro(type)       \
+   vtkSlicerMarkupsWidget* CreateInstance() const override     \
+   {                                                           \
+     vtkObject* ret = vtkObjectFactory::CreateInstance(#type); \
+     if (ret)                                                  \
+     {                                                         \
+       return static_cast<type*>(ret);                         \
+     }                                                         \
+     return new type;                                          \
+   }
+#endif
 
 #endif

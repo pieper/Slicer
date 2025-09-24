@@ -27,6 +27,7 @@ class Q_SLICER_BASE_QTGUI_EXPORT qSlicerIOManager : public qSlicerCoreIOManager
 {
   Q_OBJECT;
   QVTK_OBJECT;
+
 public:
   typedef qSlicerCoreIOManager Superclass;
   qSlicerIOManager(QObject* parent = nullptr);
@@ -48,32 +49,46 @@ public:
                               vtkCollection* loadedNodes = nullptr);
 
   void addHistory(const QString& path);
-  const QStringList& history()const;
+  const QStringList& history() const;
 
   void setFavorites(const QList<QUrl>& urls);
-  const QList<QUrl>& favorites()const;
+  const QList<QUrl>& favorites() const;
 
   /// Takes ownership. Any previously set dialog corresponding to the same
   /// fileType (only 1 dialog per filetype) is overridden.
   void registerDialog(qSlicerFileDialog* dialog);
+
+  /// Return True if a custom file dialog was registered.
+  ///
+  /// \sa registerDialog()
+  /// \sa qSlicerScriptedLoadableModule::registerFileDialog()
+  /// \sa qSlicerScriptedFileDialog
+  Q_INVOKABLE bool isDialogRegistered(qSlicerIO::IOFileType fileType, qSlicerFileDialog::IOAction action) const;
 
   /// Displays a progress dialog if it takes too long to load
   /// There is no way to know in advance how long the loading will take, so the
   /// progress dialog listens to the scene and increment the progress anytime
   /// a node is added.
   Q_INVOKABLE bool loadNodes(const qSlicerIO::IOFileType& fileType,
-                                     const qSlicerIO::IOProperties& parameters,
-                                     vtkCollection* loadedNodes = nullptr) override;
+                             const qSlicerIO::IOProperties& parameters,
+                             vtkCollection* loadedNodes = nullptr,
+                             vtkMRMLMessageCollection* userMessages = nullptr) override;
   /// If you have a list of nodes to load, it's best to use this function
   /// in order to have a unique progress dialog instead of multiple ones.
   /// It internally calls loadNodes() for each file.
-  bool loadNodes(const QList<qSlicerIO::IOProperties>& files,
-                         vtkCollection* loadedNodes = nullptr) override;
+  bool loadNodes(const QList<qSlicerIO::IOProperties>& files, vtkCollection* loadedNodes = nullptr, vtkMRMLMessageCollection* userMessages = nullptr) override;
+
+  /// Helper function to display result of loadNodes.
+  /// If success is set false then an error popup is displayed.
+  /// If success is set to true then a popup is only displayed if error or warning messages are logged.
+  /// If a popup is displayed then all the user-displayable messages are displayed in a collapsed "Details" section.
+  /// The dialog is not displayed if the application is launched with testing mode enabled.
+  Q_INVOKABLE static void showLoadNodesResultDialog(bool success, vtkMRMLMessageCollection* userMessages);
 
   /// dragEnterEvents can be forwarded to the IOManager, if a registered dialog
   /// supports it, the event is accepted, otherwise ignored.
   /// \sa dropEvent()
-  void dragEnterEvent(QDragEnterEvent *event);
+  void dragEnterEvent(QDragEnterEvent* event);
 
   /// Search, in the list of registered readers, the first dialog that
   /// handles the drop event. If the event is accepted by the dialog (
@@ -81,7 +96,7 @@ public:
   /// otherwise the next dialog is tested. The order in which dialogs are
   /// being tested is the opposite of the dialogs are registered.
   /// \sa dragEnterEvent()
-  void dropEvent(QDropEvent *event);
+  void dropEvent(QDropEvent* event);
 
 public slots:
 
@@ -104,10 +119,12 @@ public slots:
 
 protected slots:
   void updateProgressDialog();
+  void execDelayedFileDialog();
 
 protected:
   friend class qSlicerFileDialog;
   using qSlicerCoreIOManager::readers;
+
 protected:
   QScopedPointer<qSlicerIOManagerPrivate> d_ptr;
 

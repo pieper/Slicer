@@ -32,29 +32,32 @@
 
 // QtGUI includes
 #include "qSlicerApplication.h"
+#include "qSlicerApplicationUpdateManager.h"
+#include "qSlicerCoreIOManager.h"
+#include "qSlicerRelativePathMapper.h"
 #include "qSlicerSettingsGeneralPanel.h"
 #include "ui_qSlicerSettingsGeneralPanel.h"
 
 #include "vtkSlicerConfigure.h" // For Slicer_QM_OUTPUT_DIRS, Slicer_BUILD_I18N_SUPPORT, Slicer_USE_PYTHONQT
 
 #ifdef Slicer_USE_PYTHONQT
-#include "PythonQt.h"
+# include "PythonQt.h"
 #endif
 
 // --------------------------------------------------------------------------
 // qSlicerSettingsGeneralPanelPrivate
 
 //-----------------------------------------------------------------------------
-class qSlicerSettingsGeneralPanelPrivate: public Ui_qSlicerSettingsGeneralPanel
+class qSlicerSettingsGeneralPanelPrivate : public Ui_qSlicerSettingsGeneralPanel
 {
   Q_DECLARE_PUBLIC(qSlicerSettingsGeneralPanel);
+
 protected:
   qSlicerSettingsGeneralPanel* const q_ptr;
 
 public:
   qSlicerSettingsGeneralPanelPrivate(qSlicerSettingsGeneralPanel& object);
   void init();
-
 };
 
 // --------------------------------------------------------------------------
@@ -62,7 +65,7 @@ public:
 
 // --------------------------------------------------------------------------
 qSlicerSettingsGeneralPanelPrivate::qSlicerSettingsGeneralPanelPrivate(qSlicerSettingsGeneralPanel& object)
-  :q_ptr(&object)
+  : q_ptr(&object)
 {
 }
 
@@ -74,42 +77,68 @@ void qSlicerSettingsGeneralPanelPrivate::init()
   this->setupUi(q);
 
 #ifdef Slicer_BUILD_I18N_SUPPORT
-  bool internationalizationEnabled =
-      qSlicerApplication::application()->userSettings()->value("Internationalization/Enabled").toBool();
+  bool internationalizationEnabled = qSlicerApplication::application()->userSettings()->value("Internationalization/Enabled", true).toBool();
 
   this->LanguageLabel->setVisible(internationalizationEnabled);
   this->LanguageComboBox->setVisible(internationalizationEnabled);
 
   if (internationalizationEnabled)
-    {
-    /// Default values
+  {
+    // Disable showing country flags because not all regions have a flag (e.g., Latin America)
+    this->LanguageComboBox->setCountryFlagsVisible(false);
     this->LanguageComboBox->setDefaultLanguage("en");
-    /// set the directory where all the translations files are.
-    this->LanguageComboBox->setDirectory(
-        QString(Slicer_QM_OUTPUT_DIRS).split(";").at(0));
-    }
+    this->LanguageComboBox->setDirectories(qSlicerCoreApplication::translationFolders());
+  }
 #else
   this->LanguageLabel->setVisible(false);
   this->LanguageComboBox->setVisible(false);
 #endif
 
+  bool applicationUpdateEnabled = false;
+#ifdef Slicer_BUILD_APPLICATIONUPDATE_SUPPORT
+  applicationUpdateEnabled = qSlicerApplicationUpdateManager::isApplicationUpdateEnabled();
+  if (applicationUpdateEnabled)
+  {
+    this->ApplicationUpdateServerURLLineEdit->setText("https://download.slicer.org");
+
+    q->registerProperty("ApplicationUpdate/AutoUpdateCheck", this->ApplicationAutoUpdateCheckCheckBox, /*no tr*/ "checked", SIGNAL(toggled(bool)));
+
+    q->registerProperty("ApplicationUpdate/ServerUrl",
+                        this->ApplicationUpdateServerURLLineEdit,
+                        /*no tr*/ "text",
+                        SIGNAL(textChanged(QString)),
+                        qSlicerSettingsGeneralPanel::tr("Application update server URL"));
+
+    qSlicerApplication* app = qSlicerApplication::application();
+    if (app && app->applicationUpdateManager())
+    {
+      QObject::connect(app->applicationUpdateManager(), SIGNAL(autoUpdateCheckChanged()), q, SLOT(updateAutoUpdateApplicationFromManager()));
+
+      QObject::connect(this->ApplicationAutoUpdateCheckCheckBox, SIGNAL(toggled(bool)), app->applicationUpdateManager(), SLOT(setAutoUpdateCheck(bool)));
+    }
+  }
+#endif
+  this->ApplicationAutoUpdateCheckLabel->setVisible(applicationUpdateEnabled);
+  this->ApplicationAutoUpdateCheckCheckBox->setVisible(applicationUpdateEnabled);
+  this->ApplicationUpdateServerURLLabel->setVisible(applicationUpdateEnabled);
+  this->ApplicationUpdateServerURLLineEdit->setVisible(applicationUpdateEnabled);
+
 #ifdef Slicer_USE_PYTHONQT
   if (!qSlicerCoreApplication::testAttribute(qSlicerCoreApplication::AA_DisablePython))
-    {
+  {
     PythonQt::init();
     PythonQtObjectPtr context = PythonQt::self()->getMainModule();
     context.evalScript(QString("slicerrcfilename = getSlicerRCFileName()\n"));
     QVariant slicerrcFileNameVar = context.getVariable("slicerrcfilename");
     this->SlicerRCFileValueLabel->setText(slicerrcFileNameVar.toString());
-    QIcon openFileIcon = QApplication::style()->standardIcon(QStyle::SP_DialogOpenButton);
-    this->SlicerRCFileOpenButton->setIcon(openFileIcon);
+    this->SlicerRCFileOpenButton->setIcon(QIcon(":Icons/Go.png"));
     QObject::connect(this->SlicerRCFileOpenButton, SIGNAL(clicked()), q, SLOT(openSlicerRCFile()));
-    }
+  }
   else
-    {
+  {
     this->SlicerRCFileOpenButton->setVisible(false);
     this->SlicerRCFileValueLabel->setVisible(false);
-    }
+  }
 #else
   this->SlicerRCFileLabel->setVisible(false);
   this->SlicerRCFileValueLabel->setVisible(false);
@@ -118,46 +147,72 @@ void qSlicerSettingsGeneralPanelPrivate::init()
   // Default values
 
   this->DefaultScenePathButton->setDirectory(qSlicerCoreApplication::application()->defaultScenePath());
-  q->registerProperty("DefaultScenePath", this->DefaultScenePathButton,"directory",
-                      SIGNAL(directoryChanged(QString)),
-                      "Default scene path",
-                     ctkSettingsPanel::OptionRequireRestart);
-  QObject::connect(this->DefaultScenePathButton, SIGNAL(directoryChanged(QString)),
-                   q, SLOT(setDefaultScenePath(QString)));
+  qSlicerRelativePathMapper* relativePathMapper = new qSlicerRelativePathMapper(this->DefaultScenePathButton,
+                                                                                /*no tr*/ "directory",
+                                                                                SIGNAL(directoryChanged(QString)));
+  q->registerProperty("DefaultScenePath", relativePathMapper, "relativePath", SIGNAL(relativePathChanged(QString)), qSlicerSettingsGeneralPanel::tr("Default scene path"));
+  QObject::connect(this->DefaultScenePathButton, SIGNAL(directoryChanged(QString)), q, SLOT(setDefaultScenePath(QString)));
 
-  this->SlicerWikiURLLineEdit->setText("http://www.slicer.org/slicerWiki/index.php");
+  // Since currently there is only English language documentation on readthedocs, the default URL uses "en" language.
+  this->DocumentationBaseURLLineEdit->setText("https://slicer.readthedocs.io/en/{version}");
+  this->ModuleDocumentationURLLineEdit->setText("{documentationbaseurl}/user_guide/modules/{lowercasemodulename}.html");
 
-  q->registerProperty("no-splash", this->ShowSplashScreenCheckBox, "checked",
-                      SIGNAL(toggled(bool)));
+  q->registerProperty("no-splash", this->ShowSplashScreenCheckBox, /*no tr*/ "checked", SIGNAL(toggled(bool)));
 
-  ctkBooleanMapper* restartMapper = new ctkBooleanMapper(this->ConfirmRestartCheckBox, "checked", SIGNAL(toggled(bool)));
+  ctkBooleanMapper* restartMapper = new ctkBooleanMapper(this->ConfirmRestartCheckBox, /*no tr*/ "checked", SIGNAL(toggled(bool)));
   restartMapper->setTrueValue(static_cast<int>(QMessageBox::InvalidRole));
   restartMapper->setFalseValue(static_cast<int>(QMessageBox::Ok));
-  q->registerProperty("MainWindow/DontConfirmRestart",
-                      restartMapper,"valueAsInt", SIGNAL(valueAsIntChanged(int)));
+  q->registerProperty("MainWindow/DontConfirmRestart", restartMapper, "valueAsInt", SIGNAL(valueAsIntChanged(int)));
 
-  ctkBooleanMapper* exitMapper = new ctkBooleanMapper(this->ConfirmExitCheckBox, "checked", SIGNAL(toggled(bool)));
+  ctkBooleanMapper* exitMapper = new ctkBooleanMapper(this->ConfirmExitCheckBox, /*no tr*/ "checked", SIGNAL(toggled(bool)));
   exitMapper->setTrueValue(static_cast<int>(QMessageBox::InvalidRole));
   exitMapper->setFalseValue(static_cast<int>(QMessageBox::Ok));
-  q->registerProperty("MainWindow/DontConfirmExit",
-                      exitMapper, "valueAsInt", SIGNAL(valueAsIntChanged(int)));
+  q->registerProperty("MainWindow/DontConfirmExit", exitMapper, "valueAsInt", SIGNAL(valueAsIntChanged(int)));
 
-  ctkBooleanMapper* sceneCloseMapper = new ctkBooleanMapper(this->ConfirmSceneCloseCheckBox, "checked", SIGNAL(toggled(bool)));
+  ctkBooleanMapper* sceneCloseMapper = new ctkBooleanMapper(this->ConfirmSceneCloseCheckBox, /*no tr*/ "checked", SIGNAL(toggled(bool)));
   sceneCloseMapper->setTrueValue(static_cast<int>(QMessageBox::InvalidRole));
   sceneCloseMapper->setFalseValue(static_cast<int>(QMessageBox::AcceptRole));
-  q->registerProperty("MainWindow/DontConfirmSceneClose",
-                      sceneCloseMapper, "valueAsInt", SIGNAL(valueAsIntChanged(int)));
+  q->registerProperty("MainWindow/DontConfirmSceneClose", sceneCloseMapper, "valueAsInt", SIGNAL(valueAsIntChanged(int)));
 
-  q->registerProperty("SlicerWikiURL", this->SlicerWikiURLLineEdit, "text",
-                      SIGNAL(textChanged(QString)));
-  q->registerProperty("language", this->LanguageComboBox, "currentLanguage",
+  q->registerProperty("DocumentationBaseURL",
+                      this->DocumentationBaseURLLineEdit,
+                      /*no tr*/ "text",
+                      SIGNAL(textChanged(QString)),
+                      qSlicerSettingsGeneralPanel::tr("Documentation location"),
+                      ctkSettingsPanel::OptionRequireRestart);
+  q->registerProperty("ModuleDocumentationURL",
+                      this->ModuleDocumentationURLLineEdit,
+                      /*no tr*/ "text",
+                      SIGNAL(textChanged(QString)),
+                      qSlicerSettingsGeneralPanel::tr("Documentation location"),
+                      ctkSettingsPanel::OptionRequireRestart);
+  q->registerProperty("language",
+                      this->LanguageComboBox,
+                      "currentLanguage",
                       SIGNAL(currentLanguageNameChanged(const QString&)),
-                      "Enable/Disable languages",
+                      qSlicerSettingsGeneralPanel::tr("Enable/Disable languages"),
                       ctkSettingsPanel::OptionRequireRestart);
-  q->registerProperty("RecentlyLoadedFiles/NumberToKeep", this->NumOfRecentlyLoadedFiles, "value",
+  q->registerProperty("RecentlyLoadedFiles/NumberToKeep",
+                      this->NumOfRecentlyLoadedFiles,
+                      /*no tr*/ "value",
                       SIGNAL(valueChanged(int)),
-                      "Max. number of 'Recently Loaded' menu items",
+                      qSlicerSettingsGeneralPanel::tr("Max. number of 'Recent' menu items"),
                       ctkSettingsPanel::OptionRequireRestart);
+
+#ifdef Q_OS_WIN
+  // Total path length limit on Windows is 260 characters, need to keep the filename
+  // length way below that to avoid file saving issues with long paths.
+  this->MaximumFileNameLengthSpinBox->setValue(50);
+#else
+  // Non-Windows systems should have no problem dealing with files with this long name.
+  this->MaximumFileNameLengthSpinBox->setValue(1000);
+#endif
+
+  q->registerProperty(
+    "ioManager/MaximumFileNameLength", this->MaximumFileNameLengthSpinBox, /*no tr*/ "value", SIGNAL(valueChanged(int)), qSlicerSettingsGeneralPanel::tr("Max. filename length"));
+
+  // Actions to propagate to the application when settings are changed
+  QObject::connect(this->MaximumFileNameLengthSpinBox, SIGNAL(valueChanged(int)), q, SLOT(setMaximumFileNameLength(int)));
 }
 
 // --------------------------------------------------------------------------
@@ -188,25 +243,63 @@ void qSlicerSettingsGeneralPanel::openSlicerRCFile()
   QString slicerRcFileName = d->SlicerRCFileValueLabel->text();
   QFileInfo fileInfo(slicerRcFileName);
   if (!fileInfo.exists())
-    {
+  {
     QFile outputFile(slicerRcFileName);
     if (outputFile.open(QFile::WriteOnly | QFile::Truncate))
-      {
+    {
       // slicerrc file does not exist, create one with some default content
       QTextStream outputStream(&outputFile);
-      outputStream <<
-        "# Python commands in this file are executed on Slicer startup\n"
-        "\n"
-        "# Examples:\n"
-        "#\n"
-        "# Load a scene file\n"
-        "# slicer.util.loadScene('c:/Users/SomeUser/Documents/SlicerScenes/SomeScene.mrb')\n"
-        "#\n"
-        "# Open a module (overrides default startup module in application settings / modules)\n"
-        "# slicer.util.mainWindow().moduleSelector().selectModule('SegmentEditor')\n"
-        "#\n";
+      outputStream << "# Python commands in this file are executed on Slicer startup\n"
+                      "\n"
+                      "# Examples:\n"
+                      "#\n"
+                      "# Load a scene file\n"
+                      "# slicer.util.loadScene('c:/Users/SomeUser/Documents/SlicerScenes/SomeScene.mrb')\n"
+                      "#\n"
+                      "# Open a module (overrides default startup module in application settings / modules)\n"
+                      "# slicer.util.mainWindow().moduleSelector().selectModule('SegmentEditor')\n"
+                      "#\n";
       outputFile.close();
-      }
     }
-  QDesktopServices::openUrl(QUrl("file:///" + slicerRcFileName, QUrl::TolerantMode));
+  }
+
+  QString editor = qSlicerApplication::application()->userSettings()->value("Python/Editor").toString();
+  if (editor.isEmpty())
+  {
+    QDesktopServices::openUrl(QUrl("file:///" + slicerRcFileName, QUrl::TolerantMode));
+  }
+  else
+  {
+    QProcess process;
+    // Use the startup environment to avoid Python environment issues with text editors implemented in Python
+    process.setProcessEnvironment(qSlicerApplication::application()->startupEnvironment());
+    process.setProgram(editor);
+    process.setArguments(QStringList() << slicerRcFileName);
+    process.startDetached();
+  }
+}
+
+// --------------------------------------------------------------------------
+void qSlicerSettingsGeneralPanel::updateAutoUpdateApplicationFromManager()
+{
+#ifdef Slicer_BUILD_APPLICATIONUPDATE_SUPPORT
+  Q_D(qSlicerSettingsGeneralPanel);
+  qSlicerApplication* app = qSlicerApplication::application();
+  if (!app->applicationUpdateManager())
+  {
+    return;
+  }
+  QSignalBlocker blocker1(d->ApplicationAutoUpdateCheckCheckBox);
+  d->ApplicationAutoUpdateCheckCheckBox->setChecked(app->applicationUpdateManager()->autoUpdateCheck());
+#endif
+}
+
+// --------------------------------------------------------------------------
+void qSlicerSettingsGeneralPanel::setMaximumFileNameLength(int length)
+{
+  qSlicerCoreIOManager* coreIOManager = qSlicerCoreApplication::application()->coreIOManager();
+  if (coreIOManager)
+  {
+    coreIOManager->setDefaultMaximumFileNameLength(length);
+  }
 }

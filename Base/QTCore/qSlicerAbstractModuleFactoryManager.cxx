@@ -34,23 +34,23 @@
 class qSlicerAbstractModuleFactoryManagerPrivate
 {
   Q_DECLARE_PUBLIC(qSlicerAbstractModuleFactoryManager);
+
 protected:
   qSlicerAbstractModuleFactoryManager* const q_ptr;
+
 public:
   qSlicerAbstractModuleFactoryManagerPrivate(qSlicerAbstractModuleFactoryManager& object);
 
   void printAdditionalInfo();
 
-  typedef qSlicerAbstractModuleFactoryManager::qSlicerModuleFactory
-    qSlicerModuleFactory;
-  typedef qSlicerAbstractModuleFactoryManager::qSlicerFileBasedModuleFactory
-    qSlicerFileBasedModuleFactory;
-  QVector<qSlicerFileBasedModuleFactory*> fileBasedFactories()const;
-  QVector<qSlicerModuleFactory*> notFileBasedFactories()const;
+  typedef qSlicerAbstractModuleFactoryManager::qSlicerModuleFactory qSlicerModuleFactory;
+  typedef qSlicerAbstractModuleFactoryManager::qSlicerFileBasedModuleFactory qSlicerFileBasedModuleFactory;
+  QVector<qSlicerFileBasedModuleFactory*> fileBasedFactories() const;
+  QVector<qSlicerModuleFactory*> notFileBasedFactories() const;
 
   // Helper function that returns module factory for a module name, without
   // the risk of creating a nullptr entry if the module is not registered.
-  qSlicerModuleFactory* registeredModuleFactory(const QString& moduleName)const;
+  qSlicerModuleFactory* registeredModuleFactory(const QString& moduleName) const;
 
   QStringList SearchPaths;
   QStringList ExplicitModules;
@@ -76,13 +76,12 @@ void qSlicerAbstractModuleFactoryManagerPrivate::printAdditionalInfo()
 {
   Q_Q(qSlicerAbstractModuleFactoryManager);
   qDebug() << "Factories:";
-  foreach(qSlicerAbstractModuleFactoryManager::qSlicerModuleFactory* factory,
-          this->Factories.keys())
-    {
+  for (qSlicerAbstractModuleFactoryManager::qSlicerModuleFactory* const factory : this->Factories.keys())
+  {
     // todo: qSlicerModuleFactory should derive from QObject.
     qDebug() << "\t" << typeid(factory).name() << ": ";
     factory->printAdditionalInfo();
-    }
+  }
   qDebug() << "Modules to ignore:" << q->modulesToIgnore();
   qDebug() << "Registered modules:" << q->registeredModuleNames();
   qDebug() << "Ignored modules:" << q->ignoredModuleNames();
@@ -90,45 +89,40 @@ void qSlicerAbstractModuleFactoryManagerPrivate::printAdditionalInfo()
 }
 
 //-----------------------------------------------------------------------------
-QVector<qSlicerAbstractModuleFactoryManagerPrivate::qSlicerFileBasedModuleFactory*>
-qSlicerAbstractModuleFactoryManagerPrivate::fileBasedFactories()const
+QVector<qSlicerAbstractModuleFactoryManagerPrivate::qSlicerFileBasedModuleFactory*> qSlicerAbstractModuleFactoryManagerPrivate::fileBasedFactories() const
 {
   QVector<qSlicerFileBasedModuleFactory*> factories;
-  foreach(qSlicerModuleFactory* factory, this->Factories.keys())
-    {
+  for (qSlicerModuleFactory* const factory : this->Factories.keys())
+  {
     if (dynamic_cast<qSlicerFileBasedModuleFactory*>(factory) != nullptr)
-      {
+    {
       factories << dynamic_cast<qSlicerFileBasedModuleFactory*>(factory);
-      }
     }
+  }
   return factories;
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleFactoryManagerPrivate::qSlicerModuleFactory*
-qSlicerAbstractModuleFactoryManagerPrivate
-::registeredModuleFactory(const QString& moduleName)const
+qSlicerAbstractModuleFactoryManagerPrivate::qSlicerModuleFactory* qSlicerAbstractModuleFactoryManagerPrivate::registeredModuleFactory(const QString& moduleName) const
 {
   if (!this->RegisteredModules.contains(moduleName))
-    {
+  {
     return nullptr;
-    }
+  }
   return this->RegisteredModules[moduleName];
 }
 
 //-----------------------------------------------------------------------------
-QVector<qSlicerAbstractModuleFactoryManagerPrivate::qSlicerModuleFactory*>
-qSlicerAbstractModuleFactoryManagerPrivate
-::notFileBasedFactories()const
+QVector<qSlicerAbstractModuleFactoryManagerPrivate::qSlicerModuleFactory*> qSlicerAbstractModuleFactoryManagerPrivate::notFileBasedFactories() const
 {
   QVector<qSlicerModuleFactory*> factories;
-  foreach(qSlicerModuleFactory* factory, this->Factories.keys())
-    {
+  for (qSlicerModuleFactory* const factory : this->Factories.keys())
+  {
     if (dynamic_cast<qSlicerFileBasedModuleFactory*>(factory) == nullptr)
-      {
+    {
       factories << factory;
-      }
     }
+  }
   return factories;
 }
 
@@ -136,8 +130,9 @@ qSlicerAbstractModuleFactoryManagerPrivate
 // qSlicerAbstractModuleFactoryManager methods
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleFactoryManager::qSlicerAbstractModuleFactoryManager(QObject * newParent)
-  : Superclass(newParent), d_ptr(new qSlicerAbstractModuleFactoryManagerPrivate(*this))
+qSlicerAbstractModuleFactoryManager::qSlicerAbstractModuleFactoryManager(QObject* newParent)
+  : Superclass(newParent)
+  , d_ptr(new qSlicerAbstractModuleFactoryManagerPrivate(*this))
 {
 }
 
@@ -158,8 +153,7 @@ void qSlicerAbstractModuleFactoryManager::printAdditionalInfo()
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerAbstractModuleFactoryManager
-::registerFactory(qSlicerModuleFactory* factory, int priority)
+void qSlicerAbstractModuleFactoryManager::registerFactory(qSlicerModuleFactory* factory, int priority)
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
   Q_ASSERT(!d->Factories.contains(factory));
@@ -180,9 +174,9 @@ void qSlicerAbstractModuleFactoryManager::unregisterFactories()
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
   while (!d->Factories.isEmpty())
-    {
+  {
     this->unregisterFactory(d->Factories.begin().key());
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -195,7 +189,7 @@ void qSlicerAbstractModuleFactoryManager::setSearchPaths(const QStringList& path
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractModuleFactoryManager::searchPaths()const
+QStringList qSlicerAbstractModuleFactoryManager::searchPaths() const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   return d->SearchPaths;
@@ -206,15 +200,15 @@ void qSlicerAbstractModuleFactoryManager::setExplicitModules(const QStringList& 
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
   if (d->ModulesToIgnore == moduleNames)
-    {
+  {
     return;
-    }
+  }
   d->ExplicitModules = moduleNames;
   emit explicitModulesChanged(moduleNames);
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractModuleFactoryManager::explicitModules()const
+QStringList qSlicerAbstractModuleFactoryManager::explicitModules() const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   return d->ExplicitModules;
@@ -225,22 +219,22 @@ void qSlicerAbstractModuleFactoryManager::setModulesToIgnore(const QStringList& 
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
   if (d->ModulesToIgnore == moduleNames)
-    {
+  {
     return;
-    }
+  }
   d->ModulesToIgnore = moduleNames;
   emit modulesToIgnoreChanged(moduleNames);
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractModuleFactoryManager::modulesToIgnore()const
+QStringList qSlicerAbstractModuleFactoryManager::modulesToIgnore() const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   return d->ModulesToIgnore;
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractModuleFactoryManager::ignoredModuleNames()const
+QStringList qSlicerAbstractModuleFactoryManager::ignoredModuleNames() const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   return d->IgnoredModules.keys();
@@ -252,28 +246,28 @@ void qSlicerAbstractModuleFactoryManager::registerModules()
   Q_D(qSlicerAbstractModuleFactoryManager);
   // Register "regular" factories first
   // \todo: don't support factories other than filebased factories
-  foreach(qSlicerModuleFactory* factory, d->notFileBasedFactories())
-    {
+  for (qSlicerModuleFactory* const factory : d->notFileBasedFactories())
+  {
     factory->registerItems();
-    foreach(const QString& moduleName, factory->itemKeys())
-      {
+    for (const QString& moduleName : factory->itemKeys())
+    {
       if (d->Verbose)
-        {
+      {
         qDebug() << "Registering: " << moduleName;
-        }
+      }
       d->RegisteredModules[moduleName] = factory;
       emit moduleRegistered(moduleName);
-      }
     }
+  }
   // then register file based factories
-  foreach(const QString& path, d->SearchPaths)
-    {
+  for (const QString& path : d->SearchPaths)
+  {
     if (d->Verbose)
-      {
+    {
       qDebug() << "Searching path: " << path;
-      }
-    this->registerModules(path);
     }
+    this->registerModules(path);
+  }
   emit this->modulesRegistered(d->RegisteredModules.keys());
 }
 
@@ -282,11 +276,10 @@ void qSlicerAbstractModuleFactoryManager::registerModules(const QString& path)
 {
   QDir directory(path);
   /// \tbd recursive search ?
-  foreach (const QFileInfo& file,
-           directory.entryInfoList(QDir::Files))
-    {
+  for (const QFileInfo& file : directory.entryInfoList(QDir::Files))
+  {
     this->registerModule(file);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -295,131 +288,130 @@ void qSlicerAbstractModuleFactoryManager::registerModule(const QFileInfo& file)
   Q_D(qSlicerAbstractModuleFactoryManager);
 
   qSlicerFileBasedModuleFactory* moduleFactory = nullptr;
-  foreach(qSlicerFileBasedModuleFactory* factory, d->fileBasedFactories())
+  for (qSlicerFileBasedModuleFactory* const factory : d->fileBasedFactories())
+  {
+    if (d->Verbose)
     {
-    if (d->Verbose)
-      {
       qDebug() << " checking file: " << file.absoluteFilePath() << " as a " << typeid(*factory).name();
-      }
+    }
     if (!factory->isValidFile(file))
-      {
+    {
       continue;
-      }
+    }
     if (d->Verbose)
-      {
+    {
       qDebug() << " recognized file: " << file.absoluteFilePath() << " as a " << typeid(*factory).name();
-      }
+    }
     moduleFactory = factory;
     break;
-    }
+  }
   // File not supported by any factory
   if (moduleFactory == nullptr)
-    {
+  {
     return;
-    }
+  }
   QString moduleName = moduleFactory->itemKey(file);
   bool dontEmitSignal = false;
   // Has the module been already registered
   qSlicerModuleFactory* existingModuleFactory = d->registeredModuleFactory(moduleName);
   if (existingModuleFactory)
+  {
+    if (d->Factories[existingModuleFactory] >= d->Factories[moduleFactory])
     {
-    if (d->Factories[existingModuleFactory] >=
-        d->Factories[moduleFactory])
-      {
       if (d->Verbose)
-        {
+      {
         qDebug() << " file: " << file.absoluteFilePath() << " already registered";
-        }
-      return;
       }
+      return;
+    }
     // Replace the factory of the registered module with this higher priority
     // factory.
-    //existingModuleFactory->unregisterItem(file);
+    // existingModuleFactory->unregisterItem(file);
     dontEmitSignal = true;
-    }
+  }
   if (d->ModulesToIgnore.contains(moduleName))
-    {
-    //qDebug() << "Ignore module" << moduleName;
+  {
+    // qDebug() << "Ignore module" << moduleName;
     if (d->Verbose)
-      {
+    {
       qDebug() << " file: " << file.absoluteFilePath() << " is in ignore list";
-      }
+    }
     d->IgnoredModules[moduleName] = file;
     emit moduleIgnored(moduleName);
     return;
-    }
+  }
   QString registeredModuleName = moduleFactory->registerFileItem(file);
   if (registeredModuleName != moduleName)
-    {
-    //qDebug() << "Ignore module" << moduleName;
+  {
+    // qDebug() << "Ignore module" << moduleName;
     if (d->Verbose)
-      {
+    {
       qDebug() << " file: " << file.absoluteFilePath() << " ignored because moduleName does not match registeredModuleName";
-      }
+    }
     d->IgnoredModules[moduleName] = file;
     emit moduleIgnored(moduleName);
     return;
-    }
+  }
   d->RegisteredModules[moduleName] = moduleFactory;
   if (!dontEmitSignal)
-    {
+  {
     emit moduleRegistered(moduleName);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void qSlicerAbstractModuleFactoryManager::instantiateModules()
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
-  foreach (const QString& moduleName, d->RegisteredModules.keys())
-    {
+  for (const QString& moduleName : d->RegisteredModules.keys())
+  {
+    emit moduleAboutToBeInstantiated(moduleName);
     this->instantiateModule(moduleName);
-    }
+  }
 
-  // XXX See issue #3804
-  // Python maps SIGINT (control-c) to its own handler.  We will remap it
-  // to the default so that control-c works. Note that this is already done in
-  // "ctkAbstractPythonManager::initPythonQt" but the import of 'async'
-  // module by 'gitdb' module (itself imported by the SlicerExtensionWizard)
-  // resets the handler.
-  #ifdef SIGINT
+// XXX See issue #3804
+// Python maps SIGINT (control-c) to its own handler.  We will remap it
+// to the default so that control-c works. Note that this is already done in
+// "ctkAbstractPythonManager::initPythonQt" but the import of 'async'
+// module by 'gitdb' module (itself imported by the SlicerExtensionWizard)
+// resets the handler.
+#ifdef SIGINT
   signal(SIGINT, SIG_DFL);
-  #endif
+#endif
 
   emit this->modulesInstantiated(this->instantiatedModuleNames());
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractCoreModule* qSlicerAbstractModuleFactoryManager
-::instantiateModule(const QString& moduleName)
+qSlicerAbstractCoreModule* qSlicerAbstractModuleFactoryManager::instantiateModule(const QString& moduleName)
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
   qSlicerModuleFactory* factory = d->registeredModuleFactory(moduleName);
   if (!factory)
-    {
+  {
     qCritical() << "Fail to instantiate module " << moduleName << " (not registered)";
     return nullptr;
-    }
+  }
   qSlicerAbstractCoreModule* module = factory->instantiate(moduleName);
   if (!module)
-    {
+  {
     qCritical() << "Fail to instantiate module " << moduleName;
     return nullptr;
-    }
+  }
   module->setName(moduleName);
   module->setObjectName(QString("%1Module").arg(moduleName));
-  foreach(const QString& associatedNodeType, module->associatedNodeTypes())
-    {
+  for (const QString& associatedNodeType : module->associatedNodeTypes())
+  {
     qSlicerCoreApplication::application()->addModuleAssociatedNodeType(associatedNodeType, moduleName);
-    }
-  foreach(const QString& dependency, module->dependencies())
-    {
+  }
+  for (const QString& dependency : module->dependencies())
+  {
     QStringList dependees = d->ModuleDependees.value(dependency);
     if (!dependees.contains(moduleName))
-      {
+    {
       d->ModuleDependees.insert(dependency, dependees << moduleName);
-      }
     }
+  }
   emit moduleInstantiated(moduleName);
   return module;
 }
@@ -436,31 +428,30 @@ QStringList qSlicerAbstractModuleFactoryManager::instantiatedModuleNames() const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   QStringList instantiatedModules;
-  foreach(const QString& moduleName, d->RegisteredModules.keys())
-    {
+  for (const QString& moduleName : d->RegisteredModules.keys())
+  {
     qSlicerModuleFactory* factory = d->registeredModuleFactory(moduleName);
     if (!factory)
-      {
+    {
       continue;
-      }
-    if (factory->instance(moduleName))
-      {
-      instantiatedModules << moduleName;
-      }
     }
+    if (factory->instance(moduleName))
+    {
+      instantiatedModules << moduleName;
+    }
+  }
   return instantiatedModules;
 }
-
 
 //-----------------------------------------------------------------------------
 void qSlicerAbstractModuleFactoryManager::uninstantiateModules()
 {
   QStringList modulesToUninstantiate = this->instantiatedModuleNames();
   emit modulesAboutToBeUninstantiated(modulesToUninstantiate);
-  foreach(const QString& name, modulesToUninstantiate)
-    {
+  for (const QString& name : modulesToUninstantiate)
+  {
     this->uninstantiateModule(name);
-    }
+  }
   emit modulesUninstantiated(modulesToUninstantiate);
 }
 
@@ -469,22 +460,22 @@ void qSlicerAbstractModuleFactoryManager::uninstantiateModule(const QString& mod
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
   if (d->Verbose)
-    {
+  {
     qDebug() << "Uninstantiating:" << moduleName;
-    }
+  }
   qSlicerModuleFactory* factory = d->registeredModuleFactory(moduleName);
   if (!factory)
-    {
+  {
     qWarning() << "uninstantiateModule failed: module " << moduleName << " is not registered";
     return;
-    }
+  }
   emit moduleAboutToBeUninstantiated(moduleName);
   factory->uninstantiate(moduleName);
   emit moduleUninstantiated(moduleName);
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractCoreModule* qSlicerAbstractModuleFactoryManager::moduleInstance(const QString& moduleName)const
+qSlicerAbstractCoreModule* qSlicerAbstractModuleFactoryManager::moduleInstance(const QString& moduleName) const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   qSlicerModuleFactory* factory = d->registeredModuleFactory(moduleName);
@@ -492,18 +483,18 @@ qSlicerAbstractCoreModule* qSlicerAbstractModuleFactoryManager::moduleInstance(c
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerAbstractModuleFactoryManager::isRegistered(const QString& moduleName)const
+bool qSlicerAbstractModuleFactoryManager::isRegistered(const QString& moduleName) const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   return (d->registeredModuleFactory(moduleName) != nullptr);
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerAbstractModuleFactoryManager::isInstantiated(const QString& moduleName)const
+bool qSlicerAbstractModuleFactoryManager::isInstantiated(const QString& moduleName) const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
-  bool instantiated = this->isRegistered(moduleName) &&
-    d->RegisteredModules[moduleName]->instance(moduleName) != nullptr;
+  bool instantiated = this->isRegistered(moduleName) && //
+                      d->RegisteredModules[moduleName]->instance(moduleName) != nullptr;
   return instantiated;
 }
 
@@ -511,37 +502,37 @@ bool qSlicerAbstractModuleFactoryManager::isInstantiated(const QString& moduleNa
 void qSlicerAbstractModuleFactoryManager::setVerboseModuleDiscovery(bool verbose)
 {
   Q_D(qSlicerAbstractModuleFactoryManager);
-  foreach (qSlicerModuleFactory* factory, d->Factories.keys())
-    {
+  for (qSlicerModuleFactory* const factory : d->Factories.keys())
+  {
     factory->setVerbose(verbose);
-    }
+  }
   this->setIsVerbose(verbose);
 }
 
 //---------------------------------------------------------------------------
-QStringList qSlicerAbstractModuleFactoryManager::dependentModules(const QString& dependency)const
+QStringList qSlicerAbstractModuleFactoryManager::dependentModules(const QString& dependency) const
 {
   QStringList dependents;
-  foreach(const QString& moduleName, this->instantiatedModuleNames())
-    {
+  for (const QString& moduleName : this->instantiatedModuleNames())
+  {
     qSlicerAbstractCoreModule* coreModule = this->moduleInstance(moduleName);
     if (coreModule && coreModule->dependencies().contains(dependency))
-      {
+    {
       dependents << moduleName;
-      }
     }
+  }
   return dependents;
 }
 
 //---------------------------------------------------------------------------
-QStringList qSlicerAbstractModuleFactoryManager::moduleDependees(const QString& module)const
+QStringList qSlicerAbstractModuleFactoryManager::moduleDependees(const QString& module) const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   return d->ModuleDependees.value(module);
 }
 
 //---------------------------------------------------------------------------
-bool  qSlicerAbstractModuleFactoryManager::isVerbose()const
+bool qSlicerAbstractModuleFactoryManager::isVerbose() const
 {
   Q_D(const qSlicerAbstractModuleFactoryManager);
   return d->Verbose;
@@ -553,4 +544,3 @@ void qSlicerAbstractModuleFactoryManager::setIsVerbose(bool flag)
   Q_D(qSlicerAbstractModuleFactoryManager);
   d->Verbose = flag;
 }
-

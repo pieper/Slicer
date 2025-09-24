@@ -27,7 +27,7 @@
 
 #include "vtkMRMLCoreTestingMacros.h"
 
-int vtkMRMLSliceLogicTest1(int , char * [] )
+int vtkMRMLSliceLogicTest1(int, char*[])
 {
   vtkNew<vtkMRMLSliceLogic> logic;
   EXERCISE_BASIC_OBJECT_METHODS(logic.GetPointer());
@@ -37,8 +37,8 @@ int vtkMRMLSliceLogicTest1(int , char * [] )
   // Add default slice orientation presets
   vtkMRMLSliceNode::AddDefaultSliceOrientationPresets(scene.GetPointer());
 
-  logic->SetName("Green");
   logic->SetMRMLScene(scene.GetPointer());
+  CHECK_NOT_NULL(logic->AddSliceNode("Green"));
 
   vtkNew<vtkMRMLSliceNode> SliceNode;
   TEST_SET_GET_VALUE(logic, SliceNode, SliceNode.GetPointer());
@@ -58,8 +58,8 @@ int vtkMRMLSliceLogicTest1(int , char * [] )
   // TODO: need to fix the test.
   // The problem here is that the current node of the logic is wrong
   // it hasn't been added to the mrml scene. So when modified,
-  // the logic realizes it and create a new node (loosing the props).
-  //TEST_SET_GET_VALUE(logic, SliceOffset, 1);
+  // the logic realizes it and create a new node (losing the props).
+  // TEST_SET_GET_VALUE(logic, SliceOffset, 1);
 
   logic->DeleteSliceModel();
   logic->CreateSliceModel();
@@ -71,4 +71,3 @@ int vtkMRMLSliceLogicTest1(int , char * [] )
   logic->Print(std::cout);
   return EXIT_SUCCESS;
 }
-

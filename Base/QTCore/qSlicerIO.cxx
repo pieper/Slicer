@@ -21,9 +21,53 @@
 /// QtCore includes
 #include "qSlicerIO.h"
 
+// MRML includes
+#include <vtkMRMLMessageCollection.h>
+
+// CTK includes
+#include <ctkPimpl.h>
+
+//-----------------------------------------------------------------------------
+class qSlicerIOPrivate
+{
+  Q_DECLARE_PUBLIC(qSlicerIO);
+
+protected:
+  qSlicerIO* q_ptr;
+
+public:
+  qSlicerIOPrivate(qSlicerIO& object);
+  virtual ~qSlicerIOPrivate();
+
+  vtkMRMLMessageCollection* UserMessages;
+};
+
+//-----------------------------------------------------------------------------
+// qSlicerIOPrivate methods
+
+//-----------------------------------------------------------------------------
+qSlicerIOPrivate::qSlicerIOPrivate(qSlicerIO& object)
+  : q_ptr(&object)
+{
+  this->UserMessages = vtkMRMLMessageCollection::New();
+}
+
+//-----------------------------------------------------------------------------
+qSlicerIOPrivate::~qSlicerIOPrivate()
+{
+  this->UserMessages->Delete();
+  this->UserMessages = nullptr;
+}
+
+//-----------------------------------------------------------------------------
+// qSlicerIO methods
+
+CTK_GET_CPP(qSlicerIO, vtkMRMLMessageCollection*, userMessages, UserMessages);
+
 //----------------------------------------------------------------------------
 qSlicerIO::qSlicerIO(QObject* parentObject)
   : Superclass(parentObject)
+  , d_ptr(new qSlicerIOPrivate(*this))
 {
   qRegisterMetaType<qSlicerIO::IOFileType>("qSlicerIO::IOFileType");
   qRegisterMetaType<qSlicerIO::IOProperties>("qSlicerIO::IOProperties");
@@ -33,7 +77,7 @@ qSlicerIO::qSlicerIO(QObject* parentObject)
 qSlicerIO::~qSlicerIO() = default;
 
 //----------------------------------------------------------------------------
-qSlicerIOOptions* qSlicerIO::options()const
+qSlicerIOOptions* qSlicerIO::options() const
 {
   return nullptr;
 }

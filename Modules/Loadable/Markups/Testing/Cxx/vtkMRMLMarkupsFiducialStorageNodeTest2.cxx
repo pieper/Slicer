@@ -28,7 +28,7 @@
 #include <vtkNew.h>
 #include <vtkTestingOutputWindow.h>
 
-int vtkMRMLMarkupsFiducialStorageNodeTest2(int argc, char * argv[] )
+int vtkMRMLMarkupsFiducialStorageNodeTest2(int argc, char* argv[])
 {
   // Test reading in a Slicer3 .fcsv file
   vtkNew<vtkMRMLMarkupsFiducialStorageNode> node1;
@@ -38,9 +38,9 @@ int vtkMRMLMarkupsFiducialStorageNodeTest2(int argc, char * argv[] )
   // get the file name
   std::string fileName = std::string("midsag.fcsv");
   if (argc > 1)
-    {
+  {
     fileName = std::string(argv[1]);
-    }
+  }
   std::cout << "Using file name " << fileName.c_str() << std::endl;
   node1->SetFileName(fileName.c_str());
 
@@ -62,10 +62,10 @@ int vtkMRMLMarkupsFiducialStorageNodeTest2(int argc, char * argv[] )
   TESTING_OUTPUT_ASSERT_WARNINGS(1); // Expected warning: Have an unversioned file, assuming Slicer 3 format .fcsv
   TESTING_OUTPUT_ASSERT_WARNINGS_END();
   if (!retval)
-    {
+  {
     std::cerr << "Failed to read into Markups fiducial node from Slicer3 Fiducials file " << node1->GetFileName() << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   std::cout << "\nMarkup read from file = " << std::endl;
   vtkIndent indent;
@@ -73,19 +73,16 @@ int vtkMRMLMarkupsFiducialStorageNodeTest2(int argc, char * argv[] )
   std::cout << std::endl;
 
   // test values on the first markup
-  double inputPoint[3] = {12.5, -93.5, 7.5};
-  double outputPoint[3];
-  markupsFiducialNode->GetNthFiducialPosition(0, outputPoint);
+  double inputPoint[3] = { 12.5, -93.5, 7.5 };
+  vtkVector3d posVector = markupsFiducialNode->GetNthControlPointPositionVector(0);
+  double* outputPoint = posVector.GetData();
   double diff = fabs(outputPoint[0] - inputPoint[0]) + fabs(outputPoint[1] - inputPoint[1]) + fabs(outputPoint[2] - inputPoint[2]);
   if (diff > 0.1)
-    {
-    std::cerr << "After reading in, expected markup point "
-              << inputPoint[0] << "," << inputPoint[1] << "," << inputPoint[2]
-              << " but got a diff of " << diff << " from read in point "
-              << outputPoint[0] << "," << outputPoint[1] << "," << outputPoint[2]
-              << std::endl;
+  {
+    std::cerr << "After reading in, expected markup point " << inputPoint[0] << "," << inputPoint[1] << "," << inputPoint[2] << " but got a diff of " << diff
+              << " from read in point " << outputPoint[0] << "," << outputPoint[1] << "," << outputPoint[2] << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   return EXIT_SUCCESS;
 }

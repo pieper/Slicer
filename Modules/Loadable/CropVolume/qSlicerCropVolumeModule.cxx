@@ -7,16 +7,13 @@
 #include <qSlicerModuleManager.h>
 
 // CropVolume Logic includes
-#include <vtkSlicerCLIModuleLogic.h>
 #include <vtkSlicerCropVolumeLogic.h>
-#include <vtkSlicerVolumesLogic.h>
 
 // CropVolume includes
 #include "qSlicerCropVolumeModule.h"
 #include "qSlicerCropVolumeModuleWidget.h"
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_CropVolume
 class qSlicerCropVolumeModulePrivate
 {
 public:
@@ -43,14 +40,14 @@ qSlicerCropVolumeModule::qSlicerCropVolumeModule(QObject* _parent)
 qSlicerCropVolumeModule::~qSlicerCropVolumeModule() = default;
 
 //-----------------------------------------------------------------------------
-QString qSlicerCropVolumeModule::helpText()const
+QString qSlicerCropVolumeModule::helpText() const
 {
-  return "CropVolume module extracts subvolume of the image described "
-         "by Region of Interest widget.";
+  return "CropVolume module extracts the subvolume of the image described "
+         "by the Region of Interest widget and can also be used to resample the volume.";
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerCropVolumeModule::acknowledgementText()const
+QString qSlicerCropVolumeModule::acknowledgementText() const
 {
   return "This module was developed by Andrey Fedorov and Ron Kikinis. "
          "This work was supported by NIH grants CA111288 and CA151261, "
@@ -58,7 +55,7 @@ QString qSlicerCropVolumeModule::acknowledgementText()const
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerCropVolumeModule::contributors()const
+QStringList qSlicerCropVolumeModule::contributors() const
 {
   QStringList moduleContributors;
   moduleContributors << QString("Andrey Fedorov (BWH, SPL)");
@@ -67,19 +64,19 @@ QStringList qSlicerCropVolumeModule::contributors()const
 }
 
 //-----------------------------------------------------------------------------
-QIcon qSlicerCropVolumeModule::icon()const
+QIcon qSlicerCropVolumeModule::icon() const
 {
   return QIcon(":/Icons/CropVolume.png");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerCropVolumeModule::categories()const
+QStringList qSlicerCropVolumeModule::categories() const
 {
-  return QStringList() << "Converters";
+  return QStringList() << qSlicerAbstractCoreModule::tr("Converters");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerCropVolumeModule::dependencies()const
+QStringList qSlicerCropVolumeModule::dependencies() const
 {
   return QStringList() << "Volumes" << "ResampleScalarVectorDWIVolume";
 }
@@ -88,39 +85,10 @@ QStringList qSlicerCropVolumeModule::dependencies()const
 void qSlicerCropVolumeModule::setup()
 {
   this->Superclass::setup();
-
-  vtkSlicerCropVolumeLogic* cropVolumeLogic =
-    vtkSlicerCropVolumeLogic::SafeDownCast(this->logic());
-
-  qSlicerAbstractCoreModule* volumesModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("Volumes");
-  if (volumesModule)
-    {
-    vtkSlicerVolumesLogic* volumesLogic =
-      vtkSlicerVolumesLogic::SafeDownCast(volumesModule->logic());
-    cropVolumeLogic->SetVolumesLogic(volumesLogic);
-    }
-  else
-    {
-    qWarning() << "Volumes module is not found";
-    }
-
-  qSlicerAbstractCoreModule* resampleModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("ResampleScalarVectorDWIVolume");
-  if (resampleModule)
-    {
-    vtkSlicerCLIModuleLogic* resampleLogic =
-      vtkSlicerCLIModuleLogic::SafeDownCast(resampleModule->logic());
-    cropVolumeLogic->SetResampleLogic(resampleLogic);
-    }
-  else
-    {
-    qWarning() << "ResampleScalarVectorDWIVolume module is not found";
-    }
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation * qSlicerCropVolumeModule::createWidgetRepresentation()
+qSlicerAbstractModuleRepresentation* qSlicerCropVolumeModule::createWidgetRepresentation()
 {
   return new qSlicerCropVolumeModuleWidget;
 }

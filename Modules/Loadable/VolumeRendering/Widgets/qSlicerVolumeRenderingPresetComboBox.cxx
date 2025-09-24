@@ -43,10 +43,10 @@
 #include <vtkVolumeProperty.h>
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_VolumeRendering
 class qSlicerVolumeRenderingPresetComboBoxPrivate : public Ui_qSlicerVolumeRenderingPresetComboBox
 {
   Q_DECLARE_PUBLIC(qSlicerVolumeRenderingPresetComboBox);
+
 protected:
   qSlicerVolumeRenderingPresetComboBox* const q_ptr;
 
@@ -68,8 +68,7 @@ public:
 // qSlicerVolumeRenderingPresetComboBoxPrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerVolumeRenderingPresetComboBoxPrivate::qSlicerVolumeRenderingPresetComboBoxPrivate(
-  qSlicerVolumeRenderingPresetComboBox& object)
+qSlicerVolumeRenderingPresetComboBoxPrivate::qSlicerVolumeRenderingPresetComboBoxPrivate(qSlicerVolumeRenderingPresetComboBox& object)
   : q_ptr(&object)
   , OldPresetPosition(0.0)
   , VolumePropertyNode(nullptr)
@@ -90,14 +89,10 @@ void qSlicerVolumeRenderingPresetComboBoxPrivate::init()
   QObject::connect(this->PresetComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)), q, SIGNAL(currentNodeChanged(vtkMRMLNode*)));
   QObject::connect(this->PresetComboBox, SIGNAL(currentNodeIDChanged(QString)), q, SIGNAL(currentNodeIDChanged(QString)));
 
-  QObject::connect(this->PresetOffsetSlider, SIGNAL(valueChanged(double)),
-    q, SLOT(offsetPreset(double)));
-  QObject::connect(this->PresetOffsetSlider, SIGNAL(sliderPressed()),
-    q, SLOT(startInteraction()));
-  QObject::connect(this->PresetOffsetSlider, SIGNAL(valueChanged(double)),
-    q, SLOT(interaction()));
-  QObject::connect(this->PresetOffsetSlider, SIGNAL(sliderReleased()),
-    q, SLOT(endInteraction()));
+  QObject::connect(this->PresetOffsetSlider, SIGNAL(valueChanged(double)), q, SLOT(offsetPreset(double)));
+  QObject::connect(this->PresetOffsetSlider, SIGNAL(sliderPressed()), q, SLOT(startInteraction()));
+  QObject::connect(this->PresetOffsetSlider, SIGNAL(valueChanged(double)), q, SLOT(interaction()));
+  QObject::connect(this->PresetOffsetSlider, SIGNAL(sliderReleased()), q, SLOT(endInteraction()));
 
   this->PresetComboBox->setMRMLScene(nullptr);
   this->PresetComboBox->setCurrentNode(nullptr);
@@ -110,18 +105,16 @@ void qSlicerVolumeRenderingPresetComboBoxPrivate::populatePresetsIcons()
 
   // This is a hack and doesn't work yet
   for (int i = 0; i < this->PresetComboBox->nodeCount(); ++i)
-    {
+  {
     vtkMRMLNode* presetNode = this->PresetComboBox->nodeFromIndex(i);
     QIcon presetIcon(QString(":/presets/") + presetNode->GetName());
     if (!presetIcon.isNull())
-      {
-      qMRMLSceneModel* sceneModel = qobject_cast<qMRMLSceneModel*>(
-        this->PresetComboBox->sortFilterProxyModel()->sourceModel() );
+    {
+      qMRMLSceneModel* sceneModel = qobject_cast<qMRMLSceneModel*>(this->PresetComboBox->sortFilterProxyModel()->sourceModel());
       sceneModel->setData(sceneModel->indexFromNode(presetNode), presetIcon, Qt::DecorationRole);
-      }
     }
+  }
 }
-
 
 //-----------------------------------------------------------------------------
 // qSlicerVolumeRenderingPresetComboBox methods
@@ -139,21 +132,21 @@ qSlicerVolumeRenderingPresetComboBox::qSlicerVolumeRenderingPresetComboBox(QWidg
 qSlicerVolumeRenderingPresetComboBox::~qSlicerVolumeRenderingPresetComboBox() = default;
 
 // --------------------------------------------------------------------------
-vtkMRMLNode* qSlicerVolumeRenderingPresetComboBox::currentNode()const
+vtkMRMLNode* qSlicerVolumeRenderingPresetComboBox::currentNode() const
 {
   Q_D(const qSlicerVolumeRenderingPresetComboBox);
   return d->PresetComboBox->currentNode();
 }
 
 // --------------------------------------------------------------------------
-QString qSlicerVolumeRenderingPresetComboBox::currentNodeID()const
+QString qSlicerVolumeRenderingPresetComboBox::currentNodeID() const
 {
   Q_D(const qSlicerVolumeRenderingPresetComboBox);
   return d->PresetComboBox->currentNodeID();
 }
 
 // --------------------------------------------------------------------------
-vtkMRMLVolumePropertyNode* qSlicerVolumeRenderingPresetComboBox::mrmlVolumePropertyNode()const
+vtkMRMLVolumePropertyNode* qSlicerVolumeRenderingPresetComboBox::mrmlVolumePropertyNode() const
 {
   Q_D(const qSlicerVolumeRenderingPresetComboBox);
   return d->VolumePropertyNode;
@@ -187,15 +180,15 @@ void qSlicerVolumeRenderingPresetComboBox::startInteraction()
 {
   Q_D(qSlicerVolumeRenderingPresetComboBox);
   if (!d->VolumePropertyNode)
-    {
+  {
     return;
-    }
+  }
 
   vtkVolumeProperty* volumeProperty = d->VolumePropertyNode->GetVolumeProperty();
   if (volumeProperty)
-    {
+  {
     volumeProperty->InvokeEvent(vtkCommand::StartInteractionEvent);
-    }
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -203,15 +196,15 @@ void qSlicerVolumeRenderingPresetComboBox::endInteraction()
 {
   Q_D(qSlicerVolumeRenderingPresetComboBox);
   if (!d->VolumePropertyNode)
-    {
+  {
     return;
-    }
+  }
 
   vtkVolumeProperty* volumeProperty = d->VolumePropertyNode->GetVolumeProperty();
   if (volumeProperty)
-    {
+  {
     volumeProperty->InvokeEvent(vtkCommand::EndInteractionEvent);
-    }
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -219,15 +212,15 @@ void qSlicerVolumeRenderingPresetComboBox::interaction()
 {
   Q_D(qSlicerVolumeRenderingPresetComboBox);
   if (!d->VolumePropertyNode)
-    {
+  {
     return;
-    }
+  }
 
   vtkVolumeProperty* volumeProperty = d->VolumePropertyNode->GetVolumeProperty();
   if (volumeProperty)
-    {
+  {
     volumeProperty->InvokeEvent(vtkCommand::InteractionEvent);
-    }
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -235,9 +228,9 @@ void qSlicerVolumeRenderingPresetComboBox::offsetPreset(double newPosition)
 {
   Q_D(qSlicerVolumeRenderingPresetComboBox);
   if (!d->VolumePropertyNode)
-    {
+  {
     return;
-    }
+  }
 
   emit presetOffsetChanged(newPosition - d->OldPresetPosition, 0., false);
   d->OldPresetPosition = newPosition;
@@ -259,36 +252,36 @@ void qSlicerVolumeRenderingPresetComboBox::updatePresetSliderRange()
 {
   Q_D(qSlicerVolumeRenderingPresetComboBox);
   if (!d->VolumePropertyNode)
-    {
+  {
     return;
-    }
+  }
 
   if (!d->VolumePropertyNode->GetVolumeProperty())
-    {
+  {
     return;
-    }
+  }
 
   if (d->PresetOffsetSlider->slider()->isSliderDown())
-    {
+  {
     // Do not change slider range while moving the slider
     return;
-    }
+  }
 
   double effectiveRange[2] = { 0.0 };
   d->VolumePropertyNode->GetEffectiveRange(effectiveRange);
   if (effectiveRange[0] > effectiveRange[1])
-    {
+  {
     if (!d->VolumePropertyNode->CalculateEffectiveRange())
-      {
+    {
       return; // Do not use undefined effective range
-      }
-    d->VolumePropertyNode->GetEffectiveRange(effectiveRange);
     }
+    d->VolumePropertyNode->GetEffectiveRange(effectiveRange);
+  }
   double transferFunctionWidth = effectiveRange[1] - effectiveRange[0];
 
   bool wasBlocking = d->PresetOffsetSlider->blockSignals(true);
   d->PresetOffsetSlider->setRange(-transferFunctionWidth, transferFunctionWidth);
-  d->PresetOffsetSlider->setSingleStep(ctk::closestPowerOfTen(transferFunctionWidth)/500.0);
+  d->PresetOffsetSlider->setSingleStep(ctk::closestPowerOfTen(transferFunctionWidth) / 500.0);
   d->PresetOffsetSlider->setPageStep(d->PresetOffsetSlider->singleStep());
   d->PresetOffsetSlider->blockSignals(wasBlocking);
 }
@@ -299,36 +292,39 @@ void qSlicerVolumeRenderingPresetComboBox::applyPreset(vtkMRMLNode* node)
   Q_D(qSlicerVolumeRenderingPresetComboBox);
 
   if (this->signalsBlocked())
-    {
+  {
     // Prevent the preset node from overwriting the active volume property node (thus reverting
     // changes in the transfer functions) when the widget's signals are blocked.
     // Needed to handle here, because if the inner combobox's signals are blocked, then the icon
     // is not updated.
     return;
-    }
+  }
 
   vtkMRMLVolumePropertyNode* presetNode = vtkMRMLVolumePropertyNode::SafeDownCast(node);
   if (!presetNode || !d->VolumePropertyNode)
-    {
+  {
     return;
-    }
+  }
 
-  if ( !presetNode->GetVolumeProperty()
-    || !presetNode->GetVolumeProperty()->GetRGBTransferFunction()
-    || presetNode->GetVolumeProperty()->GetRGBTransferFunction()->GetRange()[0] >
-       presetNode->GetVolumeProperty()->GetRGBTransferFunction()->GetRange()[1] )
-    {
+  if (!presetNode->GetVolumeProperty()                              //
+      || !presetNode->GetVolumeProperty()->GetRGBTransferFunction() //
+      || presetNode->GetVolumeProperty()->GetRGBTransferFunction()->GetRange()[0] > presetNode->GetVolumeProperty()->GetRGBTransferFunction()->GetRange()[1])
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid volume property preset node";
     return;
-    }
+  }
 
-  d->VolumePropertyNode->Copy(presetNode);
+  d->VolumePropertyNode->CopyContent(presetNode);
+
+  // Associate the volume property node by the preset by copying its name.
+  // Note: it would be more robust to save the preset ID into the volume property node.
+  d->VolumePropertyNode->SetName(presetNode->GetName());
 
   this->resetOffset();
 }
 
 // --------------------------------------------------------------------------
-bool qSlicerVolumeRenderingPresetComboBox::showIcons()const
+bool qSlicerVolumeRenderingPresetComboBox::showIcons() const
 {
   Q_D(const qSlicerVolumeRenderingPresetComboBox);
   return d->PresetComboBox->showIcons();

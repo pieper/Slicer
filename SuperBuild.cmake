@@ -43,7 +43,7 @@ if(EP_GIT_PROTOCOL STREQUAL "https")
 "adding 'git config' statement between the 'git checkout' and the 'submodule init', it is required "
 "to manually update your global git config to successfully build ${CMAKE_PROJECT_NAME} with "
 "option Slicer_USE_GIT_PROTOCOL set to FALSE. "
-"See http://na-mic.org/Mantis/view.php?id=2731"
+"See https://mantisarchive.slicer.org/view.php?id=2731"
 "\nYou could do so by running the command:\n"
 "  ${GIT_EXECUTABLE} config --global url.${base}.insteadOf ${insteadof}\n")
     endif()
@@ -97,19 +97,17 @@ set(Slicer_DEPENDENCIES
   CTK
   LibArchive
   RapidJSON
+  SlicerExecutionModel
   )
 
 set(CURL_ENABLE_SSL ${Slicer_USE_PYTHONQT_WITH_OPENSSL})
+set(DCMTK_WITH_OPENSSL ${Slicer_USE_DCMTK_WITH_OPENSSL})
 
 if(Slicer_USE_SimpleITK)
   list(APPEND Slicer_DEPENDENCIES SimpleITK)
 endif()
 
-if(Slicer_BUILD_CLI_SUPPORT)
-  list(APPEND Slicer_DEPENDENCIES SlicerExecutionModel)
-endif()
-
-if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
+if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT OR Slicer_BUILD_APPLICATIONUPDATE_SUPPORT)
   list(APPEND Slicer_DEPENDENCIES qRestAPI)
 endif()
 
@@ -202,10 +200,16 @@ endmacro()
 
 Slicer_Remote_Add(vtkAddon
   GIT_REPOSITORY "${EP_GIT_PROTOCOL}://github.com/Slicer/vtkAddon"
-  GIT_TAG ab95838b7714a8e2fc8724a36197093393562e51
+  GIT_TAG b1fa5034077fc04b10457fe25004c65af6091a37
   OPTION_NAME Slicer_BUILD_vtkAddon
   )
 list_conditional_append(Slicer_BUILD_vtkAddon Slicer_REMOTE_DEPENDENCIES vtkAddon)
+
+set(vtkAddon_CMAKE_DIR ${vtkAddon_SOURCE_DIR}/CMake)
+mark_as_superbuild(vtkAddon_CMAKE_DIR:PATH)
+
+set(vtkAddon_LAUNCH_COMMAND ${Slicer_LAUNCH_COMMAND})
+mark_as_superbuild(vtkAddon_LAUNCH_COMMAND:STRING)
 
 set(vtkAddon_USE_UTF8 ON)
 mark_as_superbuild(vtkAddon_USE_UTF8:BOOL)
@@ -217,24 +221,12 @@ mark_as_superbuild(vtkAddon_WRAP_PYTHON:BOOL)
 # Include remote modules
 #------------------------------------------------------------------------------
 
-if(Slicer_BUILD_WEBENGINE_SUPPORT)
-  Slicer_Remote_Add(jqPlot
-    URL https://github.com/Slicer/SlicerBinaryDependencies/releases/download/jqplot/jquery.jqplot.1.0.4r1115.tar.gz
-    URL_MD5 5c5d73730145c3963f09e1d3ca355580
-    LICENSE_FILES "MIT-LICENSE.txt"
-    VERSION "1.0.4"
-    SOURCE_DIR_VAR jqPlot_DIR
-    LABELS FIND_PACKAGE
-    )
-  list(APPEND Slicer_REMOTE_DEPENDENCIES jqPlot)
-endif()
-
 option(Slicer_BUILD_MULTIVOLUME_SUPPORT "Build MultiVolume support." ON)
 mark_as_advanced(Slicer_BUILD_MULTIVOLUME_SUPPORT)
 
 Slicer_Remote_Add(MultiVolumeExplorer
   GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/fedorov/MultiVolumeExplorer.git
-  GIT_TAG b907c39b876a1d5f9eac1359ce6c829c13c53c93
+  GIT_TAG 543f5bc46444a83474b185f4aa9c9d2a916ed09b # 20250702
   OPTION_NAME Slicer_BUILD_MultiVolumeExplorer
   OPTION_DEPENDS "Slicer_BUILD_QTLOADABLEMODULES;Slicer_BUILD_MULTIVOLUME_SUPPORT;Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -243,7 +235,7 @@ list_conditional_append(Slicer_BUILD_MultiVolumeExplorer Slicer_REMOTE_DEPENDENC
 
 Slicer_Remote_Add(MultiVolumeImporter
   GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/fedorov/MultiVolumeImporter.git
-  GIT_TAG 8a81b4395e9093875b0f90a3a1b479b0832f8c36
+  GIT_TAG c8a37eb5e4f35b78ccc9287b298457a064c9d001
   OPTION_NAME Slicer_BUILD_MultiVolumeImporter
   OPTION_DEPENDS "Slicer_BUILD_QTLOADABLEMODULES;Slicer_BUILD_MULTIVOLUME_SUPPORT;Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -252,7 +244,7 @@ list_conditional_append(Slicer_BUILD_MultiVolumeImporter Slicer_REMOTE_DEPENDENC
 
 Slicer_Remote_Add(SimpleFilters
   GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/SimpleITK/SlicerSimpleFilters.git
-  GIT_TAG 8686bf5722c642cca0b765cb3f8e5b24b0a25422
+  GIT_TAG e82fc598bc010505e994b7ce22d953a9899a175c
   OPTION_NAME Slicer_BUILD_SimpleFilters
   OPTION_DEPENDS "Slicer_BUILD_QTSCRIPTEDMODULES;Slicer_USE_SimpleITK"
   LABELS REMOTE_MODULE
@@ -283,6 +275,7 @@ set(BRAINSTools_hidden_options
   USE_BRAINSTalairach:INTERNAL=OFF
   USE_BRAINSMush:INTERNAL=OFF
   USE_BRAINSInitializedControlPoints:INTERNAL=OFF
+  USE_BRAINSLabelStats:INTERNAL=OFF
   USE_BRAINSMultiModeSegment:INTERNAL=OFF
   USE_ImageCalculator:INTERNAL=OFF
   USE_BRAINSSnapShotWriter:INTERNAL=OFF
@@ -307,11 +300,11 @@ set(BRAINSTools_slicer_options
 
 
 Slicer_Remote_Add(BRAINSTools
-  GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/Slicer/BRAINSTools.git
-  GIT_TAG de71a695f605c7f17c52a168b35dce0231b62dd7 # slicer-2020-04-14-v5.2.0
-  LICENSE_FILES "http://www.apache.org/licenses/LICENSE-2.0.txt"
+  GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/BRAINSia/BRAINSTools.git
+  GIT_TAG "36ae5529907a2c41225265a7158595e8d19e2cbf" # slicer-20250702-postv5.8.0 (v5.8.0 + 1 patch)
+  LICENSE_FILES "https://www.apache.org/licenses/LICENSE-2.0.txt"
   OPTION_NAME Slicer_BUILD_BRAINSTOOLS
-  OPTION_DEPENDS "Slicer_BUILD_CLI_SUPPORT;Slicer_BUILD_CLI"
+  OPTION_DEPENDS "Slicer_BUILD_CLI"
   LABELS REMOTE_MODULE
   VARS ${BRAINSTools_slicer_options} ${BRAINSTools_hidden_options}
   )
@@ -322,29 +315,18 @@ if(Slicer_BUILD_BRAINSTOOLS)
   mark_as_superbuild(BRAINSCommonLib_DIR:PATH)
 endif()
 
-Slicer_Remote_Add(DataStore
-  GIT_REPOSITORY "${EP_GIT_PROTOCOL}://github.com/Slicer/Slicer-DataStore"
-  GIT_TAG d4d71e8a0c715d204f815cf1f49a965172ab3a39
-  OPTION_NAME Slicer_BUILD_DataStore
-  OPTION_DEPENDS "Slicer_BUILD_WEBENGINE_SUPPORT"
-  LABELS REMOTE_MODULE
-  )
-list_conditional_append(Slicer_BUILD_DataStore Slicer_REMOTE_DEPENDENCIES DataStore)
-
 Slicer_Remote_Add(CompareVolumes
   GIT_REPOSITORY "${EP_GIT_PROTOCOL}://github.com/pieper/CompareVolumes"
-  GIT_TAG 34f1b3da761f25227d6785b13b5700b8d446992d
+  GIT_TAG b5270a2d42e42824eaba1adcc8fc309a514403a3
   OPTION_NAME Slicer_BUILD_CompareVolumes
   OPTION_DEPENDS "Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
   )
 list_conditional_append(Slicer_BUILD_CompareVolumes Slicer_REMOTE_DEPENDENCIES CompareVolumes)
 
-# Disable this module until it can be ported to the new markups code
-# Tracked at https://github.com/pieper/LandmarkRegistration/issues/29
 Slicer_Remote_Add(LandmarkRegistration
-  GIT_REPOSITORY "${EP_GIT_PROTOCOL}://github.com/pieper/LandmarkRegistration"
-  GIT_TAG c1385ba2cd5069a018cd97c19085788006276918
+  GIT_REPOSITORY "${EP_GIT_PROTOCOL}://github.com/Slicer/LandmarkRegistration"
+  GIT_TAG a20528796bec08e169a42e4793dd1f60ae11977c
   OPTION_NAME Slicer_BUILD_LandmarkRegistration
   OPTION_DEPENDS "Slicer_BUILD_CompareVolumes;Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -353,7 +335,7 @@ list_conditional_append(Slicer_BUILD_LandmarkRegistration Slicer_REMOTE_DEPENDEN
 
 Slicer_Remote_Add(SurfaceToolbox
   GIT_REPOSITORY "${EP_GIT_PROTOCOL}://github.com/Slicer/SlicerSurfaceToolbox"
-  GIT_TAG 28b2567f8c155d4665ae5c684c5d8ad9e7961934
+  GIT_TAG 5fde114b1f950f632e13a658c44ca948e7955e89
   OPTION_NAME Slicer_BUILD_SurfaceToolbox
   OPTION_DEPENDS "Slicer_USE_PYTHONQT"
   LABELS REMOTE_MODULE
@@ -505,6 +487,7 @@ endif()
 # associated with the SlicerApp application.
 
 foreach(name IN ITEMS
+  APPLICATION_DISPLAY_NAME
   DESCRIPTION_SUMMARY
   DESCRIPTION_FILE
   LAUNCHER_SPLASHSCREEN_FILE

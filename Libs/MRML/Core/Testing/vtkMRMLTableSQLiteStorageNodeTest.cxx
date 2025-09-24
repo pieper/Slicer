@@ -33,24 +33,24 @@
 
 #include "vtkMRMLCoreTestingMacros.h"
 
-static int removeFile(char *fileName)
+static int removeFile(char* fileName)
 {
   int removed = 1;
   if (itksys::SystemTools::FileExists(fileName))
   {
-    removed = itksys::SystemTools::RemoveFile(fileName);
+    removed = static_cast<bool>(itksys::SystemTools::RemoveFile(fileName));
   }
   return removed;
 }
 
-int vtkMRMLTableSQLiteStorageNodeTest(int , char * [] )
+int vtkMRMLTableSQLiteStorageNodeTest(int, char*[])
 {
   vtkNew<vtkMRMLScene> scene;
 
   vtkNew<vtkMRMLTableNode> tableNode;
   scene->AddNode(tableNode.GetPointer());
 
-  vtkNew< vtkMRMLTableSQLiteStorageNode > storageNode;
+  vtkNew<vtkMRMLTableSQLiteStorageNode> storageNode;
   scene->AddNode(storageNode.GetPointer());
 
   tableNode->SetAndObserveStorageNodeID(storageNode->GetID());
@@ -69,14 +69,14 @@ int vtkMRMLTableSQLiteStorageNodeTest(int , char * [] )
 
   // add few  points...
   int numPoints = 29;
-  float inc = 7.0 / (numPoints-1);
+  float inc = 7.0 / (numPoints - 1);
   table->SetNumberOfRows(numPoints);
   for (int i = 0; i < numPoints; ++i)
-    {
+  {
     table->SetValue(i, 0, i * inc);
     table->SetValue(i, 1, cos(i * inc) + 0.0);
     table->SetValue(i, 2, sin(i * inc) + 0.0);
-    }
+  }
 
   tableNode->SetAndObserveTable(table.GetPointer());
 
@@ -88,28 +88,28 @@ int vtkMRMLTableSQLiteStorageNodeTest(int , char * [] )
 
   tableNode->RemoveAllColumns();
   if (tableNode->GetNumberOfColumns() != 0)
-    {
+  {
     std::cerr << "Unable to remove columns " << std::endl;
     removeFile(storageNode->GetFileName());
     return EXIT_FAILURE;
-    }
+  }
 
   // read table from the database
   storageNode->ReadData(tableNode.GetPointer());
 
   if (tableNode->GetNumberOfColumns() != 3)
-    {
-    std::cerr << "Unable to read table columns from the database " << storageNode->GetFileName() <<std::endl;
+  {
+    std::cerr << "Unable to read table columns from the database " << storageNode->GetFileName() << std::endl;
     removeFile(storageNode->GetFileName());
     return EXIT_FAILURE;
-    }
+  }
 
   if (tableNode->GetNumberOfRows() != numPoints)
-    {
-    std::cerr << "Unable to read table rows from the database " << storageNode->GetFileName() <<std::endl;
+  {
+    std::cerr << "Unable to read table rows from the database " << storageNode->GetFileName() << std::endl;
     removeFile(storageNode->GetFileName());
     return EXIT_FAILURE;
-    }
+  }
 
   // clean up
   removeFile(storageNode->GetFileName());

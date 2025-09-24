@@ -24,47 +24,43 @@
 #include "vtkSegmentationCoreConfigure.h"
 
 // VTK includes
+#include <vtkNew.h>
 #include <vtkObject.h>
-
-// STD includes
-#include <map>
-#include <string>
-#include <vector>
 
 class vtkDataObject;
 class vtkSegmentation;
 class vtkSegment;
 
+#include "vtkSegmentationConversionParameters.h"
+
 /// Helper macro for supporting cloning of rules
 #ifndef vtkSegmentationConverterRuleNewMacro
-#define vtkSegmentationConverterRuleNewMacro(newClass) \
-  vtkStandardNewMacro(newClass); \
-  vtkSegmentationConverterRule* newClass::CreateRuleInstance() \
-  { \
-    return newClass::New(); \
-  }
+# define vtkSegmentationConverterRuleNewMacro(newClass)         \
+   vtkStandardNewMacro(newClass);                               \
+   vtkSegmentationConverterRule* newClass::CreateRuleInstance() \
+   {                                                            \
+     return newClass::New();                                    \
+   }
 #endif
-
-/// \ingroup SegmentationCore
 /// \brief Abstract converter rule class. Subclasses perform conversions between specific
 ///   representation types. They define source and target type and provide ways to create those
 ///   types of objects.
+///
+/// Each conversion rule defines its required/possible conversion parameters,
+/// and sets possible default values whenever applicable. Required parameters have empty defaults.
+/// When the user changes the parameter value, then the default is being overwritten to contain the
+/// custom value, but for new segmentations, it is initially the default.
 class vtkSegmentationCore_EXPORT vtkSegmentationConverterRule : public vtkObject
 {
 public:
-  /// Conversion parameter list type. Maps the conversion parameter name to a pair consisting of the
-  /// value of the parameter (the default value if it is defined in the converter rule) and the
-  /// description of the parameter that appears as tooltip in the conversion parameters widget
-  /// ( name => (value, description) )
-  typedef std::map<std::string, std::pair<std::string, std::string> > ConversionParameterListType;
-
   /// Constant to use for converter rules with "infinite" computational cost (i.e. disabled)
   /// It's about UINT_MAX / 400 (allows us to have a few hundred disabled rules)
   static unsigned int GetConversionInfiniteCost() { return 10000000; };
 
 public:
-  //static vtkSegmentationConverterRule* New();
+  // static vtkSegmentationConverterRule* New();
   vtkTypeMacro(vtkSegmentationConverterRule, vtkObject);
+  void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Create instance of the default node. Similar to New but virtual method.
   /// Subclasses should implement this method by
@@ -84,7 +80,7 @@ public:
   virtual vtkDataObject* ConstructRepresentationObjectByClass(std::string className) = 0;
 
   /// Perform pre-conversion steps across the specified segments in the segmentation
-  /// This step should be unneccessary if only converting a single segment
+  /// This step should be unnecessary if only converting a single segment
   virtual bool PreConvert(vtkSegmentation* vtkNotUsed(segmentation)) { return true; };
 
   /// Update the target representation based on the source representation
@@ -93,19 +89,19 @@ public:
   virtual bool Convert(vtkSegment* segment) = 0;
 
   /// Perform post-conversion steps across the specified segments in the segmentation
-  /// This step should be unneccessary if only converting a single segment
+  /// This step should be unnecessary if only converting a single segment
   virtual bool PostConvert(vtkSegmentation* vtkNotUsed(segmentation)) { return true; };
 
   /// Get the cost of the conversion.
   /// \return Expected duration of the conversion in milliseconds. If the arguments are omitted, then a rough average can be
   ///   given just to indicate the relative computational cost of the algorithm. If the objects are given, then a more educated
   ///   guess can be made based on the object properties (dimensions, number of points, etc).
-  virtual unsigned int GetConversionCost(vtkDataObject* sourceRepresentation=nullptr, vtkDataObject* targetRepresentation=nullptr)
-    {
+  virtual unsigned int GetConversionCost(vtkDataObject* sourceRepresentation = nullptr, vtkDataObject* targetRepresentation = nullptr)
+  {
     (void)(sourceRepresentation); // unused
     (void)(targetRepresentation); // unused
     return 100;
-    };
+  };
 
   /// Human-readable name of the converter rule
   virtual const char* GetName() = 0;
@@ -117,11 +113,12 @@ public:
   virtual const char* GetTargetRepresentationName() = 0;
 
   /// Get rule conversion parameters for aggregated path parameters.
-  /// Existing values in the map are overwritten, missing name&values are added.
-  virtual void GetRuleConversionParameters(ConversionParameterListType& conversionParameters);
+  /// Existing values in the provided conversionParameters object overwritten,
+  /// missing name and values are added.
+  virtual void GetRuleConversionParameters(vtkSegmentationConversionParameters* conversionParameters) VTK_EXPECTS(conversionParameters != nullptr);
 
   /// Set a conversion parameter
-  virtual void SetConversionParameter(const std::string& name, const std::string& value, const std::string& description="");
+  virtual void SetConversionParameter(const std::string& name, const std::string& value, const std::string& description = "");
 
   /// Get a conversion parameter value
   virtual std::string GetConversionParameter(const std::string& name);
@@ -146,15 +143,15 @@ protected:
   /// and sets possible default values whenever applicable. Required parameters have empty defaults.
   /// When the user changes the parameter value, then the default is being overwritten to contain the
   /// custom value, but for new segmentations, it is initially the default.
-  ConversionParameterListType ConversionParameters;
+  vtkNew<vtkSegmentationConversionParameters> ConversionParameters;
 
   /// Used when calling createTargetRepresentation
   /// If true, replaces the target representation of the segment with a new object, even if one already exists
   /// If false, will only create a target representation if one already doesn't exist.
   /// False by default.
-  bool ReplaceTargetRepresentation{false};
+  bool ReplaceTargetRepresentation{ false };
 
   friend class vtkSegmentationConverter;
 };
 
-#endif // __vtkSegmentationConverterRule_h
+#endif

@@ -6,9 +6,6 @@ set(${proj}_DEPENDENCIES "zlib" "VTK")
 if(Slicer_BUILD_DICOM_SUPPORT)
   list(APPEND ${proj}_DEPENDENCIES DCMTK)
 endif()
-if(Slicer_BUILD_ITKPython)
-  list(APPEND ${proj}_DEPENDENCIES Swig python)
-endif()
 if(Slicer_USE_TBB)
   list(APPEND ${proj}_DEPENDENCIES tbb)
 endif()
@@ -30,13 +27,13 @@ if(NOT DEFINED ITK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   ExternalProject_SetIfNotDefined(
     Slicer_${proj}_GIT_REPOSITORY
-    "${EP_GIT_PROTOCOL}://github.com/InsightSoftwareConsortium/ITK"
+    "${EP_GIT_PROTOCOL}://github.com/Slicer/ITK"
     QUIET
     )
 
   ExternalProject_SetIfNotDefined(
     Slicer_${proj}_GIT_TAG
-    "35704a458d1ad9a4a2f2634d38032216ab280823"  # v5.1rc03 with ITK PR#1727 fixing -Wstrict-overflow warning
+    "e5dd69339bf0c436db3650eadd3c2a940c330b77" # slicer-v5.4.4-2025-06-11-f98d5fa
     QUIET
     )
 
@@ -45,11 +42,11 @@ if(NOT DEFINED ITK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
   if(Slicer_USE_TBB)
     list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
       -DModule_ITKTBB:BOOL=ON
-      -DTBB_DIR:PATH=${TBB_INSTALL_DIR}/cmake
+      -DTBB_DIR:PATH=${TBB_DIR}
       )
   endif()
 
-  if(Slicer_USE_PYTHONQT OR Slicer_BUILD_ITKPython)
+  if(Slicer_USE_PYTHONQT)
     # XXX Ensure python executable used for ITKModuleHeaderTest
     #     is the same as Slicer.
     #     This will keep the sanity check implemented in SlicerConfig.cmake
@@ -57,32 +54,14 @@ if(NOT DEFINED ITK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
     list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
       -DPYTHON_EXECUTABLE:PATH=${PYTHON_EXECUTABLE}
       )
-  endif()
-
-  if(Slicer_BUILD_ITKPython)
-
-    # Sanity checks
-    if("${PYTHON_SITE_PACKAGES_SUBDIR}" STREQUAL "")
-      message(FATAL_ERROR "PYTHON_SITE_PACKAGES_SUBDIR CMake variable is expected to be set")
-    endif()
-
-    # Custom name for the components associated with ITK
-    # wrapping install rules enabling Slicer to optionally
-    # package ITK Wrapping in Slicer installer by simply
-    # toggling the Slicer_INSTALL_ITKPython option.
-    set(Slicer_WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER "Wrapping")
-    mark_as_superbuild(Slicer_WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING)
-
-    set(PY_SITE_PACKAGES_PATH lib/Python/${PYTHON_SITE_PACKAGES_SUBDIR})
-
     list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
-      -DPYTHON_LIBRARY:FILEPATH=${PYTHON_LIBRARY}
-      -DPYTHON_INCLUDE_DIR:PATH=${PYTHON_INCLUDE_DIR}
-      -DSWIG_EXECUTABLE:PATH=${SWIG_EXECUTABLE}
-      -DITK_USE_SYSTEM_SWIG:BOOL=ON
-      -DITK_LEGACY_SILENT:BOOL=ON
-      -DWRAP_ITK_INSTALL_COMPONENT_IDENTIFIER:STRING=${Slicer_WRAP_ITK_INSTALL_COMPONENT_IDENTIFIER}
-      -DPY_SITE_PACKAGES_PATH:STRING=${PY_SITE_PACKAGES_PATH}
+      # Required by FindPython3 CMake module used by VTK
+      -DPython3_ROOT_DIR:PATH=${Python3_ROOT_DIR}
+      -DPython3_INCLUDE_DIR:PATH=${Python3_INCLUDE_DIR}
+      -DPython3_LIBRARY:FILEPATH=${Python3_LIBRARY}
+      -DPython3_LIBRARY_DEBUG:FILEPATH=${Python3_LIBRARY_DEBUG}
+      -DPython3_LIBRARY_RELEASE:FILEPATH=${Python3_LIBRARY_RELEASE}
+      -DPython3_EXECUTABLE:FILEPATH=${Python3_EXECUTABLE}
       )
   endif()
 
@@ -91,7 +70,7 @@ if(NOT DEFINED ITK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   list(APPEND EXTERNAL_PROJECT_OPTIONAL_CMAKE_CACHE_ARGS
     -DITK_LEGACY_REMOVE:BOOL=OFF   #<-- Allow LEGACY ITKv4 features for now.
-    -DITK_LEGACY_SILENT:BOOL=ON    #<-- Silence for initial ITKv5 migration.
+    -DITK_LEGACY_SILENT:BOOL=OFF   #<-- Use of legacy code will produce compiler warnings
     -DModule_ITKDeprecated:BOOL=ON #<-- Needed for ITKv5 now. (itkMultiThreader.h and MutexLock backwards compatibility.)
     )
 
@@ -134,11 +113,17 @@ if(NOT DEFINED ITK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
       -DModule_ITKReview:BOOL=ON
       -DModule_MGHIO:BOOL=ON
       -DModule_ITKIOMINC:BOOL=ON
+      -DModule_IOScanco:BOOL=ON
+      -DModule_MorphologicalContourInterpolation:BOOL=ON
+      -DModule_GrowCut:BOOL=ON
+      -DModule_SimpleITKFilters:BOOL=${Slicer_USE_SimpleITK}
+      -DModule_GenericLabelInterpolator:BOOL=ON
+      -DModule_AdaptiveDenoising:BOOL=ON
       -DBUILD_SHARED_LIBS:BOOL=ON
       -DITK_INSTALL_NO_DEVELOPMENT:BOOL=ON
       -DKWSYS_USE_MD5:BOOL=ON # Required by SlicerExecutionModel
       -DITK_WRAPPING:BOOL=OFF #${BUILD_SHARED_LIBS} ## HACK:  QUICK CHANGE
-      -DITK_WRAP_PYTHON:BOOL=${Slicer_BUILD_ITKPython}
+      -DITK_WRAP_PYTHON:BOOL=OFF
       -DExternalData_OBJECT_STORES:PATH=${ExternalData_OBJECT_STORES}
       # VTK
       -DModule_ITKVtkGlue:BOOL=ON
@@ -160,7 +145,7 @@ if(NOT DEFINED ITK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   ExternalProject_GenerateProjectDescription_Step(${proj})
 
-  set(ITK_DIR ${CMAKE_BINARY_DIR}/${proj}-build)
+  set(ITK_DIR ${EP_BINARY_DIR})
 
   if(NOT DEFINED ITK_VALGRIND_SUPPRESSIONS_FILE)
     set(ITK_VALGRIND_SUPPRESSIONS_FILE ${EP_SOURCE_DIR}/CMake/InsightValgrind.supp)
@@ -181,19 +166,6 @@ if(NOT DEFINED ITK_DIR AND NOT Slicer_USE_SYSTEM_${proj})
     VARS ${proj}_LIBRARY_PATHS_LAUNCHER_BUILD
     LABELS "LIBRARY_PATHS_LAUNCHER_BUILD"
     )
-
-  if(Slicer_BUILD_ITKPython)
-    # pythonpath
-    set(${proj}_PYTHONPATH_LAUNCHER_BUILD
-      ${ITK_DIR}/Wrapping/Generators/Python/<CMAKE_CFG_INTDIR>
-      ${ITK_DIR}/lib/<CMAKE_CFG_INTDIR>
-      ${ITK_DIR}/lib
-      )
-    mark_as_superbuild(
-      VARS ${proj}_PYTHONPATH_LAUNCHER_BUILD
-      LABELS "PYTHONPATH_LAUNCHER_BUILD"
-      )
-  endif()
 
   #-----------------------------------------------------------------------------
   # Launcher setting specific to install tree

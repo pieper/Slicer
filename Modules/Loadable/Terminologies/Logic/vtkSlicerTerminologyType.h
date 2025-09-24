@@ -43,7 +43,7 @@ public:
   static int INVALID_COLOR[3];
 
 public:
-  static vtkSlicerTerminologyType *New();
+  static vtkSlicerTerminologyType* New();
   vtkTypeMacro(vtkSlicerTerminologyType, vtkCodedEntry);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -94,7 +94,7 @@ protected:
   /// Flag indicating whether the type object has a 'Modifier' member array. False by default.
   /// A Type object EITHER has 'recommendedDisplayRGBValue' and '3dSlicerLabel' OR a 'Modifier' member
   /// array with the modifiers, so if this flag is true, then there is no valid color and Slicer label.
-  /// Anatomic region objects can have neither.
+  /// Region objects can have neither.
   bool HasModifiers;
 };
 

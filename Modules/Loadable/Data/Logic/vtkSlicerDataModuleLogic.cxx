@@ -54,13 +54,11 @@ void vtkSlicerDataModuleLogic::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
-  os << indent << "AutoRemoveDisplayAndStorageNode: " <<
-    (AutoRemoveDisplayAndStorageNodes ? "On" : "Off") << "\n";
-
- }
+  os << indent << "AutoRemoveDisplayAndStorageNode: " << (AutoRemoveDisplayAndStorageNodes ? "On" : "Off") << "\n";
+}
 
 //---------------------------------------------------------------------------
-void vtkSlicerDataModuleLogic::SetMRMLSceneInternal(vtkMRMLScene * newScene)
+void vtkSlicerDataModuleLogic::SetMRMLSceneInternal(vtkMRMLScene* newScene)
 {
   vtkNew<vtkIntArray> events;
   events->InsertNextValue(vtkMRMLScene::NodeAddedEvent);
@@ -82,51 +80,48 @@ void vtkSlicerDataModuleLogic::UpdateFromMRMLScene()
   this->SceneChangedOn();
 }
 
-
 //----------------------------------------------------------------------------
 void vtkSlicerDataModuleLogic::OnMRMLSceneNodeRemoved(vtkMRMLNode* node)
 {
   vtkMRMLDisplayableNode* displayableNode = vtkMRMLDisplayableNode::SafeDownCast(node);
   if (!displayableNode || this->GetMRMLScene()->IsClosing() || !this->AutoRemoveDisplayAndStorageNodes)
-    {
+  {
     return;
-    }
+  }
 
   // Collect a list of storage and display nodes that are only
   // referenced by the node to be removed.
-  std::vector< vtkWeakPointer<vtkMRMLNode> > nodesToRemove;
+  std::vector<vtkWeakPointer<vtkMRMLNode>> nodesToRemove;
 
   /// we can't get the display node directly as it might be 0 because the
   /// displayable node has no longer access to the scene
-  std::vector<vtkMRMLNode *> referencingNodes;
+  std::vector<vtkMRMLNode*> referencingNodes;
   for (int i = 0; i < displayableNode->GetNumberOfDisplayNodes(); ++i)
-    {
-    vtkMRMLNode *dnode = this->GetMRMLScene()->GetNodeByID(
-      displayableNode->GetNthDisplayNodeID(i));
+  {
+    vtkMRMLNode* dnode = this->GetMRMLScene()->GetNodeByID(displayableNode->GetNthDisplayNodeID(i));
 
     // make sure no other nodes reference this display node
     this->GetMRMLScene()->GetReferencingNodes(dnode, referencingNodes);
 
-    if (referencingNodes.size() == 0 ||
-        (referencingNodes.size() == 1 && referencingNodes[0] == node) )
-      {
-      nodesToRemove.emplace_back(dnode);
-      }
-    }
-  for (int i = 0; i < displayableNode->GetNumberOfStorageNodes(); ++i)
+    if (referencingNodes.size() == 0 || //
+        (referencingNodes.size() == 1 && referencingNodes[0] == node))
     {
-    vtkMRMLNode *snode = this->GetMRMLScene()->GetNodeByID(
-      displayableNode->GetNthStorageNodeID(i));
+      nodesToRemove.emplace_back(dnode);
+    }
+  }
+  for (int i = 0; i < displayableNode->GetNumberOfStorageNodes(); ++i)
+  {
+    vtkMRMLNode* snode = this->GetMRMLScene()->GetNodeByID(displayableNode->GetNthStorageNodeID(i));
 
     // make sure no other nodes reference this storage node
     this->GetMRMLScene()->GetReferencingNodes(snode, referencingNodes);
 
-    if (referencingNodes.size() == 0 ||
-        (referencingNodes.size() == 1 && referencingNodes[0] == node) )
-      {
+    if (referencingNodes.size() == 0 || //
+        (referencingNodes.size() == 1 && referencingNodes[0] == node))
+    {
       nodesToRemove.emplace_back(snode);
-      }
     }
+  }
 
   // Now remove the collected nodes. Batch process is only used if many nodes will be removed
   // because entering/exiting batch processing is a very expensive operation (the display flickers,
@@ -135,25 +130,25 @@ void vtkSlicerDataModuleLogic::OnMRMLSceneNodeRemoved(vtkMRMLNode* node)
   bool useBatchMode = toRemove > 10; // Switch to batch mode if more than 10 nodes to remove
   int progress = 0;
   if (useBatchMode)
-    {
+  {
     this->GetMRMLScene()->StartState(vtkMRMLScene::BatchProcessState, toRemove);
-    }
-  std::vector< vtkWeakPointer<vtkMRMLNode> >::const_iterator nodeIterator;
+  }
+  std::vector<vtkWeakPointer<vtkMRMLNode>>::const_iterator nodeIterator;
   nodeIterator = nodesToRemove.begin();
   while (nodeIterator != nodesToRemove.end())
-    {
+  {
     if (nodeIterator->GetPointer())
-       {
+    {
       this->GetMRMLScene()->RemoveNode(*nodeIterator);
       if (useBatchMode)
-        {
+      {
         this->GetMRMLScene()->ProgressState(vtkMRMLScene::BatchProcessState, ++progress);
-        }
       }
+    }
     ++nodeIterator;
-    }
+  }
   if (useBatchMode)
-    {
+  {
     this->GetMRMLScene()->EndState(vtkMRMLScene::BatchProcessState);
-    }
+  }
 }

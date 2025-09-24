@@ -1,7 +1,6 @@
 
 #-----------------------------------------------------------------------------
 set(MODULE_NAME "Markups")
-set(MODULE_TITLE "${MODULE_NAME}")
 
 string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
 
@@ -27,6 +26,9 @@ set(MODULE_INCLUDE_DIRECTORIES
   ${qSlicerSubjectHierarchyModuleWidgets_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/Widgets
   ${CMAKE_CURRENT_BINARY_DIR}/Widgets
+  ${qSlicerColorsModuleWidgets_INCLUDE_DIRS}
+  ${vtkSlicerColorsModuleMRML_INCLUDE_DIRS}
+  ${vtkSlicerColorsModuleLogic_INCLUDE_DIRS}
   )
 
 set(MODULE_SRCS
@@ -38,6 +40,12 @@ set(MODULE_SRCS
   qSlicer${MODULE_NAME}Reader.h
   qSlicer${MODULE_NAME}SettingsPanel.cxx
   qSlicer${MODULE_NAME}SettingsPanel.h
+  qSlicer${MODULE_NAME}Writer.cxx
+  qSlicer${MODULE_NAME}Writer.h
+  qSlicerAnnotationsReader.cxx  # for reading legacy annotation files
+  qSlicerAnnotationsReader.h
+  qSlicerAnnotationsIOOptionsWidget.cxx
+  qSlicerAnnotationsIOOptionsWidget.h
   )
 
 set(MODULE_MOC_SRCS
@@ -45,20 +53,26 @@ set(MODULE_MOC_SRCS
   qSlicer${MODULE_NAME}ModuleWidget.h
   qSlicer${MODULE_NAME}Reader.h
   qSlicer${MODULE_NAME}SettingsPanel.h
+  qSlicer${MODULE_NAME}Writer.h
+  qSlicerAnnotationsIOOptionsWidget.h
+  qSlicerAnnotationsReader.h
   )
 
 set(MODULE_UI_SRCS
   Resources/UI/qSlicer${MODULE_NAME}Module.ui
   Resources/UI/qSlicer${MODULE_NAME}SettingsPanel.ui
+  Resources/UI/qSlicerAnnotationModuleIOOptionsWidget.ui
   )
 
 set(MODULE_TARGET_LIBRARIES
   vtkSlicer${MODULE_NAME}ModuleMRML
-  vtkSlicer${MODULE_NAME}ModuleVTKWidgets
   vtkSlicer${MODULE_NAME}ModuleMRMLDisplayableManager
   vtkSlicer${MODULE_NAME}ModuleLogic
   qSlicer${MODULE_NAME}ModuleWidgets
   qSlicer${MODULE_NAME}SubjectHierarchyPlugins
+  qSlicerColorsModuleWidgets
+  vtkSlicerColorsModuleLogic
+  vtkSlicerColorsModuleMRML
   )
 
 set(MODULE_RESOURCES
@@ -68,7 +82,6 @@ set(MODULE_RESOURCES
 #-----------------------------------------------------------------------------
 slicerMacroBuildLoadableModule(
   NAME ${MODULE_NAME}
-  TITLE ${MODULE_TITLE}
   EXPORT_DIRECTIVE ${MODULE_EXPORT_DIRECTIVE}
   INCLUDE_DIRECTORIES ${MODULE_INCLUDE_DIRECTORIES}
   SRCS ${MODULE_SRCS}
@@ -78,6 +91,11 @@ slicerMacroBuildLoadableModule(
   RESOURCES ${MODULE_RESOURCES}
   WITH_GENERIC_TESTS
   )
+
+#-----------------------------------------------------------------------------
+if(Slicer_USE_PYTHONQT)
+  add_subdirectory(${MODULE_NAME}Lib)
+endif()
 
 #-----------------------------------------------------------------------------
 if(BUILD_TESTING)

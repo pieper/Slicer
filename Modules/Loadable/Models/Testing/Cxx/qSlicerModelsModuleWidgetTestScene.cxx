@@ -44,18 +44,17 @@
 #include "qMRMLWidget.h"
 
 //-----------------------------------------------------------------------------
-int qSlicerModelsModuleWidgetTestScene( int argc, char * argv[] )
+int qSlicerModelsModuleWidgetTestScene(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   qSlicerApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
 
   if (argc < 2)
-    {
-    std::cerr << "Usage: qSlicerModelsModuleWidgetTest1 sceneFilePath [-I]"
-              << std::endl;
+  {
+    std::cerr << "Usage: qSlicerModelsModuleWidgetTest1 sceneFilePath [-I]" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
 
   qSlicerModelsModule module;
   module.initialize(nullptr);
@@ -70,13 +69,12 @@ int qSlicerModelsModuleWidgetTestScene( int argc, char * argv[] )
 
   qMRMLThreeDWidget view;
   view.setMRMLScene(scene.GetPointer());
-  view.setMRMLViewNode(vtkMRMLViewNode::SafeDownCast(
-    scene->GetFirstNodeByClass("vtkMRMLViewNode")));
+  view.setMRMLViewNode(vtkMRMLViewNode::SafeDownCast(scene->GetFirstNodeByClass("vtkMRMLViewNode")));
   view.show();
 
   if (argc < 3 || QString(argv[2]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
   return app.exec();
 }

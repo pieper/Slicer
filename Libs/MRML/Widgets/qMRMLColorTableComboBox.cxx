@@ -31,16 +31,17 @@
 class qMRMLColorTableComboBoxPrivate
 {
   Q_DECLARE_PUBLIC(qMRMLColorTableComboBox);
+
 protected:
   qMRMLColorTableComboBox* const q_ptr;
+
 public:
   qMRMLColorTableComboBoxPrivate(qMRMLColorTableComboBox& object);
   void init();
 };
 
 // -----------------------------------------------------------------------------
-qMRMLColorTableComboBoxPrivate
-::qMRMLColorTableComboBoxPrivate(qMRMLColorTableComboBox& object)
+qMRMLColorTableComboBoxPrivate::qMRMLColorTableComboBoxPrivate(qMRMLColorTableComboBox& object)
   : q_ptr(&object)
 {
 }
@@ -66,9 +67,9 @@ void qMRMLColorTableComboBoxPrivate::init()
   QIcon defaultIcon(":blankLUT");
   QList<QSize> iconSizes(defaultIcon.availableSizes());
   if (iconSizes.size() > 0)
-    {
+  {
     comboBox->setIconSize(iconSizes[0]);
-    }
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -93,7 +94,7 @@ QAbstractItemModel* qMRMLColorTableComboBox::createSceneModel()
 void qMRMLColorTableComboBox::setMRMLScene(vtkMRMLScene* scene)
 {
   this->Superclass::setMRMLScene(scene);
-  QModelIndex sceneIndex = this->comboBox()->model()->index(0,0);
+  QModelIndex sceneIndex = this->comboBox()->model()->index(0, 0);
   // index(0,0) is the scene.
   this->comboBox()->setRootModelIndex(sceneIndex);
 }

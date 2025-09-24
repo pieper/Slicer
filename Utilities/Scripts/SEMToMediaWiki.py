@@ -8,29 +8,23 @@ a MediaWiki format
 """
 
 import sys
-import pprint
 
 import xml.dom.minidom
-from xml.dom.minidom import Node
 
 
 def getTextValuesFromNode(nodelist):
-    r"""
-    Get this nodes text information.
-    """
+    """Get this nodes text information."""
     rc = []
     for node in nodelist:
         if node.nodeType == node.TEXT_NODE:
             rc.append(node.data)
-    return ''.join(rc)
+    return "".join(rc)
 
 
 def getThisNodesInfoAsText(currentNode, label):
-    r"""
-    Only get the text info for the matching label at this level of the tree
-    """
+    """Only get the text info for the matching label at this level of the tree"""
     labelNodeList = [node for node in
-    currentNode.childNodes if node.nodeName == label]
+                     currentNode.childNodes if node.nodeName == label]
 
     if len(labelNodeList) > 0:
         labelNode = labelNodeList[0]  # Only get the first one
@@ -39,50 +33,42 @@ def getThisNodesInfoAsText(currentNode, label):
 
 
 def getLongFlagDefinition(currentNode):
-    r"""
-    Extract the long flag, and color the text string
-    """
+    """Extract the long flag, and color the text string"""
     labelNodeList = currentNode.getElementsByTagName("longflag")
     if labelNodeList.length > 0:
         labelNode = labelNodeList[0]  # Only get the first one
-        return "{0}{1}{2}".format("[<span style=\"color:orange\">--",
-            getTextValuesFromNode(labelNode.childNodes), "</span>]")
+        return "{}{}{}".format('[<span style="color:orange">--',
+                               getTextValuesFromNode(labelNode.childNodes), "</span>]")
     return ""
 
 
 def getFlagDefinition(currentNode):
-    r"""
-    Extract the (short) flag, and color the text string
-    """
+    """Extract the (short) flag, and color the text string"""
     labelNodeList = currentNode.getElementsByTagName("flag")
     if labelNodeList.length > 0:
         labelNode = labelNodeList[0]  # Only get the first one
-        return "{0}{1}{2}".format("[<span style=\"color:pink\">-",
-            getTextValuesFromNode(labelNode.childNodes), "</span>]")
+        return "{}{}{}".format('[<span style="color:pink">-',
+                               getTextValuesFromNode(labelNode.childNodes), "</span>]")
     return ""
 
 
 def getLabelDefinition(currentNode):
-    r"""
-    Extract the nodes label, and color the text string
-    """
+    """Extract the nodes label, and color the text string"""
     labelNodeList = currentNode.getElementsByTagName("label")
     if labelNodeList.length > 0:
         labelNode = labelNodeList[0]  # Only get the first one
-        return "{0}{1}{2}".format("** <span style=\"color:green\">'''",
-            getTextValuesFromNode(labelNode.childNodes), "'''</span>")
+        return "{}{}{}".format("** <span style=\"color:green\">'''",
+                               getTextValuesFromNode(labelNode.childNodes), "'''</span>")
     return ""
 
 
 def getDefaultValueDefinition(currentNode):
-    r"""
-    Extract the default value
-    """
+    """Extract the default value"""
     labelNodeList = currentNode.getElementsByTagName("default")
     if labelNodeList.length > 0:
         labelNode = labelNodeList[0]  # Only get the first one
-        return "{0}{1}{2}".format("''Default value: ",
-            getTextValuesFromNode(labelNode.childNodes), "''")
+        return "{}{}{}".format("''Default value: ",
+                               getTextValuesFromNode(labelNode.childNodes), "''")
     return ""
 
 
@@ -93,15 +79,13 @@ def GetSEMDoc(filename):
     """
     doc = xml.dom.minidom.parse(filename)
     executableNode = [node for node in doc.childNodes if
-            node.nodeName == "executable"]
-    #Only use the first
+                      node.nodeName == "executable"]
+    # Only use the first
     return executableNode[0]
 
 
 def DumpSEMMediaWikiHeader(executableNode):
-    r"""
-    Just dump the header section of the MediaWikiPage
-    """
+    """Just dump the header section of the MediaWikiPage"""
 
     outputRegionTemplate = """
 __NOTOC__
@@ -164,20 +148,20 @@ Examples of the module in use:
 """
 
     stringDict = dict({})
-    stringDict['executableTitle'] = getThisNodesInfoAsText(
+    stringDict["executableTitle"] = getThisNodesInfoAsText(
         executableNode, "title")
-    stringDict['executableCategory'] = getThisNodesInfoAsText(
+    stringDict["executableCategory"] = getThisNodesInfoAsText(
         executableNode, "category")
-    stringDict['executableAuthor'] = getThisNodesInfoAsText(
+    stringDict["executableAuthor"] = getThisNodesInfoAsText(
         executableNode, "contributor")
-    stringDict['executableDescription'] = getThisNodesInfoAsText(
+    stringDict["executableDescription"] = getThisNodesInfoAsText(
         executableNode, "description")
-    stringDict['executableVersion'] = getThisNodesInfoAsText(
+    stringDict["executableVersion"] = getThisNodesInfoAsText(
         executableNode, "version")
-    stringDict['executableDocumentationURL'] = getThisNodesInfoAsText(
+    stringDict["executableDocumentationURL"] = getThisNodesInfoAsText(
         executableNode, "documentation-url")
-    stringDict['tblStart'] = "{|"  # To avoid subs the entire table as var
-    stringDict['tblStop'] = "|}"   # To avoid subs the entire table as var
+    stringDict["tblStart"] = "{|"  # To avoid subs the entire table as var
+    stringDict["tblStop"] = "|}"  # To avoid subs the entire table as var
 
     outRegion = outputRegionTemplate.format(**stringDict)
     return outRegion
@@ -186,40 +170,40 @@ Examples of the module in use:
 def DumpSEMMediaWikiFeatures(executableNode):
     outRegion = ""
     outRegion += "===Quick Tour of Features and Use===\n\n"
-    outRegion += "{0}{1}".format("A list panels in the interface,",
-           " their features, what they mean, and how to use them.\n")
+    outRegion += "{}{}".format("A list panels in the interface,",
+                               " their features, what they mean, and how to use them.\n")
     outRegion += "{|\n|\n"
     # Now print all the command line arguments and the labels
     # that showup in the GUI interface
     for parameterNode in executableNode.getElementsByTagName("parameters"):
-        outRegion += "* <span style=\"color:blue\">'''''{0}'''''</span>: {1}\n".format(
+        outRegion += "* <span style=\"color:blue\">'''''{}'''''</span>: {}\n".format(
             getThisNodesInfoAsText(parameterNode, "label"),
             getThisNodesInfoAsText(parameterNode, "description"))
         currentNode = parameterNode.firstChild
         while currentNode is not None:
             if currentNode.nodeType == currentNode.ELEMENT_NODE:
-                #If this node doe not have a "label" element, then skip it.
+                # If this node doe not have a "label" element, then skip it.
                 if getThisNodesInfoAsText(currentNode, "label") != "":
                     # if this node has a default value -- document it!
                     if getThisNodesInfoAsText(currentNode, "default") != "":
-                        outRegion += "{0} {1} {2}: {3} {4}\n".format(
-                                getLabelDefinition(currentNode),
-                                getLongFlagDefinition(currentNode),
-                                getFlagDefinition(currentNode),
-                                getThisNodesInfoAsText(currentNode,
-                                    "description"),
-                                getDefaultValueDefinition(currentNode))
+                        outRegion += "{} {} {}: {} {}\n".format(
+                            getLabelDefinition(currentNode),
+                            getLongFlagDefinition(currentNode),
+                            getFlagDefinition(currentNode),
+                            getThisNodesInfoAsText(currentNode,
+                                                   "description"),
+                            getDefaultValueDefinition(currentNode))
                     else:
-                        outRegion += "{0} {1} {2}: {3}\n\n".format(
-                                getLabelDefinition(currentNode),
-                                getLongFlagDefinition(currentNode),
-                                getFlagDefinition(currentNode),
-                                getThisNodesInfoAsText(currentNode,
-                                    "description"))
+                        outRegion += "{} {} {}: {}\n\n".format(
+                            getLabelDefinition(currentNode),
+                            getLongFlagDefinition(currentNode),
+                            getFlagDefinition(currentNode),
+                            getThisNodesInfoAsText(currentNode,
+                                                   "description"))
             currentNode = currentNode.nextSibling
 
-    outRegion += "{0}{1}\n".format("|[[Image:screenshotBlankNotOptional.png|",
-            "thumb|280px|User Interface]]")
+    outRegion += "{}{}\n".format("|[[Image:screenshotBlankNotOptional.png|",
+                                 "thumb|280px|User Interface]]")
     outRegion += "|}\n\n"
     return outRegion
 
@@ -239,7 +223,7 @@ Other modules or packages that are required for this module's use.
 
 ===Tests===
 
-On the [http://www.cdash.org/CDash/index.php?project=Slicer3 Dashboard], these tests verify that the module is working on various platforms:
+On the [https://www.cdash.org/CDash/index.php?project=Slicer3 Dashboard], these tests verify that the module is working on various platforms:
 
 * MyModuleTest1 [http://viewvc.slicer.org/viewcvs.cgi/trunkMyModuleTest1.cxx]
 * MyModuleTest2 [http://viewvc.slicer.org/viewcvs.cgi/trunk MyModuleTest2.cxx]
@@ -248,11 +232,11 @@ On the [http://www.cdash.org/CDash/index.php?project=Slicer3 Dashboard], these t
 
 Links to known bugs in the Slicer3 bug tracker
 
-* [http://www.na-mic.org/Bug/view.php?id=000 Bug 000:description]
+* [https://mantisarchive.slicer.org/view.php?id=000 Bug 000:description]
 
 ===Usability issues===
 
-Follow this [http://na-mic.org/Mantis/main_page.php link] to
+Follow this [https://na-mic.org/Mantis/main_page.php link] to
 the Slicer3 bug tracker. Please select the '''usabilityissue category''' when browsing or contributing.
 
 ===Source code & documentation===
@@ -264,7 +248,7 @@ Source code:
 *[http://viewvc.slicer.org/viewcvs.cgi/trunk file.h ]
 
 Doxygen documentation:
-*[http://www.na-mic.org/Slicer/Documentation/Slicer3-doc/html/classes.html class1]
+*[https://www.na-mic.org/Slicer/Documentation/Slicer3-doc/html/classes.html class1]
 
 == More Information ==
 
@@ -278,33 +262,52 @@ Publications related to this module go here. Links to pdfs would be useful.
 """
 
     stringDict = dict({})
-    stringDict['executableAcknowledgment'] = getThisNodesInfoAsText(executableNode, "acknowledgements")
+    stringDict["executableAcknowledgment"] = getThisNodesInfoAsText(executableNode, "acknowledgements")
     outRegion = outRegionTemplate.format(**stringDict)
     return outRegion
 
 
 def SEMToMediaWikiProg():
     from optparse import OptionParser
+
     usage = "%prog -x XMLFILE -o MEDIWIKIFILE"
     version = "%prog v0.1"
     parser = OptionParser()
-    parser.add_option("-x", "--xmlfile", dest="xmlfilename",
-        action="store", type="string",
-        metavar="XMLFILE", help="The SEM formatted XMLFILE file")
-    parser.add_option("-o", "--outfile", dest="outfilename",
-        action="store", type="string", default=None,
+    parser.add_option(
+        "-x",
+        "--xmlfile",
+        dest="xmlfilename",
+        action="store",
+        type="string",
+        metavar="XMLFILE",
+        help="The SEM formatted XMLFILE file",
+    )
+    parser.add_option(
+        "-o",
+        "--outfile",
+        dest="outfilename",
+        action="store",
+        type="string",
+        default=None,
         metavar="MEDIAWIKIFILE",
-        help="The MEDIAWIKIFILE ascii file with media-wiki formatted text.")
-    parser.add_option("-p", "--parts", dest="parts",
-        action="store", type="string", default="hbf",
-        help="The parts to print out, h=Header,b=body,f=footer")
+        help="The MEDIAWIKIFILE ascii file with media-wiki formatted text.",
+    )
+    parser.add_option(
+        "-p",
+        "--parts",
+        dest="parts",
+        action="store",
+        type="string",
+        default="hbf",
+        help="The parts to print out, h=Header,b=body,f=footer",
+    )
     parser.epilog = program_description
-#    print program_description
-    (options, args) = parser.parse_args()
+    #    print program_description
+    (options, _args) = parser.parse_args()
 
-#    It may be desirable in the future to automatically push information to the
-#    WIKI page without having to copy and paste.
-#    http://python-wikitools.googlecode.com/svn/trunk/README
+    #    It may be desirable in the future to automatically push information to the
+    #    WIKI page without having to copy and paste.
+    #    http://python-wikitools.googlecode.com/svn/trunk/README
 
     ExecutableNode = GetSEMDoc(options.xmlfilename)
 
@@ -318,15 +321,16 @@ def SEMToMediaWikiProg():
             docString += DumpSEMMediaWikiFooter(ExecutableNode)
         else:
             parser.error(
-                "The only valid options are [h|b|f]: Given {0}".format(
+                "The only valid options are [h|b|f]: Given {}".format(
                     stage))
 
     if options.xmlfilename is not None:
-        outfile = open(options.outfilename, 'w')
+        outfile = open(options.outfilename, "w")
         outfile.write(docString)
         outfile.close()
     else:
         sys.stdout.write(docString)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     SEMToMediaWikiProg()

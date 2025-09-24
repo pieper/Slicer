@@ -33,7 +33,6 @@
 class qSlicerSegmentEditorAbstractEffect;
 class qSlicerSegmentEditorEffectFactoryCleanup;
 
-/// \ingroup SlicerRt_QtModules_Segmentations
 /// \class qSlicerSegmentEditorEffectFactory
 /// \brief Singleton class managing segment editor effect plugins
 class Q_SLICER_SEGMENTATIONS_EFFECTS_EXPORT qSlicerSegmentEditorEffectFactory : public QObject
@@ -44,9 +43,6 @@ public:
   /// Instance getter for the singleton class
   /// \return Instance object
   Q_INVOKABLE static qSlicerSegmentEditorEffectFactory* instance();
-
-  /// Allows cleanup of the singleton at application exit
-  static void setInstance(qSlicerSegmentEditorEffectFactory* instance);
 
 public:
   /// Register a effect
@@ -69,17 +65,17 @@ protected:
   /// List of registered effect instances
   QList<qSlicerSegmentEditorAbstractEffect*> m_RegisteredEffects;
 
-public:
-  /// Private constructor made public to enable python wrapping
-  /// IMPORTANT: Should not be used for creating effect handler! Use instance() instead.
-  qSlicerSegmentEditorEffectFactory(QObject* parent=nullptr);
-
-  /// Private destructor made public to enable python wrapping
-  ~qSlicerSegmentEditorEffectFactory() override;
+private:
+  /// Allows cleanup of the singleton at application exit
+  static void cleanup();
 
 private:
+  qSlicerSegmentEditorEffectFactory(QObject* parent = nullptr);
+  ~qSlicerSegmentEditorEffectFactory() override;
+
   Q_DISABLE_COPY(qSlicerSegmentEditorEffectFactory);
   friend class qSlicerSegmentEditorEffectFactoryCleanup;
+  friend class PythonQtWrapper_qSlicerSegmentEditorEffectFactory; // Allow Python wrapping without enabling direct instantiation
 
 private:
   /// Instance of the singleton

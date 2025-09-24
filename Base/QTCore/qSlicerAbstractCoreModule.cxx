@@ -43,6 +43,7 @@ public:
   qSlicerAbstractCoreModulePrivate();
   virtual ~qSlicerAbstractCoreModulePrivate();
 
+  // clang-format off
   bool                                       Hidden;
   QString                                    Name;
   QString                                    Path;
@@ -54,6 +55,7 @@ public:
   vtkSmartPointer<vtkMRMLScene>              MRMLScene;
   vtkSmartPointer<vtkSlicerApplicationLogic> AppLogic;
   vtkSmartPointer<vtkMRMLAbstractLogic>      Logic;
+  // clang-format on
 };
 
 //-----------------------------------------------------------------------------
@@ -73,9 +75,9 @@ qSlicerAbstractCoreModulePrivate::~qSlicerAbstractCoreModulePrivate()
 {
   // Delete the widget representation
   if (this->WidgetRepresentation)
-    {
+  {
     delete this->WidgetRepresentation;
-    }
+  }
   qDeleteAll(this->WidgetRepresentations.begin(), this->WidgetRepresentations.end());
   this->WidgetRepresentations.clear();
 }
@@ -102,12 +104,10 @@ void qSlicerAbstractCoreModule::initialize(vtkSlicerApplicationLogic* _appLogic)
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerAbstractCoreModule::printAdditionalInfo()
-{
-}
+void qSlicerAbstractCoreModule::printAdditionalInfo() {}
 
 //-----------------------------------------------------------------------------
-QString qSlicerAbstractCoreModule::name()const
+QString qSlicerAbstractCoreModule::name() const
 {
   Q_D(const qSlicerAbstractCoreModule);
   return d->Name;
@@ -121,31 +121,31 @@ void qSlicerAbstractCoreModule::setName(const QString& _name)
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractCoreModule::categories()const
+QStringList qSlicerAbstractCoreModule::categories() const
 {
   return QStringList();
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractCoreModule::contributors()const
+QStringList qSlicerAbstractCoreModule::contributors() const
 {
   return QStringList();
 }
 
 //-----------------------------------------------------------------------------
-int qSlicerAbstractCoreModule::index()const
+int qSlicerAbstractCoreModule::index() const
 {
   return -1;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerAbstractCoreModule::helpText()const
+QString qSlicerAbstractCoreModule::helpText() const
 {
   return QString();
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerAbstractCoreModule::acknowledgementText()const
+QString qSlicerAbstractCoreModule::acknowledgementText() const
 {
   return QString();
 }
@@ -158,20 +158,20 @@ void qSlicerAbstractCoreModule::setMRMLScene(vtkMRMLScene* _mrmlScene)
 {
   Q_D(qSlicerAbstractCoreModule);
   if (d->MRMLScene == _mrmlScene)
-    {
+  {
     return;
-    }
+  }
   d->MRMLScene = _mrmlScene;
   // Since we don't want 'setMRMLScene' to instantiate explicitly the logic,
   // we just check the pointer (instead of calling 'this->logic()')
   if (d->Logic)
-    {// logic should be updated first (because it doesn't depends on the widget
+  { // logic should be updated first (because it doesn't depends on the widget
     d->Logic->SetMRMLScene(_mrmlScene);
-    }
+  }
   if (d->WidgetRepresentation)
-    {
+  {
     d->WidgetRepresentation->setMRMLScene(_mrmlScene);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -181,25 +181,34 @@ void qSlicerAbstractCoreModule::setAppLogic(vtkSlicerApplicationLogic* newAppLog
   d->AppLogic = newAppLogic;
   // here we don't want to create a logic if no logic exists yet. it's not setAppLogic
   // role to create logics.
-  vtkSlicerModuleLogic* moduleLogic =
-    vtkSlicerModuleLogic::SafeDownCast(d->Logic);
+  vtkSlicerModuleLogic* moduleLogic = vtkSlicerModuleLogic::SafeDownCast(d->Logic);
   if (moduleLogic)
-    {
+  {
     moduleLogic->SetMRMLApplicationLogic(newAppLogic);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
 CTK_GET_CPP(qSlicerAbstractCoreModule, vtkSlicerApplicationLogic*, appLogic, AppLogic);
 
 //-----------------------------------------------------------------------------
-bool qSlicerAbstractCoreModule::isHidden()const
+vtkMRMLAbstractLogic* qSlicerAbstractCoreModule::moduleLogic(const QString& moduleName) const
+{
+  if (!this->appLogic())
+  {
+    return nullptr;
+  }
+  return this->appLogic()->GetModuleLogic(moduleName.toUtf8());
+}
+
+//-----------------------------------------------------------------------------
+bool qSlicerAbstractCoreModule::isHidden() const
 {
   return this->isWidgetRepresentationCreationEnabled() ? false : true;
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractCoreModule::dependencies()const
+QStringList qSlicerAbstractCoreModule::dependencies() const
 {
   return QStringList();
 }
@@ -227,9 +236,9 @@ qSlicerAbstractModuleRepresentation* qSlicerAbstractCoreModule::widgetRepresenta
 
   // If required, create widgetRepresentation
   if (!d->WidgetRepresentation)
-    {
+  {
     d->WidgetRepresentation = this->createNewWidgetRepresentation();
-    }
+  }
   return d->WidgetRepresentation;
 }
 
@@ -239,33 +248,33 @@ qSlicerAbstractModuleRepresentation* qSlicerAbstractCoreModule::createNewWidgetR
   Q_D(qSlicerAbstractCoreModule);
 
   if (!this->isWidgetRepresentationCreationEnabled())
-    {
+  {
     return nullptr;
-    }
+  }
 
   // Since 'logic()' should have been called in 'initialize(), let's make
   // sure the 'logic()' method call is consistent and won't create a
-  // diffent logic object
+  // different logic object
 #ifndef QT_NO_DEBUG // Required to avoid undefined variable warning
   vtkMRMLAbstractLogic* currentLogic = d->Logic;
   Q_ASSERT(currentLogic == this->logic());
 #endif
 
-  qSlicerAbstractModuleRepresentation *newWidgetRepresentation;
+  qSlicerAbstractModuleRepresentation* newWidgetRepresentation;
   newWidgetRepresentation = this->createWidgetRepresentation();
 
   if (newWidgetRepresentation == nullptr)
-    {
-    qDebug() << "Warning, the module "<<this->name()<< "has no widget representation";
+  {
+    qDebug() << "Warning, the module " << this->name() << "has no widget representation";
     return nullptr;
-    }
+  }
   // internally sets the logic and call setup,
   newWidgetRepresentation->setModule(this);
   // Note: setMRMLScene should be called after setup (just to make sure widgets
   // are well written and can handle empty mrmlscene
   newWidgetRepresentation->setMRMLScene(this->mrmlScene());
-  //d->WidgetRepresentation->setWindowTitle(this->title());
-  // Add the copy of the widget representation to the list
+  // d->WidgetRepresentation->setWindowTitle(this->title());
+  //  Add the copy of the widget representation to the list
   d->WidgetRepresentations << newWidgetRepresentation;
 
   return newWidgetRepresentation;
@@ -278,9 +287,9 @@ vtkMRMLAbstractLogic* qSlicerAbstractCoreModule::logic()
 
   // Return a logic object is one already exists
   if (d->Logic)
-    {
+  {
     return d->Logic;
-    }
+  }
   // Attempt to create a logic object
   d->Logic.TakeReference(this->createLogic());
 
@@ -288,52 +297,51 @@ vtkMRMLAbstractLogic* qSlicerAbstractCoreModule::logic()
   // Note also that, in case no logic is associated with the module,
   // 'createLogic()' could return 0
   if (d->Logic)
-    {
+  {
     vtkSlicerModuleLogic* moduleLogic = vtkSlicerModuleLogic::SafeDownCast(d->Logic);
     if (moduleLogic)
-      {
-      moduleLogic->SetMRMLApplicationLogic(d->AppLogic);
-      moduleLogic->SetModuleShareDirectory(vtkSlicerApplicationLogic::GetModuleShareDirectory(
-                                       this->name().toStdString(), this->path().toStdString()));
-      }
-    d->Logic->SetMRMLScene(this->mrmlScene());
+    {
+      moduleLogic->SetModuleShareDirectory(vtkSlicerApplicationLogic::GetModuleShareDirectory(this->name().toStdString(), this->path().toStdString()));
     }
+    d->Logic->SetMRMLApplicationLogic(d->AppLogic);
+    d->Logic->SetMRMLScene(this->mrmlScene());
+  }
   return d->Logic;
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerAbstractCoreModule::representationDeleted(qSlicerAbstractModuleRepresentation *representation)
+void qSlicerAbstractCoreModule::representationDeleted(qSlicerAbstractModuleRepresentation* representation)
 {
   Q_D(qSlicerAbstractCoreModule);
 
   // Just remove the list entry, the object storage has already been
   // deleted by caller.
   if (d->WidgetRepresentation == representation)
-    {
+  {
     d->WidgetRepresentation = nullptr;
-    }
+  }
   d->WidgetRepresentations.removeAll(representation);
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerAbstractCoreModule::associatedNodeTypes()const
+QStringList qSlicerAbstractCoreModule::associatedNodeTypes() const
 {
   return QStringList();
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerAbstractCoreModule::defaultDocumentationLink()const
+QString qSlicerAbstractCoreModule::defaultDocumentationLink() const
 {
   qSlicerCoreApplication* app = qSlicerCoreApplication::application();
-
-  // Use "latest" version for Preview (installed preview release) and Experimental (developer build),
-  // and use "majorVersion.minorVersion" for Stable release.
-  QString version = QLatin1String("latest");
-  if (app->releaseType() == "Stable")
-    {
-    version = QString("%1.%2").arg(app->majorVersion()).arg(app->minorVersion());
-    }
-  QString url = QString("https://slicer.readthedocs.io/en/%1/user_guide/modules/%2.html").arg(version).arg(this->name().toLower());
-  QString linkText = QString("<p>For more information see the <a href=\"%1\">online documentation</a>.</p>").arg(url);
+  if (!app)
+  {
+    // base URL stored in application settings, therefore if there is no
+    // valid application then we cannot get default documentation link
+    return "";
+  }
+  QString url = app->moduleDocumentationUrl(this->name());
+  QString linkText = QString("<p>")                                                                                                          //
+                     + tr("For more information see the %1.").arg(QString("<a href=\"%1\">%2</a>").arg(url).arg(tr("online documentation"))) //
+                     + QString("</p>");
   return linkText;
 }

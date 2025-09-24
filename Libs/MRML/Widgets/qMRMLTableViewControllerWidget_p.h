@@ -43,7 +43,6 @@
 #include <vtkWeakPointer.h>
 
 class QAction;
-class qMRMLSceneViewMenu;
 class vtkMRMLTableViewNode;
 class vtkMRMLTableNode;
 class QString;
@@ -65,10 +64,7 @@ public:
   void init() override;
 
   vtkWeakPointer<vtkMRMLTableNode> TableNode;
-  vtkWeakPointer<vtkMRMLTableViewNode> TableViewNode;
   qMRMLTableView* TableView;
-
-  QString TableViewLabel;
 
   QAction* CopyAction;
   QAction* PasteAction;
@@ -91,7 +87,6 @@ protected:
   void setupPopupUi() override;
 
 public:
-
 };
 
 #endif

@@ -28,6 +28,7 @@ macro(slicerMacroBuildAppLibrary)
     EXPORT_DIRECTIVE
     FOLDER
     APPLICATION_NAME
+    APPLICATION_DISPLAY_NAME
     DESCRIPTION_SUMMARY
     DESCRIPTION_FILE
     )
@@ -178,7 +179,6 @@ macro(slicerMacroBuildAppLibrary)
     set(TS_DIR
       "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Translations/"
     )
-    get_property(Slicer_LANGUAGES GLOBAL PROPERTY Slicer_LANGUAGES)
 
     include(SlicerMacroTranslation)
     SlicerMacroTranslation(
@@ -277,14 +277,18 @@ macro(slicerMacroBuildApplication)
     NAME
     FOLDER
     APPLICATION_NAME
+    APPLICATION_DISPLAY_NAME
 
     DEFAULT_SETTINGS_FILE
+    SPLASHSCREEN_ENABLED
     LAUNCHER_SPLASHSCREEN_FILE
     APPLE_ICON_FILE
     WIN_ICON_FILE
     LICENSE_FILE
 
     TARGET_NAME_VAR
+
+    APPLICATION_DEFAULT_ARGUMENTS # space separated list
     )
   set(multiValueArgs
     SRCS
@@ -305,13 +309,23 @@ macro(slicerMacroBuildApplication)
     message(FATAL_ERROR "Unknown keywords given to slicerMacroBuildApplication(): \"${SLICERAPP_UNPARSED_ARGUMENTS}\"")
   endif()
 
+  # Set defaults
+  if(NOT DEFINED SLICERAPP_SPLASHSCREEN_ENABLED)
+    set(SLICERAPP_SPLASHSCREEN_ENABLED TRUE)
+  endif()
+
+  # Check expected variables
   set(expected_defined_vars
     NAME
-    LAUNCHER_SPLASHSCREEN_FILE
     APPLE_ICON_FILE
     WIN_ICON_FILE
     LICENSE_FILE
     )
+  if(SLICERAPP_SPLASHSCREEN_ENABLED)
+    list(APPEND expected_defined_vars
+      LAUNCHER_SPLASHSCREEN_FILE
+      )
+  endif()
   foreach(var ${expected_defined_vars})
     if(NOT DEFINED SLICERAPP_${var})
       message(FATAL_ERROR "${var} is mandatory")
@@ -332,7 +346,20 @@ macro(slicerMacroBuildApplication)
     message(STATUS "Setting ${SLICERAPP_APPLICATION_NAME} ${varname} to '${SLICERAPP_${varname}}'")
   endmacro()
 
+  # To avoid conflict between the revision specific settings folder name and the application name,
+  # the following checks that both are different.
+  #
+  # Note that while the name conflict is specific to Linux and happens only if
+  # Slicer_STORE_SETTINGS_IN_APPLICATION_HOME_DIR is ON (the default), the check
+  # is done unconditionally of the platform.
+  #
+  # See https://github.com/Slicer/Slicer/issues/6878
+  if(SLICERAPP_APPLICATION_NAME STREQUAL Slicer_ORGANIZATION_NAME)
+    message(FATAL_ERROR "Application name [${SLICERAPP_APPLICATION_NAME}] must be different from the organization name")
+  endif()
+
   _set_app_property("APPLICATION_NAME")
+  _set_app_property("APPLICATION_DISPLAY_NAME")
 
   macro(_set_path_var varname)
     if(NOT IS_ABSOLUTE ${SLICERAPP_${varname}})
@@ -344,7 +371,9 @@ macro(slicerMacroBuildApplication)
     _set_app_property(${varname})
   endmacro()
 
-  _set_path_var(LAUNCHER_SPLASHSCREEN_FILE)
+  if(SLICERAPP_SPLASHSCREEN_ENABLED)
+    _set_path_var(LAUNCHER_SPLASHSCREEN_FILE)
+  endif()
   _set_path_var(APPLE_ICON_FILE)
   _set_path_var(WIN_ICON_FILE)
   _set_path_var(LICENSE_FILE)
@@ -390,9 +419,11 @@ macro(slicerMacroBuildApplication)
   # --------------------------------------------------------------------------
   # Build the executable
   # --------------------------------------------------------------------------
-  set(Slicer_HAS_CONSOLE_IO_SUPPORT TRUE)
+  set(Slicer_HAS_CONSOLE_IO_SUPPORT TRUE)  # SlicerApp-real is a console application
+  set(Slicer_HAS_CONSOLE_LAUNCHER TRUE)    # Slicer launcher is a console application
   if(WIN32)
     set(Slicer_HAS_CONSOLE_IO_SUPPORT ${Slicer_BUILD_WIN32_CONSOLE})
+    set(Slicer_HAS_CONSOLE_LAUNCHER ${Slicer_BUILD_WIN32_CONSOLE_LAUNCHER})
   endif()
 
   set(SLICERAPP_EXE_OPTIONS)
@@ -433,12 +464,13 @@ macro(slicerMacroBuildApplication)
       PROPERTIES
         MACOSX_BUNDLE_BUNDLE_NAME "${SLICERAPP_APPLICATION_NAME} ${Slicer_MAIN_PROJECT_VERSION_FULL}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${Slicer_MAIN_PROJECT_VERSION_FULL}"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "${Slicer_MACOSX_BUNDLE_GUI_IDENTIFIER}"
         MACOSX_BUNDLE_INFO_PLIST "${Slicer_CMAKE_DIR}/MacOSXBundleInfo.plist.in"
         LINK_FLAGS ${link_flags}
       )
     if("${Slicer_RELEASE_TYPE}" STREQUAL "Stable")
       set_target_properties(${slicerapp_target} PROPERTIES
-        MACOSX_BUNDLE_SHORT_VERSION_STRING "${Slicer_VERSION_MAJOR}.${Slicer_VERSION_MINOR}.${Slicer_VERSION_PATCH}"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "${Slicer_MAIN_PROJECT_VERSION_MAJOR}.${Slicer_MAIN_PROJECT_VERSION_MINOR}.${Slicer_MAIN_PROJECT_VERSION_PATCH}"
         )
     endif()
   endif()
@@ -458,14 +490,14 @@ macro(slicerMacroBuildApplication)
 
   if(WIN32)
     if(Slicer_USE_PYTHONQT)
-      # HACK - See http://www.na-mic.org/Bug/view.php?id=1180
+      # HACK - See https://mantisarchive.slicer.org/view.php?id=1180
       get_filename_component(_python_library_name_we ${PYTHON_LIBRARY} NAME_WE)
       add_custom_command(
         TARGET ${slicerapp_target}
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${PYTHON_LIBRARY_PATH}/${_python_library_name_we}.dll
-                ${_slicerapp_output_dir}/${CMAKE_CFG_INTDIR}
+                ${_slicerapp_output_dir}/$<CONFIG>
         COMMENT "Copy '${_python_library_name_we}.dll' along side '${slicerapp_target}' executable. See Slicer issue #1180"
         )
     endif()
@@ -539,6 +571,45 @@ macro(slicerMacroBuildApplication)
           OUTPUTVAR extraApplicationToLaunchListForBuildTree
           )
       endif()
+
+      # Make available Qt language tools conveniently on the command line, for example:
+      # Slicer.exe --lconvert ...
+      if(Slicer_BUILD_I18N_SUPPORT)
+        if(NOT QT_LCONVERT_EXECUTABLE)
+          find_program(QT_LCONVERT_EXECUTABLE lconvert HINTS "${QT_BINARY_DIR}" NO_DEFAULT_PATH)
+        endif()
+        if(EXISTS ${QT_LCONVERT_EXECUTABLE})
+          ctkAppLauncherAppendExtraAppToLaunchToList(
+            LONG_ARG lconvert
+            HELP "Start Qt lconvert language utility"
+            PATH ${QT_LCONVERT_EXECUTABLE}
+            OUTPUTVAR extraApplicationToLaunchListForBuildTree
+            )
+        endif()
+        if(NOT QT_LRELEASE_EXECUTABLE)
+          find_program(QT_LRELEASE_EXECUTABLE lrelease HINTS "${QT_BINARY_DIR}" NO_DEFAULT_PATH)
+        endif()
+        if(EXISTS ${QT_LRELEASE_EXECUTABLE})
+          ctkAppLauncherAppendExtraAppToLaunchToList(
+            LONG_ARG lrelease
+            HELP "Start Qt lrelease language utility"
+            PATH ${QT_LRELEASE_EXECUTABLE}
+            OUTPUTVAR extraApplicationToLaunchListForBuildTree
+            )
+        endif()
+        if(NOT QT_LUPDATE_EXECUTABLE)
+          find_program(QT_LUPDATE_EXECUTABLE lupdate HINTS "${QT_BINARY_DIR}" NO_DEFAULT_PATH)
+        endif()
+        if(EXISTS ${QT_LUPDATE_EXECUTABLE})
+          ctkAppLauncherAppendExtraAppToLaunchToList(
+            LONG_ARG lupdate
+            HELP "Start Qt lupdate language utility"
+            PATH ${QT_LUPDATE_EXECUTABLE}
+            OUTPUTVAR extraApplicationToLaunchListForBuildTree
+            )
+        endif()
+      endif()
+
       set(executables)
       if(UNIX)
         list(APPEND executables gnome-terminal xterm)
@@ -598,7 +669,48 @@ macro(slicerMacroBuildApplication)
           )
       endif()
 
+      # Make available Qt language tools conveniently on the command line, for example:
+      # Slicer.exe --lconvert ...
+      if(Slicer_BUILD_I18N_SUPPORT)
+        if(EXISTS ${QT_LCONVERT_EXECUTABLE} AND NOT APPLE)
+          ctkAppLauncherAppendExtraAppToLaunchToList(
+            LONG_ARG lconvert
+            HELP "Start Qt lconvert language utility"
+            PATH "<APPLAUNCHER_SETTINGS_DIR>/../bin/lconvert${CMAKE_EXECUTABLE_SUFFIX}"
+            OUTPUTVAR extraApplicationToLaunchListForInstallTree
+            )
+        endif()
+        if(EXISTS ${QT_LRELEASE_EXECUTABLE} AND NOT APPLE)
+          ctkAppLauncherAppendExtraAppToLaunchToList(
+            LONG_ARG lrelease
+            HELP "Start Qt lrelease language utility"
+            PATH "<APPLAUNCHER_SETTINGS_DIR>/../bin/lrelease${CMAKE_EXECUTABLE_SUFFIX}"
+            OUTPUTVAR extraApplicationToLaunchListForInstallTree
+            )
+        endif()
+        if(EXISTS ${QT_LUPDATE_EXECUTABLE} AND NOT APPLE)
+          ctkAppLauncherAppendExtraAppToLaunchToList(
+            LONG_ARG lupdate
+            HELP "Start Qt lupdate language utility"
+            PATH "<APPLAUNCHER_SETTINGS_DIR>/../bin/lupdate${CMAKE_EXECUTABLE_SUFFIX}"
+            OUTPUTVAR extraApplicationToLaunchListForInstallTree
+            )
+        endif()
+      endif()
+
       include(SlicerBlockCTKAppLauncherSettings)
+
+      if(SLICERAPP_SPLASHSCREEN_ENABLED)
+        set(_launcher_splashscreen_args
+          SPLASH_IMAGE_PATH ${SLICERAPP_LAUNCHER_SPLASHSCREEN_FILE}
+          SPLASH_IMAGE_INSTALL_SUBDIR ${Slicer_BIN_DIR}
+          SPLASHSCREEN_HIDE_DELAY_MS 3000
+          )
+        set(_launcher_application_default_arguments "${SLICERAPP_APPLICATION_DEFAULT_ARGUMENTS}")
+      else()
+        set(_launcher_splashscreen_args SPLASHSCREEN_DISABLED)
+        set(_launcher_application_default_arguments "--no-splash ${SLICERAPP_APPLICATION_DEFAULT_ARGUMENTS}")
+      endif()
 
       ctkAppLauncherConfigureForTarget(
         # Executable target associated with the launcher
@@ -612,13 +724,13 @@ macro(slicerMacroBuildApplication)
         ORGANIZATION_NAME ${Slicer_ORGANIZATION_NAME}
         USER_ADDITIONAL_SETTINGS_FILEBASENAME ${SLICER_REVISION_SPECIFIC_USER_SETTINGS_FILEBASENAME}
         # Splash screen
-        SPLASH_IMAGE_PATH ${SLICERAPP_LAUNCHER_SPLASHSCREEN_FILE}
-        SPLASH_IMAGE_INSTALL_SUBDIR ${Slicer_BIN_DIR}
-        SPLASHSCREEN_HIDE_DELAY_MS 3000
+        ${_launcher_splashscreen_args}
+        # Slicer default arguments
+        APPLICATION_DEFAULT_ARGUMENTS ${_launcher_application_default_arguments}
         # Slicer arguments triggering display of launcher help
         HELP_SHORT_ARG "-h"
         HELP_LONG_ARG "--help"
-        # Slicer arguments that should NOT be associated with the spash screeb
+        # Slicer arguments that should NOT be associated with the splash screen
         NOSPLASH_ARGS "--no-splash,--help,--version,--home,--program-path,--no-main-window,--settings-path,--temporary-path"
         # Extra application associated with the launcher
         EXTRA_APPLICATION_TO_LAUNCH_BUILD ${extraApplicationToLaunchListForBuildTree}
@@ -649,7 +761,7 @@ macro(slicerMacroBuildApplication)
       set_target_properties(${SLICERAPP_APPLICATION_NAME}ConfigureLauncher PROPERTIES FOLDER ${SLICERAPP_FOLDER})
 
       if(NOT APPLE)
-        if(Slicer_HAS_CONSOLE_IO_SUPPORT)
+        if(Slicer_HAS_CONSOLE_LAUNCHER)
           install(
             PROGRAMS "${Slicer_BINARY_DIR}/${SLICERAPP_APPLICATION_NAME}${CMAKE_EXECUTABLE_SUFFIX}"
             DESTINATION "."
@@ -687,15 +799,17 @@ macro(slicerMacroBuildApplication)
             )
         endif()
 
-        install(
-          FILES ${SLICERAPP_LAUNCHER_SPLASHSCREEN_FILE}
-          DESTINATION ${Slicer_INSTALL_BIN_DIR}
-          COMPONENT Runtime
-          )
+        if(SLICERAPP_SPLASHSCREEN_ENABLED)
+          install(
+            FILES ${SLICERAPP_LAUNCHER_SPLASHSCREEN_FILE}
+            DESTINATION ${Slicer_INSTALL_BIN_DIR}
+            COMPONENT Runtime
+            )
+        endif()
       endif()
 
       #
-      # On MacOSX, the installed launcher settings are *only* read directly by the
+      # On macOS, the installed launcher settings are *only* read directly by the
       # qSlicerCoreApplication using the LauncherLib.
       #
       # On Linux and Windows, the installed launcher settings are first read by the

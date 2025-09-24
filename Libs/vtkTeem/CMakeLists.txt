@@ -1,7 +1,7 @@
 project(vtkTeem)
 
 #-----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 #-----------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -42,7 +42,7 @@ endif()
 include(${Teem_USE_FILE})
 
 # XXX Teem 1.11.0 or Teem >= 4168 - This variable won't be needed anymore.
-#     See http://sourceforge.net/p/teem/code/4168/
+#     See https://sourceforge.net/p/teem/code/4168/
 set(Teem_LIBRARIES teem)
 
 # --------------------------------------------------------------------------
@@ -61,7 +61,7 @@ if(NOT DEFINED ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
   set(${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT ON)
 endif()
 if(NOT ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
-  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|txx)")
+  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|hxx)")
   install(
     FILES ${headers} ${CMAKE_CURRENT_BINARY_DIR}/${configure_header_file}
     DESTINATION include/${PROJECT_NAME} COMPONENT Development)
@@ -155,11 +155,10 @@ if(VTK_WRAP_PYTHON)
     KIT_INSTALL_LIB_DIR ${${PROJECT_NAME}_INSTALL_LIB_DIR}
     )
   # Export target
-  export(TARGETS ${lib_name}Python ${lib_name}PythonD APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
+  export(TARGETS ${lib_name}Python APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
   # Folder
   if(NOT "${${PROJECT_NAME}_FOLDER}" STREQUAL "")
     set_target_properties(${lib_name}Python PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
-    set_target_properties(${lib_name}PythonD PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     if(TARGET ${lib_name}Hierarchy)
       set_target_properties(${lib_name}Hierarchy PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     endif()

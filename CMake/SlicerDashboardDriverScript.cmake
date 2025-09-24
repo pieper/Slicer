@@ -59,14 +59,21 @@ else()
 endif()
 
 if(WIN32)
+  # By default, build a console application so that console output can be capture
+  # by the launcher; but make the launcher a non-console application application
+  # when creating packages to avoid popping up a console window when running Slicer.
   if(NOT DEFINED Slicer_BUILD_WIN32_CONSOLE)
-    if(WITH_PACKAGES)
-      set(Slicer_BUILD_WIN32_CONSOLE OFF)
-    else()
-      set(Slicer_BUILD_WIN32_CONSOLE ON)
-    endif()
+    set(Slicer_BUILD_WIN32_CONSOLE ON)
   endif()
   list(APPEND expected_variables Slicer_BUILD_WIN32_CONSOLE)
+  if(NOT DEFINED Slicer_BUILD_WIN32_CONSOLE_LAUNCHER)
+    if(WITH_PACKAGES)
+      set(Slicer_BUILD_WIN32_CONSOLE_LAUNCHER OFF)
+    else()
+      set(Slicer_BUILD_WIN32_CONSOLE_LAUNCHER ON)
+    endif()
+  endif()
+  list(APPEND expected_variables Slicer_BUILD_WIN32_CONSOLE_LAUNCHER)
 endif()
 
 if(NOT DEFINED Slicer_USE_VTK_DEBUG_LEAKS)
@@ -104,7 +111,7 @@ if(NOT DEFINED CTEST_BUILD_NAME)
     set(name "${name}-NoCLI")
   endif()
   if(WIN32)
-    if(NOT Slicer_BUILD_WIN32_CONSOLE)
+    if(NOT Slicer_BUILD_WIN32_CONSOLE_LAUNCHER)
       set(name "${name}-NoConsole")
     endif()
   endif()
@@ -230,9 +237,7 @@ endmacro()
 setIfNotDefined(CTEST_TEST_TIMEOUT 900) # 15mins
 setIfNotDefined(CTEST_PARALLEL_LEVEL 8)
 setIfNotDefined(CTEST_CONTINUOUS_DURATION 46800) # Lasts 13 hours (Assuming it starts at 9am, it will end around 10pm)
-setIfNotDefined(MIDAS_PACKAGE_URL "http://slicer.kitware.com/midas3")
-setIfNotDefined(MIDAS_PACKAGE_EMAIL "MIDAS_PACKAGE_EMAIL-NOTDEFINED" OBFUSCATE)
-setIfNotDefined(MIDAS_PACKAGE_API_KEY "MIDAS_PACKAGE_API_KEY-NOTDEFINED" OBFUSCATE)
+setIfNotDefined(SLICER_PACKAGE_MANAGER_URL "https://slicer-packages.kitware.com")
 if(WITH_DOCUMENTATION)
   setIfNotDefined(DOCUMENTATION_ARCHIVES_OUTPUT_DIRECTORY "$ENV{HOME}/Projects/Doxygen")
 endif()
@@ -258,9 +263,7 @@ setIfNotDefined(run_ctest_with_notes TRUE)
 if(NOT DEFINED CDASH_PROJECT_NAME)
   set(CDASH_PROJECT_NAME  "SlicerPreview")
   if("${Slicer_RELEASE_TYPE}" STREQUAL "Stable")
-    # XXX Rename Slicer CDash project
-    set(CDASH_PROJECT_NAME "Slicer4")
-    # set(CDASH_PROJECT_NAME  "SlicerStable")
+    set(CDASH_PROJECT_NAME  "SlicerStable")
   endif()
 endif()
 list(APPEND variables CDASH_PROJECT_NAME)
@@ -270,7 +273,7 @@ if(NOT DEFINED GIT_REPOSITORY)
   set(GIT_REPOSITORY "https://github.com/Slicer/Slicer")
 endif()
 if(NOT DEFINED GIT_TAG)
-  set(GIT_TAG "master")
+  set(GIT_TAG "main")
 endif()
 list(APPEND variables GIT_REPOSITORY GIT_TAG)
 
@@ -333,7 +336,7 @@ set(track ${CTEST_TRACK_PREFIX}${track}${CTEST_TRACK_SUFFIX})
 # Used in SlicerPackageAndUploadTarget CMake module
 set(ENV{CTEST_MODEL} ${model})
 
-# For more details, see http://www.kitware.com/blog/home/post/11
+# For more details, see https://www.kitware.com/blog/home/post/11
 set(CTEST_USE_LAUNCHERS 1)
 if(NOT "${CTEST_CMAKE_GENERATOR}" MATCHES "Make")
   set(CTEST_USE_LAUNCHERS 0)
@@ -467,6 +470,11 @@ CMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}")
 Slicer_BUILD_WIN32_CONSOLE:BOOL=${Slicer_BUILD_WIN32_CONSOLE}")
     endif()
 
+    if(DEFINED Slicer_BUILD_WIN32_CONSOLE_LAUNCHER)
+    set(OPTIONAL_CACHE_CONTENT "${OPTIONAL_CACHE_CONTENT}
+Slicer_BUILD_WIN32_CONSOLE_LAUNCHER:BOOL=${Slicer_BUILD_WIN32_CONSOLE_LAUNCHER}")
+  endif()
+
     if(DEFINED Slicer_USE_PYTHONQT)
       set(OPTIONAL_CACHE_CONTENT "${OPTIONAL_CACHE_CONTENT}
 Slicer_USE_PYTHONQT:BOOL=${Slicer_USE_PYTHONQT}")
@@ -536,6 +544,62 @@ ${ADDITIONAL_CMAKECACHE_OPTION}
     set(slicer_build_dir "${CTEST_BINARY_DIRECTORY}/Slicer-build")
 
     #-----------------------------------------------------------------------------
+    # Package and upload
+    #-----------------------------------------------------------------------------
+    if(WITH_PACKAGES AND run_ctest_with_packages)
+      message(STATUS "----------- [ WITH_PACKAGES and UPLOAD ] -----------")
+
+      if(build_errors GREATER "0")
+        message("Build Errors Detected: ${build_errors}. Aborting package generation")
+      else()
+
+        # Update CMake module path so that our custom macros/functions can be included.
+        set(CMAKE_MODULE_PATH ${CTEST_SOURCE_DIRECTORY}/CMake ${CMAKE_MODULE_PATH})
+
+        include(SlicerCTestUploadURL)
+
+        message(STATUS "Packaging and uploading Slicer to packages server ...")
+        set(package_list)
+        if(run_ctest_with_packages)
+
+          set(package_target "package")
+          if(run_ctest_with_upload)
+            set(package_target "packageupload")
+          endif()
+
+          ctest_build(
+            TARGET ${package_target}
+            BUILD ${slicer_build_dir}
+            APPEND
+            )
+          if(run_ctest_submit)
+            ctest_submit(PARTS Build)
+          endif()
+        endif()
+
+        if(run_ctest_with_upload)
+          message(STATUS "Uploading Slicer package URL ...")
+
+          file(STRINGS ${slicer_build_dir}/PACKAGES.txt package_list)
+
+          foreach(p ${package_list})
+            get_filename_component(package_name "${p}" NAME)
+            message(STATUS "Uploading URL to [${package_name}] on CDash")
+            slicer_ctest_upload_url(
+              ALGO "SHA512"
+              DOWNLOAD_URL_TEMPLATE "${SLICER_PACKAGE_MANAGER_URL}/api/v1/file/hashsum/%(algo)/%(hash)/download"
+              FILEPATH ${p}
+              )
+            if(run_ctest_submit)
+              ctest_submit(PARTS Upload)
+            endif()
+          endforeach()
+        endif()
+
+      endif()
+    endif()
+
+    #-----------------------------------------------------------------------------
     # Test
     #-----------------------------------------------------------------------------
     if(run_ctest_with_test)
@@ -576,53 +640,6 @@ ${ADDITIONAL_CMAKECACHE_OPTION}
     endif()
 
     #-----------------------------------------------------------------------------
-    # Package and upload
-    #-----------------------------------------------------------------------------
-    if(WITH_PACKAGES AND (run_ctest_with_packages OR run_ctest_with_upload))
-      message(STATUS "----------- [ WITH_PACKAGES and UPLOAD ] -----------")
-
-      if(build_errors GREATER "0")
-        message("Build Errors Detected: ${build_errors}. Aborting package generation")
-      else()
-
-        # Update CMake module path so that our custom macros/functions can be included.
-        set(CMAKE_MODULE_PATH ${CTEST_SOURCE_DIRECTORY}/CMake ${CMAKE_MODULE_PATH})
-
-        include(MIDASCTestUploadURL)
-
-        message(STATUS "Packaging and uploading Slicer to midas ...")
-        set(package_list)
-        if(run_ctest_with_packages)
-          ctest_build(
-            TARGET packageupload
-            BUILD ${slicer_build_dir}
-            APPEND
-            )
-          ctest_submit(PARTS Build)
-        endif()
-
-        if(run_ctest_with_upload)
-          message(STATUS "Uploading Slicer package URL ...")
-
-          file(STRINGS ${slicer_build_dir}/PACKAGES.txt package_list)
-
-          foreach(p ${package_list})
-            get_filename_component(package_name "${p}" NAME)
-            message(STATUS "Uploading URL to [${package_name}] on CDash")
-            midas_ctest_upload_url(
-              API_URL ${MIDAS_PACKAGE_URL}
-              FILEPATH ${p}
-              )
-            if(run_ctest_submit)
-              ctest_submit(PARTS Upload)
-            endif()
-          endforeach()
-        endif()
-
-      endif()
-    endif()
-
-    #-----------------------------------------------------------------------------
     # Note should be at the end
     #-----------------------------------------------------------------------------
     if(run_ctest_with_notes AND run_ctest_submit)
@@ -650,4 +667,3 @@ if(SCRIPT_MODE STREQUAL "continuous" AND ${CTEST_CONTINUOUS_DURATION} GREATER 0)
 else()
   run_ctest()
 endif()
-

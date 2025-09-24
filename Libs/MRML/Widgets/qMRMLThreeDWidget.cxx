@@ -36,18 +36,21 @@
 
 // MRML includes
 #include <vtkMRMLScene.h>
+#include <vtkMRMLViewLogic.h>
+#include <vtkMRMLViewNode.h>
 
 // VTK includes
 #include <vtkCollection.h>
 
 //--------------------------------------------------------------------------
 // qMRMLSliceViewPrivate
-class qMRMLThreeDWidgetPrivate
-  : public QObject
+class qMRMLThreeDWidgetPrivate : public QObject
 {
   Q_DECLARE_PUBLIC(qMRMLThreeDWidget);
+
 protected:
   qMRMLThreeDWidget* const q_ptr;
+
 public:
   qMRMLThreeDWidgetPrivate(qMRMLThreeDWidget& object);
   ~qMRMLThreeDWidgetPrivate() override;
@@ -57,7 +60,6 @@ public:
   qMRMLThreeDView* ThreeDView;
   qMRMLThreeDViewControllerWidget* ThreeDController;
 };
-
 
 //---------------------------------------------------------------------------
 qMRMLThreeDWidgetPrivate::qMRMLThreeDWidgetPrivate(qMRMLThreeDWidget& object)
@@ -88,11 +90,9 @@ void qMRMLThreeDWidgetPrivate::init()
 
   this->ThreeDController->setThreeDView(this->ThreeDView);
 
-  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)),
-                   this->ThreeDView, SLOT(setMRMLScene(vtkMRMLScene*)));
+  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)), this->ThreeDView, SLOT(setMRMLScene(vtkMRMLScene*)));
 
-  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)),
-                   this->ThreeDController, SLOT(setMRMLScene(vtkMRMLScene*)));
+  QObject::connect(q, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)), this->ThreeDController, SLOT(setMRMLScene(vtkMRMLScene*)));
 }
 
 // --------------------------------------------------------------------------
@@ -121,15 +121,45 @@ void qMRMLThreeDWidget::addDisplayableManager(const QString& dManager)
 void qMRMLThreeDWidget::setMRMLViewNode(vtkMRMLViewNode* newViewNode)
 {
   Q_D(qMRMLThreeDWidget);
+  if (!newViewNode)
+  {
+    qWarning() << Q_FUNC_INFO << " failed: view node is invalid";
+    return;
+  }
+  vtkMRMLViewLogic* viewLogic = this->viewLogic();
+  if (!viewLogic)
+  {
+    qWarning() << Q_FUNC_INFO << " failed: view logic is invalid";
+    return;
+  }
   d->ThreeDView->setMRMLViewNode(newViewNode);
-  d->ThreeDController->setMRMLViewNode(newViewNode);
+  viewLogic->SetName(newViewNode->GetLayoutName());
 }
 
 // --------------------------------------------------------------------------
-vtkMRMLViewNode* qMRMLThreeDWidget::mrmlViewNode()const
+void qMRMLThreeDWidget::setMRMLAbstractViewNode(vtkMRMLAbstractViewNode* newViewNode)
+{
+  Q_D(qMRMLThreeDWidget);
+  vtkMRMLViewNode* threeDViewNode = vtkMRMLViewNode::SafeDownCast(newViewNode);
+  if (newViewNode && !threeDViewNode)
+  {
+    qWarning() << Q_FUNC_INFO << " failed: Invalid view node type " << newViewNode->GetClassName() << ". Expected node type: vtkMRMLViewNode";
+  }
+  this->setMRMLViewNode(threeDViewNode);
+}
+
+// --------------------------------------------------------------------------
+vtkMRMLViewNode* qMRMLThreeDWidget::mrmlViewNode() const
 {
   Q_D(const qMRMLThreeDWidget);
-    return d->ThreeDView->mrmlViewNode();
+  return d->ThreeDView->mrmlViewNode();
+}
+
+// --------------------------------------------------------------------------
+vtkMRMLAbstractViewNode* qMRMLThreeDWidget::mrmlAbstractViewNode() const
+{
+  Q_D(const qMRMLThreeDWidget);
+  return this->mrmlViewNode();
 }
 
 // --------------------------------------------------------------------------
@@ -141,10 +171,24 @@ vtkMRMLViewLogic* qMRMLThreeDWidget::viewLogic() const
 }
 
 // --------------------------------------------------------------------------
-qMRMLThreeDView* qMRMLThreeDWidget::threeDView()const
+vtkMRMLAbstractLogic* qMRMLThreeDWidget::logic() const
+{
+  Q_D(const qMRMLThreeDWidget);
+  return this->viewLogic();
+}
+
+// --------------------------------------------------------------------------
+qMRMLThreeDView* qMRMLThreeDWidget::threeDView() const
 {
   Q_D(const qMRMLThreeDWidget);
   return d->ThreeDView;
+}
+
+// --------------------------------------------------------------------------
+QWidget* qMRMLThreeDWidget::viewWidget() const
+{
+  Q_D(const qMRMLThreeDWidget);
+  return this->threeDView();
 }
 
 // --------------------------------------------------------------------------
@@ -155,10 +199,10 @@ qMRMLThreeDViewControllerWidget* qMRMLThreeDWidget::threeDController() const
 }
 
 //---------------------------------------------------------------------------
-void qMRMLThreeDWidget::setViewLabel(const QString& newViewLabel)
+qMRMLViewControllerBar* qMRMLThreeDWidget::controllerWidget() const
 {
-  Q_D(qMRMLThreeDWidget);
-  d->ThreeDController->setViewLabel(newViewLabel);
+  Q_D(const qMRMLThreeDWidget);
+  return this->threeDController();
 }
 
 //---------------------------------------------------------------------------
@@ -166,42 +210,6 @@ void qMRMLThreeDWidget::setQuadBufferStereoSupportEnabled(bool value)
 {
   Q_D(qMRMLThreeDWidget);
   d->ThreeDController->setQuadBufferStereoSupportEnabled(value);
-}
-
-//---------------------------------------------------------------------------
-QString qMRMLThreeDWidget::viewLabel()const
-{
-  Q_D(const qMRMLThreeDWidget);
-  return d->ThreeDController->viewLabel();
-}
-
-//---------------------------------------------------------------------------
-void qMRMLThreeDWidget::setViewColor(const QColor& newViewColor)
-{
-  Q_D(qMRMLThreeDWidget);
-  d->ThreeDController->setViewColor(newViewColor);
-}
-
-//---------------------------------------------------------------------------
-void qMRMLThreeDWidget::setViewLogics(vtkCollection* logics)
-{
-  Q_D(qMRMLThreeDWidget);
-  d->ThreeDController->setViewLogics(logics);
-}
-
-//---------------------------------------------------------------------------
-void qMRMLThreeDWidget::setMRMLScene(vtkMRMLScene* newScene)
-{
-  Q_D(qMRMLThreeDWidget);
-
-  this->Superclass::setMRMLScene(newScene);
-}
-
-//---------------------------------------------------------------------------
-QColor qMRMLThreeDWidget::viewColor()const
-{
-  Q_D(const qMRMLThreeDWidget);
-  return d->ThreeDController->viewColor();
 }
 
 //------------------------------------------------------------------------------

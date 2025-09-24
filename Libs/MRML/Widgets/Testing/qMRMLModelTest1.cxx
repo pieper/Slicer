@@ -34,17 +34,16 @@
 // VTK includes
 #include "qMRMLWidget.h"
 
-
 // STD includes
 
-int qMRMLModelTest1(int argc, char * argv [] )
+int qMRMLModelTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
 
   try
-    {
+  {
     qMRMLSceneModel model;
     ctkModelTester tester(&model);
     tester.setTestDataEnabled(false);
@@ -79,24 +78,23 @@ int qMRMLModelTest1(int argc, char * argv [] )
     sceneFactory.deleteNode();
     sceneFactory.deleteNode();
 
-    for( int i = 0; i < 100; ++i)
-      {
-      sceneFactory.deleteNode();
-      }
-    for( int i = 0; i < 100; ++i)
-      {
-      sceneFactory.generateNode();
-      }
-    for( int i = 0; i < 99; ++i)
-      {
-      sceneFactory.deleteNode();
-      }
-    }
-  catch (const char* error)
+    for (int i = 0; i < 100; ++i)
     {
+      sceneFactory.deleteNode();
+    }
+    for (int i = 0; i < 100; ++i)
+    {
+      sceneFactory.generateNode();
+    }
+    for (int i = 0; i < 99; ++i)
+    {
+      sceneFactory.deleteNode();
+    }
+  }
+  catch (const char* error)
+  {
     std::cerr << error << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   return EXIT_SUCCESS;
 }
-

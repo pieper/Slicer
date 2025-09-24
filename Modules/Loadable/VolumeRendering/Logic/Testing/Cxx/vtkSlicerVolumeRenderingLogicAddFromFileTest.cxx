@@ -34,20 +34,20 @@
 #include <vtkTestingOutputWindow.h>
 
 //----------------------------------------------------------------------------
-int testAddVolumePropertyFromFile(const std::string &temporaryDirectory);
+int testAddVolumePropertyFromFile(const std::string& temporaryDirectory);
 
 //----------------------------------------------------------------------------
 int vtkSlicerVolumeRenderingLogicAddFromFileTest(int argc, char* argv[])
 {
   if (argc != 2)
-    {
+  {
     std::cout << "Missing temporary directory argument !" << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   std::string temporaryDirectory(argv[1]);
 
   CHECK_EXIT_SUCCESS(testAddVolumePropertyFromFile(temporaryDirectory));
-  
+
   return EXIT_SUCCESS;
 }
 
@@ -58,7 +58,6 @@ int testAddVolumePropertyFromFile(const std::string& temporaryDirectory)
 
   std::cout << "temporaryDirectory = " << temporaryDirectory.c_str() << std::endl;
 
- 
   // write out a defaults file
   vtkNew<vtkMRMLVolumePropertyNode> defaultVolumePropertyNode;
   vtkNew<vtkMRMLVolumePropertyStorageNode> volumePropertyStorageNode;
@@ -75,7 +74,7 @@ int testAddVolumePropertyFromFile(const std::string& temporaryDirectory)
   std::cout << "\tfile written okay" << std::endl;
 
   // try reading without a scene
-  vtkMRMLVolumePropertyNode *vpNode = logic->AddVolumePropertyFromFile(fileName.c_str());
+  vtkMRMLVolumePropertyNode* vpNode = logic->AddVolumePropertyFromFile(fileName.c_str());
   CHECK_NULL(vpNode);
 
   // set the scene

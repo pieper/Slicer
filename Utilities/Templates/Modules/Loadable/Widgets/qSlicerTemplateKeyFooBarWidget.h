@@ -29,15 +29,13 @@
 
 class qSlicerTemplateKeyFooBarWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_TemplateKey
-class Q_SLICER_MODULE_TEMPLATEKEY_WIDGETS_EXPORT qSlicerTemplateKeyFooBarWidget
-  : public QWidget
+class Q_SLICER_MODULE_TEMPLATEKEY_WIDGETS_EXPORT qSlicerTemplateKeyFooBarWidget : public QWidget
 {
   Q_OBJECT
 public:
   typedef QWidget Superclass;
-  qSlicerTemplateKeyFooBarWidget(QWidget *parent=0);
-  virtual ~qSlicerTemplateKeyFooBarWidget();
+  qSlicerTemplateKeyFooBarWidget(QWidget* parent = 0);
+  ~qSlicerTemplateKeyFooBarWidget() override;
 
 protected slots:
 

@@ -19,10 +19,12 @@
 ==============================================================================*/
 
 // Qt includes
+#include <QProcessEnvironment>
 #include <QTimer>
 
 // Slicer includes
 #include "vtkSlicerConfigure.h"
+#include <vtkSlicerApplicationLogic.h>
 
 // Slicer includes
 #include "qSlicerApplication.h"
@@ -38,42 +40,38 @@
 // VTK includes
 #include "qMRMLWidget.h"
 
-// STD includes
-
-#include "vtkMRMLCoreTestingMacros.h"
-
-int qSlicerColorsModuleWidgetTest1(int argc, char * argv [] )
+int qSlicerColorsModuleWidgetTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
 
   vtkSmartPointer<vtkMRMLScene> scene = vtkSmartPointer<vtkMRMLScene>::New();
-  vtkSmartPointer<vtkMRMLColorLogic> colorLogic = vtkSmartPointer<vtkMRMLColorLogic>::New();
-  colorLogic->SetMRMLScene(scene);
 
   qSlicerColorsModule colorsModule;
   colorsModule.setMRMLScene(scene);
-  colorsModule.initialize(nullptr);
 
-  qSlicerColorsModuleWidget* colorsWidget =
-    dynamic_cast<qSlicerColorsModuleWidget*>(colorsModule.widgetRepresentation());
+  vtkNew<vtkSlicerApplicationLogic> appLogic;
+  appLogic->SetHomeDirectory(QProcessEnvironment::systemEnvironment().value("SLICER_HOME").toStdString());
+  appLogic->SetShareDirectory(Slicer_SHARE_DIR);
+  colorsModule.initialize(appLogic);
+
+  qSlicerColorsModuleWidget* colorsWidget = dynamic_cast<qSlicerColorsModuleWidget*>(colorsModule.widgetRepresentation());
   colorsWidget->show();
 
-  std::vector< vtkMRMLNode* > nodes;
+  std::vector<vtkMRMLNode*> nodes;
   scene->GetNodesByClass("vtkMRMLColorNode", nodes);
-  for (std::vector< vtkMRMLNode* >::iterator nodeIt = nodes.begin(); nodeIt != nodes.end(); ++nodeIt)
-    {
+  for (std::vector<vtkMRMLNode*>::iterator nodeIt = nodes.begin(); nodeIt != nodes.end(); ++nodeIt)
+  {
     colorsWidget->setCurrentColorNode(*nodeIt);
-    }
+  }
 
   // colorsWidget->show();
 
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
     QTimer::singleShot(100, qApp, SLOT(quit()));
-    }
+  }
 
   return app.exec();
 }
-

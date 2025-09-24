@@ -188,19 +188,19 @@
       </widget>
      </item>
      <item row="1" column="3">
-      <widget class="QToolButton" name="StereoButton">
+      <widget class="QToolButton" name="ShadowsButton">
        <property name="enabled">
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>Select among stereo viewing options (3DSlicer must be started with stereo enabled to use these features).</string>
+        <string>Display shadows for improved depth perception</string>
        </property>
        <property name="text">
         <string/>
        </property>
        <property name="icon">
         <iconset resource="../qMRMLWidgets.qrc">
-         <normaloff>:/Icons/ViewStereo.png</normaloff>:/Icons/ViewStereo.png</iconset>
+         <normaloff>:/Icons/ViewShadows.svg</normaloff>:/Icons/ViewShadows.svg</iconset>
        </property>
        <property name="popupMode">
         <enum>QToolButton::InstantPopup</enum>
@@ -254,14 +254,14 @@
         <bool>false</bool>
        </property>
        <property name="toolTip">
-        <string>Center the 3D view on the scene.</string>
+        <string>Center view</string>
        </property>
       </widget>
      </item>
      <item row="0" column="0">
       <widget class="QToolButton" name="ViewLinkButton">
        <property name="toolTip">
-        <string>Link/Unlink the view controls across all 3D Viewers.</string>
+        <string>Link 3D views. Synchronizes properties of all 3D views in the same view group.</string>
        </property>
        <property name="text">
         <string/>
@@ -398,7 +398,7 @@
     <string>Center</string>
    </property>
    <property name="toolTip">
-    <string>Center the 3D view on the scene</string>
+    <string>Center view</string>
    </property>
   </action>
   <action name="actionUseDepthPeeling">
@@ -589,6 +589,29 @@
    </property>
    <property name="text">
     <string>Yellow ruler</string>
+   </property>
+  </action>
+  <action name="actionStereo">
+   <property name="icon">
+    <iconset resource="../qMRMLWidgets.qrc">
+     <normaloff>:/Icons/ViewStereo.png</normaloff>:/Icons/ViewStereo.png</iconset>
+   </property>
+   <property name="text">
+    <string>Stereo viewing</string>
+   </property>
+   <property name="toolTip">
+    <string>Select stereo viewing mode</string>
+   </property>
+  </action>
+  <action name="actionShadowsVisibility">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Shadows visibility</string>
+   </property>
+   <property name="toolTip">
+    <string>Make objects cast shadows to improve depth perception</string>
    </property>
   </action>
  </widget>

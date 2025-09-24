@@ -29,9 +29,7 @@
 class qSlicerSegmentEditorPaintEffectPrivate;
 class vtkPolyData;
 
-/// \ingroup SlicerRt_QtModules_Segmentations
-class Q_SLICER_SEGMENTATIONS_EFFECTS_EXPORT qSlicerSegmentEditorPaintEffect :
-  public qSlicerSegmentEditorAbstractLabelEffect
+class Q_SLICER_SEGMENTATIONS_EFFECTS_EXPORT qSlicerSegmentEditorPaintEffect : public qSlicerSegmentEditorAbstractLabelEffect
 {
   Q_OBJECT
 
@@ -48,13 +46,13 @@ public:
   QIcon icon() override;
 
   /// Get help text for effect to be displayed in the help box
-  Q_INVOKABLE const QString helpText()const override;
+  const QString helpText() const override;
 
   /// Clone editor effect
   qSlicerSegmentEditorAbstractEffect* clone() override;
 
   /// Perform actions to deactivate the effect (such as destroy actors, etc.)
-  Q_INVOKABLE void deactivate() override;
+  void deactivate() override;
 
   /// Callback function invoked when interaction happens
   /// \param callerInteractor Interactor object that was observed to catch the event
@@ -82,10 +80,24 @@ public:
   /// This is an experimental feature
   /// that may help in limiting number of paint points to
   /// improve performance.
-  double minimumPaintPointDistance();
+  Q_INVOKABLE double minimumPaintPointDistance();
 
   /// If enabled then segmentation is only modified when the mouse button is released.
-  bool delayedPaint();
+  Q_INVOKABLE bool delayedPaint();
+
+  // returns extent of the brushes
+  Q_INVOKABLE QList<int> paintBrushesIntoLabelmap(vtkOrientedImageData* labelmap, qMRMLWidget* viewWidget);
+
+  Q_INVOKABLE void clearBrushes();
+
+  /// Get frame that contains all paint options (brush size, modes, etc.). This allows subclasses to show/hide
+  /// these controls or move them to a different position.
+  Q_INVOKABLE QFrame* paintOptionsFrame();
+
+  Q_INVOKABLE void setColorSmudgeCheckboxVisible(bool show);
+
+  /// Paint labelmap
+  Q_INVOKABLE virtual void paintApply(qMRMLWidget* viewWidget);
 
 public slots:
   /// Update user interface from parameter set node

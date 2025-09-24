@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
-    <height>286</height>
+    <width>325</width>
+    <height>311</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -30,7 +30,7 @@
          <string>Pick the input to the algorithm.</string>
         </property>
         <property name="nodeTypes">
-         <stringlist>
+         <stringlist notr="true">
           <string>vtkMRMLScalarVolumeNode</string>
          </stringlist>
         </property>
@@ -42,6 +42,9 @@
         </property>
         <property name="removeEnabled">
          <bool>false</bool>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>inputVolume</string>
         </property>
        </widget>
       </item>
@@ -69,6 +72,9 @@
         <property name="value">
          <double>0.500000000000000</double>
         </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>imageThreshold</string>
+        </property>
        </widget>
       </item>
      </layout>
@@ -93,7 +99,7 @@
          <string>Pick the output to the algorithm.</string>
         </property>
         <property name="nodeTypes">
-         <stringlist>
+         <stringlist notr="true">
           <string>vtkMRMLScalarVolumeNode</string>
          </stringlist>
         </property>
@@ -108,6 +114,9 @@
         </property>
         <property name="removeEnabled">
          <bool>true</bool>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>thresholdedVolume</string>
         </property>
        </widget>
       </item>
@@ -124,7 +133,7 @@
          <string>Result with inverted threshold will be written into this volume</string>
         </property>
         <property name="nodeTypes">
-         <stringlist>
+         <stringlist notr="true">
           <string>vtkMRMLScalarVolumeNode</string>
          </stringlist>
         </property>
@@ -139,6 +148,9 @@
         </property>
         <property name="removeEnabled">
          <bool>true</bool>
+        </property>
+        <property name="SlicerParameterName" stdset="0">
+         <string>invertedVolume</string>
         </property>
        </widget>
       </item>
@@ -167,6 +179,9 @@
          <string>If checked, values above threshold are set to 0. If unchecked, values below are set to 0.</string>
         </property>
         <property name="text">
+         <string/>
+        </property>
+        <property name="invertThreshold" stdset="0">
          <string/>
         </property>
        </widget>
@@ -204,17 +219,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ctkCollapsibleButton</class>
-   <extends>QWidget</extends>
-   <header>ctkCollapsibleButton.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>ctkSliderWidget</class>
-   <extends>QWidget</extends>
-   <header>ctkSliderWidget.h</header>
-  </customwidget>
-  <customwidget>
    <class>qMRMLNodeComboBox</class>
    <extends>QWidget</extends>
    <header>qMRMLNodeComboBox.h</header>
@@ -224,6 +228,17 @@
    <extends>QWidget</extends>
    <header>qMRMLWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>ctkSliderWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -4,7 +4,7 @@
   <title>Execution Model Tour</title>
   <description><![CDATA[Shows one of each type of parameter.]]></description>
   <version>0.1.0.$Revision$(alpha)</version>
-  <documentation-url>http://wiki.slicer.org/slicerWiki/index.php/Documentation/Nightly/Modules/ExecutionModelTour</documentation-url>
+  <documentation-url></documentation-url>
   <license/>
   <contributor>Daniel Blezek (GE), Bill Lorensen (GE)</contributor>
   <acknowledgements><![CDATA[This work is part of the National Alliance for Medical Image Computing (NAMIC), funded by the National Institutes of Health through the NIH Roadmap for Medical Research, Grant U54 EB005149.]]></acknowledgements>
@@ -38,6 +38,7 @@
     <description><![CDATA[Variations on vector parameters]]></description>
     <float-vector>
       <name>floatVector</name>
+      <longflag>float_vector</longflag>
       <flag>f</flag>
       <description><![CDATA[A vector of floats]]></description>
       <label>Float Vector Parameter</label>
@@ -127,6 +128,12 @@
       <label>Input image</label>
       <channel>input</channel>
     </image>
+    <image type="dynamic-contrast-enhanced">
+      <longflag>image4d</longflag>
+      <label>Input 4D Image</label>
+      <channel>input</channel>
+      <description><![CDATA[Input 4D Image (txyz)]]></description>
+    </image>
     <image reference="image1">
       <longflag>image2</longflag>
       <description><![CDATA[An output image]]></description>
@@ -137,49 +144,49 @@
   <parameters>
     <label>Transform Parameters</label>
     <description><![CDATA[Parameters that describe transforms.]]></description>
-    <transform>
+    <transform fileExtensions=".mrml">
       <longflag>transformInput</longflag>
       <description><![CDATA[A generic input transform]]></description>
       <label>Input transform</label>
       <channel>input</channel>
     </transform>
-    <transform type="linear">
+    <transform type="linear" fileExtensions=".mrml">
       <longflag>transform1</longflag>
       <description><![CDATA[A linear input transform]]></description>
       <label>Input transform linear</label>
       <channel>input</channel>
     </transform>
-    <transform type="nonlinear">
+    <transform type="nonlinear" fileExtensions=".mrml">
       <longflag>transformInputNonlinear</longflag>
       <description><![CDATA[A nonlinear input transform]]></description>
       <label>Input transform nonlinear</label>
       <channel>input</channel>
     </transform>
-    <transform type="bspline">
+    <transform type="bspline" fileExtensions=".mrml">
       <longflag>transformInputBspline</longflag>
       <description><![CDATA[A bspline input transform]]></description>
       <label>Input transform bspline</label>
       <channel>input</channel>
     </transform>
-    <transform>
+    <transform fileExtensions=".mrml">
       <longflag>transformOutput</longflag>
       <description><![CDATA[A generic output transform]]></description>
       <label>Output transform</label>
       <channel>output</channel>
     </transform>
-    <transform type="linear">
+    <transform type="linear" fileExtensions=".mrml">
       <longflag>transform2</longflag>
       <description><![CDATA[A linear output transform]]></description>
       <label>Output transform linear</label>
       <channel>output</channel>
     </transform>
-    <transform type="nonlinear">
+    <transform type="nonlinear" fileExtensions=".mrml">
       <longflag>transformOutputNonlinear</longflag>
       <description><![CDATA[A nonlinear output transform]]></description>
       <label>Output transform nonlinear</label>
       <channel>output</channel>
     </transform>
-    <transform type="bspline">
+    <transform type="bspline" fileExtensions=".mrml">
       <longflag>transformOutputBspline</longflag>
       <description><![CDATA[A bspline output transform]]></description>
       <label>Output transform bspline</label>
@@ -259,7 +266,7 @@
     <label>Regions of interest</label>
     <region multiple="true">
       <name>regions</name>
-      <label>Region list</label>
+      <label>Input region list</label>
       <longflag>region</longflag>
       <description><![CDATA[List of regions to process]]></description>
     </region>

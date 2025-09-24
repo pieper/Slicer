@@ -52,18 +52,18 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void checkFinalWidgetState(void* data)
-  {
+{
   qMRMLDisplayNodeWidget* widget = reinterpret_cast<qMRMLDisplayNodeWidget*>(data);
 
   CTKCOMPARE(widget->visibility(), false);
   CTKCOMPARE(widget->selected(), true);
   CTKCOMPARE(widget->clipping(), true);
   CTKCOMPARE(widget->sliceIntersectionVisible(), true);
-  }
 }
+} // namespace
 
 //-----------------------------------------------------------------------------
-int qMRMLDisplayNodeWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
+int qMRMLDisplayNodeWidgetEventTranslatorPlayerTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -79,22 +79,18 @@ int qMRMLDisplayNodeWidgetEventTranslatorPlayerTest1(int argc, char * argv [] )
   // Test case 1
   qMRMLDisplayNodeWidget* widget = new qMRMLDisplayNodeWidget();
 
-  vtkSmartPointer< vtkMRMLModelDisplayNode > displayNode =
-    vtkSmartPointer< vtkMRMLModelDisplayNode >::New();
+  vtkSmartPointer<vtkMRMLModelDisplayNode> displayNode = vtkSmartPointer<vtkMRMLModelDisplayNode>::New();
 
   widget->setMRMLDisplayNode(displayNode);
 
-  etpWidget.addTestCase(widget,
-                        xmlDirectory + "qMRMLDisplayNodeWidgetEventTranslatorPlayerTest1.xml",
-                        &checkFinalWidgetState);
+  etpWidget.addTestCase(widget, xmlDirectory + "qMRMLDisplayNodeWidgetEventTranslatorPlayerTest1.xml", &checkFinalWidgetState);
 
   // ------------------------
   if (!app.arguments().contains("-I"))
-    {
+  {
     QTimer::singleShot(0, &etpWidget, SLOT(play()));
-    }
+  }
 
   etpWidget.show();
   return app.exec();
 }
-

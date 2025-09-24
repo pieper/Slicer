@@ -1,7 +1,6 @@
 
 #-----------------------------------------------------------------------------
 set(MODULE_NAME Sequences)
-set(MODULE_TITLE "Sequences")
 
 string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
 
@@ -50,9 +49,8 @@ set(MODULE_RESOURCES
   )
 
 #-----------------------------------------------------------------------------
-slicerMacroBuildQtModule(
+slicerMacroBuildLoadableModule(
   NAME ${MODULE_NAME}
-  TITLE ${MODULE_TITLE}
   EXPORT_DIRECTIVE ${MODULE_EXPORT_DIRECTIVE}
   INCLUDE_DIRECTORIES ${MODULE_INCLUDE_DIRECTORIES}
   SRCS ${MODULE_SRCS}

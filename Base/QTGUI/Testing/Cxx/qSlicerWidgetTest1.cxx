@@ -35,33 +35,31 @@
 
 // STD includes
 
-int qSlicerWidgetTest1(int argc, char * argv[] )
+int qSlicerWidgetTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
   qSlicerWidget widget;
   if (widget.mrmlScene() != nullptr)
-    {
+  {
     std::cerr << "scene incorrectly initialized." << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   // check for infinite loop
-  QObject::connect(&widget, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)),
-                   &widget, SLOT(setMRMLScene(vtkMRMLScene*)));
+  QObject::connect(&widget, SIGNAL(mrmlSceneChanged(vtkMRMLScene*)), &widget, SLOT(setMRMLScene(vtkMRMLScene*)));
   vtkMRMLScene* scene = vtkMRMLScene::New();
   widget.setMRMLScene(scene);
   if (widget.mrmlScene() != scene)
-    {
+  {
     std::cerr << "scene incorrectly set." << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   scene->Delete();
   if (widget.mrmlScene() != scene)
-    {
+  {
     std::cerr << "scene has been deleted, qSlicerWidget is supposed to keep a ref on it." << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   return EXIT_SUCCESS;
 }
-

@@ -51,29 +51,33 @@ class vtkMRMLColorNode;
 class QMRML_WIDGETS_EXPORT qMRMLColorModelPrivate
 {
   Q_DECLARE_PUBLIC(qMRMLColorModel);
+
 protected:
   qMRMLColorModel* const q_ptr;
+
 public:
   qMRMLColorModelPrivate(qMRMLColorModel& object);
   virtual ~qMRMLColorModelPrivate();
   void init();
 
   void updateColumnCount();
-  virtual int maxColumnId()const;
+  virtual int maxColumnId() const;
 
-  vtkSmartPointer<vtkMRMLColorLogic>  ColorLogic;
+  vtkSmartPointer<vtkMRMLColorLogic> ColorLogic;
   vtkSmartPointer<vtkCallbackCommand> CallBack;
-  vtkSmartPointer<vtkMRMLColorNode>   MRMLColorNode;
+  vtkSmartPointer<vtkMRMLColorNode> MRMLColorNode;
 
-  bool NoneEnabled;
-  int ColorColumn;
-  int LabelColumn;
-  int OpacityColumn;
-  int CheckableColumn;
+  bool NoneEnabled{ false };
+
+  int ColorColumn{ 0 };
+  int OpacityColumn{ 1 };
+  int LabelColumn{ 2 };
+  int TerminologyColumn{ 3 };
+  int CheckableColumn{ -1 };
 
   /// This flag allows to make sure that during updating widget from MRML,
   /// GUI updates will not trigger MRML node updates.
-  bool IsUpdatingWidgetFromMRML;
+  bool IsUpdatingWidgetFromMRML{ false };
 };
 
 #endif

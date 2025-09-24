@@ -51,6 +51,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkWeakPointer.h>
 
+class ctkDynamicSpacer;
 class ctkSignalMapper;
 class ctkDoubleSpinBox;
 class ctkVTKSliceView;
@@ -59,13 +60,7 @@ class qMRMLSliderWidget;
 class vtkMRMLSliceNode;
 class vtkObject;
 class vtkMRMLSegmentationDisplayNode;
-
-//-----------------------------------------------------------------------------
-struct QMRML_WIDGETS_EXPORT qMRMLOrientation
-{
-  QString Prefix;
-  QString ToolTip;
-};
+class vtkMRMLSelectionNode;
 
 //-----------------------------------------------------------------------------
 class QMRML_WIDGETS_EXPORT qMRMLSliceControllerWidgetPrivate
@@ -96,8 +91,7 @@ public:
   void setupMoreOptionsMenu();
   void setupOrientationMarkerMenu();
   void setupRulerMenu();
-
-  qMRMLOrientation mrmlOrientation(const QString& name);
+  void setupSlabReconstructionMenu();
 
   vtkSmartPointer<vtkCollection> saveNodesForUndo(const QString& nodeTypes);
 
@@ -111,8 +105,7 @@ public:
 
   /// Create a list of orientation containing the regular presets and also
   /// the "Reformat" string if sliceToRAS is different one of the preset.
-  static void updateSliceOrientationSelector(
-      vtkMRMLSliceNode* sliceNode, QComboBox *sliceOrientationSelector);
+  static void updateSliceOrientationSelector(vtkMRMLSliceNode* sliceNode, QComboBox* sliceOrientationSelector);
 
 public slots:
   /// Update widget state when the scene is modified
@@ -123,6 +116,9 @@ public slots:
 
   /// Update widget state using the associated MRML slice composite node
   void updateWidgetFromMRMLSliceCompositeNode();
+
+  /// Update step size when unit changes
+  void updateWidgetFromUnitNode();
 
   /// Called after a foreground layer volume node is selected
   /// using the associated qMRMLNodeComboBox
@@ -160,57 +156,68 @@ public slots:
 
   void applyCustomLightbox();
 
+  void updateSliceOffsetSliderVisibility();
+
 protected:
   void setupPopupUi() override;
-  virtual void setMRMLSliceNodeInternal(vtkMRMLSliceNode* sliceNode);
   void setMRMLSliceCompositeNodeInternal(vtkMRMLSliceCompositeNode* sliceComposite);
+  void setAndObserveSelectionNode();
 
 public:
-  vtkMRMLSliceNode*                   MRMLSliceNode;
-  vtkMRMLSliceCompositeNode*          MRMLSliceCompositeNode;
-  vtkSmartPointer<vtkMRMLSliceLogic>  SliceLogic;
-  vtkCollection*                      SliceLogics;
-  vtkWeakPointer<vtkAlgorithmOutput>  ImageDataConnection;
-  QHash<QString, qMRMLOrientation>    SliceOrientationToDescription;
-  QString                             SliceViewName;
-  QButtonGroup*                       ControllerButtonGroup;
+  vtkMRMLSliceCompositeNode* MRMLSliceCompositeNode;
+  vtkMRMLSelectionNode* SelectionNode{ nullptr };
+  vtkSmartPointer<vtkMRMLSliceLogic> SliceLogic;
+  vtkCollection* SliceLogics;
+  vtkWeakPointer<vtkAlgorithmOutput> ImageDataConnection;
+  QButtonGroup* ControllerButtonGroup;
 
-  QToolButton*                        FitToWindowToolButton;
-  qMRMLSliderWidget*                  SliceOffsetSlider;
-  double                              LastLabelMapOpacity;
-  double                              LastForegroundOpacity;
-  double                              LastBackgroundOpacity;
+  QToolButton* FitToWindowToolButton;
+  qMRMLSliderWidget* SliceOffsetSlider;
+  ctkDynamicSpacer* SliderSpacer;
+  /// Slicer offset resolution without applying display scaling.
+  double SliceOffsetResolution{ 1.0 };
+  double LastLabelMapOpacity;
+  double LastForegroundOpacity;
+  double LastBackgroundOpacity;
 
-  QMenu*                              LightboxMenu;
-  QMenu*                              CompositingMenu;
-  QMenu*                              SliceSpacingMenu;
-  QMenu*                              SliceModelMenu;
-  QMenu*                              SegmentationMenu;
-  QMenu*                              LabelMapMenu;
-  QMenu*                              OrientationMarkerMenu;
-  QMenu*                              RulerMenu;
+  QMenu* LightboxMenu;
+  QMenu* CompositingMenu;
+  QMenu* SliceSpacingMenu;
+  QMenu* SliceModelMenu;
+  QMenu* SegmentationMenu;
+  QMenu* LabelMapMenu;
+  QMenu* OrientationMarkerMenu;
+  QMenu* RulerMenu;
+  QMenu* SlabReconstructionMenu;
 
-  ctkDoubleSpinBox*                   SliceSpacingSpinBox;
-  ctkDoubleSpinBox*                   SliceFOVSpinBox;
-  QSpinBox*                           LightBoxRowsSpinBox;
-  QSpinBox*                           LightBoxColumnsSpinBox;
+  ctkDoubleSpinBox* SliceSpacingSpinBox;
+  ctkDoubleSpinBox* SliceFOVSpinBox;
+  QSpinBox* LightBoxRowsSpinBox;
+  QSpinBox* LightBoxColumnsSpinBox;
+  ctkDoubleSpinBox* SlabReconstructionThicknessSpinBox;
 
-  ctkDoubleSpinBox*                   SliceModelFOVXSpinBox;
-  ctkDoubleSpinBox*                   SliceModelFOVYSpinBox;
+  ctkDoubleSpinBox* SliceModelFOVXSpinBox;
+  ctkDoubleSpinBox* SliceModelFOVYSpinBox;
 
-  ctkDoubleSpinBox*                   SliceModelOriginXSpinBox;
-  ctkDoubleSpinBox*                   SliceModelOriginYSpinBox;
+  ctkDoubleSpinBox* SliceModelOriginXSpinBox;
+  ctkDoubleSpinBox* SliceModelOriginYSpinBox;
 
-  QSpinBox*                           SliceModelDimensionXSpinBox;
-  QSpinBox*                           SliceModelDimensionYSpinBox;
+  QSpinBox* SliceModelDimensionXSpinBox;
+  QSpinBox* SliceModelDimensionYSpinBox;
 
-  QSize                               ViewSize;
+  QSize ViewSize;
 
-  ctkSignalMapper*                    OrientationMarkerTypesMapper;
-  ctkSignalMapper*                    OrientationMarkerSizesMapper;
+  ctkSignalMapper* OrientationMarkerTypesMapper;
+  ctkSignalMapper* OrientationMarkerSizesMapper;
 
-  ctkSignalMapper*                    RulerTypesMapper;
-  ctkSignalMapper*                    RulerColorMapper;
+  ctkSignalMapper* RulerTypesMapper;
+  ctkSignalMapper* RulerColorMapper;
+
+  ctkSignalMapper* SlabReconstructionTypesMapper;
+  QMenu* SlabReconstructionThicknessMenu{ nullptr };
+  QActionGroup* SlabReconstructionTypesActions{ nullptr };
+
+  bool ShowSliceOffsetSlider{ true };
 };
 
 #endif

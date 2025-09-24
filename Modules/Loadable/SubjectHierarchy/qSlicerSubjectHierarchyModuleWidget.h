@@ -33,15 +33,13 @@ class qMRMLSubjectHierarchyModel;
 class qSlicerSubjectHierarchyPluginLogic;
 class qSlicerSubjectHierarchyAbstractPlugin;
 
-/// \ingroup Slicer_QtModules_SubjectHierarchy
-class Q_SLICER_QTMODULES_SUBJECTHIERARCHY_EXPORT qSlicerSubjectHierarchyModuleWidget :
-  public qSlicerAbstractModuleWidget
+class Q_SLICER_QTMODULES_SUBJECTHIERARCHY_EXPORT qSlicerSubjectHierarchyModuleWidget : public qSlicerAbstractModuleWidget
 {
   Q_OBJECT
 
 public:
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerSubjectHierarchyModuleWidget(QWidget *parent=nullptr);
+  qSlicerSubjectHierarchyModuleWidget(QWidget* parent = nullptr);
   ~qSlicerSubjectHierarchyModuleWidget() override;
 
   Q_INVOKABLE qSlicerSubjectHierarchyPluginLogic* pluginLogic();

@@ -20,7 +20,7 @@
 
 ==============================================================================*/
 
-///  vtkSliceRTScalarBarActor - slicer vtk class for adding color names in scalarbar
+///  vtkSlicerScalarBarActor - slicer vtk class for adding color names in scalar bar
 ///
 /// This class enhances the vtkScalarBarActor class by adding color names
 /// in the label display.
@@ -36,14 +36,12 @@
 // MRMLLogic includes
 #include "vtkSlicerColorsModuleVTKWidgetsExport.h"
 
-/// \ingroup SlicerRt_QtModules_Isodose
-class VTK_SLICER_COLORS_VTKWIDGETS_EXPORT vtkSlicerScalarBarActor
-  : public vtkScalarBarActor
+class VTK_SLICER_COLORS_VTKWIDGETS_EXPORT vtkSlicerScalarBarActor : public vtkScalarBarActor
 {
 public:
   // The usual VTK class functions
-  static vtkSlicerScalarBarActor *New();
-  vtkTypeMacro(vtkSlicerScalarBarActor,vtkScalarBarActor);
+  static vtkSlicerScalarBarActor* New();
+  vtkTypeMacro(vtkSlicerScalarBarActor, vtkScalarBarActor);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   /// Get for the flag on using VTK6 annotation as label
@@ -83,6 +81,16 @@ protected:
   // It centers labels on color swatches instead of placing labels
   // at the edge.
   void ConfigureTicks() override;
+
+  // Modify original behavior by aligning title to the left/right when orientation is vertical.
+  // This allows moving the color bar to the edge of the view, even if the title is long.
+  void PrepareTitleText() override;
+  void ConfigureTitle() override;
+
+  /// Parses the requestedFormat string to find a validated format for the types contained in typeString.
+  /// validatedFormat is set to the first matching sprintf for the input types
+  /// prefix and suffix are set to the non-matching components of requestedFormat
+  static bool ValidateFormatString(std::string& validatedFormat, std::string& prefix, std::string& suffix, const std::string& requestedFormat, const std::string& typeString);
 
   /// flag for setting color name as label
   int UseAnnotationAsLabel;

@@ -3,8 +3,8 @@ import slicer
 import slicer.util
 import vtk
 
-class SlicerUtilGetNodeTest(unittest.TestCase):
 
+class SlicerUtilGetNodeTest(unittest.TestCase):
     def setUp(self):
         slicer.mrmlScene.Clear(0)
         self.nodes = self._configure_scene(slicer.mrmlScene)
@@ -21,15 +21,14 @@ class SlicerUtilGetNodeTest(unittest.TestCase):
         return nodes
 
     def test_getFirstNodeByName(self):
-        self.assertEqual(slicer.util.getFirstNodeByName("Volume", 'vtkMRMLScalarVolumeNode').GetName(), "Volume1" )
+        self.assertEqual(slicer.util.getFirstNodeByName("Volume", "vtkMRMLScalarVolumeNode").GetName(), "Volume1")
 
     def test_getNode(self):
-
         # Test handling of requesting non-existing node
         with self.assertRaises(slicer.util.MRMLNodeNotFoundException):
-          slicer.util.getNode("")
+            slicer.util.getNode("")
         with self.assertRaises(slicer.util.MRMLNodeNotFoundException):
-          slicer.util.getNode("NotExistingNodeName")
+            slicer.util.getNode("NotExistingNodeName")
 
         # For the following tests, use a dedicated scene where
         # all nodes are known.
@@ -53,11 +52,10 @@ class SlicerUtilGetNodeTest(unittest.TestCase):
         self.assertEqual(list(slicer.util.getNodes("Volume*").keys()), ["Volume1", "Volume2", "Volume"])
 
     def test_getNodesMultipleNodesSharingName(self):
-
         self.assertIn("Volume", slicer.util.getNodes("Volume"))
         self.assertIn("Volume", slicer.util.getNodes("Volume", useLists=True))
 
         self.assertEqual(list(slicer.util.getNodes("Volume").keys()), ["Volume"])
         self.assertIsInstance(slicer.util.getNodes("Volume")["Volume"], vtk.vtkObject)
-        self.assertEqual(list(slicer.util.getNodes("Volume",useLists=True).keys()), ["Volume"])
-        self.assertIsInstance(slicer.util.getNodes("Volume",useLists=True)["Volume"], list)
+        self.assertEqual(list(slicer.util.getNodes("Volume", useLists=True).keys()), ["Volume"])
+        self.assertIsInstance(slicer.util.getNodes("Volume", useLists=True)["Volume"], list)

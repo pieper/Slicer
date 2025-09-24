@@ -22,26 +22,29 @@
 #include "vtkSlicerColorLogic.h"
 
 // MRML includes
-#include "vtkMRMLCoreTestingMacros.h"
+#include "vtkMRMLApplicationLogic.h"
 #include "vtkMRMLScene.h"
 
+#include "vtkSlicerConfigure.h" // For Slicer_SHARE_DIR
+
+// vtkAddon includes
+#include <vtkAddonTestingMacros.h>
+
 // VTK includes
+#include <vtksys/SystemTools.hxx>
 #include <vtkTimerLog.h>
 
 // STD includes
 
-#include "vtkMRMLCoreTestingMacros.h"
-
 using namespace vtkAddonTestingUtilities;
-using namespace vtkMRMLCoreTestingUtilities;
 
 //----------------------------------------------------------------------------
 namespace
 {
-  int TestDefaults();
+int TestDefaults();
 }
 
-int vtkSlicerColorLogicTest1(int vtkNotUsed(argc), char * vtkNotUsed(argv)[])
+int vtkSlicerColorLogicTest1(int vtkNotUsed(argc), char* vtkNotUsed(argv)[])
 {
   CHECK_EXIT_SUCCESS(TestDefaults());
   return EXIT_SUCCESS;
@@ -54,6 +57,11 @@ int TestDefaults()
 {
   vtkNew<vtkMRMLScene> scene;
   vtkSlicerColorLogic* colorLogic = vtkSlicerColorLogic::New();
+
+  vtkNew<vtkMRMLApplicationLogic> appLogic;
+  appLogic->SetHomeDirectory(std::string(vtksys::SystemTools::GetEnv("SLICER_HOME")));
+  appLogic->SetShareDirectory(Slicer_SHARE_DIR);
+  colorLogic->SetMRMLApplicationLogic(appLogic);
 
   vtkNew<vtkTimerLog> overallTimer;
   overallTimer->StartTimer();
@@ -73,4 +81,4 @@ int TestDefaults()
   return EXIT_SUCCESS;
 }
 
-}
+} // namespace

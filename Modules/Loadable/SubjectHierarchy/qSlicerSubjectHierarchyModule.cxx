@@ -20,8 +20,13 @@
 
 ==============================================================================*/
 
+#include <vtkSlicerConfigure.h> // For Slicer_USE_PYTHONQT
+
 // QtGUI includes
 #include <qSlicerApplication.h>
+#ifdef Slicer_USE_PYTHONQT
+# include <qSlicerPythonManager.h>
+#endif
 
 // SubjectHierarchy includes
 #include "qSlicerSubjectHierarchyModule.h"
@@ -37,14 +42,13 @@
 #include <vtkMRMLScene.h>
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_SubjectHierarchy
 class qSlicerSubjectHierarchyModulePrivate
 {
 public:
   qSlicerSubjectHierarchyModulePrivate();
   ~qSlicerSubjectHierarchyModulePrivate();
 
-  qSlicerSubjectHierarchyPluginLogic* PluginLogic{nullptr};
+  qSlicerSubjectHierarchyPluginLogic* PluginLogic{ nullptr };
 };
 
 //-----------------------------------------------------------------------------
@@ -57,10 +61,10 @@ qSlicerSubjectHierarchyModulePrivate::qSlicerSubjectHierarchyModulePrivate() = d
 qSlicerSubjectHierarchyModulePrivate::~qSlicerSubjectHierarchyModulePrivate()
 {
   if (this->PluginLogic)
-    {
+  {
     delete this->PluginLogic;
     this->PluginLogic = nullptr;
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -77,24 +81,25 @@ qSlicerSubjectHierarchyModule::qSlicerSubjectHierarchyModule(QObject* _parent)
 qSlicerSubjectHierarchyModule::~qSlicerSubjectHierarchyModule() = default;
 
 //-----------------------------------------------------------------------------
-QString qSlicerSubjectHierarchyModule::helpText()const
+QString qSlicerSubjectHierarchyModule::helpText() const
 {
-  QString help =
-    "The Subject hierarchy module provides a nice and intuitive tree view of the loaded data. It acts as a convenient central organizing point for many of the operations that 3D Slicer and its extensions perform."
-    "For more information see <a href=\"%1/Documentation/%2.%3/Modules/SubjectHierarchy\">%1/Documentation/%2.%3/Modules/SubjectHierarchy</a><br>";
-  return help.arg(this->slicerWikiUrl()).arg(Slicer_VERSION_MAJOR).arg(Slicer_VERSION_MINOR);
+  QString help = "The Subject hierarchy module provides a nice and intuitive tree view of the loaded data."
+                 " It acts as a convenient central organizing point for many of the operations that 3D Slicer and its extensions perform.<br>";
+  help += this->defaultDocumentationLink();
+  return help;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerSubjectHierarchyModule::acknowledgementText()const
+QString qSlicerSubjectHierarchyModule::acknowledgementText() const
 {
-  return "This work is part of SparKit project, funded by Cancer Care Ontario (CCO)'s ACRU program and Ontario Consortium for Adaptive Interventions in Radiation Oncology (OCAIRO).";
+  return "This work is part of SparKit project, funded by Cancer Care Ontario (CCO)'s ACRU program and Ontario Consortium for Adaptive Interventions in Radiation Oncology "
+         "(OCAIRO).";
 }
 
 //-----------------------------------------------------------------------------
 QStringList qSlicerSubjectHierarchyModule::categories() const
 {
-  return QStringList() << "" << "Informatics";
+  return QStringList() << "" << qSlicerAbstractCoreModule::tr("Informatics");
 }
 
 //-----------------------------------------------------------------------------
@@ -106,7 +111,7 @@ QStringList qSlicerSubjectHierarchyModule::contributors() const
 }
 
 //-----------------------------------------------------------------------------
-QIcon qSlicerSubjectHierarchyModule::icon()const
+QIcon qSlicerSubjectHierarchyModule::icon() const
 {
   return QIcon(":/Icons/SubjectHierarchy.png");
 }
@@ -116,11 +121,21 @@ void qSlicerSubjectHierarchyModule::setup()
 {
   this->Superclass::setup();
 
-  if (qSlicerApplication::application())
-    {
+  qSlicerApplication* app = qSlicerApplication::application();
+  if (app)
+  {
+    // Register settings panel
     qSlicerSubjectHierarchySettingsPanel* panel = new qSlicerSubjectHierarchySettingsPanel();
-    qSlicerApplication::application()->settingsDialog()->addPanel("Subject hierarchy", panel);
+    app->settingsDialog()->addPanel("Subject hierarchy", panel);
+
+    // Explicitly import associated python library to trigger registration of plugins
+#ifdef Slicer_USE_PYTHONQT
+    if (!qSlicerCoreApplication::testAttribute(qSlicerCoreApplication::AA_DisablePython))
+    {
+      app->pythonManager()->executeString(QString("import SubjectHierarchyLib"));
     }
+#endif
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -131,7 +146,7 @@ vtkMRMLAbstractLogic* qSlicerSubjectHierarchyModule::createLogic()
   // Create logic
   vtkSlicerSubjectHierarchyModuleLogic* logic = vtkSlicerSubjectHierarchyModuleLogic::New();
   // Handle scene change event if occurs
-  qvtkConnect( logic, vtkCommand::ModifiedEvent, this, SLOT( onLogicModified() ) );
+  qvtkConnect(logic, vtkCommand::ModifiedEvent, this, SLOT(onLogicModified()));
 
   // Create plugin logic
   d->PluginLogic = new qSlicerSubjectHierarchyPluginLogic();
@@ -148,9 +163,9 @@ qSlicerAbstractModuleRepresentation* qSlicerSubjectHierarchyModule::createWidget
 
   qSlicerSubjectHierarchyModuleWidget* moduleWidget = new qSlicerSubjectHierarchyModuleWidget();
   if (!d->PluginLogic)
-    {
+  {
     this->createLogic();
-    }
+  }
   moduleWidget->setPluginLogic(d->PluginLogic);
 
   return moduleWidget;
@@ -163,8 +178,8 @@ void qSlicerSubjectHierarchyModule::onLogicModified()
 
   vtkMRMLScene* scene = this->mrmlScene();
   if (d->PluginLogic && scene != d->PluginLogic->mrmlScene())
-    {
+  {
     // Set the new scene to the plugin logic
     d->PluginLogic->setMRMLScene(scene);
-    }
+  }
 }

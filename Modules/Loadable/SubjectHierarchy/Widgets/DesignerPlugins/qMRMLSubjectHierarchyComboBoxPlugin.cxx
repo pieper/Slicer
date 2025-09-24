@@ -30,19 +30,23 @@ qMRMLSubjectHierarchyComboBoxPlugin::qMRMLSubjectHierarchyComboBoxPlugin(QObject
 }
 
 //-----------------------------------------------------------------------------
-QWidget *qMRMLSubjectHierarchyComboBoxPlugin::createWidget(QWidget* parentWidget)
+QWidget* qMRMLSubjectHierarchyComboBoxPlugin::createWidget(QWidget* parentWidget)
 {
-  qMRMLSubjectHierarchyComboBox* pluginWidget =
-    new qMRMLSubjectHierarchyComboBox(parentWidget);
+  qMRMLSubjectHierarchyComboBox* pluginWidget = new qMRMLSubjectHierarchyComboBox(parentWidget);
   return pluginWidget;
 }
 
 //-----------------------------------------------------------------------------
 QString qMRMLSubjectHierarchyComboBoxPlugin::domXml() const
 {
-  return "<widget class=\"qMRMLSubjectHierarchyComboBox\" \
-          name=\"SubjectHierarchyComboBox\">\n"
-          "</widget>\n";
+  return "<ui language=\"c++\">\n"
+         "<widget class=\"qMRMLSubjectHierarchyComboBox\" name=\"SubjectHierarchyComboBox\">\n"
+         "  <property name=\"includeItemAttributeNamesFilter\"> <stringlist notr=\"true\"/> </property>\n"
+         "  <property name=\"includeNodeAttributeNamesFilter\"> <stringlist notr=\"true\"/> </property>\n"
+         "  <property name=\"excludeItemAttributeNamesFilter\"> <stringlist notr=\"true\"/> </property>\n"
+         "  <property name=\"excludeNodeAttributeNamesFilter\"> <stringlist notr=\"true\"/> </property>\n"
+         "</widget>\n"
+         "</ui>\n";
 }
 
 //-----------------------------------------------------------------------------

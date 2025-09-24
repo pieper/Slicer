@@ -48,13 +48,13 @@ if(NOT DEFINED OPENSSL_LIBRARIES
     # Starting with Qt 5.12.4, official Qt binaries are build against OpenSSL 1.1.1
     # See https://www.qt.io/blog/2019/06/17/qt-5-12-4-released-support-openssl-1-1-1
     if("${Qt5_VERSION_MAJOR}.${Qt5_VERSION_MINOR}.${Qt5_VERSION_PATCH}" VERSION_GREATER_EQUAL "5.12.4")
-      set(_default_version "1.1.1g")
+      set(_default_version "1.1.1w")
     else()
       set(_default_version "1.0.2n")
     endif()
 
     set(OPENSSL_DOWNLOAD_VERSION "${_default_version}" CACHE STRING "Version of OpenSSL source package to download")
-    set_property(CACHE OPENSSL_DOWNLOAD_VERSION PROPERTY STRINGS "1.0.1e" "1.0.1l" "1.0.2n" "1.1.1g")
+    set_property(CACHE OPENSSL_DOWNLOAD_VERSION PROPERTY STRINGS "1.0.1e" "1.0.1l" "1.0.2n" "1.1.1g" "1.1.1w")
 
     set(OpenSSL_1.0.1e_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/sources/openssl-1.0.1e.tar.gz)
     set(OpenSSL_1.0.1e_MD5 66bf6f10f060d561929de96f9dfe5b8c)
@@ -69,6 +69,11 @@ if(NOT DEFINED OPENSSL_LIBRARIES
     # See https://github.com/openssl/openssl/pull/12238
     set(OpenSSL_1.1.1g_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/sources/openssl-1.1.1g-pr12238.tar.gz)
     set(OpenSSL_1.1.1g_MD5 4765dcd60bcbed784c59ad7c2ca2b841)
+
+    # Workaround linking error when building against non-system zlib on macOS
+    # See https://github.com/openssl/openssl/pull/12238
+    set(OpenSSL_1.1.1w_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/sources/openssl-1.1.1w-pr12238.tar.gz)
+    set(OpenSSL_1.1.1w_MD5 6d9543e9fbfac5914a8597e3a14c4ece)
 
     if(NOT DEFINED OpenSSL_${OPENSSL_DOWNLOAD_VERSION}_URL)
       message(FATAL_ERROR "There is no source version of OpenSSL ${OPENSSL_DOWNLOAD_VERSION} available.
@@ -213,15 +218,15 @@ ExternalProject_Execute(${proj} \"build\" make \${jflag} build_libs)
     # libraries.
     #
     # We found out that '/MD' was used by inspecting the the file 'ms/ntdll.mak'
-    # generated atfer configuring OpenSSL.
+    # generated after configuring OpenSSL.
     #
     # If you find mistake in this explanation, do not hesitate to submit a patch
     # to fix this text. Thanks.
     #
     # [1] Script used to compile OpenSSL: https://gist.github.com/jcfr/6030240
-    # [2] http://siomsystems.com/mixing-visual-studio-versions/
-    # [3] http://bytes.com/topic/net/answers/505515-compile-different-versions-visual-studio
-    # [4] http://msdn.microsoft.com/en-us/library/2kzt1wy3.aspx
+    # [2] https://siomsystems.com/mixing-visual-studio-versions/
+    # [3] https://bytes.com/topic/net/answers/505515-compile-different-versions-visual-studio
+    # [4] https://msdn.microsoft.com/en-us/library/2kzt1wy3.aspx
 
     set(_error_msg "There is no pre-compiled version of OpenSSL ${OPENSSL_DOWNLOAD_VERSION} available for
 this version of visual studio [${MSVC_VERSION}]. You could either:
@@ -245,7 +250,7 @@ this version of visual studio [${MSVC_VERSION}]. You could either:
       # VS2013
       set(OpenSSL_1.0.1h_1800_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/1.0.1h/OpenSSL_1_0_1h-install-msvc1800-32.tar.gz)
       set(OpenSSL_1.0.1h_1800_MD5 f10ceb422ab37f2b0bd5e225c74fd1d4)
-      # VS2015, VS2017 and VS2019
+      # VS2015, VS2017, VS2019 and VS2022
       if(${MSVC_VERSION} VERSION_GREATER_EQUAL 1900)
         set(OpenSSL_1.0.1h_${MSVC_VERSION}_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/1.0.1h/OpenSSL_1_0_1h-install-msvc1900-32.tar.gz)
         set(OpenSSL_1.0.1h_${MSVC_VERSION}_MD5 e0e26ae6ac5693d266c804e738d7aa14)
@@ -263,7 +268,7 @@ this version of visual studio [${MSVC_VERSION}]. You could either:
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 8) # 64-bit
 
       # OpenSSL 1.1.1g
-      # VS2015, VS2017 and VS2019
+      # VS2015, VS2017, VS2019 and VS2022
       if(${MSVC_VERSION} VERSION_GREATER_EQUAL 1900)
         set(OpenSSL_1.1.1g_${MSVC_VERSION}_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/1.1.1g/OpenSSL_1_1_1g-install-msvc1900-64.tar.gz)
         set(OpenSSL_1.1.1g_${MSVC_VERSION}_MD5 f89ea6a4fcfb279af30cbe01c1d7f879)
@@ -279,7 +284,7 @@ this version of visual studio [${MSVC_VERSION}]. You could either:
       # VS2013
       set(OpenSSL_1.0.1h_1800_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/1.0.1h/OpenSSL_1_0_1h-install-msvc1800-64.tar.gz)
       set(OpenSSL_1.0.1h_1800_MD5 7aefdd94babefbe603cca48ff86da768)
-      # VS2015, VS2017 and VS2019
+      # VS2015, VS2017, VS2019 and VS2022
       if(${MSVC_VERSION} VERSION_GREATER_EQUAL 1900)
         set(OpenSSL_1.0.1h_${MSVC_VERSION}_URL https://github.com/Slicer/Slicer-OpenSSL/releases/download/1.0.1h/OpenSSL_1_0_1h-install-msvc1900-64.tar.gz)
         set(OpenSSL_1.0.1h_${MSVC_VERSION}_MD5 f93d266def384926015550452573e824)
@@ -318,7 +323,7 @@ this version of visual studio [${MSVC_VERSION}]. You could either:
     set(OpenSSL_DIR ${EP_SOURCE_DIR})
     set(_openssl_base_dir ${OpenSSL_DIR})
     if(DEFINED CMAKE_CONFIGURATION_TYPES)
-      set(OpenSSL_DIR ${OpenSSL_DIR}/${CMAKE_CFG_INTDIR})
+      set(OpenSSL_DIR ${OpenSSL_DIR}/$<CONFIG>)
       set(_copy_release_directory 1)
     else()
       set(OpenSSL_DIR ${OpenSSL_DIR}/${CMAKE_BUILD_TYPE})

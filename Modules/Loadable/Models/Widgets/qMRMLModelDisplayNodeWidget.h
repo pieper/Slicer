@@ -23,6 +23,7 @@
 
 // MRMLWidgets includes
 #include "qMRMLWidget.h"
+#include "qMRMLScalarsDisplayWidget.h"
 
 // CTK includes
 #include <ctkVTKObject.h>
@@ -41,11 +42,7 @@ class Q_SLICER_QTMODULES_MODELS_WIDGETS_EXPORT qMRMLModelDisplayNodeWidget : pub
   Q_OBJECT
   QVTK_OBJECT
 
-  Q_PROPERTY(ControlMode scalarRangeMode READ scalarRangeMode WRITE setScalarRangeMode)
-  Q_PROPERTY(double minimumValue READ minimumValue WRITE setMinimumValue)
-  Q_PROPERTY(double maximumValue READ maximumValue WRITE setMaximumValue)
   Q_PROPERTY(bool clippingConfigurationButtonVisible READ clippingConfigurationButtonVisible WRITE setClippingConfigurationButtonVisible)
-  Q_ENUMS(ControlMode)
 
 public:
   typedef qMRMLWidget Superclass;
@@ -53,49 +50,24 @@ public:
   ~qMRMLModelDisplayNodeWidget() override;
 
   /// Get model display node (if model was selected not folder)
-  vtkMRMLModelDisplayNode* mrmlModelDisplayNode()const;
+  vtkMRMLModelDisplayNode* mrmlModelDisplayNode() const;
   /// Get current display node (may be model or folder display node)
-  vtkMRMLDisplayNode* mrmlDisplayNode()const;
+  vtkMRMLDisplayNode* mrmlDisplayNode() const;
   /// Get current item (if single selection)
-  vtkIdType currentSubjectHierarchyItemID()const;
+  vtkIdType currentSubjectHierarchyItemID() const;
   /// Get current items (if multi selection)
-  QList<vtkIdType> currentSubjectHierarchyItemIDs()const;
+  QList<vtkIdType> currentSubjectHierarchyItemIDs() const;
 
-  bool visibility()const;
-  bool clipping()const;
-  bool sliceIntersectionVisible()const;
-  int sliceIntersectionThickness()const;
-  double sliceIntersectionOpacity()const;
-  bool clippingConfigurationButtonVisible()const;
-
-  bool scalarsVisibility()const;
-  QString activeScalarName()const;
-  vtkMRMLColorNode* scalarsColorNode()const;
-
-  enum ControlMode
-  {
-    Data = 0,
-    LUT = 1,
-    DataType = 2,
-    Manual = 3,
-    DirectMapping = 4
-  };
-
-  /// Set scalar range mode
-  void setScalarRangeMode(ControlMode controlMode);
-  ControlMode scalarRangeMode() const;
-
-  /// Get minimum of the scalar display range
-  double minimumValue()const;
-
-  /// Get maximum of the scalar display range
-  double maximumValue()const;
+  bool visibility() const;
+  bool clipping() const;
+  bool sliceIntersectionVisible() const;
+  int sliceIntersectionThickness() const;
+  double sliceIntersectionOpacity() const;
+  bool clippingConfigurationButtonVisible() const;
 
 signals:
-  /// Signal sent if the min/max value is updated
-  void minMaxValuesChanged(double min, double max);
   /// Signal sent if the auto/manual value is updated
-  void scalarRangeModeValueChanged(ControlMode value);
+  void scalarRangeModeValueChanged(vtkMRMLDisplayNode::ScalarRangeFlagType value);
   /// Signal sent if the any property in the display node is changed
   void displayNodeChanged();
   /// Signal sent if user toggles clipping checkbox on the GUI
@@ -104,6 +76,8 @@ signals:
   void clippingConfigurationButtonClicked();
 
 public slots:
+  /// Set the scene.
+  void setMRMLScene(vtkMRMLScene* newScene) override;
   /// Set the model display node
   void setMRMLModelDisplayNode(vtkMRMLModelDisplayNode* node);
   /// Utility function to be connected with generic signals
@@ -144,21 +118,6 @@ public slots:
   void setEdgeColor(const QColor&);
   void setLighting(bool);
   void setInterpolation(int);
-
-  void setScalarsVisibility(bool);
-  void setActiveScalarName(const QString&);
-  void setScalarsColorNode(vtkMRMLNode*);
-  void setScalarsColorNode(vtkMRMLColorNode*);
-  void setScalarsDisplayRange(double min, double max);
-  void setTresholdEnabled(bool b);
-  void setThresholdRange(double min, double max);
-
-  /// Set Auto/Manual mode
-  void setScalarRangeMode(int scalarRangeMode);
-
-  /// Set min/max of scalar range
-  void setMinimumValue(double min);
-  void setMaximumValue(double max);
 
   /// Show/hide "Configure..." button for clipping
   void setClippingConfigurationButtonVisible(bool);

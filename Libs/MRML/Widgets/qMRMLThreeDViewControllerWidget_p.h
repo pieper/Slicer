@@ -47,7 +47,7 @@
 class QAction;
 class ctkButtonGroup;
 class ctkSignalMapper;
-class qMRMLSceneViewMenu;
+class ctkSliderWidget;
 class vtkMRMLCameraNode;
 class vtkMRMLViewNode;
 class QString;
@@ -58,31 +58,40 @@ class qMRMLThreeDViewControllerWidgetPrivate
   , public Ui_qMRMLThreeDViewControllerWidget
 {
   Q_DECLARE_PUBLIC(qMRMLThreeDViewControllerWidget);
+
 public:
   typedef qMRMLViewControllerBarPrivate Superclass;
   qMRMLThreeDViewControllerWidgetPrivate(qMRMLThreeDViewControllerWidget& object);
   ~qMRMLThreeDViewControllerWidgetPrivate() override;
 
   void init() override;
+  void setupShadowsMenu();
 
   vtkMRMLViewLogic* viewNodeLogic(vtkMRMLViewNode* node);
 
-  vtkWeakPointer<vtkMRMLViewNode>     ViewNode;
-  vtkWeakPointer<vtkMRMLCameraNode>   CameraNode;
-  qMRMLThreeDView*                    ThreeDView;
+  vtkWeakPointer<vtkMRMLCameraNode> CameraNode;
+  qMRMLThreeDView* ThreeDView;
 
-  vtkSmartPointer<vtkMRMLViewLogic>   ViewLogic;
-  vtkCollection*                      ViewLogics;
+  QMenu* ShadowsMenu;
+  QMenu* AmbientShadowsSizeScaleMenu;
+  QMenu* AmbientShadowsVolumeOpacityThresholdMenu;
+  QMenu* AmbientShadowsIntensityScaleMenu;
+  QMenu* AmbientShadowsIntensityShiftMenu;
+  ctkSliderWidget* AmbientShadowsSizeScaleSlider;
+  ctkSliderWidget* AmbientShadowsVolumeOpacityThresholdPercentSlider;
+  ctkSliderWidget* AmbientShadowsIntensityScaleSlider;
+  ctkSliderWidget* AmbientShadowsIntensityShiftSlider;
 
-  ctkSignalMapper*                    StereoTypesMapper;
-  ctkButtonGroup*                     AnimateViewButtonGroup;
-  ctkSignalMapper*                    OrientationMarkerTypesMapper;
-  ctkSignalMapper*                    OrientationMarkerSizesMapper;
-  ctkSignalMapper*                    RulerTypesMapper;
-  ctkSignalMapper*                    RulerColorMapper;
+  vtkSmartPointer<vtkMRMLViewLogic> ViewLogic;
 
-  QString                             ThreeDViewLabel;
-  QToolButton*                        CenterToolButton;
+  ctkSignalMapper* StereoTypesMapper;
+  ctkButtonGroup* AnimateViewButtonGroup;
+  ctkSignalMapper* OrientationMarkerTypesMapper;
+  ctkSignalMapper* OrientationMarkerSizesMapper;
+  ctkSignalMapper* RulerTypesMapper;
+  ctkSignalMapper* RulerColorMapper;
+
+  QToolButton* CenterToolButton;
 
 protected:
   void setupPopupUi() override;

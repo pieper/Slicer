@@ -26,7 +26,7 @@ class ModuleDescription;
 class VTK_MRML_CLI_EXPORT vtkMRMLCommandLineModuleNode : public vtkMRMLNode
 {
 public:
-  static vtkMRMLCommandLineModuleNode *New();
+  static vtkMRMLCommandLineModuleNode* New();
   vtkTypeMacro(vtkMRMLCommandLineModuleNode, vtkMRMLNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -43,11 +43,11 @@ public:
   vtkMRMLCopyContentMacro(vtkMRMLCommandLineModuleNode);
 
   /// Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override
-    {return "CommandLineModule";}
+  const char* GetNodeTagName() override { return "CommandLineModule"; }
 
   /// List of events that can be fired on or by the node.
-  enum CLINodeEvent{
+  enum CLINodeEvent
+  {
     /// Event invoked anytime a parameter value is changed.
     /// \sa InputParameterModifiedEvent, SetParameterAsString(),
     /// SetParameterAsNode(), SetParameterAsInt(), SetParameterAsBool(),
@@ -73,32 +73,33 @@ public:
   std::string GetModuleDescriptionAsString() const;
   void SetModuleDescription(const ModuleDescription& description);
 
-  typedef enum {
+  enum StatusType
+  {
     /// Initial state of the CLI.
-    Idle=0x00,
+    Idle = 0x00,
     /// State when the CLI has been requested to be executed.
-    Scheduled=0x01,
+    Scheduled = 0x01,
     /// State when the CLI is being executed.
-    Running=0x02,
+    Running = 0x02,
     /// State when the CLI has been requested to be cancelled.
-    Cancelling=0x04,
+    Cancelling = 0x04,
     /// State when the CLI is no longer being executed because
     /// Cancelling has been requested.
     /// Do not set manually, use Cancel() instead.
-    Cancelled=0x08,
+    Cancelled = 0x08,
     /// State when the CLI has been successfully executed and is in a finishing
     /// state that loads the outputs into the scene.
-    Completing=0x10,
+    Completing = 0x10,
     /// State when the CLI has been successfully executed and outputs are
     /// loaded in the scene.
-    Completed=0x20,
+    Completed = 0x20,
     /// Mask applied when the CLI has been executed with errors
-    ErrorsMask=0x40,
+    ErrorsMask = 0x40,
     /// State when the CLI has been executed with errors
-    CompletedWithErrors= Completed | ErrorsMask,
+    CompletedWithErrors = Completed | ErrorsMask,
     /// Mask used to know if the CLI is in pending mode.
     BusyMask = Scheduled | Running | Cancelling | Completing
-  } StatusType;
+  };
 
   /// Set the status of the node (Idle, Scheduled, Running,
   /// Completed).  The "modify" parameter indicates whether the object
@@ -107,30 +108,56 @@ public:
   /// events because it would refresh the GUI from the thread.
   /// Do not call manually, only the logic should change the status of the node.
   /// \sa GetStatus(), GetStatusString(), IsBusy(), Cancel()
-  void SetStatus(int status, bool modify=true);
+  void SetStatus(int status, bool modify = true);
   /// \sa SetStatus(), GetStatusString(), IsBusy()
   int GetStatus() const;
 
-  /// Return current status as a string for display.
-  /// \sa GetStatus(), IsBusy()
+  /// Return current status as a string. Not translated.
+  /// \sa GetStatus(), IsBusy(), GetDisplayableStatusString()
   const char* GetStatusString() const;
 
-  /// Set output messages generated during latest execution.
-  void SetOutputText(const std::string& text, bool modify = true);
-  /// Set output messages generated during latest execution.
-  const std::string GetOutputText() const;
+  /// Return current status as a string for display (translated to current language).
+  /// \sa GetStatusString()
+  std::string GetDisplayableStatusString() const;
 
-  /// Set error messages generated during latest execution.
+  //@{
+  /// Start/stop continuous updating of output and error texts during execution.
+  ///
+  /// If ContinuousOutputUpdate is not active then output and error texts are only
+  /// updated when execution is completed. If continuous update is active, then
+  /// output and error texts are updated continuously, which may be useful
+  /// for close monitoring of the execution, but may impact the performance
+  /// if the process output is very long.
+  ///
+  /// Modified event is not invoked when the value is changed and
+  /// the value is not stored persistently in the scene file.
+  void StartContinuousOutputUpdate();
+  void EndContinuousOutputUpdate();
+  bool IsContinuousOutputUpdate();
+  //@}
+
+  //@{
+  /// Get/set output text generated during latest execution.
+  /// This value is not stored persistently in the scene file.
+  /// It is safe to call this method from a non-main thread (with modify=false).
+  void SetOutputText(const std::string& text, bool modify = true);
+  std::string GetOutputText() const;
+  //@}
+
+  //@{
+  /// Get/set error text generated during latest execution.
+  /// This value is not stored persistently in the scene file.
+  /// It is safe to call this method from a non-main thread (with modify=false).
   void SetErrorText(const std::string& text, bool modify = true);
-  /// Get error messages generated during latest execution.
-  const std::string GetErrorText() const;
+  std::string GetErrorText() const;
+  //@}
 
   /// Return true if the module is in a busy state: Scheduled, Running,
   /// Cancelling, Completing.
   /// \sa SetStatus(), GetStatus(), BusyMask, Cancel()
-  bool IsBusy()const;
+  bool IsBusy() const;
 
-  int GetProgress()const;
+  int GetProgress() const;
 
   /// Set a request to stop the processing of the CLI.
   /// Do nothing if the module is not "busy".
@@ -172,7 +199,7 @@ public:
 
   /// Return true if the AutoRun is enabled, false otherwise.
   /// \sa SetAutoRun(), AutoRunMode, GetAutoRunDelay()
-  bool GetAutoRun()const;
+  bool GetAutoRun() const;
 
   /// Set the auto running flags for the node.
   /// The behavior is ensured by the CLI logic. AutoRun is not enabled until
@@ -183,29 +210,29 @@ public:
 
   /// Return the AutoRun mode flags.
   /// \sa AutoRunMode, SetAutoRunMode(), GetAutoRun(), GetAutoRunDelay()
-  int GetAutoRunMode()const;
+  int GetAutoRunMode() const;
 
-  /// Set the number of msecs to wait before automatically running
-  /// the module. 1000msecs by default.
+  /// Set the delay (in milliseconds) to wait before automatically running
+  /// the module. 1000 ms by default.
   /// \sa GetAutoRunDelay(), SetAutoRun(), SetAutoRunMode()
   void SetAutoRunDelay(unsigned int delayInMs);
 
   /// Return the number of msecs to wait before automatically running
   /// the module.
   /// \sa SetAutoRunDelay(), GetAutoRun(), GetAutoRunMode()
-  unsigned int GetAutoRunDelay()const;
+  unsigned int GetAutoRunDelay() const;
 
   /// Return the last time the module was ran.
   /// \sa GetParameterMTime(), GetInputMTime(), GetMTime()
-  vtkMTimeType GetLastRunTime()const;
+  vtkMTimeType GetLastRunTime() const;
 
   /// Return the last time a parameter was modified
   /// \sa GetInputMTime(), GetMTime()
-  vtkMTimeType GetParameterMTime()const;
+  vtkMTimeType GetParameterMTime() const;
 
   /// Return the last time an input parameter was modified.
   /// \sa GetParameterMTime(), GetMTime()
-  vtkMTimeType GetInputMTime()const;
+  vtkMTimeType GetInputMTime() const;
 
   /// Read a parameter file. This will set any parameters that
   /// parameters in this ModuleDescription.
@@ -247,7 +274,7 @@ public:
 
   std::string GetParameterAsString(const char* name) const;
 
-  void SetModuleDescription(const char *name);
+  void SetModuleDescription(const char* name);
   std::string GetModuleVersion() const;
   std::string GetModuleTitle() const;
   std::string GetModuleTarget() const;
@@ -282,7 +309,7 @@ public:
   /// Returns true if the value is a default value for a parameter that is not
   /// an output parameter.
   /// \sa SetAutoRun
-  bool IsInputDefaultValue(const std::string& value)const;
+  bool IsInputDefaultValue(const std::string& value) const;
 
   /// Methods to manage the master list of module description prototypes
   static int GetNumberOfRegisteredModules();
@@ -293,10 +320,12 @@ public:
 
   /// Reimplemented for internal reasons.
   void Modified() override;
+
 protected:
   void AbortProcess();
-  void ProcessMRMLEvents(vtkObject *caller, unsigned long event,
-                                 void *callData) override;
+  void ProcessMRMLEvents(vtkObject* caller, unsigned long event, void* callData) override;
+
+  int ContinuousOutputUpdateInProgressCount{ 0 };
 
 private:
   vtkMRMLCommandLineModuleNode();
@@ -305,7 +334,7 @@ private:
   void operator=(const vtkMRMLCommandLineModuleNode&) = delete;
 
   class vtkInternal;
-  vtkInternal * Internal;
+  vtkInternal* Internal;
 };
 
 #endif

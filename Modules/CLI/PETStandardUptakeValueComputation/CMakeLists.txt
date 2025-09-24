@@ -26,7 +26,13 @@ set(${PROJECT_NAME}_ITK_COMPONENTS
   ${ModuleDescriptionParser_ITK_COMPONENTS}
   )
 find_package(ITK 4.6 COMPONENTS ${${PROJECT_NAME}_ITK_COMPONENTS} REQUIRED)
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 include(${ITK_USE_FILE})
 
 #-----------------------------------------------------------------------------
@@ -35,13 +41,18 @@ set(${MODULE_NAME}_TARGET_LIBRARIES
   MRMLCore SlicerBaseLogic SlicerBaseCLI
   ${ITK_LIBRARIES}
   ${VTK_LIBRARIES}
-  ${DCMTK_LIBRARIES}
   )
+foreach(lib IN LISTS DCMTK_LIBRARIES)
+  if(TARGET "DCMTK::${lib}")
+    list(APPEND ${MODULE_NAME}_TARGET_LIBRARIES DCMTK::${lib})
+  else()
+    list(APPEND ${MODULE_NAME}_TARGET_LIBRARIES ${lib})
+  endif()
+endforeach()
 
 #-----------------------------------------------------------------------------
 SEMMacroBuildCLI(
   NAME ${MODULE_NAME}
-  ADDITIONAL_SRCS itkDCMTKFileReader.cxx
   LOGO_HEADER ${Slicer_SOURCE_DIR}/Resources/NAMICLogo.h
   # LOGO_HEADER ${Slicer_SOURCE_DIR}/Resources/CTSCLogo.h
   TARGET_LIBRARIES ${${MODULE_NAME}_TARGET_LIBRARIES}

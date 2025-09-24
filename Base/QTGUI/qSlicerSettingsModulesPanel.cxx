@@ -30,6 +30,7 @@
 #include "qSlicerModuleManager.h"
 #include "qSlicerModulesMenu.h"
 #include "qSlicerModuleSelectorToolBar.h"
+#include "qSlicerRelativePathMapper.h"
 #include "qSlicerSettingsModulesPanel.h"
 #include "ui_qSlicerSettingsModulesPanel.h"
 
@@ -37,9 +38,10 @@
 // qSlicerSettingsModulesPanelPrivate
 
 //-----------------------------------------------------------------------------
-class qSlicerSettingsModulesPanelPrivate: public Ui_qSlicerSettingsModulesPanel
+class qSlicerSettingsModulesPanelPrivate : public Ui_qSlicerSettingsModulesPanel
 {
   Q_DECLARE_PUBLIC(qSlicerSettingsModulesPanel);
+
 protected:
   qSlicerSettingsModulesPanel* const q_ptr;
 
@@ -56,7 +58,7 @@ public:
 
 // --------------------------------------------------------------------------
 qSlicerSettingsModulesPanelPrivate::qSlicerSettingsModulesPanelPrivate(qSlicerSettingsModulesPanel& object)
-  :q_ptr(&object)
+  : q_ptr(&object)
 {
   this->ModulesMenu = nullptr;
 }
@@ -68,31 +70,23 @@ void qSlicerSettingsModulesPanelPrivate::init()
 
   this->setupUi(q);
 
-  qSlicerCoreApplication * coreApp = qSlicerCoreApplication::application();
+  qSlicerCoreApplication* coreApp = qSlicerCoreApplication::application();
   qSlicerAbstractModuleFactoryManager* factoryManager = coreApp->moduleManager()->factoryManager();
 
   // Show Hidden
-  QObject::connect(this->ShowHiddenModulesCheckBox, SIGNAL(toggled(bool)),
-                   q, SLOT(onShowHiddenModulesChanged(bool)));
+  QObject::connect(this->ShowHiddenModulesCheckBox, SIGNAL(toggled(bool)), q, SLOT(onShowHiddenModulesChanged(bool)));
 
   // Additional module paths
   this->AdditionalModulePathMoreButton->setChecked(false);
 
   // Modules
-  qSlicerModuleFactoryFilterModel* filterModel =
-    this->DisableModulesListView->filterModel();
-  QObject::connect(this->FilterToLoadPushButton, SIGNAL(toggled(bool)),
-                   filterModel, SLOT(setShowToLoad(bool)));
-  QObject::connect(this->FilterToIgnorePushButton, SIGNAL(toggled(bool)),
-                   filterModel, SLOT(setShowToIgnore(bool)));
-  QObject::connect(this->FilterLoadedPushButton, SIGNAL(toggled(bool)),
-                   filterModel, SLOT(setShowLoaded(bool)));
-  QObject::connect(this->FilterIgnoredPushButton, SIGNAL(toggled(bool)),
-                   filterModel, SLOT(setShowIgnored(bool)));
-  QObject::connect(this->FilterFailedPushButton, SIGNAL(toggled(bool)),
-                   filterModel, SLOT(setShowFailed(bool)));
-  QObject::connect(this->FilterTitleSearchBox, SIGNAL(textChanged(QString)),
-                   filterModel, SLOT(setFilterFixedString(QString)));
+  qSlicerModuleFactoryFilterModel* filterModel = this->DisableModulesListView->filterModel();
+  QObject::connect(this->FilterToLoadPushButton, SIGNAL(toggled(bool)), filterModel, SLOT(setShowToLoad(bool)));
+  QObject::connect(this->FilterToIgnorePushButton, SIGNAL(toggled(bool)), filterModel, SLOT(setShowToIgnore(bool)));
+  QObject::connect(this->FilterLoadedPushButton, SIGNAL(toggled(bool)), filterModel, SLOT(setShowLoaded(bool)));
+  QObject::connect(this->FilterIgnoredPushButton, SIGNAL(toggled(bool)), filterModel, SLOT(setShowIgnored(bool)));
+  QObject::connect(this->FilterFailedPushButton, SIGNAL(toggled(bool)), filterModel, SLOT(setShowFailed(bool)));
+  QObject::connect(this->FilterTitleSearchBox, SIGNAL(textChanged(QString)), filterModel, SLOT(setFilterFixedString(QString)));
 
   this->FilterMoreButton->setChecked(false); // hide filters by default
 
@@ -100,94 +94,110 @@ void qSlicerSettingsModulesPanelPrivate::init()
   this->ModulesMenu = new qSlicerModulesMenu(q);
   this->ModulesMenu->setDuplicateActions(true);
   this->HomeModuleButton->setMenu(this->ModulesMenu);
-  QObject::connect(this->ModulesMenu, SIGNAL(currentModuleChanged(QString)),
-                   q, SLOT(onHomeModuleChanged(QString)));
+  QObject::connect(this->ModulesMenu, SIGNAL(currentModuleChanged(QString)), q, SLOT(onHomeModuleChanged(QString)));
   this->ModulesMenu->setModuleManager(coreApp->moduleManager());
 
   // Favorites
   this->FavoritesModulesListView->filterModel()->setHideAllWhenShowModulesIsEmpty(true);
   this->FavoritesMoveLeftButton->setIcon(q->style()->standardIcon(QStyle::SP_ArrowLeft));
   this->FavoritesMoveRightButton->setIcon(q->style()->standardIcon(QStyle::SP_ArrowRight));
-  QObject::connect(this->FavoritesRemoveButton, SIGNAL(clicked()),
-                   this->FavoritesModulesListView, SLOT(hideSelectedModules()));
-  QObject::connect(this->FavoritesMoveLeftButton, SIGNAL(clicked()),
-                   this->FavoritesModulesListView, SLOT(moveLeftSelectedModules()));
-  QObject::connect(this->FavoritesMoveRightButton, SIGNAL(clicked()),
-                   this->FavoritesModulesListView, SLOT(moveRightSelectedModules()));
-  QObject::connect(this->FavoritesMoreButton, SIGNAL(toggled(bool)),
-                   this->FavoritesModulesListView, SLOT(scrollToSelectedModules()));
+  QObject::connect(this->FavoritesRemoveButton, SIGNAL(clicked()), this->FavoritesModulesListView, SLOT(hideSelectedModules()));
+  QObject::connect(this->FavoritesMoveLeftButton, SIGNAL(clicked()), this->FavoritesModulesListView, SLOT(moveLeftSelectedModules()));
+  QObject::connect(this->FavoritesMoveRightButton, SIGNAL(clicked()), this->FavoritesModulesListView, SLOT(moveRightSelectedModules()));
+  QObject::connect(this->FavoritesMoreButton, SIGNAL(toggled(bool)), this->FavoritesModulesListView, SLOT(scrollToSelectedModules()));
   this->FavoritesMoreButton->setChecked(false);
 
   // Default values
-  this->PreferExecutableCLICheckBox->setChecked(Slicer_CLI_PREFER_EXECUTABLE_DEFAULT);
   this->TemporaryDirectoryButton->setDirectory(coreApp->defaultTemporaryPath());
-  this->DisableModulesListView->setFactoryManager( factoryManager );
-  this->FavoritesModulesListView->setFactoryManager( factoryManager );
-  
+  this->DisableModulesListView->setFactoryManager(factoryManager);
+  this->FavoritesModulesListView->setFactoryManager(factoryManager);
+
   this->ModulesMenu->setCurrentModule(Slicer_DEFAULT_HOME_MODULE);
-  
-  // Slicer_DEFAULT_FAVORITE_MODULES contains module names in a comma-separated list 
+
+  // Allow reordering of favorite modules by drag-and-drop within the favorite modules list
+  this->FavoritesModulesListView->filterModel()->setDynamicSortFilter(false);
+  // Slicer_DEFAULT_FAVORITE_MODULES contains module names in a comma-separated list
   // (chosen this format because the same format is used for storing the favorites list in the .ini file).
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QStringList favoritesRaw = QString(Slicer_DEFAULT_FAVORITE_MODULES).split(",", Qt::SkipEmptyParts);
+#else
   QStringList favoritesRaw = QString(Slicer_DEFAULT_FAVORITE_MODULES).split(",", QString::SkipEmptyParts);
+#endif
   // The separator commas have been removed, but we also need need to remove leading and trailing spaces from the retrieved names.
   QStringList favorites;
-  foreach(QString s, favoritesRaw)
-    {
+  for (const QString& s : favoritesRaw)
+  {
     favorites << s.trimmed();
-    }
+  }
   this->FavoritesModulesListView->filterModel()->setShowModules(favorites);
 
   // Register settings
-  q->registerProperty("disable-loadable-modules", this->LoadLoadableModulesCheckBox,
-                      "checked", SIGNAL(toggled(bool)));
-  q->registerProperty("disable-scripted-loadable-modules", this->LoadScriptedLoadableModulesCheckBox,
-                      "checked", SIGNAL(toggled(bool)));
-  q->registerProperty("disable-cli-modules", this->LoadCommandLineModulesCheckBox,
-                      "checked", SIGNAL(toggled(bool)));
+  q->registerProperty("disable-loadable-modules",
+                      this->LoadLoadableModulesCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)));
+  q->registerProperty("disable-scripted-loadable-modules",
+                      this->LoadScriptedLoadableModulesCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)));
+  q->registerProperty("disable-cli-modules",
+                      this->LoadCommandLineModulesCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)));
 
-  q->registerProperty("disable-builtin-loadable-modules", this->LoadBuiltInLoadableModulesCheckBox,
-                      "checked", SIGNAL(toggled(bool)));
-  q->registerProperty("disable-builtin-scripted-loadable-modules", this->LoadBuiltInScriptedLoadableModulesCheckBox,
-                      "checked", SIGNAL(toggled(bool)));
-  q->registerProperty("disable-builtin-cli-modules", this->LoadBuiltInCommandLineModulesCheckBox,
-                      "checked", SIGNAL(toggled(bool)));
+  q->registerProperty("disable-builtin-loadable-modules",
+                      this->LoadBuiltInLoadableModulesCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)));
+  q->registerProperty("disable-builtin-scripted-loadable-modules",
+                      this->LoadBuiltInScriptedLoadableModulesCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)));
+  q->registerProperty("disable-builtin-cli-modules",
+                      this->LoadBuiltInCommandLineModulesCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)));
 
-  q->registerProperty("Modules/PreferExecutableCLI", this->PreferExecutableCLICheckBox,
-                      "checked", SIGNAL(toggled(bool)));
-  q->registerProperty("Modules/HomeModule", this->ModulesMenu,
-                      "currentModule", SIGNAL(currentModuleChanged(QString)));
-  q->registerProperty("Modules/FavoriteModules", this->FavoritesModulesListView->filterModel(),
-                      "showModules", SIGNAL(showModulesChanged(QStringList)));
-  q->registerProperty("Modules/TemporaryDirectory", this->TemporaryDirectoryButton,
-                      "directory", SIGNAL(directoryChanged(QString)));
-  q->registerProperty("Modules/ShowHiddenModules", this->ShowHiddenModulesCheckBox,
-                      "checked", SIGNAL(toggled(bool)));
-  q->registerProperty("Modules/AdditionalPaths", this->AdditionalModulePathsView,
-                      "directoryList", SIGNAL(directoryListChanged()),
-                      "Additional module paths", ctkSettingsPanel::OptionRequireRestart,
+  q->registerProperty("Modules/HomeModule", this->ModulesMenu, "currentModule", SIGNAL(currentModuleChanged(QString)));
+  q->registerProperty("Modules/FavoriteModules", this->FavoritesModulesListView->filterModel(), "showModules", SIGNAL(showModulesChanged(QStringList)));
+  // Emit signal when favorite modules are updated to allow immediate update of the application GUI
+  // (e.g., favorite module toolbar)
+  QObject::connect(this->FavoritesModulesListView->filterModel(), SIGNAL(showModulesChanged(QStringList)), q, SIGNAL(favoriteModulesChanged()));
+
+  qSlicerRelativePathMapper* relativePathMapper = new qSlicerRelativePathMapper(this->TemporaryDirectoryButton, /*no tr*/ "directory", SIGNAL(directoryChanged(QString)));
+  q->registerProperty("TemporaryPath", relativePathMapper, "relativePath", SIGNAL(relativePathChanged(QString)));
+  q->registerProperty("Modules/ShowHiddenModules",
+                      this->ShowHiddenModulesCheckBox,
+                      /*no tr*/ "checked",
+                      SIGNAL(toggled(bool)));
+  qSlicerRelativePathMapper* relativePathMapper2 = new qSlicerRelativePathMapper(this->AdditionalModulePathsView, "directoryList", SIGNAL(directoryListChanged()));
+  q->registerProperty("Modules/AdditionalPaths",
+                      relativePathMapper2,
+                      "relativePaths",
+                      SIGNAL(relativePathsChanged(QStringList)),
+                      qSlicerSettingsModulesPanel::tr("Additional module paths"),
+                      ctkSettingsPanel::OptionRequireRestart,
                       coreApp->revisionUserSettings());
 
   this->ModulesToAlwaysIgnore = coreApp->revisionUserSettings()->value("Modules/IgnoreModules").toStringList();
   emit q->modulesToAlwaysIgnoreChanged(this->ModulesToAlwaysIgnore);
 
-  q->registerProperty("Modules/IgnoreModules", q,
-                      "modulesToAlwaysIgnore", SIGNAL(modulesToAlwaysIgnoreChanged(QStringList)),
-                      "Modules to ignore", ctkSettingsPanel::OptionRequireRestart,
+  q->registerProperty("Modules/IgnoreModules",
+                      q,
+                      "modulesToAlwaysIgnore",
+                      SIGNAL(modulesToAlwaysIgnoreChanged(QStringList)),
+                      qSlicerSettingsModulesPanel::tr("Modules to ignore"),
+                      ctkSettingsPanel::OptionRequireRestart,
                       coreApp->revisionUserSettings());
-  QObject::connect(factoryManager, SIGNAL(modulesToIgnoreChanged(QStringList)),
-                   q, SLOT(setModulesToAlwaysIgnore(QStringList)));
+  QObject::connect(factoryManager, SIGNAL(modulesToIgnoreChanged(QStringList)), q, SLOT(setModulesToAlwaysIgnore(QStringList)));
 
   // Actions to propagate to the application when settings are changed
-  QObject::connect(this->TemporaryDirectoryButton, SIGNAL(directoryChanged(QString)),
-                   q, SLOT(onTemporaryPathChanged(QString)));
-  QObject::connect(this->AdditionalModulePathsView, SIGNAL(directoryListChanged()),
-                   q, SLOT(onAdditionalModulePathsChanged()));
+  QObject::connect(this->TemporaryDirectoryButton, SIGNAL(directoryChanged(QString)), q, SLOT(onTemporaryPathChanged(QString)));
+  QObject::connect(this->AdditionalModulePathsView, SIGNAL(directoryListChanged()), q, SLOT(onAdditionalModulePathsChanged()));
 
   // Connect AdditionalModulePaths buttons
-  QObject::connect(this->AddAdditionalModulePathButton, SIGNAL(clicked()),
-                   q, SLOT(onAddModulesAdditionalPathClicked()));
-  QObject::connect(this->RemoveAdditionalModulePathButton, SIGNAL(clicked()),
-                   q, SLOT(onRemoveModulesAdditionalPathClicked()));
+  QObject::connect(this->AddAdditionalModulePathButton, SIGNAL(clicked()), q, SLOT(onAddModulesAdditionalPathClicked()));
+  QObject::connect(this->RemoveAdditionalModulePathButton, SIGNAL(clicked()), q, SLOT(onRemoveModulesAdditionalPathClicked()));
 }
 
 // --------------------------------------------------------------------------
@@ -223,30 +233,30 @@ void qSlicerSettingsModulesPanel::setModulesToAlwaysIgnore(const QStringList& mo
   // list.
 
   if (d->ModulesToAlwaysIgnore == moduleNames)
-    {
+  {
     return;
-    }
+  }
 
   // Ensure the ModulesListView observing the factoryManager is updated
   // when settings are restored.
-  qSlicerCoreApplication * coreApp = qSlicerCoreApplication::application();
+  qSlicerCoreApplication* coreApp = qSlicerCoreApplication::application();
   coreApp->moduleManager()->factoryManager()->setModulesToIgnore(moduleNames);
 
   // Update the list of modules to ignore removing the one
   // specified from the command line.
   QStringList updatedModulesToAlwaysIgnore;
-  foreach(const QString& moduleName, moduleNames)
-    {
+  for (const QString& moduleName : moduleNames)
+  {
     if (!coreApp->coreCommandOptions()->modulesToIgnore().contains(moduleName))
-      {
+    {
       updatedModulesToAlwaysIgnore.append(moduleName);
-      }
     }
+  }
 
   if (d->ModulesToAlwaysIgnore == updatedModulesToAlwaysIgnore)
-    {
+  {
     return;
-    }
+  }
 
   d->ModulesToAlwaysIgnore = updatedModulesToAlwaysIgnore;
 
@@ -254,7 +264,7 @@ void qSlicerSettingsModulesPanel::setModulesToAlwaysIgnore(const QStringList& mo
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerSettingsModulesPanel::modulesToAlwaysIgnore()const
+QStringList qSlicerSettingsModulesPanel::modulesToAlwaysIgnore() const
 {
   Q_D(const qSlicerSettingsModulesPanel);
   return d->ModulesToAlwaysIgnore;
@@ -280,39 +290,35 @@ void qSlicerSettingsModulesPanel::onTemporaryPathChanged(const QString& path)
 void qSlicerSettingsModulesPanel::onShowHiddenModulesChanged(bool show)
 {
   QMainWindow* mainWindow = qSlicerApplication::application()->mainWindow();
-  foreach (qSlicerModuleSelectorToolBar* toolBar,
-           mainWindow->findChildren<qSlicerModuleSelectorToolBar*>())
-    {
+  for (qSlicerModuleSelectorToolBar* const toolBar : mainWindow->findChildren<qSlicerModuleSelectorToolBar*>())
+  {
     toolBar->modulesMenu()->setShowHiddenModules(show);
     // refresh the list
-    toolBar->modulesMenu()->setModuleManager(
-      toolBar->modulesMenu()->moduleManager());
-    }
+    toolBar->modulesMenu()->setModuleManager(toolBar->modulesMenu()->moduleManager());
+  }
 }
 
 // --------------------------------------------------------------------------
 void qSlicerSettingsModulesPanel::onAdditionalModulePathsChanged()
 {
   Q_D(qSlicerSettingsModulesPanel);
-  d->RemoveAdditionalModulePathButton->setEnabled(
-        d->AdditionalModulePathsView->directoryList().count() > 0);
+  d->RemoveAdditionalModulePathButton->setEnabled(d->AdditionalModulePathsView->directoryList().count() > 0);
 }
 
 // --------------------------------------------------------------------------
 void qSlicerSettingsModulesPanel::onAddModulesAdditionalPathClicked()
 {
   Q_D(qSlicerSettingsModulesPanel);
-  qSlicerCoreApplication * coreApp = qSlicerCoreApplication::application();
-  QString path = QFileDialog::getExistingDirectory(
-        this, tr("Select folder"),
-        coreApp->revisionUserSettings()->value("Modules/MostRecentlySelectedPath").toString());
+  qSlicerCoreApplication* coreApp = qSlicerCoreApplication::application();
+  QString mostRecentPath = coreApp->toSlicerHomeAbsolutePath(coreApp->revisionUserSettings()->value("Modules/MostRecentlySelectedPath").toString());
+  QString path = QFileDialog::getExistingDirectory(this, tr("Select folder"), mostRecentPath);
   // An empty directory means that the user cancelled the dialog.
   if (path.isEmpty())
-    {
+  {
     return;
-    }
+  }
   d->AdditionalModulePathsView->addDirectory(path);
-  coreApp->revisionUserSettings()->setValue("Modules/MostRecentlySelectedPath", path);
+  coreApp->revisionUserSettings()->setValue("Modules/MostRecentlySelectedPath", coreApp->toSlicerHomeRelativePath(path));
 }
 
 // --------------------------------------------------------------------------
@@ -322,4 +328,3 @@ void qSlicerSettingsModulesPanel::onRemoveModulesAdditionalPathClicked()
   // Remove all selected
   d->AdditionalModulePathsView->removeSelectedDirectories();
 }
-

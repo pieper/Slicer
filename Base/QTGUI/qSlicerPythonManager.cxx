@@ -19,7 +19,8 @@
 #include "qSlicerPythonManager.h"
 
 //-----------------------------------------------------------------------------
-qSlicerPythonManager::qSlicerPythonManager(QObject* _parent) : Superclass(_parent)
+qSlicerPythonManager::qSlicerPythonManager(QObject* _parent)
+  : Superclass(_parent)
 {
 }
 
@@ -37,16 +38,16 @@ void qSlicerPythonManager::executeInitializationScripts()
 {
   qSlicerApplication* app = qSlicerApplication::application();
   if (!app)
-    {
+  {
     return;
-    }
+  }
 
   // Evaluate application script
   this->executeFile(app->slicerHome() + "/bin/Python/slicer/slicerqt.py");
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerPythonManager::eventBrokerScriptHandler(const char *script, void *clientData)
+void qSlicerPythonManager::eventBrokerScriptHandler(const char* script, void* clientData)
 {
   Q_UNUSED(script);
   Q_UNUSED(clientData);

@@ -1,6 +1,6 @@
 project(ITKFactoryRegistration)
 
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 
 # --------------------------------------------------------------------------
 # Dependencies
@@ -29,6 +29,7 @@ set(ITK_IO_MODULES_USED
   ITKIOTransformMatlab
   MGHIO
   ITKIOMINC
+  IOScanco
   )
 if(Slicer_BUILD_DICOM_SUPPORT)
   list(APPEND ITK_IO_MODULES_USED ITKIODCMTK)
@@ -71,7 +72,7 @@ if(NOT DEFINED ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
   set(${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT ON)
 endif()
 if(NOT ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
-  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|txx)")
+  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|hxx)")
   install(
     FILES ${headers} ${CMAKE_CURRENT_BINARY_DIR}/${configure_header_file}
     DESTINATION include/${PROJECT_NAME} COMPONENT Development)

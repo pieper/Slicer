@@ -23,8 +23,7 @@
 #include "ui_qSlicerSuperLoadableModuleTemplateModuleWidget.h"
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_ExtensionTemplate
-class qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate: public Ui_qSlicerSuperLoadableModuleTemplateModuleWidget
+class qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate : public Ui_qSlicerSuperLoadableModuleTemplateModuleWidget
 {
 public:
   qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate();
@@ -34,24 +33,20 @@ public:
 // qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate::qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate()
-{
-}
+qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate::qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate() {}
 
 //-----------------------------------------------------------------------------
 // qSlicerSuperLoadableModuleTemplateModuleWidget methods
 
 //-----------------------------------------------------------------------------
 qSlicerSuperLoadableModuleTemplateModuleWidget::qSlicerSuperLoadableModuleTemplateModuleWidget(QWidget* _parent)
-  : Superclass( _parent )
-  , d_ptr( new qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate )
+  : Superclass(_parent)
+  , d_ptr(new qSlicerSuperLoadableModuleTemplateModuleWidgetPrivate)
 {
 }
 
 //-----------------------------------------------------------------------------
-qSlicerSuperLoadableModuleTemplateModuleWidget::~qSlicerSuperLoadableModuleTemplateModuleWidget()
-{
-}
+qSlicerSuperLoadableModuleTemplateModuleWidget::~qSlicerSuperLoadableModuleTemplateModuleWidget() {}
 
 //-----------------------------------------------------------------------------
 void qSlicerSuperLoadableModuleTemplateModuleWidget::setup()

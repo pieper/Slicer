@@ -44,9 +44,9 @@ void qMRMLNodeObject::modify()
   timer->StartTimer();
   this->Node->Modified();
   if (this->ProcessEvents)
-    {
+  {
     QApplication::processEvents();
-    }
+  }
   timer->StopTimer();
   qDebug() << this->Message << " modified: " << timer->GetElapsedTime() << "seconds. FPS:" << 1. / timer->GetElapsedTime();
   timer->Delete();
@@ -59,7 +59,7 @@ void qMRMLNodeObject::setProcessEvents(bool process)
 }
 
 //-----------------------------------------------------------------------------
-bool qMRMLNodeObject::processEvents()const
+bool qMRMLNodeObject::processEvents() const
 {
   return this->ProcessEvents;
 }
@@ -71,7 +71,7 @@ void qMRMLNodeObject::setMessage(const QString& message)
 }
 
 //-----------------------------------------------------------------------------
-QString qMRMLNodeObject::message()const
+QString qMRMLNodeObject::message() const
 {
   return this->Message;
 }

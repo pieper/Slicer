@@ -24,16 +24,20 @@ class vtkMRMLVectorVolumeDisplayNode;
 /// Volume with vector pixel type.
 class VTK_MRML_EXPORT vtkMRMLVectorVolumeNode : public vtkMRMLTensorVolumeNode
 {
-  public:
-  static vtkMRMLVectorVolumeNode *New();
-  vtkTypeMacro(vtkMRMLVectorVolumeNode,vtkMRMLTensorVolumeNode);
+public:
+  static vtkMRMLVectorVolumeNode* New();
+  vtkTypeMacro(vtkMRMLVectorVolumeNode, vtkMRMLTensorVolumeNode);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
   vtkMRMLNode* CreateNodeInstance() override;
 
+  /// Copy node content (excludes basic data, such as name and node references).
+  /// \sa vtkMRMLNode::CopyContent
+  vtkMRMLCopyContentDefaultMacro(vtkMRMLVectorVolumeNode);
+
   ///
   /// Set node attributes
-  void ReadXMLAttributes( const char** atts) override;
+  void ReadXMLAttributes(const char** atts) override;
 
   ///
   /// Write this node's information to a MRML file in XML format.
@@ -41,11 +45,11 @@ class VTK_MRML_EXPORT vtkMRMLVectorVolumeNode : public vtkMRMLTensorVolumeNode
 
   ///
   /// Copy the node's attributes to this object
-  void Copy(vtkMRMLNode *node) override;
+  void Copy(vtkMRMLNode* node) override;
 
   ///
   /// Get node XML tag name (like Volume, Model)
-  const char* GetNodeTagName() override {return "VectorVolume";}
+  const char* GetNodeTagName() override { return "VectorVolume"; }
 
   ///
   /// Associated display MRML node
@@ -64,7 +68,6 @@ protected:
   ~vtkMRMLVectorVolumeNode() override;
   vtkMRMLVectorVolumeNode(const vtkMRMLVectorVolumeNode&);
   void operator=(const vtkMRMLVectorVolumeNode&);
-
 };
 
 #endif

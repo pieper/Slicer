@@ -1,7 +1,7 @@
 project(vtkITK)
 
 #-----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.20.6...3.22.6 FATAL_ERROR)
 #-----------------------------------------------------------------------------
 
 # --------------------------------------------------------------------------
@@ -29,6 +29,7 @@ endif()
 # ITK
 #
 set(${PROJECT_NAME}_ITK_COMPONENTS
+  GrowCut
   ITKAnisotropicSmoothing
   ITKCommon
   ITKConnectedComponents
@@ -52,7 +53,13 @@ set(${PROJECT_NAME}_ITK_COMPONENTS
   ITKDeprecated
   )
 find_package(ITK 5.0 COMPONENTS ${${PROJECT_NAME}_ITK_COMPONENTS} REQUIRED)
-set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
+  set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
+endif()
 list(APPEND ITK_LIBRARIES ITKFactoryRegistration)
 list(APPEND ITK_INCLUDE_DIRS ${ITKFactoryRegistration_INCLUDE_DIRS})
 include(${ITK_USE_FILE})
@@ -90,7 +97,7 @@ if(NOT DEFINED ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
   set(${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT ON)
 endif()
 if(NOT ${PROJECT_NAME}_INSTALL_NO_DEVELOPMENT)
-  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|txx)")
+  file(GLOB headers "${CMAKE_CURRENT_SOURCE_DIR}/*.(h|hxx)")
   install(
     FILES ${headers} ${CMAKE_CURRENT_BINARY_DIR}/${configure_header_file}
     DESTINATION include/${PROJECT_NAME} COMPONENT Development)
@@ -110,19 +117,17 @@ set(vtkITK_SRCS
   vtkITKImageWriter.cxx
   vtkITKImageToImageFilter.h
   vtkITKImageToImageFilterFF.h
-  vtkITKImageToImageFilterSS.h
   vtkITKGradientAnisotropicDiffusionImageFilter.cxx
+  vtkITKGrowCut.cxx
   vtkITKDistanceTransform.cxx
   vtkITKLabelShapeStatistics.cxx
   vtkITKLevelTracingImageFilter.cxx
   vtkITKLevelTracing3DImageFilter.cxx
-  vtkITKWandImageFilter.cxx
-  vtkITKNewOtsuThresholdImageFilter.cxx
-  vtkITKTimeSeriesDatabase.cxx
   vtkITKIslandMath.cxx
   vtkITKImageMargin.cxx
-  vtkITKGrowCutSegmentationImageFilter.cxx
   vtkITKMorphologicalContourInterpolator.cxx
+  vtkITKImageSequenceReader.cxx
+  vtkITKImageSequenceWriter.cxx
   )
 
 # these types are never instantiated, so they don't
@@ -131,6 +136,7 @@ set(vtkITK_SRCS
 set(vtkITK_SRCS_not_used
   vtkITKImageToImageFilter2DFF.h
   vtkITKImageToImageFilterFUL.h
+  vtkITKImageToImageFilterSS.h
   vtkITKImageToImageFilterULUL.h
   vtkITKImageToImageFilterUSUL.h
   vtkITKImageToImageFilterUSUS.h
@@ -214,11 +220,10 @@ if(VTK_WRAP_PYTHON)
     KIT_INSTALL_LIB_DIR ${${PROJECT_NAME}_INSTALL_LIB_DIR}
     )
   # Export target
-  export(TARGETS ${lib_name}Python ${lib_name}PythonD APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
+  export(TARGETS ${lib_name}Python APPEND FILE ${${PROJECT_NAME}_EXPORT_FILE})
   # Folder
   if(NOT "${${PROJECT_NAME}_FOLDER}" STREQUAL "")
     set_target_properties(${lib_name}Python PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
-    set_target_properties(${lib_name}PythonD PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     if(TARGET ${lib_name}Hierarchy)
       set_target_properties(${lib_name}Hierarchy PROPERTIES FOLDER ${${PROJECT_NAME}_FOLDER})
     endif()

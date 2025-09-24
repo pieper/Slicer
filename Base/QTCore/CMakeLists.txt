@@ -14,27 +14,31 @@ endif()
 #
 # ModuleDescriptionParser - Required to define ModuleDescriptionParser_INCLUDE_DIRS
 #
-if(Slicer_BUILD_CLI_SUPPORT)
-  find_package(SlicerExecutionModel REQUIRED ModuleDescriptionParser)
+find_package(SlicerExecutionModel REQUIRED ModuleDescriptionParser)
 
-  #
-  # ITK
-  #
-  set(${PROJECT_NAME}_ITK_COMPONENTS
-    # Import ITK targets required by ModuleDescriptionParser
-    ${ModuleDescriptionParser_ITK_COMPONENTS}
-    # Import ITK targets required by CTKImageProcessingITKCore
-    ITKCommon
-    )
-  find_package(ITK 4.6 COMPONENTS ${${PROJECT_NAME}_ITK_COMPONENTS} REQUIRED)
+#
+# ITK
+#
+set(${PROJECT_NAME}_ITK_COMPONENTS
+  # Import ITK targets required by ModuleDescriptionParser
+  ${ModuleDescriptionParser_ITK_COMPONENTS}
+  # Import ITK targets required by CTKImageProcessingITKCore
+  ITKCommon
+  )
+find_package(ITK 4.6 COMPONENTS ${${PROJECT_NAME}_ITK_COMPONENTS} REQUIRED)
+if(ITK_VERSION VERSION_GREATER_EQUAL "5.3")
+  foreach(factory_uc IN ITEMS "IMAGEIO" "MESHIO" "TRANSFORMIO")
+    set(ITK_NO_${factory_uc}_FACTORY_REGISTER_MANAGER 1)
+  endforeach()
+else()
   set(ITK_NO_IO_FACTORY_REGISTER_MANAGER 1) # See Libs/ITKFactoryRegistration/CMakeLists.txt
-  include(${ITK_USE_FILE})
 endif()
+include(${ITK_USE_FILE})
 
 #
 # qRestAPI
 #
-if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
+if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT OR Slicer_BUILD_APPLICATIONUPDATE_SUPPORT)
   find_package(qRestAPI REQUIRED)
   include(${qRestAPI_USE_FILE})
 endif()
@@ -54,14 +58,9 @@ set(KIT_export_directive "Q_SLICER_BASE_QTCORE_EXPORT")
 set(KIT_include_directories
   ${MRMLLogic_INCLUDE_DIRS}
   ${MRMLDisplayableManager_INCLUDE_DIRS}
+  ${ModuleDescriptionParser_INCLUDE_DIRS}
+  ${MRMLCLI_INCLUDE_DIRS}
   )
-
-if(Slicer_BUILD_CLI_SUPPORT)
-  list(APPEND KIT_include_directories
-    ${ModuleDescriptionParser_INCLUDE_DIRS}
-    ${MRMLCLI_INCLUDE_DIRS}
-    )
-endif()
 
 # Source files
 set(KIT_SRCS
@@ -97,10 +96,10 @@ set(KIT_SRCS
   qSlicerObject.h
   qSlicerPersistentCookieJar.cxx
   qSlicerPersistentCookieJar.h
+  qSlicerRelativePathMapper.cxx
+  qSlicerRelativePathMapper.h
   qSlicerSceneBundleReader.cxx
   qSlicerSceneBundleReader.h
-  qSlicerSlicer2SceneReader.cxx
-  qSlicerSlicer2SceneReader.h
   qSlicerUtils.cxx
   qSlicerUtils.h
   )
@@ -111,6 +110,13 @@ if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
     qSlicerExtensionDownloadTask.h
     qSlicerExtensionsManagerModel.cxx
     qSlicerExtensionsManagerModel.h
+    )
+endif()
+
+if(Slicer_BUILD_APPLICATIONUPDATE_SUPPORT)
+  list(APPEND KIT_SRCS
+    qSlicerApplicationUpdateManager.cxx
+    qSlicerApplicationUpdateManager.h
     )
 endif()
 
@@ -145,14 +151,20 @@ set(KIT_MOC_SRCS
   qSlicerIO.h
   qSlicerModuleFactoryManager.h
   qSlicerModuleManager.h
+  qSlicerRelativePathMapper.h
   qSlicerSceneBundleReader.h
-  qSlicerSlicer2SceneReader.h
   )
 
 if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
   list(APPEND KIT_MOC_SRCS
     qSlicerExtensionDownloadTask.h
     qSlicerExtensionsManagerModel.h
+    )
+endif()
+
+if(Slicer_BUILD_APPLICATIONUPDATE_SUPPORT)
+  list(APPEND KIT_MOC_SRCS
+    qSlicerApplicationUpdateManager.h
     )
 endif()
 
@@ -173,25 +185,26 @@ set(KIT_target_libraries
   CTKImageProcessingITKCore
   CTKVisualizationVTKCore
   ${ITK_LIBRARIES}
+  ModuleDescriptionParser
   )
 
 if(Slicer_BUILD_DICOM_SUPPORT)
+  # Support namespaced DCMTK targets
+  foreach(lib IN LISTS DCMTK_LIBRARIES)
+    if(TARGET "DCMTK::${lib}")
+      list(APPEND KIT_target_libraries DCMTK::${lib})
+    else()
+      list(APPEND KIT_target_libraries ${lib})
+    endif()
+  endforeach()
   list(APPEND KIT_target_libraries
-    ${DCMTK_LIBRARIES}
     CTKDICOMCore
     )
 endif()
 
-if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
+if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT OR Slicer_BUILD_APPLICATIONUPDATE_SUPPORT)
   list(APPEND KIT_target_libraries
     qRestAPI
-    )
-endif()
-
-if(Slicer_BUILD_CLI_SUPPORT)
-  list(APPEND KIT_target_libraries
-    ${ITK_LIBRARIES}
-    ModuleDescriptionParser
     )
 endif()
 
@@ -220,7 +233,7 @@ endif()
 # Python wrap
 if(Slicer_USE_PYTHONQT)
   set(VTK_COMMON_PYTHON_LIBRARY
-    vtkWrappingPythonCore # For vtkPythonUtil
+    VTK::WrappingPythonCore # For vtkPythonUtil
     )
   list(APPEND KIT_target_libraries
     CTKScriptingPythonCore

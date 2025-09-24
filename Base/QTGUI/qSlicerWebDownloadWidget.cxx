@@ -37,104 +37,146 @@
 #include "qSlicerWebDownloadWidget.h"
 
 // --------------------------------------------------------------------------
-qSlicerWebDownloadWidget::qSlicerWebDownloadWidget(QWidget *parent)
+qSlicerWebDownloadWidget::qSlicerWebDownloadWidget(QWidget* parent)
   : QDialog(parent)
 {
 }
 
 // --------------------------------------------------------------------------
-void qSlicerWebDownloadWidget::handleDownload(QWebEngineDownloadItem *download)
+void qSlicerWebDownloadWidget::handleDownload(QWebEngineDownloadItem* download)
 {
   // need to use a modal dialog here because 'download' will be deleted
   // if we don't return 'accept from this slot
-  QMessageBox *messageBox = new QMessageBox(this);
+  QMessageBox* messageBox = new QMessageBox(this);
   messageBox->setWindowTitle(tr("Web download"));
   messageBox->setText(tr("Load data into Slicer or download to separate location."));
-  QPushButton *loadButton = messageBox->addButton(tr("Load..."), QMessageBox::AcceptRole);
+  QPushButton* loadButton = messageBox->addButton(tr("Load..."), QMessageBox::AcceptRole);
   messageBox->setDefaultButton(loadButton);
   loadButton->setToolTip(tr("Download the data and open in Slicer"));
-  QPushButton *saveButton = messageBox->addButton(tr("Save..."), QMessageBox::AcceptRole);
+  QPushButton* saveButton = messageBox->addButton(tr("Save..."), QMessageBox::AcceptRole);
   saveButton->setToolTip(tr("Save to an arbitrary location"));
-  QPushButton *abortlButton = messageBox->addButton(tr("Cancel"), QMessageBox::AcceptRole);
+  QPushButton* abortlButton = messageBox->addButton(tr("Cancel"), QMessageBox::AcceptRole);
 
   this->hide();
   messageBox->exec();
 
   if (messageBox->clickedButton() == loadButton)
-    {
+  {
     // start the download into Slicer's temp directory
     qDebug() << "Load...";
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QString fileName = download->downloadFileName();
+#else
     QString fileName = QFileInfo(download->path()).fileName();
+#endif
     QDir directory = QDir(qSlicerCoreApplication::application()->temporaryPath());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    download->setDownloadFileName(fileName);
+    download->setDownloadDirectory(directory.absolutePath());
+#else
     download->setPath(QFileInfo(directory, fileName).absoluteFilePath());
-    }
-  else if (messageBox->clickedButton() == saveButton)
-    {
-    qDebug() << "Save...";
-    QString filePath = QFileDialog::getSaveFileName(this, tr("Save File"), download->path());
-    if (filePath.isEmpty())
-      {
-      download->cancel();
-      return;
-      }
-    download->setPath(filePath);
-    this->show();
-  } else if (messageBox->clickedButton() == abortlButton) {
-      qDebug() << "Cancel download...";
-      download->cancel();
-      return;
+#endif
   }
+  else if (messageBox->clickedButton() == saveButton)
+  {
+    qDebug() << "Save...";
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QString filePath = QFileInfo(download->downloadDirectory(), download->downloadFileName()).absoluteFilePath();
+#else
+    QString filePath = download->path();
+#endif
+    filePath = QFileDialog::getSaveFileName(this, tr("Save File"), filePath);
+    if (filePath.isEmpty())
+    {
+      download->cancel();
+      return;
+    }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    download->setDownloadFileName(QFileInfo(filePath).fileName());
+    download->setDownloadDirectory(QFileInfo(filePath).absoluteDir().absolutePath());
+#else
+    download->setPath(filePath);
+#endif
+    this->show();
+  }
+  else if (messageBox->clickedButton() == abortlButton)
+  {
+    qDebug() << "Cancel download...";
+    download->cancel();
+    return;
+  }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  qDebug() << "Saving to " << QFileInfo(download->downloadDirectory(), download->downloadFileName()).absoluteFilePath();
+#else
 
   qDebug() << "Saving to " << download->path();
+#endif
   download->accept();
   this->show();
 
   //
   // setup progress and cancel UI and callbacks
   //
-  QVBoxLayout *layout = new QVBoxLayout();
+  QVBoxLayout* layout = new QVBoxLayout();
   this->setLayout(layout);
 
-  QLabel *label = new QLabel();
-  label->setText(QString("Downloading %1").arg(QFileInfo(download->path()).fileName()));
+  QLabel* label = new QLabel();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  label->setText(tr("Downloading %1").arg(download->downloadFileName()));
+#else
+  label->setText(tr("Downloading %1").arg(QFileInfo(download->path()).fileName()));
+#endif
   layout->addWidget(label);
 
-  QProgressBar *progressBar = new QProgressBar();
+  QProgressBar* progressBar = new QProgressBar();
   layout->addWidget(progressBar);
 
-  QWidget *buttons = new QWidget(this);
-  QHBoxLayout *buttonLayout = new QHBoxLayout();
+  QWidget* buttons = new QWidget(this);
+  QHBoxLayout* buttonLayout = new QHBoxLayout();
   buttons->setLayout(buttonLayout);
   layout->addWidget(buttons);
 
-  QPushButton *cancelButton = new QPushButton("Cancel");
+  QPushButton* cancelButton = new QPushButton(tr("Cancel"));
   buttonLayout->addWidget(cancelButton);
 
   // Progress
-  connect(download, &QWebEngineDownloadItem::downloadProgress, [=](qint64 bytesReceived, qint64 bytesTotal) {
-    progressBar->setRange(0, bytesTotal);
-    progressBar->setValue(bytesReceived);
-  });
+  connect(download,
+          &QWebEngineDownloadItem::downloadProgress,
+          [=](qint64 bytesReceived, qint64 bytesTotal)
+          {
+            progressBar->setRange(0, bytesTotal);
+            progressBar->setValue(bytesReceived);
+          });
 
   // Cancel
-  connect(cancelButton, &QPushButton::clicked, [=]() {
-    qDebug() << "Download canceled";
-    download->cancel();
-    this->hide();
-  });
+  connect(cancelButton,
+          &QPushButton::clicked,
+          [=]()
+          {
+            qDebug() << "Download canceled";
+            download->cancel();
+            this->hide();
+          });
 
   // Finish
-  connect(download, &QWebEngineDownloadItem::finished, [=]() {
-    this->hide();
-    if (messageBox->clickedButton() == loadButton)
-      {
-      qSlicerDataDialog *dataDialog = new qSlicerDataDialog(this->parent());
+  connect(download,
+          &QWebEngineDownloadItem::finished,
+          [=]()
+          {
+            this->hide();
+            if (messageBox->clickedButton() == loadButton)
+            {
+              qSlicerDataDialog* dataDialog = new qSlicerDataDialog(this->parent());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+              dataDialog->addFile(QFileInfo(download->downloadDirectory(), download->downloadFileName()).absoluteFilePath());
+#else
       dataDialog->addFile(download->path());
-      dataDialog->exec();
-      }
-    else
-      {
-      QMessageBox::information(this, tr("Web download"), tr("Download complete"));
-      }
-  });
+#endif
+              dataDialog->exec();
+            }
+            else
+            {
+              QMessageBox::information(this, tr("Web download"), tr("Download complete"));
+            }
+          });
 }

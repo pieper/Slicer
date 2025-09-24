@@ -1,22 +1,27 @@
 
 include(${Slicer_CMAKE_DIR}/SlicerMacroBuildLoadableModule.cmake)
 
+# "A depends on B" comment in the module list means that
+# module B must be in the module list before module A
+# (so that include directories provided by B are available
+# when configuring module A).
+
 set(qtmodules
   Cameras
   Units
   Terminologies
-  Colors
   SubjectHierarchy
+  Colors # Colors depends on SubjectHierarchy
   Annotations
-  Markups
   Transforms
+  GeneralizedReformat
   Data
-  DoubleArrays
   Models
   Plots
-  SceneViews
   Segmentations
   Sequences
+  SceneViews # Scene views depends on Sequences
+  Markups # Markups depends on SceneViews (for testing) and Annotations
   SlicerWelcome
   Tables
   Texts
@@ -24,12 +29,8 @@ set(qtmodules
   ViewControllers
   Volumes
   VolumeRendering # Volume Rendering depends of Volumes
+  CropVolume # CropVolume depends of Volumes
   )
-if(Slicer_BUILD_CLI_SUPPORT)
-  list(APPEND qtmodules
-    CropVolume
-    )
-endif()
 
 include(SlicerCheckModuleEnabled)
 

@@ -7,33 +7,24 @@ set(KIT ${PROJECT_NAME})
 set(${KIT}_EXPORT_DIRECTIVE "VTK_SLICER_${MODULE_NAME_UPPER}_MODULE_MRML_EXPORT")
 
 set(${KIT}_INCLUDE_DIRECTORIES
-  ${RapidJSON_INCLUDE_DIR}
+  ${vtkSlicer${MODULE_NAME}ModuleVTKWidgets_SOURCE_DIR}
+  ${vtkSlicer${MODULE_NAME}ModuleVTKWidgets_BINARY_DIR}
   )
 
 set(${KIT}_SRCS
-  vtkMRML${MODULE_NAME}DisplayNode.cxx
-  vtkMRML${MODULE_NAME}FiducialDisplayNode.cxx
-  vtkMRML${MODULE_NAME}FiducialNode.cxx
-  vtkMRML${MODULE_NAME}LineNode.cxx
-  vtkMRML${MODULE_NAME}AngleNode.cxx
-  vtkMRML${MODULE_NAME}CurveNode.cxx
-  vtkMRML${MODULE_NAME}ClosedCurveNode.cxx
-  vtkMRML${MODULE_NAME}PlaneNode.cxx
-  vtkMRML${MODULE_NAME}Node.cxx
-  vtkMRML${MODULE_NAME}FiducialStorageNode.cxx
+  vtkMRML${MODULE_NAME}JsonElement.cxx
+  vtkMRML${MODULE_NAME}JsonElement.h
   vtkMRML${MODULE_NAME}JsonStorageNode.cxx
-  vtkCurveGenerator.cxx
-  vtkCurveGenerator.h
-  vtkLinearSpline.cxx
-  vtkLinearSpline.h
-  vtkParametricPolynomialApproximation.cxx
-  vtkParametricPolynomialApproximation.h
-  vtkSlicerDijkstraGraphGeodesicPath.cxx
-  vtkSlicerDijkstraGraphGeodesicPath.h
+  vtkMRML${MODULE_NAME}JsonStorageNode.h
+  vtkMRML${MODULE_NAME}PlaneJsonStorageNode.cxx
+  vtkMRML${MODULE_NAME}PlaneJsonStorageNode.h
+  vtkMRML${MODULE_NAME}ROIJsonStorageNode.cxx
+  vtkMRML${MODULE_NAME}ROIJsonStorageNode.cxx
   )
 
 set(${KIT}_TARGET_LIBRARIES
   ${MRML_LIBRARIES}
+  RapidJSON
   )
 
 #-----------------------------------------------------------------------------

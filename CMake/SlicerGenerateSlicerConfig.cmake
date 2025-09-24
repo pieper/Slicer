@@ -33,7 +33,7 @@ set(Slicer_LAUNCH_COMMAND_CONFIG ${Slicer_LAUNCH_COMMAND})
 
 # License and Readme file
 set(Slicer_LICENSE_FILE_CONFIG ${Slicer_SOURCE_DIR}/License.txt)
-set(Slicer_README_FILE_CONFIG ${Slicer_SOURCE_DIR}/README.txt)
+set(Slicer_README_FILE_CONFIG ${Slicer_SOURCE_DIR}/README.md)
 
 # Test templates directory
 set(Slicer_CXX_MODULE_TEST_TEMPLATES_DIR_CONFIG ${Slicer_CXX_MODULE_TEST_TEMPLATES_DIR})
@@ -138,7 +138,7 @@ set(Slicer_EP_COMPONENT_VARS_CONFIG
   "set(Slicer_VTK_COMPONENTS \"${Slicer_VTK_COMPONENTS}\")")
 
 # List all required external project
-set(Slicer_EXTERNAL_PROJECTS_CONFIG CTK CTKAppLauncherLib ITK CURL Teem VTK RapidJSON)
+set(Slicer_EXTERNAL_PROJECTS_CONFIG CTK CTKAppLauncherLib ITK CURL Teem VTK RapidJSON SlicerExecutionModel)
 set(Slicer_EXTERNAL_PROJECTS_NO_USEFILE_CONFIG CURL CTKAppLauncherLib RapidJSON)
 if(Slicer_USE_CTKAPPLAUNCHER)
   list(APPEND Slicer_EXTERNAL_PROJECTS_CONFIG CTKAppLauncher)
@@ -148,10 +148,7 @@ if(Slicer_USE_QtTesting)
   list(APPEND Slicer_EXTERNAL_PROJECTS_CONFIG QtTesting)
   list(APPEND Slicer_EXTERNAL_PROJECTS_NO_USEFILE_CONFIG QtTesting)
 endif()
-if(Slicer_BUILD_CLI_SUPPORT)
-  list(APPEND Slicer_EXTERNAL_PROJECTS_CONFIG SlicerExecutionModel)
-endif()
-if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT)
+if(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT OR Slicer_BUILD_APPLICATIONUPDATE_SUPPORT)
   list(APPEND Slicer_EXTERNAL_PROJECTS_CONFIG qRestAPI)
 endif()
 if(Slicer_BUILD_DICOM_SUPPORT)
@@ -166,6 +163,8 @@ if(Slicer_USE_SimpleITK)
   list(APPEND Slicer_EXTERNAL_PROJECTS_CONFIG SWIG)
   list(APPEND Slicer_EXTERNAL_PROJECTS_NO_USEFILE_CONFIG SWIG)
 endif()
+# Prevent VTK displaying the warning "The `VTK_USE_FILE` is no longer used starting with 8.90."
+list(APPEND Slicer_EXTERNAL_PROJECTS_NO_USEFILE_CONFIG VTK)
 
 # Configure Slicer_USE_SYSTEM_* variables
 set(Slicer_EP_USE_SYSTEM_VARS_CONFIG "")
@@ -176,11 +175,9 @@ set(Slicer_USE_SYSTEM_${varname} \"${Slicer_USE_SYSTEM_${varname}}\")"
     )
 endforeach()
 
-if(Slicer_BUILD_CLI_SUPPORT)
-  set(SlicerExecutionModel_CLI_LIBRARY_WRAPPER_CXX_CONFIG ${SlicerExecutionModel_CLI_LIBRARY_WRAPPER_CXX})
-  set(SlicerExecutionModel_EXTRA_INCLUDE_DIRECTORIES_CONFIG ${SlicerExecutionModel_EXTRA_INCLUDE_DIRECTORIES})
-  set(SlicerExecutionModel_EXTRA_EXECUTABLE_TARGET_LIBRARIES_CONFIG ${SlicerExecutionModel_EXTRA_EXECUTABLE_TARGET_LIBRARIES})
-endif()
+set(SlicerExecutionModel_CLI_LIBRARY_WRAPPER_CXX_CONFIG ${SlicerExecutionModel_CLI_LIBRARY_WRAPPER_CXX})
+set(SlicerExecutionModel_EXTRA_INCLUDE_DIRECTORIES_CONFIG ${SlicerExecutionModel_EXTRA_INCLUDE_DIRECTORIES})
+set(SlicerExecutionModel_EXTRA_EXECUTABLE_TARGET_LIBRARIES_CONFIG ${SlicerExecutionModel_EXTRA_EXECUTABLE_TARGET_LIBRARIES})
 
 # Export Targets file.
 set(Slicer_TARGETS_FILE "${Slicer_BINARY_DIR}/SlicerTargets.cmake")

@@ -20,10 +20,10 @@
  * @brief   Show slice intersection lines
  *
  * The vtkMRMLWindowLevelWidget allows moving slices by interacting with
- * displayed slice intersecrion lines.
+ * displayed slice intersection lines.
  *
  *
-*/
+ */
 
 #ifndef vtkMRMLWindowLevelWidget_h
 #define vtkMRMLWindowLevelWidget_h
@@ -42,14 +42,13 @@ class vtkSliceIntersectionRepresentation2D;
 class vtkMRMLApplicationLogic;
 class vtkMRMLSegmentationDisplayNode;
 
-
 class VTK_MRML_DISPLAYABLEMANAGER_EXPORT vtkMRMLWindowLevelWidget : public vtkMRMLAbstractWidget
 {
 public:
   /**
    * Instantiate this class.
    */
-  static vtkMRMLWindowLevelWidget *New();
+  static vtkMRMLWindowLevelWidget* New();
 
   enum
   {
@@ -88,7 +87,7 @@ public:
   void SetMRMLApplicationLogic(vtkMRMLApplicationLogic* applicationLogic) override;
 
   /// Return true if the widget can process the event.
-  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double &distance2) override;
+  bool CanProcessInteractionEvent(vtkMRMLInteractionEventData* eventData, double& distance2) override;
 
   /// Process interaction event.
   bool ProcessInteractionEvent(vtkMRMLInteractionEventData* eventData) override;
@@ -98,16 +97,16 @@ public:
 
   /// Widget states
   enum
-    {
+  {
     WidgetStateAdjustWindowLevel = WidgetStateUser,
     /// alternative state: if current mode is region-based then in alternative state
     /// the mode is adjustment; if current mode is adjustment then alternative state is region-based
     WidgetStateAdjustWindowLevelAlternative,
-    };
+  };
 
   /// Widget events
   enum
-    {
+  {
     WidgetEventResetWindowLevel = WidgetEventUser,
     WidgetEventAdjustWindowLevelStart,
     WidgetEventAdjustWindowLevelEnd,
@@ -115,7 +114,14 @@ public:
     WidgetEventAdjustWindowLevelAlternativeStart,
     WidgetEventAdjustWindowLevelAlternativeEnd,
     WidgetEventAdjustWindowLevelAlternativeCancel,
-    };
+    WidgetEventAlwaysOnResetWindowLevel,
+    WidgetEventAlwaysOnAdjustWindowLevelStart,
+    WidgetEventAlwaysOnAdjustWindowLevelEnd,
+    WidgetEventAlwaysOnAdjustWindowLevelCancel,
+    WidgetEventAlwaysOnAdjustWindowLevelAlternativeStart,
+    WidgetEventAlwaysOnAdjustWindowLevelAlternativeEnd,
+    WidgetEventAlwaysOnAdjustWindowLevelAlternativeCancel,
+  };
 
   bool UpdateWindowLevelFromRectangle(int layer, int cornerPoint1[2], int cornerPoint2[2]);
 
@@ -138,25 +144,17 @@ protected:
   bool ProcessSetWindowLevelFromRegionStart(vtkMRMLInteractionEventData* eventData);
   void ProcessSetWindowLevelFromRegion(vtkMRMLInteractionEventData* eventData);
   // If updateWindowLevel is set to false then the operation is cancelled without changing the window/level
-  bool ProcessSetWindowLevelFromRegionEnd(vtkMRMLInteractionEventData* eventData, bool updateWindowLevel=true);
+  bool ProcessSetWindowLevelFromRegionEnd(vtkMRMLInteractionEventData* eventData, bool updateWindowLevel = true);
 
   bool ProcessResetWindowLevel(vtkMRMLInteractionEventData* eventData);
 
   int GetEditableLayerAtEventPosition(vtkMRMLInteractionEventData* eventData);
 
-  /// Returns true if mouse is inside the selected layer volume.
-  /// Use background flag to choose between foreground/background layer.
-  bool IsEventInsideVolume(bool background, vtkMRMLInteractionEventData* eventData);
-
-  /// Returns true if the volume's window/level values are editable
-  /// on the GUI
-  bool VolumeWindowLevelEditable(const char* volumeNodeID);
-
   vtkMRMLVolumeNode* GetVolumeNodeFromSliceLayer(int editedLayer);
 
   bool SetVolumeWindowLevel(double window, double level, bool isAutoWindowLevel);
 
-  /// Rubberband is centered around the click position
+  /// RubberBand is centered around the click position
   vtkGetMacro(CenteredRubberBand, bool);
   vtkSetMacro(CenteredRubberBand, bool);
   vtkBooleanMacro(CenteredRubberBand, bool);

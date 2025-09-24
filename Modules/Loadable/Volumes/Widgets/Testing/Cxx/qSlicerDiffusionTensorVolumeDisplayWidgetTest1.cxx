@@ -38,18 +38,16 @@
 #include "qMRMLWidget.h"
 
 //-----------------------------------------------------------------------------
-int qSlicerDiffusionTensorVolumeDisplayWidgetTest1( int argc, char * argv[] )
+int qSlicerDiffusionTensorVolumeDisplayWidgetTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
   qMRMLWidget::postInitializeApplication();
 
   vtkSmartPointer<vtkMRMLScene> scene = vtkSmartPointer<vtkMRMLScene>::New();
-  vtkSmartPointer<vtkMRMLDiffusionTensorVolumeDisplayNode> displayNode =
-    vtkSmartPointer<vtkMRMLDiffusionTensorVolumeDisplayNode>::New();
+  vtkSmartPointer<vtkMRMLDiffusionTensorVolumeDisplayNode> displayNode = vtkSmartPointer<vtkMRMLDiffusionTensorVolumeDisplayNode>::New();
   scene->AddNode(displayNode);
-  vtkSmartPointer<vtkMRMLDiffusionTensorVolumeNode> volumeNode =
-    vtkSmartPointer<vtkMRMLDiffusionTensorVolumeNode>::New();
+  vtkSmartPointer<vtkMRMLDiffusionTensorVolumeNode> volumeNode = vtkSmartPointer<vtkMRMLDiffusionTensorVolumeNode>::New();
   volumeNode->SetAndObserveDisplayNodeID(displayNode->GetID());
   scene->AddNode(volumeNode);
 
@@ -59,8 +57,8 @@ int qSlicerDiffusionTensorVolumeDisplayWidgetTest1( int argc, char * argv[] )
 
   widget.show();
   if (argc < 2 || QString(argv[1]) != "-I")
-    {
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
   return app.exec();
 }

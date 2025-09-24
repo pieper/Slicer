@@ -27,7 +27,6 @@
 # We mean it.
 #
 
-from __future__ import print_function
 
 import os
 import pipes
@@ -35,66 +34,69 @@ import subprocess
 import sys
 import time
 
-__all__ = ['EXIT_FAILURE', 'EXIT_SUCCESS', 'run', 'runSlicer', 'runSlicerAndExit', 'timecall']
+__all__ = ["EXIT_FAILURE", "EXIT_SUCCESS", "run", "runSlicer", "runSlicerAndExit", "timecall"]
 
-EXIT_FAILURE=1
-EXIT_SUCCESS=0
+EXIT_FAILURE = 1
+EXIT_SUCCESS = 0
+
 
 def dropcache():
-  if sys.platform in ["linux", "linux2"]:
-    run('/usr/bin/sudo', ['sysctl', 'vm.drop_caches=1'], drop_cache=False)
-  else:
-    # XXX Implement other platform (Windows: EmptyStandbyList ?, MacOSX: Purge ?)
-    raise Exception("--drop-cache is not supported on %s" % sys.platform)
+    if sys.platform in ["linux", "linux2"]:
+        run("/usr/bin/sudo", ["sysctl", "vm.drop_caches=1"], drop_cache=False)
+    else:
+        # XXX Implement other platform (Windows: EmptyStandbyList ?, macOS: Purge ?)
+        raise Exception("--drop-cache is not supported on %s" % sys.platform)
+
 
 def run(executable, arguments=[], verbose=True, shell=False, drop_cache=False):
-  """Run ``executable`` with provided ``arguments``.
-  """
-  if drop_cache:
-    dropcache()
-  if verbose:
-    print("%s %s" % (os.path.basename(executable), " ".join([pipes.quote(arg) for arg in arguments])))
-  arguments.insert(0, executable)
-  if shell:
-    arguments = " ".join([pipes.quote(arg) for arg in arguments])
-  p = subprocess.Popen(args=arguments, stdout=subprocess.PIPE,
-                       stderr=subprocess.PIPE, shell=shell)
-  stdout, stderr = p.communicate()
+    """Run ``executable`` with provided ``arguments``."""
+    if drop_cache:
+        dropcache()
+    if verbose:
+        print("{} {}".format(os.path.basename(executable), " ".join([pipes.quote(arg) for arg in arguments])))
+    arguments.insert(0, executable)
+    if shell:
+        arguments = " ".join([pipes.quote(arg) for arg in arguments])
+    p = subprocess.Popen(args=arguments, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, shell=shell)
+    stdout, stderr = p.communicate()
 
-  if p.returncode != EXIT_SUCCESS:
-    print('STDERR: ' + stderr.decode(), file=sys.stderr)
+    if p.returncode != EXIT_SUCCESS:
+        print("STDERR: " + stderr.decode(), file=sys.stderr)
 
-  return (p.returncode, stdout.decode(), stderr.decode())
+    return (p.returncode, stdout.decode(), stderr.decode())
+
 
 def runSlicer(slicer_executable, arguments=[], verbose=True, **kwargs):
-  """Run ``slicer_executable`` with provided ``arguments``.
-  """
-  args = ['--no-splash']
-  args.extend(arguments)
-  return run(slicer_executable, args, verbose, **kwargs)
+    """Run ``slicer_executable`` with provided ``arguments``."""
+    args = ["--no-splash"]
+    args.extend(arguments)
+    return run(slicer_executable, args, verbose, **kwargs)
+
 
 def runSlicerAndExit(slicer_executable, arguments=[], verbose=True, **kwargs):
-  """Run ``slicer_executable`` with provided ``arguments`` and exit.
-  """
-  args = ['--exit-after-startup']
-  args.extend(arguments)
-  return runSlicer(slicer_executable, args, verbose, **kwargs)
+    """Run ``slicer_executable`` with provided ``arguments`` and exit."""
+    args = ["--exit-after-startup"]
+    args.extend(arguments)
+    return runSlicer(slicer_executable, args, verbose, **kwargs)
+
 
 def timecall(method, **kwargs):
-  """Wrap ``method`` and return its execution time.
-  """
-  repeat = 1
-  if 'repeat' in kwargs:
-    repeat = kwargs['repeat']
-  def wrapper(*args, **kwargs):
-    durations = []
-    for iteration in range(1, repeat + 1):
-      start = time.time()
-      result = method(*args, **kwargs)
-      durations.append(time.time() - start)
-      print("{:d}/{:d}: {:.2f}s".format(iteration, repeat, durations[-1]))
-    average = sum(durations) / len(durations)
-    print("Average: {:.2f}s\n".format(average))
-    duration = average
-    return (duration, result)
-  return wrapper
+    """Wrap ``method`` and return its execution time."""
+    repeat = 1
+    if "repeat" in kwargs:
+        repeat = kwargs["repeat"]
+
+    def wrapper(*args, **kwargs):
+        durations = []
+        for iteration in range(1, repeat + 1):
+            start = time.time()
+            result = method(*args, **kwargs)
+            durations.append(time.time() - start)
+            print(f"{iteration:d}/{repeat:d}: {durations[-1]:.2f}s")
+        average = sum(durations) / len(durations)
+        print(f"Average: {average:.2f}s\n")
+        duration = average
+        return (duration, result)
+
+    return wrapper

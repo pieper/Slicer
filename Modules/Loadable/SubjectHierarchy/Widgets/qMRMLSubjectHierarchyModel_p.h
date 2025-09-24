@@ -53,6 +53,7 @@
 
 class QStandardItemModel;
 class vtkSlicerTerminologiesModuleLogic;
+class qSlicerSubjectHierarchyAbstractPlugin;
 
 //------------------------------------------------------------------------------
 // qMRMLSubjectHierarchyModelPrivate
@@ -63,12 +64,13 @@ class Q_SLICER_MODULE_SUBJECTHIERARCHY_WIDGETS_EXPORT qMRMLSubjectHierarchyModel
 
 protected:
   qMRMLSubjectHierarchyModel* const q_ptr;
+
 public:
   qMRMLSubjectHierarchyModelPrivate(qMRMLSubjectHierarchyModel& object);
   virtual ~qMRMLSubjectHierarchyModelPrivate();
   void init();
 
-  /// This method is called by qMRMLSubjectHierarchyModel::updateFromSubjectHierarchy() to speed up
+  /// This method is called by qMRMLSubjectHierarchyModel::rebuildFromSubjectHierarchy() to speed up
   /// the loading. By explicitly specifying the \a index, it skips item lookup within their parents
   /// happening in qMRMLSubjectHierarchyModel::subjectHierarchyItemIndex(vtkIdType).
   virtual QStandardItem* insertSubjectHierarchyItem(vtkIdType itemID, int index);
@@ -78,6 +80,25 @@ public:
 
   /// Get terminologies module logic. If not found in cache get from module object
   vtkSlicerTerminologiesModuleLogic* terminologiesModuleLogic();
+
+  /// Get extra item identifier
+  const QString extraItemIdentifier() { return QString("ExtraItem"); };
+
+  /// Information about a drag-and-drop operation of an item. It can be used to undo the drag-and-drop
+  /// by placing back the item into its original position.
+  struct ItemDragInfo
+  {
+    vtkIdType parentItemID{ 0 };
+    vtkIdType originalParentItemID{ 0 };
+    int originalIndexUnderParent{ -1 };
+    qSlicerSubjectHierarchyAbstractPlugin* plugin{ nullptr };
+    bool revert{ false };
+  };
+
+  // Undo drag-and-drop of each item that has 'revert' set to true and remove from the itemsDragInfo.
+  void completePendingDragAndDropReverts(QMap<vtkIdType, qMRMLSubjectHierarchyModelPrivate::ItemDragInfo>& itemsDragInfo);
+
+  qSlicerSubjectHierarchyAbstractPlugin* pluginForReparenting(vtkIdType itemID, vtkIdType oldParentID, vtkIdType newParentID) const;
 
 public:
   vtkSmartPointer<vtkCallbackCommand> CallBack;
@@ -89,6 +110,9 @@ public:
   int ColorColumn;
   int TransformColumn;
   int DescriptionColumn;
+
+  bool NoneEnabled;
+  QString NoneDisplay;
 
   QIcon VisibleIcon;
   QIcon HiddenIcon;
@@ -111,10 +135,14 @@ public:
 
   mutable QList<vtkIdType> DraggedSubjectHierarchyItems;
   bool DelayedItemChangedInvoked;
+  /// Indicates that the last drag-and-drop operation was finished with dropping inside the widget.
+  /// It is necessary to distinguish between internal and external drops, because internal drop
+  /// results in reparenting and there are additional steps necessary to handle that (e.g., restore item selection).
+  bool IsDroppedInside;
 
   // Keep a list of QStandardItem instead of subject hierarchy item because they are likely to be
   // unreachable when browsing the model
-  QList<QList<QStandardItem*> > Orphans;
+  QList<QList<QStandardItem*>> Orphans;
 
   // Map from subject hierarchy item to row.
   // It just stores the result of the latest lookup by \sa indexFromSubjectHierarchyItem,

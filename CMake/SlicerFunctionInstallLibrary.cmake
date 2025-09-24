@@ -94,7 +94,9 @@ function(slicerInstallLibrary)
       DESTINATION ${_slicerInstallLibrary_DESTINATION} COMPONENT ${_slicerInstallLibrary_COMPONENT}
       FILES_MATCHING PATTERN "${lib_name}*" ${install_permissions}
       PATTERN "${lib_name}*.a" EXCLUDE
-      PATTERN "${lib_name}*.debug" EXCLUDE)
+      PATTERN "${lib_name}*.debug" EXCLUDE
+      PATTERN "${lib_name}*_debug.*" EXCLUDE
+      REGEX "${lib_dir}/.+/" EXCLUDE)
 
     if(_slicerInstallLibrary_STRIP)
       slicerStripInstalledLibrary(
@@ -115,7 +117,7 @@ endfunction()
 #   )
 #
 #
-# Strip regular symbols from ELF library or exectuable.
+# Strip regular symbols from ELF library or executable.
 #
 #
 #  FILES ......: Relative paths to the libraries or executables in the install tree.
@@ -181,16 +183,17 @@ function(slicerStripInstalledLibrary)
   if(UNIX AND NOT APPLE)
     if("${CMAKE_BUILD_TYPE}" IN_LIST configs)
       if(NOT EXISTS "${CMAKE_STRIP}")
-        message(FATAL_ERROR "failed to add install rule for stripping symbols of '${file}'. CMAKE_STRIP CMake variable is either not set or pointing to an nonexistent file.")
+        message(FATAL_ERROR "failed to add install rule for stripping symbols. CMAKE_STRIP CMake variable is either not set or pointing to an nonexistent file.")
       endif()
-      set(file "${_slicerStripInstalledLibrary_FILES}")
       set(dollar "$")
       if(_slicerStripInstalledLibrary_FILES)
-        install(
-          CODE "message(STATUS \"Stripping: ${dollar}ENV{DESTDIR}${dollar}{CMAKE_INSTALL_PREFIX}/${file}\")
-execute_process(COMMAND \"${CMAKE_STRIP}\" \"${dollar}ENV{DESTDIR}${dollar}{CMAKE_INSTALL_PREFIX}/${file}\")"
-          COMPONENT ${_slicerStripInstalledLibrary_COMPONENT}
-          )
+        foreach(file IN LISTS _slicerStripInstalledLibrary_FILES)
+          install(
+            CODE "message(STATUS \"Stripping: ${dollar}ENV{DESTDIR}${dollar}{CMAKE_INSTALL_PREFIX}/${file}\")
+  execute_process(COMMAND \"${CMAKE_STRIP}\" \"${dollar}ENV{DESTDIR}${dollar}{CMAKE_INSTALL_PREFIX}/${file}\")"
+            COMPONENT ${_slicerStripInstalledLibrary_COMPONENT}
+            )
+        endforeach()
       endif()
       if(_slicerStripInstalledLibrary_PATTERN)
         install(

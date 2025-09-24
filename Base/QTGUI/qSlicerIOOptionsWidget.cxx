@@ -31,8 +31,7 @@ qSlicerIOOptionsWidget::qSlicerIOOptionsWidget(QWidget* parentWidget)
 }
 
 //------------------------------------------------------------------------------
-qSlicerIOOptionsWidget
-::qSlicerIOOptionsWidget(qSlicerIOOptionsPrivate* pimpl, QWidget* parentWidget)
+qSlicerIOOptionsWidget::qSlicerIOOptionsWidget(qSlicerIOOptionsPrivate* pimpl, QWidget* parentWidget)
   : qSlicerWidget(parentWidget)
   , qSlicerIOOptions(pimpl)
 {
@@ -41,7 +40,7 @@ qSlicerIOOptionsWidget
 qSlicerIOOptionsWidget::~qSlicerIOOptionsWidget() = default;
 
 //------------------------------------------------------------------------------
-bool qSlicerIOOptionsWidget::isValid()const
+bool qSlicerIOOptionsWidget::isValid() const
 {
   Q_D(const qSlicerIOOptions);
   return d->Properties.contains("fileName") || d->Properties.contains("fileNames");
@@ -54,9 +53,9 @@ void qSlicerIOOptionsWidget::updateValid()
   bool wasValid = d->ArePropertiesValid;
   this->Superclass::updateValid();
   if (wasValid != d->ArePropertiesValid)
-    {
+  {
     emit this->validChanged(d->ArePropertiesValid);
-    }
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -65,13 +64,13 @@ void qSlicerIOOptionsWidget::setFileName(const QString& fileName)
   Q_D(qSlicerIOOptions);
   // replace the old filename if any
   if (!fileName.isEmpty())
-    {
+  {
     d->Properties["fileName"] = fileName;
-    }
+  }
   else
-    {
+  {
     d->Properties.remove("fileName");
-    }
+  }
   d->Properties.remove("fileNames");
   this->updateValid();
 }

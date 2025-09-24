@@ -23,7 +23,6 @@
 // Segmentations MRML includes
 #include "vtkMRMLSegmentEditorNode.h"
 
-#include "vtkMRMLSegmentationNode.h"
 #include "vtkOrientedImageDataResample.h"
 
 // MRML includes
@@ -40,7 +39,7 @@
 
 //------------------------------------------------------------------------------
 static const char* SEGMENTATION_REFERENCE_ROLE = "segmentationRef";
-static const char* MASTER_VOLUME_REFERENCE_ROLE = "masterVolumeRef";
+static const char* SOURCE_VOLUME_REFERENCE_ROLE = "masterVolumeRef";
 
 //----------------------------------------------------------------------------
 vtkMRMLNodeNewMacro(vtkMRMLSegmentEditorNode);
@@ -48,9 +47,11 @@ vtkMRMLNodeNewMacro(vtkMRMLSegmentEditorNode);
 //----------------------------------------------------------------------------
 vtkMRMLSegmentEditorNode::vtkMRMLSegmentEditorNode()
 {
+  this->TypeDisplayName = vtkMRMLTr("vtkMRMLSegmentEditorNode", "Segment Editor");
+
   this->SetHideFromEditors(true);
-  this->MasterVolumeIntensityMaskRange[0] = 0.0;
-  this->MasterVolumeIntensityMaskRange[1] = 0.0;
+  this->SourceVolumeIntensityMaskRange[0] = 0.0;
+  this->SourceVolumeIntensityMaskRange[1] = 0.0;
 }
 
 //----------------------------------------------------------------------------
@@ -67,12 +68,12 @@ void vtkMRMLSegmentEditorNode::WriteXML(ostream& of, int nIndent)
   Superclass::WriteXML(of, nIndent);
 
   // Write all MRML node attributes into output stream
-  of << " selectedSegmentID=\"" << (this->SelectedSegmentID?this->SelectedSegmentID:"") << "\"";
-  of << " activeEffectName=\"" << (this->ActiveEffectName?this->ActiveEffectName:"") << "\"";
-  of << " maskMode=\"" << vtkMRMLSegmentEditorNode::ConvertMaskModeToString(this->MaskMode) << "\"";
-  of << " maskSegmentID=\"" << (this->MaskSegmentID?this->MaskSegmentID:"") << "\"";
-  of << " masterVolumeIntensityMask=\"" << (this->MasterVolumeIntensityMask ? "true" : "false") << "\"";
-  of << " masterVolumeIntensityMaskRange=\"" << this->MasterVolumeIntensityMaskRange[0] << " " << this->MasterVolumeIntensityMaskRange[1] << "\"";
+  of << " selectedSegmentID=\"" << (this->SelectedSegmentID ? this->SelectedSegmentID : "") << "\"";
+  of << " activeEffectName=\"" << (this->ActiveEffectName ? this->ActiveEffectName : "") << "\"";
+  of << " maskMode=\"" << vtkMRMLSegmentationNode::ConvertMaskModeToString(this->MaskMode) << "\"";
+  of << " maskSegmentID=\"" << (this->MaskSegmentID ? this->MaskSegmentID : "") << "\"";
+  of << " masterVolumeIntensityMask=\"" << (this->SourceVolumeIntensityMask ? "true" : "false") << "\"";
+  of << " masterVolumeIntensityMaskRange=\"" << this->SourceVolumeIntensityMaskRange[0] << " " << this->SourceVolumeIntensityMaskRange[1] << "\"";
   of << " overwriteMode=\"" << vtkMRMLSegmentEditorNode::ConvertOverwriteModeToString(this->OverwriteMode) << "\"";
 }
 
@@ -88,44 +89,52 @@ void vtkMRMLSegmentEditorNode::ReadXMLAttributes(const char** atts)
   const char* attValue = nullptr;
 
   while (*atts != nullptr)
-    {
+  {
     attName = *(atts++);
     attValue = *(atts++);
 
     if (!strcmp(attName, "selectedSegmentID"))
-      {
+    {
       this->SetSelectedSegmentID(attValue);
-      }
+    }
     else if (!strcmp(attName, "activeEffectName"))
-      {
+    {
       this->SetActiveEffectName(attValue);
-      }
+    }
     else if (!strcmp(attName, "maskMode"))
-      {
-      this->SetMaskMode(vtkMRMLSegmentEditorNode::ConvertMaskModeFromString(attValue));
-      }
+    {
+      this->SetMaskMode(vtkMRMLSegmentationNode::ConvertMaskModeFromString(attValue));
+    }
     else if (!strcmp(attName, "maskSegmentID"))
-      {
+    {
       this->SetMaskSegmentID(attValue);
-      }
-    else if (!strcmp(attName, "masterVolumeIntensityMask"))
-      {
-      this->SetMasterVolumeIntensityMask(!strcmp(attValue,"true"));
-      }
-    else if (!strcmp(attName, "masterVolumeIntensityMaskRange"))
-      {
+    }
+    else if (!strcmp(attName, "masterVolumeIntensityMask")     //
+             || !strcmp(attName, "sourceVolumeIntensityMask")) // for future compatibility
+    {
+      this->SetSourceVolumeIntensityMask(!strcmp(attValue, "true"));
+    }
+    else if (!strcmp(attName, "masterVolumeIntensityMaskRange")     //
+             || !strcmp(attName, "sourceVolumeIntensityMaskRange")) // for future compatibility)
+    {
       std::stringstream ss;
       ss << attValue;
-      double range[2]={0};
+      double range[2] = { 0 };
       ss >> range[0];
       ss >> range[1];
-      this->SetMasterVolumeIntensityMaskRange(range);
-      }
-    else if (!strcmp(attName, "overwriteMode"))
-      {
-      this->SetOverwriteMode(vtkMRMLSegmentEditorNode::ConvertOverwriteModeFromString(attValue));
-      }
+      this->SetSourceVolumeIntensityMaskRange(range);
     }
+    else if (!strcmp(attName, "overwriteMode"))
+    {
+      this->SetOverwriteMode(vtkMRMLSegmentEditorNode::ConvertOverwriteModeFromString(attValue));
+    }
+  }
+
+  // For future compatibility (when masterVolumeRef will be replaced by sourceVolumeRef)
+  if (this->GetNodeReferenceID("sourceVolumeRef"))
+  {
+    this->SetNodeReferenceID(SOURCE_VOLUME_REFERENCE_ROLE, this->GetNodeReferenceID("sourceVolumeRef"));
+  }
 
   this->EndModify(disabledModify);
 }
@@ -133,7 +142,7 @@ void vtkMRMLSegmentEditorNode::ReadXMLAttributes(const char** atts)
 //----------------------------------------------------------------------------
 // Copy the node's attributes to this object.
 // Does NOT copy: ID, FilePrefix, Name, VolumeID
-void vtkMRMLSegmentEditorNode::Copy(vtkMRMLNode *anode)
+void vtkMRMLSegmentEditorNode::Copy(vtkMRMLNode* anode)
 {
   Superclass::Copy(anode);
   this->DisableModifiedEventOn();
@@ -144,8 +153,8 @@ void vtkMRMLSegmentEditorNode::Copy(vtkMRMLNode *anode)
   this->SetActiveEffectName(otherNode->ActiveEffectName);
   this->SetMaskMode(otherNode->GetMaskMode());
   this->SetMaskSegmentID(otherNode->GetMaskSegmentID());
-  this->SetMasterVolumeIntensityMask(otherNode->GetMasterVolumeIntensityMask());
-  this->SetMasterVolumeIntensityMaskRange(otherNode->GetMasterVolumeIntensityMaskRange());
+  this->SetSourceVolumeIntensityMask(otherNode->GetSourceVolumeIntensityMask());
+  this->SetSourceVolumeIntensityMaskRange(otherNode->GetSourceVolumeIntensityMaskRange());
   this->SetOverwriteMode(otherNode->GetOverwriteMode());
 
   this->DisableModifiedEventOff();
@@ -155,71 +164,52 @@ void vtkMRMLSegmentEditorNode::Copy(vtkMRMLNode *anode)
 //----------------------------------------------------------------------------
 void vtkMRMLSegmentEditorNode::PrintSelf(ostream& os, vtkIndent indent)
 {
-  Superclass::PrintSelf(os,indent);
+  Superclass::PrintSelf(os, indent);
 
   os << indent << "SelectedSegmentID: " << (this->SelectedSegmentID ? this->SelectedSegmentID : "") << "\n";
   os << indent << "ActiveEffectName: " << (this->ActiveEffectName ? this->ActiveEffectName : "") << "\n";
-  os << indent << "MaskMode: " << vtkMRMLSegmentEditorNode::ConvertMaskModeToString(this->MaskMode) << "\n";
-  os << indent << "MaskSegmentID: " << (this->MaskSegmentID?this->MaskSegmentID:"") << "\n";
+  os << indent << "MaskMode: " << vtkMRMLSegmentationNode::ConvertMaskModeToString(this->MaskMode) << "\n";
+  os << indent << "MaskSegmentID: " << (this->MaskSegmentID ? this->MaskSegmentID : "") << "\n";
   os << indent << "OverwriteMode: " << vtkMRMLSegmentEditorNode::ConvertOverwriteModeToString(this->OverwriteMode) << "\n";
-  os << indent << "MasterVolumeIntensityMask: " << (this->MasterVolumeIntensityMask ? "true" : "false") << "\n";
-  os << indent << "MasterVolumeIntensityMaskRange: " << this->MasterVolumeIntensityMaskRange[0] << " " << this->MasterVolumeIntensityMaskRange[1] << "\n";
+  os << indent << "SourceVolumeIntensityMask: " << (this->SourceVolumeIntensityMask ? "true" : "false") << "\n";
+  os << indent << "SourceVolumeIntensityMaskRange: " << this->SourceVolumeIntensityMaskRange[0] << " " << this->SourceVolumeIntensityMaskRange[1] << "\n";
+}
+
+//----------------------------------------------------------------------------
+vtkMRMLScalarVolumeNode* vtkMRMLSegmentEditorNode::GetSourceVolumeNode()
+{
+  return vtkMRMLScalarVolumeNode::SafeDownCast(this->GetNodeReference(SOURCE_VOLUME_REFERENCE_ROLE));
 }
 
 //----------------------------------------------------------------------------
 vtkMRMLScalarVolumeNode* vtkMRMLSegmentEditorNode::GetMasterVolumeNode()
 {
-  return vtkMRMLScalarVolumeNode::SafeDownCast( this->GetNodeReference(MASTER_VOLUME_REFERENCE_ROLE) );
+  vtkWarningMacro("qSlicerSegmentEditorAbstractEffect::GetMasterVolumeNode() method is deprecated, use GetSourceVolumeNode method instead");
+  return this->GetSourceVolumeNode();
 }
 
 //----------------------------------------------------------------------------
+void vtkMRMLSegmentEditorNode::SetAndObserveSourceVolumeNode(vtkMRMLScalarVolumeNode* node)
+{
+  this->SetNodeReferenceID(SOURCE_VOLUME_REFERENCE_ROLE, (node ? node->GetID() : nullptr));
+}
+
 void vtkMRMLSegmentEditorNode::SetAndObserveMasterVolumeNode(vtkMRMLScalarVolumeNode* node)
 {
-  this->SetNodeReferenceID(MASTER_VOLUME_REFERENCE_ROLE, (node ? node->GetID() : nullptr));
+  vtkWarningMacro("qSlicerSegmentEditorAbstractEffect::SetAndObserveMasterVolumeNode() method is deprecated, use SetAndObserveSourceVolumeNode method instead");
+  this->SetAndObserveSourceVolumeNode(node);
 }
 
 //----------------------------------------------------------------------------
 vtkMRMLSegmentationNode* vtkMRMLSegmentEditorNode::GetSegmentationNode()
 {
-  return vtkMRMLSegmentationNode::SafeDownCast( this->GetNodeReference(SEGMENTATION_REFERENCE_ROLE) );
+  return vtkMRMLSegmentationNode::SafeDownCast(this->GetNodeReference(SEGMENTATION_REFERENCE_ROLE));
 }
 
 //----------------------------------------------------------------------------
 void vtkMRMLSegmentEditorNode::SetAndObserveSegmentationNode(vtkMRMLSegmentationNode* node)
 {
   this->SetNodeReferenceID(SEGMENTATION_REFERENCE_ROLE, (node ? node->GetID() : nullptr));
-}
-
-//----------------------------------------------------------------------------
-const char* vtkMRMLSegmentEditorNode::ConvertMaskModeToString(int mode)
-{
-  switch (mode)
-  {
-    case PaintAllowedEverywhere: return "PaintAllowedEverywhere";
-    case PaintAllowedInsideAllSegments: return "PaintAllowedInsideAllSegments";
-    case PaintAllowedInsideVisibleSegments: return "PaintAllowedInsideVisibleSegments";
-    case PaintAllowedOutsideAllSegments: return "PaintAllowedOutsideAllSegments";
-    case PaintAllowedOutsideVisibleSegments: return "PaintAllowedOutsideVisibleSegments";
-    case PaintAllowedInsideSingleSegment: return "PaintAllowedInsideSingleSegment";
-    default: return "";
-  }
-}
-
-//----------------------------------------------------------------------------
-int vtkMRMLSegmentEditorNode::ConvertMaskModeFromString(const char* modeStr)
-{
-  if (!modeStr)
-  {
-    return -1;
-  }
-  for (int i=0; i<PaintAllowed_Last; i++)
-  {
-    if (strcmp(modeStr, vtkMRMLSegmentEditorNode::ConvertMaskModeToString(i))==0)
-    {
-      return i;
-    }
-  }
-  return -1;
 }
 
 //----------------------------------------------------------------------------
@@ -241,9 +231,9 @@ int vtkMRMLSegmentEditorNode::ConvertOverwriteModeFromString(const char* modeStr
   {
     return -1;
   }
-  for (int i=0; i<Overwrite_Last; i++)
+  for (int i = 0; i < Overwrite_Last; i++)
   {
-    if (strcmp(modeStr, vtkMRMLSegmentEditorNode::ConvertOverwriteModeToString(i))==0)
+    if (strcmp(modeStr, vtkMRMLSegmentEditorNode::ConvertOverwriteModeToString(i)) == 0)
     {
       return i;
     }

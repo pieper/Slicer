@@ -168,7 +168,6 @@ macro(slicerMacroBuildLoadableModule)
   # --------------------------------------------------------------------------
   if(Slicer_BUILD_I18N_SUPPORT)
     set(TS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Translations/")
-    get_property(Slicer_LANGUAGES GLOBAL PROPERTY Slicer_LANGUAGES)
 
     include(SlicerMacroTranslation)
     SlicerMacroTranslation(
@@ -206,7 +205,7 @@ macro(slicerMacroBuildLoadableModule)
   set_target_properties(${lib_name} PROPERTIES LABELS ${lib_name})
 
   target_link_libraries(${lib_name}
-    # The two PUBLIC keywords are not a duplication, they allow developers to 
+    # The two PUBLIC keywords are not a duplication, they allow developers to
     # include PRIVATE/INTERFACE keywords in their library list
     PUBLIC
       ${LOADABLEMODULE_TARGET_LIBRARIES}
@@ -328,7 +327,7 @@ macro(slicerMacroBuildQtModule)
     ${ARGN}
     )
 
-  # See http://www.na-mic.org/Bug/view.php?id=3332
+  # See https://mantisarchive.slicer.org/view.php?id=3332
   #message(AUTHOR_WARNING
   #  "Macro 'slicerMacroBuildQtModule' is deprecated: Use 'slicerMacroBuildLoadableModule' instead."
   #  )

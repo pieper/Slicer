@@ -1,14 +1,14 @@
-import unittest
 import slicer
-from slicer.ScriptedLoadableModule import *
+from slicer.ScriptedLoadableModule import ScriptedLoadableModuleTest
 
 
 class VolumeRenderingThreeDOnlyLayout(ScriptedLoadableModuleTest):
     """
     This is the test case for your scripted module.
     Uses ScriptedLoadableModuleTest base class, available at:
-    https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
+    https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
+
     def setUp(self):
         pass
 
@@ -35,9 +35,10 @@ class VolumeRenderingThreeDOnlyLayout(ScriptedLoadableModuleTest):
 
         # Load MRHead volume
         import SampleData
+
         SampleData.downloadSample("MRHead")
 
         # Enter the volume rendering module
-        slicer.util.mainWindow().moduleSelector().selectModule('VolumeRendering')
+        slicer.util.mainWindow().moduleSelector().selectModule("VolumeRendering")
 
-        self.delayDisplay('Test passed!')
+        self.delayDisplay("Test passed!")

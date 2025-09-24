@@ -7,8 +7,8 @@
 
 =========================================================================auto=*/
 
-#ifndef __qqSlicerSettingsUserInformationPanel_h
-#define __qqSlicerSettingsUserInformationPanel_h
+#ifndef qSlicerSettingsUserInformationPanel_h
+#define qSlicerSettingsUserInformationPanel_h
 
 // Qt includes
 #include <QWidget>
@@ -23,8 +23,7 @@
 class qSlicerSettingsUserInformationPanelPrivate;
 class vtkPersonInformation;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsUserInformationPanel
-  : public ctkSettingsPanel
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsUserInformationPanel : public ctkSettingsPanel
 {
   Q_OBJECT
   QVTK_OBJECT
@@ -53,7 +52,6 @@ public Q_SLOTS:
   void onProcedureRoleChanged();
 
 protected:
-
   void resetWarnings();
 
   std::string UserInformationBackup;

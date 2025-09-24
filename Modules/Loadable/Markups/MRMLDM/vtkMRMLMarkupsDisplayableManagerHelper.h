@@ -23,9 +23,8 @@
 ///   c) a vtkWidget to represent sliceIntersections in the slice viewers (WidgetIntersections)
 ///
 
-
-#ifndef VTKMRMLMARKUPSDISPLAYABLEMANAGERHELPER_H_
-#define VTKMRMLMARKUPSDISPLAYABLEMANAGERHELPER_H_
+#ifndef vtkMRMLMarkupsDisplayableManagerHelper_h
+#define vtkMRMLMarkupsDisplayableManagerHelper_h
 
 // MarkupsModule includes
 #include "vtkSlicerMarkupsModuleMRMLDisplayableManagerExport.h"
@@ -33,8 +32,11 @@
 // MarkupsModule/MRML includes
 #include <vtkMRMLMarkupsNode.h>
 
-// VTK includes
+// MarkupsModule/VTKWidgets includes
+#include <vtkSlicerMarkupsInteractionWidget.h>
 #include <vtkSlicerMarkupsWidget.h>
+
+// VTK includes
 #include <vtkSmartPointer.h>
 
 // MRML includes
@@ -47,13 +49,10 @@ class vtkMRMLMarkupsDisplayableManager;
 class vtkMRMLMarkupsDisplayNode;
 class vtkMRMLInteractionNode;
 
-/// \ingroup Slicer_QtModules_Markups
-class VTK_SLICER_MARKUPS_MODULE_MRMLDISPLAYABLEMANAGER_EXPORT vtkMRMLMarkupsDisplayableManagerHelper :
-    public vtkObject
+class VTK_SLICER_MARKUPS_MODULE_MRMLDISPLAYABLEMANAGER_EXPORT vtkMRMLMarkupsDisplayableManagerHelper : public vtkObject
 {
 public:
-
-  static vtkMRMLMarkupsDisplayableManagerHelper *New();
+  static vtkMRMLMarkupsDisplayableManagerHelper* New();
   vtkTypeMacro(vtkMRMLMarkupsDisplayableManagerHelper, vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -61,48 +60,58 @@ public:
   void SetDisplayableManager(vtkMRMLMarkupsDisplayableManager*);
 
   /// Set all widget status to manipulate
-  //void SetAllWidgetsToManipulate();
+  // void SetAllWidgetsToManipulate();
 
   /// Get a vtkSlicerMarkupsWidget* given a node
-  vtkSlicerMarkupsWidget * GetWidget(vtkMRMLMarkupsDisplayNode * markupsDisplayNode);
+  vtkSlicerMarkupsWidget* GetWidget(vtkMRMLMarkupsDisplayNode* markupsDisplayNode);
   /// Get first visible widget for this markup
-  vtkSlicerMarkupsWidget * GetWidget(vtkMRMLMarkupsNode * markupsNode);
+  vtkSlicerMarkupsWidget* GetWidget(vtkMRMLMarkupsNode* markupsNode);
+
+  /// Get a vtkSlicerMarkupsWidget* given a node
+  vtkSlicerMarkupsInteractionWidget* GetInteractionWidget(vtkMRMLMarkupsDisplayNode* markupsDisplayNode);
+  /// Get first visible widget for this markup
+  vtkSlicerMarkupsInteractionWidget* GetInteractionWidget(vtkMRMLMarkupsNode* markupsNode);
 
   /// Remove all widgets, intersection widgets, nodes
   void RemoveAllWidgetsAndNodes();
 
   /// Map of vtkWidget indexed using associated node ID
-  typedef std::map < vtkSmartPointer<vtkMRMLMarkupsDisplayNode>, vtkSlicerMarkupsWidget* > DisplayNodeToWidgetType;
-  typedef std::map < vtkSmartPointer<vtkMRMLMarkupsDisplayNode>, vtkSlicerMarkupsWidget* >::iterator DisplayNodeToWidgetIt;
-  DisplayNodeToWidgetType MarkupsDisplayNodesToWidgets;  // display nodes with widgets assigned
+  typedef std::map<vtkSmartPointer<vtkMRMLMarkupsDisplayNode>, vtkSlicerMarkupsWidget*> DisplayNodeToWidgetType;
+  typedef std::map<vtkSmartPointer<vtkMRMLMarkupsDisplayNode>, vtkSlicerMarkupsWidget*>::iterator DisplayNodeToWidgetIt;
+  DisplayNodeToWidgetType MarkupsDisplayNodesToWidgets; // display nodes with widgets assigned
 
-  typedef std::set < vtkSmartPointer<vtkMRMLMarkupsNode> > MarkupsNodesType;
-  typedef std::set < vtkSmartPointer<vtkMRMLMarkupsNode> >::iterator MarkupsNodesIt;
+  typedef std::map<vtkSmartPointer<vtkMRMLMarkupsDisplayNode>, vtkSlicerMarkupsInteractionWidget*> DisplayNodeToInteractionWidgetType;
+  typedef std::map<vtkSmartPointer<vtkMRMLMarkupsDisplayNode>, vtkSlicerMarkupsInteractionWidget*>::iterator DisplayNodeToInteractionWidgetIt;
+  DisplayNodeToInteractionWidgetType MarkupsDisplayNodesToInteractionWidgets; // display nodes with widgets assigned
+
+  typedef std::set<vtkSmartPointer<vtkMRMLMarkupsNode>> MarkupsNodesType;
+  typedef std::set<vtkSmartPointer<vtkMRMLMarkupsNode>>::iterator MarkupsNodesIt;
   MarkupsNodesType MarkupsNodes; // observed markups nodes
 
   void AddMarkupsNode(vtkMRMLMarkupsNode* node);
   void RemoveMarkupsNode(vtkMRMLMarkupsNode* node);
   void AddDisplayNode(vtkMRMLMarkupsDisplayNode* displayNode);
+  void AddWidget(vtkMRMLMarkupsDisplayNode* displayNode);
+  void AddInteractionWidget(vtkMRMLMarkupsDisplayNode* displayNode);
   void RemoveDisplayNode(vtkMRMLMarkupsDisplayNode* displayNode);
 
   void DeleteWidget(vtkSlicerMarkupsWidget* widget);
+  void DeleteInteractionWidget(vtkSlicerMarkupsInteractionWidget* widget);
 
   void AddObservations(vtkMRMLMarkupsNode* node);
   void RemoveObservations(vtkMRMLMarkupsNode* node);
 
 protected:
-
   vtkMRMLMarkupsDisplayableManagerHelper();
   ~vtkMRMLMarkupsDisplayableManagerHelper() override;
 
 private:
-
   vtkMRMLMarkupsDisplayableManagerHelper(const vtkMRMLMarkupsDisplayableManagerHelper&) = delete;
   void operator=(const vtkMRMLMarkupsDisplayableManagerHelper&) = delete;
 
   /// Keep a record of the current glyph type for the handles in the widget
   /// associated with this node, prevents changing them unnecessarily
-  std::map<vtkMRMLNode*, std::vector<int> > NodeGlyphTypes;
+  std::map<vtkMRMLNode*, std::vector<int>> NodeGlyphTypes;
 
   bool AddingMarkupsNode;
 
@@ -111,4 +120,4 @@ private:
   vtkMRMLMarkupsDisplayableManager* DisplayableManager;
 };
 
-#endif /* VTKMRMLMARKUPSDISPLAYABLEMANAGERHELPER_H_ */
+#endif

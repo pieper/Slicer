@@ -807,9 +807,9 @@ function(fixup_bundle app libs dirs)
   if(valid)
     get_filename_component(exepath "${executable}" PATH)
 
-    # TODO: Extract list of rpath dirs automatically. On MacOSX, the following could be
+    # TODO: Extract list of rpath dirs automatically. On macOS, the following could be
     #       done: otool -l path/to/executable | grep -A 3 LC_RPATH | grep path
-    #       See http://www.mikeash.com/pyblog/friday-qa-2009-11-06-linking-and-install-names.html#comment-87ea054b4839586412727dcfc94c79d2
+    #       See https://www.mikeash.com/pyblog/friday-qa-2009-11-06-linking-and-install-names.html#comment-87ea054b4839586412727dcfc94c79d2
     set(GP_RPATH_DIR ${bundle}/Contents)
     message(STATUS "  GP_RPATH_DIR='${GP_RPATH_DIR}'")
 
@@ -860,7 +860,7 @@ function(fixup_bundle app libs dirs)
         message(STATUS "${i}/${n}: fixing up '${${key}_RESOLVED_EMBEDDED_ITEM}'")
         fixup_bundle_item("${${key}_RESOLVED_EMBEDDED_ITEM}" "${exepath}" "${dirs}")
       else()
-        message(STATUS "${i}/${n}: fix-up not required on this platform '${${key}_RESOLVED_EMBEDDED_ITEM}'")
+        message(STATUS "${i}/${n}: fixup not required on this platform '${${key}_RESOLVED_EMBEDDED_ITEM}'")
       endif()
     endforeach()
 

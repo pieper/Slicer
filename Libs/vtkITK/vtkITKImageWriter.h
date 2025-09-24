@@ -25,63 +25,88 @@
 
 class vtkStringArray;
 
+/// \brief Writes image files using ITK.
+///
+/// It can be used for writing 3D image data with voxels containing scalars, RGB, RGBA, spatial vectors
+/// (displacement, speed, etc.), or generic list components.
+///
+/// vtkITKImageSequenceWriter can be used instead for writing time sequence data
+/// (e.g., time sequence of displacement fields, RGB volumes, etc.).
+///
+/// \sa vtkITKImageSequenceWriter vtkITKArchetypeImageSeriesReader
+
 class VTK_ITK_EXPORT vtkITKImageWriter : public vtkImageAlgorithm
 {
 public:
-  static vtkITKImageWriter *New();
-  vtkTypeMacro(vtkITKImageWriter,vtkImageAlgorithm);
+  static vtkITKImageWriter* New();
+  vtkTypeMacro(vtkITKImageWriter, vtkImageAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent) override;
+
+  enum
+  {
+    VoxelVectorTypeUndefined,
+    VoxelVectorTypeSpatial, // 3D contravariant spatial vector (displacement field, motion, etc.)
+    VoxelVectorTypeColorRGB,
+    VoxelVectorTypeColorRGBA,
+    VoxelVectorTypeSpatialCovariant, // 3D covariant spatial vector (gradient, etc.)
+    VoxelVectorType_Last             // must be last
+  };
 
   ///
   /// Specify file name for the image file. You should specify either
   /// a FileName or a FilePrefix. Use FilePrefix if the data is stored
   /// in multiple files.
-  void SetFileName(const char *);
+  void SetFileName(const char*);
 
-  char *GetFileName() {
-    return FileName;
-  }
+  char* GetFileName() { return FileName; }
 
   ///
-  /// use compression if possible
-  vtkGetMacro (UseCompression, int);
-  vtkSetMacro (UseCompression, int);
+  /// Use compression if possible
+  vtkGetMacro(UseCompression, int);
+  vtkSetMacro(UseCompression, int);
   vtkBooleanMacro(UseCompression, int);
 
   ///
   /// Set/Get the ImageIO class name.
-  vtkGetStringMacro (ImageIOClassName);
-  vtkSetStringMacro (ImageIOClassName);
+  vtkGetStringMacro(ImageIOClassName);
+  vtkSetStringMacro(ImageIOClassName);
 
   ///
   /// The main interface which triggers the writer to start.
   void Write();
 
   /// Set orientation matrix
-  void SetRasToIJKMatrix( vtkMatrix4x4* mat) {
-    RasToIJKMatrix = mat;
-  }
+  void SetRasToIJKMatrix(vtkMatrix4x4* mat) { RasToIJKMatrix = mat; }
 
   /// Set orientation matrix
-  void SetMeasurementFrameMatrix( vtkMatrix4x4* mat) {
-    MeasurementFrameMatrix = mat;
-  }
+  void SetMeasurementFrameMatrix(vtkMatrix4x4* mat) { MeasurementFrameMatrix = mat; }
+
+  /// Defines how to interpret voxel components
+  vtkSetMacro(VoxelVectorType, int);
+  vtkGetMacro(VoxelVectorType, int);
+
+  /// Convert voxel vector type between RAS and LPS measurement frame
+  static void ConvertSpatialVectorVoxelsBetweenRasLps(vtkImageData* imageData);
+
+  /// Adds measurement frame matrix to the metadata.
+  static void WriteMeasurementFrameMatrixToMetaDataDictionary(itk::MetaDataDictionary& dictionary, vtkMatrix4x4* measurementFrameMatrix);
 
 protected:
   vtkITKImageWriter();
   ~vtkITKImageWriter() override;
 
-  char *FileName;
+  char* FileName;
   vtkMatrix4x4* RasToIJKMatrix;
   vtkMatrix4x4* MeasurementFrameMatrix;
   int UseCompression;
   char* ImageIOClassName;
+  int VoxelVectorType;
 
 private:
   vtkITKImageWriter(const vtkITKImageWriter&) = delete;
   void operator=(const vtkITKImageWriter&) = delete;
 };
 
-//vtkStandardNewMacro(vtkITKImageWriter)
+// vtkStandardNewMacro(vtkITKImageWriter);
 
 #endif

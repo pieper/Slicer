@@ -46,16 +46,18 @@
 #include <QWidgetAction>
 
 //-----------------------------------------------------------------------------
-/// \ingroup Slicer_QtModules_SubjectHierarchy_Widgets
-class qSlicerSubjectHierarchyOpacityPluginPrivate: public QObject
+class qSlicerSubjectHierarchyOpacityPluginPrivate : public QObject
 {
   Q_DECLARE_PUBLIC(qSlicerSubjectHierarchyOpacityPlugin);
+
 protected:
   qSlicerSubjectHierarchyOpacityPlugin* const q_ptr;
+
 public:
   qSlicerSubjectHierarchyOpacityPluginPrivate(qSlicerSubjectHierarchyOpacityPlugin& object);
   ~qSlicerSubjectHierarchyOpacityPluginPrivate() override;
   void init();
+
 public:
   QAction* OpacityAction;
   QMenu* OpacityMenu;
@@ -67,7 +69,7 @@ public:
 
 //-----------------------------------------------------------------------------
 qSlicerSubjectHierarchyOpacityPluginPrivate::qSlicerSubjectHierarchyOpacityPluginPrivate(qSlicerSubjectHierarchyOpacityPlugin& object)
-: q_ptr(&object)
+  : q_ptr(&object)
 {
   this->OpacityAction = nullptr;
   this->OpacityMenu = nullptr;
@@ -79,7 +81,7 @@ void qSlicerSubjectHierarchyOpacityPluginPrivate::init()
 {
   Q_Q(qSlicerSubjectHierarchyOpacityPlugin);
 
-  this->OpacityMenu = new QMenu(tr("Opacity"));
+  this->OpacityMenu = new QMenu(qSlicerSubjectHierarchyOpacityPlugin::tr("Opacity"));
   this->OpacitySlider = new ctkDoubleSlider(this->OpacityMenu);
   this->OpacitySlider->setOrientation(Qt::Horizontal);
   this->OpacitySlider->setRange(0.0, 1.0);
@@ -89,8 +91,8 @@ void qSlicerSubjectHierarchyOpacityPluginPrivate::init()
   opacityAction->setDefaultWidget(this->OpacitySlider);
   this->OpacityMenu->addAction(opacityAction);
 
-  this->OpacityAction = new QAction("Opacity",q);
-  this->OpacityAction->setToolTip("Set item opacity in the sub-menu");
+  this->OpacityAction = new QAction(qSlicerSubjectHierarchyOpacityPlugin::tr("Opacity"), q);
+  this->OpacityAction->setToolTip(qSlicerSubjectHierarchyOpacityPlugin::tr("Set item opacity in the sub-menu"));
   this->OpacityAction->setMenu(this->OpacityMenu);
 }
 
@@ -102,8 +104,8 @@ qSlicerSubjectHierarchyOpacityPluginPrivate::~qSlicerSubjectHierarchyOpacityPlug
 
 //-----------------------------------------------------------------------------
 qSlicerSubjectHierarchyOpacityPlugin::qSlicerSubjectHierarchyOpacityPlugin(QObject* parent)
- : Superclass(parent)
- , d_ptr( new qSlicerSubjectHierarchyOpacityPluginPrivate(*this) )
+  : Superclass(parent)
+  , d_ptr(new qSlicerSubjectHierarchyOpacityPluginPrivate(*this))
 {
   this->m_Name = QString("Opacity");
 
@@ -115,7 +117,7 @@ qSlicerSubjectHierarchyOpacityPlugin::qSlicerSubjectHierarchyOpacityPlugin(QObje
 qSlicerSubjectHierarchyOpacityPlugin::~qSlicerSubjectHierarchyOpacityPlugin() = default;
 
 //---------------------------------------------------------------------------
-QList<QAction*> qSlicerSubjectHierarchyOpacityPlugin::visibilityContextMenuActions()const
+QList<QAction*> qSlicerSubjectHierarchyOpacityPlugin::visibilityContextMenuActions() const
 {
   Q_D(const qSlicerSubjectHierarchyOpacityPlugin);
 
@@ -131,35 +133,35 @@ void qSlicerSubjectHierarchyOpacityPlugin::showVisibilityContextMenuActionsForIt
 
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
 
   if (!itemID || itemID == shNode->GetSceneItemID())
-    {
+  {
     // There are no scene actions in this plugin
     return;
-    }
+  }
 
   // Show opacity for every non-scene items with display node
   vtkMRMLDisplayNode* displayNode = nullptr;
   vtkMRMLDisplayableNode* displayableNode = vtkMRMLDisplayableNode::SafeDownCast(shNode->GetItemDataNode(itemID));
   vtkMRMLScalarVolumeNode* volumeNode = vtkMRMLScalarVolumeNode::SafeDownCast(displayableNode);
   if (displayableNode)
-    {
+  {
     displayNode = displayableNode->GetDisplayNode();
-    }
+  }
   else
-    {
+  {
     // Folder nodes may have display nodes directly associated
     displayNode = vtkMRMLDisplayNode::SafeDownCast(shNode->GetItemDataNode(itemID));
-    }
+  }
 
   if (displayNode)
-    {
+  {
     d->OpacitySlider->setValue(displayNode->GetOpacity());
-    }
+  }
 
   // Show opacity action if there is a valid display node and if the node is not a volume
   d->OpacityAction->setVisible(displayNode && !volumeNode);
@@ -171,34 +173,34 @@ void qSlicerSubjectHierarchyOpacityPlugin::setOpacityForCurrentItem(double opaci
   // Get currently selected node and scene
   vtkMRMLSubjectHierarchyNode* shNode = qSlicerSubjectHierarchyPluginHandler::instance()->subjectHierarchyNode();
   if (!shNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Failed to access subject hierarchy node";
     return;
-    }
+  }
   vtkIdType currentItemID = qSlicerSubjectHierarchyPluginHandler::instance()->currentItem();
   if (!currentItemID)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Invalid current subject hierarchy item!";
     return;
-    }
+  }
 
   // Get display node
   vtkMRMLDisplayNode* displayNode = nullptr;
   vtkMRMLDisplayableNode* displayableNode = vtkMRMLDisplayableNode::SafeDownCast(shNode->GetItemDataNode(currentItemID));
   if (displayableNode)
-    {
+  {
     displayNode = displayableNode->GetDisplayNode();
-    }
+  }
   else
-    {
+  {
     // Folder nodes may have display nodes directly associated
     displayNode = vtkMRMLDisplayNode::SafeDownCast(shNode->GetItemDataNode(currentItemID));
-    }
+  }
   if (!displayNode)
-    {
+  {
     qCritical() << Q_FUNC_INFO << ": Unable to find display node for subject hierarchy item " << shNode->GetItemName(currentItemID).c_str();
     return;
-    }
+  }
 
   displayNode->SetOpacity(opacity);
 }

@@ -27,18 +27,17 @@
 
 // CTK includes
 #include <ctkErrorLogModel.h>
-class ctkErrorLogWidget;
-class ctkPythonConsole;
 
 // Slicer includes
 #include "qSlicerBaseQTAppExport.h"
 #include "qSlicerIO.h"
 #include "vtkSlicerConfigure.h" // For Slicer_BUILD_DICOM_SUPPORT, Slicer_USE_PYTHONQT, Slicer_USE_QtTesting
 
+class ctkErrorLogWidget;
+class ctkPythonConsole;
 class qSlicerModuleSelectorToolBar;
 class qSlicerMainWindowPrivate;
-
-// VTK includes
+class vtkMRMLAbstractViewNode;
 class vtkObject;
 
 class Q_SLICER_BASE_QTAPP_EXPORT qSlicerMainWindow : public QMainWindow
@@ -47,27 +46,30 @@ class Q_SLICER_BASE_QTAPP_EXPORT qSlicerMainWindow : public QMainWindow
 public:
   typedef QMainWindow Superclass;
 
-  qSlicerMainWindow(QWidget *parent=nullptr);
+  qSlicerMainWindow(QWidget* parent = nullptr);
   ~qSlicerMainWindow() override;
 
   /// Return a pointer to the module selector toolbar that can change the
   /// current module.
   /// \sa pythonConsole(), errorLogWidget()
-  Q_INVOKABLE qSlicerModuleSelectorToolBar* moduleSelector()const;
+  Q_INVOKABLE qSlicerModuleSelectorToolBar* moduleSelector() const;
 
 #ifdef Slicer_USE_PYTHONQT
   /// Return a pointer to the python console.
   /// \sa moduleSelector(), errorLogWidget()
-  Q_INVOKABLE ctkPythonConsole* pythonConsole()const;
+  Q_INVOKABLE ctkPythonConsole* pythonConsole() const;
 #endif
   /// Return a pointer to the error log widget.
   /// \sa moduleSelector(), pythonConsole()
-  Q_INVOKABLE ctkErrorLogWidget* errorLogWidget()const;
+  Q_INVOKABLE ctkErrorLogWidget* errorLogWidget() const;
+  /// Return a pointer to the dock widget that shows the Error Log.
+  Q_INVOKABLE QDockWidget* errorLogDockWidget() const;
 
 public slots:
   virtual void setHomeModuleCurrent();
   virtual void restoreToolbars();
 
+  virtual void on_FileFavoriteModulesAction_triggered();
   virtual void on_FileAddDataAction_triggered();
   virtual void on_FileLoadDataAction_triggered();
   virtual void on_FileImportSceneAction_triggered();
@@ -94,13 +96,18 @@ public slots:
   virtual void onLayoutCompareWidescreenActionTriggered(QAction* action);
   virtual void onLayoutCompareGridActionTriggered(QAction* action);
 
+  /// Set the view layout.
   virtual void setLayout(int);
+
+  /// Restores the original (non-maximized) layout in all viewports.
+  virtual void removeAllMaximizedViewNodes();
+
   virtual void setLayoutNumberOfCompareViewRows(int);
   virtual void setLayoutNumberOfCompareViewColumns(int);
 
   virtual void onPythonConsoleToggled(bool);
+  virtual void onErrorLogToggled(bool);
 
-  virtual void on_WindowErrorLogAction_triggered();
   virtual void on_WindowToolbarsResetToDefaultAction_triggered();
 
   virtual void on_EditApplicationSettingsAction_triggered();
@@ -109,29 +116,64 @@ public slots:
   virtual void on_PasteAction_triggered();
   virtual void on_ViewExtensionsManagerAction_triggered();
 
+  virtual void on_ShowStatusBarAction_triggered(bool);
+
+  /// Write GUI state to application settings.
+  ///
+  /// GUI state includes:
+  /// - main window state and geometry (only if MainWindow/geometry application setting is
+  ///   enabled or force argument is set to true)
+  /// - current view layout ID
+  /// - favorite modules
+  /// - recently loaded files
+  ///
+  /// \sa restoreGUIState()
+  virtual void saveGUIState(bool force = false);
+
+  /// Read GUI state from application settings and update the user interface accordingly.
+  /// \sa saveGUIState()
+  virtual void restoreGUIState(bool force = false);
+
+  virtual void addFileToRecentFiles(const qSlicerIO::IOProperties& fileProperties);
+
+  /// Refresh favorite modules toolbar from application settings
+  virtual void on_FavoriteModulesChanged();
+
 signals:
   /// Emitted when the window is first shown to the user.
-  /// \sa showEvent(QShowEvent *)
+  /// \sa showEvent(QShowEvent*)
   void initialWindowShown();
 
 protected slots:
   virtual void onModuleLoaded(const QString& moduleName);
   virtual void onModuleAboutToBeUnloaded(const QString& moduleName);
-  virtual void onNewFileLoaded(const qSlicerIO::IOProperties &fileProperties);
+  virtual void onNewFileLoaded(const qSlicerIO::IOProperties& fileProperties);
+  virtual void onFileSaved(const qSlicerIO::IOProperties& fileProperties);
 
   virtual void onMRMLSceneModified(vtkObject*);
   virtual void onLayoutChanged(int);
   virtual void onWarningsOrErrorsOccurred(ctkErrorLogLevel::LogLevel logLevel);
 
+  // Show/hide update indicator on Extensions Manager toolbar icon
+  void setExtensionUpdatesAvailable(bool updateAvailable);
+
 #ifdef Slicer_USE_PYTHONQT
   virtual void onPythonConsoleUserInput(const QString&);
 #endif
+
+  /// The Error Log widget was docked into a different screen region,
+  /// adjust its orientation as needed.
+  virtual void onErrorLogDockWidgetAreaChanged(Qt::DockWidgetArea);
+
+  /// User interacted with the Error Log window,
+  /// hide the new error notification.
+  void onUserViewedErrorLog();
 
 protected:
   /// Connect MainWindow action with slots defined in MainWindowCore
   virtual void setupMenuActions();
 
-  /// Open Python interactor if it was requested
+  /// Open Python console if it was requested
   virtual void pythonConsoleInitialDisplay();
 
   /// Open a popup to warn the user Slicer is not for clinical use.
@@ -140,11 +182,11 @@ protected:
   /// Forward the dragEnterEvent to the IOManager which will
   /// decide if it could accept a drag/drop or not.
   /// \sa dropEvent()
-  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragEnterEvent(QDragEnterEvent* event) override;
 
   /// Forward the dropEvent to the IOManager.
   /// \sa dragEnterEvent()
-  void dropEvent(QDropEvent *event) override;
+  void dropEvent(QDropEvent* event) override;
 
   /// Reimplemented to catch activationChange/show/hide events.
   /// More specifically it allows to:
@@ -154,8 +196,8 @@ protected:
   ///  the error log dialog.
   bool eventFilter(QObject* object, QEvent* event) override;
 
-  void closeEvent(QCloseEvent *event) override;
-  void showEvent(QShowEvent *event) override;
+  void closeEvent(QCloseEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
   void changeEvent(QEvent* event) override;
 

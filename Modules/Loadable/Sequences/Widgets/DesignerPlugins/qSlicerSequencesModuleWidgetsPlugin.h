@@ -18,21 +18,17 @@
 
 ==============================================================================*/
 
-#ifndef __qSlicerSequenceBrowserModuleWidgetsPlugin_h
-#define __qSlicerSequenceBrowserModuleWidgetsPlugin_h
+#ifndef qSlicerSequencesModuleWidgetsPlugin_h
+#define qSlicerSequencesModuleWidgetsPlugin_h
 
 // Qt includes
-#include "vtkSlicerConfigure.h" // For Slicer_HAVE_QT5
-#ifdef Slicer_HAVE_QT5
 #include <QtUiPlugin/QDesignerCustomWidgetCollectionInterface>
-#else
-#include <QDesignerCustomWidgetCollectionInterface>
-#endif
 
 // SequenceBrowser includes
 #include "qMRMLSequenceBrowserPlayWidgetPlugin.h"
 #include "qMRMLSequenceBrowserSeekWidgetPlugin.h"
 #include "qMRMLSequenceBrowserToolBarPlugin.h"
+#include "qMRMLSequenceEditWidgetPlugin.h"
 
 // \class Group the plugins in one library
 class Q_SLICER_MODULE_SEQUENCES_WIDGETS_PLUGINS_EXPORT qSlicerSequenceBrowserModuleWidgetsPlugin
@@ -40,20 +36,19 @@ class Q_SLICER_MODULE_SEQUENCES_WIDGETS_PLUGINS_EXPORT qSlicerSequenceBrowserMod
   , public QDesignerCustomWidgetCollectionInterface
 {
   Q_OBJECT
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QDesignerCustomWidgetInterface")
-#endif
   Q_INTERFACES(QDesignerCustomWidgetCollectionInterface);
 
 public:
   QList<QDesignerCustomWidgetInterface*> customWidgets() const override
-    {
-    QList<QDesignerCustomWidgetInterface *> plugins;
+  {
+    QList<QDesignerCustomWidgetInterface*> plugins;
     plugins << new qMRMLSequenceBrowserPlayWidgetPlugin;
     plugins << new qMRMLSequenceBrowserSeekWidgetPlugin;
     plugins << new qMRMLSequenceBrowserToolBarPlugin;
+    plugins << new qMRMLSequenceEditWidgetPlugin;
     return plugins;
-    }
+  }
 };
 
 #endif

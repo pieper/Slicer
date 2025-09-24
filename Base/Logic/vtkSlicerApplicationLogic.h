@@ -27,12 +27,12 @@
 // VTK includes
 #include <vtkCollection.h>
 
-// ITK includes
-#include <itkPlatformMultiThreader.h>
-
 // STL includes
 #include <mutex>
+#include <thread>
 
+class vtkMRMLAbstractDisplayableManager;
+class vtkMRMLAbstractViewNode;
 class vtkMRMLSelectionNode;
 class vtkMRMLInteractionNode;
 class vtkMRMLRemoteIOLogic;
@@ -46,13 +46,11 @@ class ReadDataRequest;
 class WriteDataQueue;
 class WriteDataRequest;
 
-class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
-  : public vtkMRMLApplicationLogic
+class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic : public vtkMRMLApplicationLogic
 {
-  public:
-
+public:
   /// The Usual vtk class functions
-  static vtkSlicerApplicationLogic *New();
+  static vtkSlicerApplicationLogic* New();
   vtkTypeMacro(vtkSlicerApplicationLogic, vtkMRMLApplicationLogic);
   void PrintSelf(ostream& os, vtkIndent indent) override;
 
@@ -63,14 +61,7 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// method to hook them into the scene.
   /// \sa qSlicerCoreApplicationPrivate::initDataIO()
   /// \sa vtkMRMLRemoteIOLogic::AddDataIOToScene()
-  void SetMRMLSceneDataIO(vtkMRMLScene *scene,
-                          vtkMRMLRemoteIOLogic *remoteIOLogic,
-                          vtkDataIOManagerLogic *dataIOManagerLogic);
-
-
-  /// Perform the default behaviour related to selecting a fiducial list
-  /// (display it in the Fiducials GUI)
-  void PropagateFiducialListSelection();
+  void SetMRMLSceneDataIO(vtkMRMLScene* scene, vtkMRMLRemoteIOLogic* remoteIOLogic, vtkDataIOManagerLogic* dataIOManagerLogic);
 
   /// Create a thread for processing
   void CreateProcessingThread();
@@ -79,21 +70,21 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   void TerminateProcessingThread();
   /// List of events potentially fired by the application logic
   enum RequestEvents
-    {
-      RequestModifiedEvent = vtkMRMLApplicationLogic::RequestInvokeEvent + 1,
-      RequestReadDataEvent,
-      RequestWriteDataEvent,
-      /// Event fired when a readData, writeData or readScene request
-      /// has been processed.
-      /// The uid of the request is passed as callData.
-      /// \todo Add support for "modified" request.
-      RequestProcessedEvent
-    };
+  {
+    RequestModifiedEvent = vtkMRMLApplicationLogic::RequestInvokeEvent + 1,
+    RequestReadDataEvent,
+    RequestWriteDataEvent,
+    /// Event fired when a readData, writeData or readScene request
+    /// has been processed.
+    /// The UID of the request is passed as callData.
+    /// \todo Add support for "modified" request.
+    RequestProcessedEvent
+  };
 
   /// Schedule a task to run in the processing thread. Returns true if
   /// task was successfully scheduled. ScheduleTask() is called from the
   /// main thread to run something in the processing thread.
-  int ScheduleTask( vtkSlicerTask* );
+  int ScheduleTask(vtkSlicerTask*);
 
   /// Request a Modified call on an object.  This method allows a
   /// processing thread to request a Modified call on an object to be
@@ -104,7 +95,7 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// the request failed to be registered.
   /// \todo Fire RequestProcessedEvent when processing Modified requests.
   /// \sa RequestReadData(), RequestWriteData()
-  vtkMTimeType RequestModified(vtkObject *);
+  vtkMTimeType RequestModified(vtkObject*);
 
   /// Request that data be read from a file and set it on the referenced
   /// node.  The request will be sent to the main thread which will be
@@ -114,8 +105,7 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// the request failed to be registered. When the request is processed,
   /// RequestProcessedEvent is invoked with the request UID as calldata.
   /// \sa RequestReadScene(), RequestWriteData(), RequestModified()
-  vtkMTimeType RequestReadFile(const char *refNode, const char *filename,
-    int displayData = false, int deleteFile = false);
+  vtkMTimeType RequestReadFile(const char* refNode, const char* filename, int displayData = false, int deleteFile = false);
 
   /// Request setting of parent transform.
   /// The request will executed on the main thread.
@@ -123,7 +113,7 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// the request failed to be registered. When the request is processed,
   /// RequestProcessedEvent is invoked with the request UID as calldata.
   /// \sa RequestReadScene(), RequestWriteData(), RequestModified()
-  vtkMTimeType RequestUpdateParentTransform(const std::string &updatedNode, const std::string& parentTransformNode);
+  vtkMTimeType RequestUpdateParentTransform(const std::string& updatedNode, const std::string& parentTransformNode);
 
   /// Request setting of subject hierarchy location (will have the same parent and same level as sibling node).
   /// The request will executed on the main thread.
@@ -131,7 +121,7 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// the request failed to be registered. When the request is processed,
   /// RequestProcessedEvent is invoked with the request UID as calldata.
   /// \sa RequestReadScene(), RequestWriteData(), RequestModified()
-  vtkMTimeType RequestUpdateSubjectHierarchyLocation(const std::string &updatedNode, const std::string& siblingNode);
+  vtkMTimeType RequestUpdateSubjectHierarchyLocation(const std::string& updatedNode, const std::string& siblingNode);
 
   /// Request adding a node reference
   /// The request will executed on the main thread.
@@ -139,20 +129,19 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// the request failed to be registered. When the request is processed,
   /// RequestProcessedEvent is invoked with the request UID as calldata.
   /// \sa RequestReadScene(), RequestWriteData(), RequestModified()
-  vtkMTimeType RequestAddNodeReference(const std::string &referencingNode, const std::string& referencedNode, const std::string& role);
+  vtkMTimeType RequestAddNodeReference(const std::string& referencingNode, const std::string& referencedNode, const std::string& role);
 
   /// Return the number of items that need to be read from the queue
   /// (this allows code that invokes command line modules to know when
   /// multiple items are being returned and have all been returned).
   unsigned int GetReadDataQueueSize();
 
-
   /// Request that data be written from a file to a remote destination.
   /// Return the request UID (monotonically increasing) of the request or 0 if
   /// the request failed to be registered.  When the request is processed,
   /// RequestProcessedEvent is invoked with the request UID as calldata.
   /// \sa RequestReadData(), RequestReadScene()
-  vtkMTimeType RequestWriteData(const char *refNode, const char *filename);
+  vtkMTimeType RequestWriteData(const char* refNode, const char* filename);
 
   /// Request that a scene be read from a file. Mappings of node IDs in
   /// the file (sourceIDs) to node IDs in the main scene
@@ -165,10 +154,10 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// RequestProcessedEvent is invoked with the request UID as calldata.
   /// \sa RequestReadData(), RequestWriteData()
   vtkMTimeType RequestReadScene(const std::string& filename,
-                       std::vector<std::string> &targetIDs,
-                       std::vector<std::string> &sourceIDs,
-                       int displayData = false,
-                       int deleteFile = false);
+                                std::vector<std::string>& targetIDs,
+                                std::vector<std::string>& sourceIDs,
+                                int displayData = false,
+                                int deleteFile = false);
 
   /// Process a request on the Modified queue.  This method is called
   /// in the main thread of the application because calls to Modified()
@@ -188,25 +177,38 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// These routings act as place holders so that test scripts can
   /// turn on and off tracing.  These are just hooks
   /// for use with external tracing tool (such as AQTime)
-  void SetTracingOn () { this->Tracing = 1; }
-  void SetTracingOff () { this->Tracing = 0; }
+  void SetTracingOn() { this->Tracing = 1; }
+  void SetTracingOff() { this->Tracing = 0; }
 
   /// Return True if \a filePath is a descendant of \a applicationHomeDir.
-  /// \note On MacOSX extensions are installed in the "<Slicer_EXTENSIONS_DIRBASENAME>-<slicerRevision>"
+  ///
+  /// \note On macOS extensions are installed in the "<extensionsDirBase>-<slicerRevision>"
   /// folder being a sub directory of the application dir, an extra test is performed to make sure the
-  /// tested filePath doesn't belong to that "<Slicer_EXTENSIONS_DIRBASENAME>-<slicerRevision>" folder.
+  /// tested filePath doesn't belong to that "<extensionsDirBase>-<slicerRevision>" folder.
   /// If this is the case, False will be returned.
-  static bool IsEmbeddedModule(const std::string& filePath, const std::string& applicationHomeDir,
-                               const std::string& slicerRevision);
+  ///
+  /// \note If \a extensionsDirBase is empty, this function assumes that Slicer was built
+  /// without extension manager support (Slicer_BUILD_EXTENSIONMANAGER_SUPPORT is OFF)
+  static bool IsEmbeddedModule(const std::string& filePath, const std::string& applicationHomeDir, const std::string& slicerRevision, const std::string& extensionsDirBase = "");
 
   /// Return \a true if the plugin identified with its \a filePath is loaded from an install tree.
   /// \warning Since internally the function looks for the existence of CMakeCache.txt, it will
   /// return an incorrect result if the plugin is installed in the build tree of
   /// an other project.
-  static bool IsPluginInstalled(const std::string& filePath, const std::string& applicationHomeDir);
+  /// \note If \a extensionsDirBase is empty, this function assumes that Slicer was build with
+  /// without extension manager support (Slicer_BUILD_EXTENSIONMANAGER_SUPPORT is OFF)
+  /// \note If \a organizationDomain or \a organizationName is empty, this function won't check
+  /// the associated directory!
+  static bool IsPluginInstalled(const std::string& filePath,
+                                const std::string& applicationHomeDir,
+                                const std::string& organizationDomain = "",
+                                const std::string& organizationName = "",
+                                const std::string& extensionsDirBase = "");
 
   /// Return \a true if the plugin identified with its \a filePath is a built-in Slicer module.
-  static bool IsPluginBuiltIn(const std::string& filePath, const std::string& applicationHomeDir);
+  /// \note If \a extensionsDirBase is empty, this function assumes that Slicer was build with
+  /// without extension manager support (Slicer_BUILD_EXTENSIONMANAGER_SUPPORT is OFF)
+  static bool IsPluginBuiltIn(const std::string& filePath, const std::string& applicationHomeDir, const std::string& slicerRevision, const std::string& extensionsDirBase = "");
 
   /// Get share directory associated with \a moduleName located in \a filePath
   static std::string GetModuleShareDirectory(const std::string& moduleName, const std::string& filePath);
@@ -221,16 +223,38 @@ class VTK_SLICER_BASE_LOGIC_EXPORT vtkSlicerApplicationLogic
   /// Values are allowed to be modified.
   vtkPersonInformation* GetUserInformation();
 
-protected:
+  /// Callback function to request invoking a modified event on the main thread.
+  /// This function may be called from any thread.
+  static void RequestModifiedCallback(vtkObject* caller, unsigned long eid, void* clientData, void* callData);
 
+  /// Get view displayable manager given its class name.
+  ///
+  /// This provides a Qt-independent way to access displayable managers, by
+  /// looking up the vtkMRMLDisplayableManagerGroup associated with a
+  /// vtkMRMLViewNode (3D) or vtkMRMLSliceNode (2D).
+  ///
+  /// \param viewNode MRML view node (slice or 3D) whose displayable manager group will be queried.
+  /// \param className Class name of the displayable manager (e.g., "vtkMRMLCameraDisplayableManager").
+  ///
+  /// \return The displayable manager instance if found, otherwise nullptr.
+  ///  The returned pointer is owned by the displayable manager group and must
+  ///  not be deleted by the caller.
+  ///
+  /// This API is primarily intended for accessing low-level VTK actors or
+  /// widgets without going through Qt view classes, and is especially
+  /// useful in headless contexts or alternative frontends (e.g., trame).
+  ///
+  vtkMRMLAbstractDisplayableManager* GetViewDisplayableManagerByClassName(vtkMRMLAbstractViewNode* viewNode, const char* className) const;
+
+protected:
   vtkSlicerApplicationLogic();
   ~vtkSlicerApplicationLogic() override;
 
-   /// Callback used by a MultiThreader to start a processing thread
-  static itk::ITK_THREAD_RETURN_TYPE ProcessingThreaderCallback( void * );
+  /// Callback used by a std::thread to start a processing thread
+  static void ProcessingThreaderCallback(vtkSlicerApplicationLogic* appLogic);
 
-   /// Callback used by a MultiThreader to start a networking thread
-  static itk::ITK_THREAD_RETURN_TYPE NetworkingThreaderCallback( void * );
+  /// Callback used by a std::thread to start a networking thread
+  static void NetworkingThreaderCallback(vtkSlicerApplicationLogic* appLogic);
 
   /// Task processing loop that is run in the processing thread
   void ProcessProcessingTasks();
@@ -242,8 +266,8 @@ protected:
   /// called by ProcessReadData() in the application main thread
   /// because calls to load data will cause a Modified() on a node
   /// which can force a render.
-  void ProcessReadSceneData( ReadDataRequest &req );
-  void ProcessWriteSceneData( WriteDataRequest &req );
+  void ProcessReadSceneData(ReadDataRequest& req);
+  void ProcessWriteSceneData(WriteDataRequest& req);
 
   /// Set background thread (background processing, networking) priority, which
   /// can be set via an environment variable SLICER_BACKGROUND_THREAD_PRIORITY.
@@ -255,7 +279,6 @@ private:
   vtkSlicerApplicationLogic(const vtkSlicerApplicationLogic&);
   void operator=(const vtkSlicerApplicationLogic&);
 
-  itk::PlatformMultiThreader::Pointer ProcessingThreader;
   std::mutex ProcessingThreadActiveLock;
   std::mutex ProcessingTaskQueueLock;
   std::mutex ModifiedQueueActiveLock;
@@ -265,17 +288,17 @@ private:
   std::mutex WriteDataQueueActiveLock;
   std::mutex WriteDataQueueLock;
   vtkTimeStamp RequestTimeStamp;
-  int ProcessingThreadId;
-  std::vector<int> NetworkingThreadIDs;
+  std::thread ProcessingThread;
+  std::vector<std::thread> NetworkingThreads;
   int ProcessingThreadActive;
   int ModifiedQueueActive;
   int ReadDataQueueActive;
   int WriteDataQueueActive;
 
   ProcessingTaskQueue* InternalTaskQueue;
-  ModifiedQueue*       InternalModifiedQueue;
-  ReadDataQueue*       InternalReadDataQueue;
-  WriteDataQueue*      InternalWriteDataQueue;
+  ModifiedQueue* InternalModifiedQueue;
+  ReadDataQueue* InternalReadDataQueue;
+  WriteDataQueue* InternalWriteDataQueue;
 
   vtkPersonInformation* UserInformation;
 

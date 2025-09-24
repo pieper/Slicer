@@ -50,32 +50,32 @@
 class qMRMLScreenShotDialogPrivate : public Ui_qMRMLScreenShotDialog
 {
   Q_DECLARE_PUBLIC(qMRMLScreenShotDialog);
+
 protected:
   qMRMLScreenShotDialog* const q_ptr;
+
 public:
   qMRMLScreenShotDialogPrivate(qMRMLScreenShotDialog& object);
 
   void setupUi(QDialog* dialog);
   void setCheckedRadioButton(int type);
   void setWidgetEnabled(bool state);
-  QPointer<qMRMLLayoutManager>   LayoutManager;
-  vtkSmartPointer<vtkImageData>      ImageData;
+  QPointer<qMRMLLayoutManager> LayoutManager;
+  vtkSmartPointer<vtkImageData> ImageData;
   /// The ID of the associated snapshot node.
   /// This is nullptr if the dialog has no associated snapshot node (== new snapshot mode).
-  QVariant                           Data;
-  QButtonGroup*                      WidgetTypeGroup;
+  QVariant Data;
+  QButtonGroup* WidgetTypeGroup;
 
   /// The last selected thumbnail type
   int LastWidgetType;
-
 };
 
 //-----------------------------------------------------------------------------
-qMRMLScreenShotDialogPrivate::qMRMLScreenShotDialogPrivate(qMRMLScreenShotDialog &object)
+qMRMLScreenShotDialogPrivate::qMRMLScreenShotDialogPrivate(qMRMLScreenShotDialog& object)
   : q_ptr(&object)
 {
-  qRegisterMetaType<qMRMLScreenShotDialog::WidgetType>(
-      "qMRMLScreenShotDialog::WidgetType");
+  qRegisterMetaType<qMRMLScreenShotDialog::WidgetType>("qMRMLScreenShotDialog::WidgetType");
   this->WidgetTypeGroup = nullptr;
 
   this->LastWidgetType = qMRMLScreenShotDialog::FullLayout;
@@ -97,23 +97,19 @@ void qMRMLScreenShotDialogPrivate::setupUi(QDialog* dialog)
 
   this->setCheckedRadioButton(this->LastWidgetType);
 
-  QObject::connect(this->saveAsButton, SIGNAL(clicked()),
-                   q, SLOT(saveAs()));
-  QObject::connect(this->WidgetTypeGroup, SIGNAL(buttonClicked(int)),
-                   q, SLOT(setLastWidgetType(int)));
+  QObject::connect(this->saveAsButton, SIGNAL(clicked()), q, SLOT(saveAs()));
+  QObject::connect(this->WidgetTypeGroup, SIGNAL(buttonClicked(int)), q, SLOT(setLastWidgetType(int)));
 }
-
 
 //-----------------------------------------------------------------------------
 void qMRMLScreenShotDialogPrivate::setCheckedRadioButton(int type)
 {
-  QRadioButton* widgetButton =
-    qobject_cast<QRadioButton*>(this->WidgetTypeGroup->button(type));
+  QRadioButton* widgetButton = qobject_cast<QRadioButton*>(this->WidgetTypeGroup->button(type));
   if (widgetButton)
-    {
+  {
     // this can crash if an invalid type is passed in
     widgetButton->setChecked(true);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -131,7 +127,7 @@ void qMRMLScreenShotDialogPrivate::setWidgetEnabled(bool state)
 // qMRMLScreenShotDialog methods
 
 //-----------------------------------------------------------------------------
-qMRMLScreenShotDialog::qMRMLScreenShotDialog(QWidget * _parent)
+qMRMLScreenShotDialog::qMRMLScreenShotDialog(QWidget* _parent)
   : Superclass(_parent)
   , d_ptr(new qMRMLScreenShotDialogPrivate(*this))
 {
@@ -242,7 +238,7 @@ void qMRMLScreenShotDialog::setImageData(vtkImageData* screenshot)
   Q_D(qMRMLScreenShotDialog);
   d->ImageData = screenshot;
   QImage qimage;
-  qMRMLUtils::vtkImageDataToQImage(screenshot,qimage);
+  qMRMLUtils::vtkImageDataToQImage(screenshot, qimage);
   // set preview
   d->ScreenshotWidget->setPixmap(QPixmap::fromImage(qimage));
 }
@@ -270,6 +266,20 @@ bool qMRMLScreenShotDialog::showScaleFactorSpinBox() const
 }
 
 //-----------------------------------------------------------------------------
+void qMRMLScreenShotDialog::setSaveAsButtonVisibility(const bool& visible)
+{
+  Q_D(qMRMLScreenShotDialog);
+  d->saveAsButton->setVisible(visible);
+}
+
+//-----------------------------------------------------------------------------
+bool qMRMLScreenShotDialog::saveAsButtonVisibility() const
+{
+  Q_D(const qMRMLScreenShotDialog);
+  return d->saveAsButton->isVisible();
+}
+
+//-----------------------------------------------------------------------------
 void qMRMLScreenShotDialog::resetDialog()
 {
   Q_D(qMRMLScreenShotDialog);
@@ -293,10 +303,10 @@ void qMRMLScreenShotDialog::resetDialog()
 void qMRMLScreenShotDialog::grabScreenShot()
 {
   if (this->data().isValid())
-    {
+  {
     // If a data is set, we are in "review" mode, no screenshot can be taken
     return;
-    }
+  }
   this->grabScreenShot(this->widgetType());
 }
 
@@ -307,30 +317,30 @@ void qMRMLScreenShotDialog::grabScreenShot(int screenshotWindow)
   QWidget* widget = nullptr;
   vtkRenderWindow* renderWindow = nullptr;
   if (d->LayoutManager.isNull())
-    {
+  {
     // layout manager not set, can't grab image
     return;
-    }
+  }
   switch (screenshotWindow)
-    {
+  {
     case qMRMLScreenShotDialog::ThreeD:
-      {
+    {
       // Create a screenshot of the first 3DView
       qMRMLThreeDView* threeDView = d->LayoutManager.data()->threeDWidget(0)->threeDView();
       widget = threeDView;
       renderWindow = threeDView->renderWindow();
-      }
-      break;
+    }
+    break;
     case qMRMLScreenShotDialog::Red:
     case qMRMLScreenShotDialog::Yellow:
     case qMRMLScreenShotDialog::Green:
       // Create a screenshot of a specific sliceView
       {
-      QString name = this->enumToString(screenshotWindow);
-      qMRMLSliceWidget* sliceWidget = d->LayoutManager.data()->sliceWidget(name);
-      qMRMLSliceView* sliceView = sliceWidget->sliceView();
-      widget = sliceView;
-      renderWindow = sliceView->renderWindow();
+        QString name = this->enumToString(screenshotWindow);
+        qMRMLSliceWidget* sliceWidget = d->LayoutManager.data()->sliceWidget(name);
+        qMRMLSliceView* sliceView = sliceWidget->sliceView();
+        widget = sliceView;
+        renderWindow = sliceView->renderWindow();
       }
       break;
     case qMRMLScreenShotDialog::FullLayout:
@@ -338,31 +348,31 @@ void qMRMLScreenShotDialog::grabScreenShot(int screenshotWindow)
       // Create a screenshot of the full layout
       widget = d->LayoutManager.data()->viewport();
       break;
-    }
+  }
 
   double scaleFactor = d->scaleFactorSpinBox->value();
 
   vtkNew<vtkImageData> newImageData;
-  if (!qFuzzyCompare(scaleFactor, 1.0) &&
+  if (!qFuzzyCompare(scaleFactor, 1.0) && //
       screenshotWindow == qMRMLScreenShotDialog::ThreeD)
-    {
+  {
     // use off screen rendering to magnifiy the VTK widget's image without interpolation
-    vtkRenderer *renderer = renderWindow->GetRenderers()->GetFirstRenderer();
+    vtkRenderer* renderer = renderWindow->GetRenderers()->GetFirstRenderer();
     vtkNew<vtkRenderLargeImage> renderLargeImage;
     renderLargeImage->SetInput(renderer);
     renderLargeImage->SetMagnification(scaleFactor);
     renderLargeImage->Update();
     newImageData.GetPointer()->DeepCopy(renderLargeImage->GetOutput());
-    }
+  }
   else if (!qFuzzyCompare(scaleFactor, 1.0) && renderWindow != nullptr)
-    {
+  {
     // Render slice widget at high resolution
 
     // Enable offscreen rendering
     renderWindow->OffScreenRenderingOn();
 
     // Resize render window and slice widget
-    int* renderWindowSize = renderWindow->GetSize();
+    const int* renderWindowSize = renderWindow->GetSize();
     int width = renderWindowSize[0];
     int height = renderWindowSize[1];
     int scaledWidth = width * scaleFactor;
@@ -382,29 +392,26 @@ void qMRMLScreenShotDialog::grabScreenShot(int screenshotWindow)
 
     // Disable offscreen rendering; restores original render window size
     renderWindow->OffScreenRenderingOff();
-    }
+  }
   else
-    {
+  {
     // no scaling, or for not just the 3D window
     QImage screenShot = ctk::grabVTKWidget(widget);
 
     if (!qFuzzyCompare(scaleFactor, 1.0))
-      {
+    {
       // Rescale the image which gets saved
-      QImage rescaledScreenShot = screenShot.scaled(screenShot.size().width() * scaleFactor,
-                                                    screenShot.size().height() * scaleFactor);
+      QImage rescaledScreenShot = screenShot.scaled(screenShot.size().width() * scaleFactor, screenShot.size().height() * scaleFactor);
 
       // convert the scaled screenshot from QPixmap to vtkImageData
-      qMRMLUtils::qImageToVtkImageData(rescaledScreenShot,
-                                       newImageData.GetPointer());
-      }
-    else
-      {
-      // convert the screenshot from QPixmap to vtkImageData
-      qMRMLUtils::qImageToVtkImageData(screenShot,
-                                       newImageData.GetPointer());
-      }
+      qMRMLUtils::qImageToVtkImageData(rescaledScreenShot, newImageData.GetPointer());
     }
+    else
+    {
+      // convert the screenshot from QPixmap to vtkImageData
+      qMRMLUtils::qImageToVtkImageData(screenShot, newImageData.GetPointer());
+    }
+  }
   // save the screen shot image to this class
   this->setImageData(newImageData.GetPointer());
 }
@@ -413,24 +420,23 @@ void qMRMLScreenShotDialog::grabScreenShot(int screenshotWindow)
 void qMRMLScreenShotDialog::saveAs()
 {
   if (this->data().isValid())
-    {
+  {
     // If a data is set, we are in "review" mode, no screenshot can be taken
     return;
-    }
+  }
   QString name = nameEdit();
   if (name == "")
-    {
+  {
     name = "Slicer Screen Capture";
-    }
-  QString savePath = QFileDialog::getSaveFileName(this, tr("Save File"),
-                           name, tr("Images (*.png *.jpg)"));
+  }
+  QString savePath = QFileDialog::getSaveFileName(this, tr("Save File"), name, tr("Images (*.png *.jpg)"));
 
   if (savePath != "")
-    {
+  {
     QImage qimage;
-    qMRMLUtils::vtkImageDataToQImage(this->imageData(),qimage);
+    qMRMLUtils::vtkImageDataToQImage(this->imageData(), qimage);
     qimage.save(savePath);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -12,6 +12,8 @@ set(${KIT}_INCLUDE_DIRECTORIES
 set(${KIT}_SRCS
   vtk${MODULE_NAME}GlyphSource2D.cxx
   vtk${MODULE_NAME}GlyphSource2D.h
+  vtkFastSelectVisiblePoints.cxx
+  vtkFastSelectVisiblePoints.h
   vtkSlicerMarkupsWidgetRepresentation.cxx
   vtkSlicerMarkupsWidgetRepresentation.h
   vtkSlicerMarkupsWidgetRepresentation3D.cxx
@@ -32,8 +34,6 @@ set(${KIT}_SRCS
   vtkSlicerCurveRepresentation3D.h
   vtkSlicerCurveWidget.cxx
   vtkSlicerCurveWidget.h
-  vtkSlicerClosedCurveWidget.cxx
-  vtkSlicerClosedCurveWidget.h
   vtkSlicerLineRepresentation3D.cxx
   vtkSlicerLineRepresentation3D.h
   vtkSlicerLineRepresentation2D.cxx
@@ -52,6 +52,16 @@ set(${KIT}_SRCS
   vtkSlicerPlaneRepresentation3D.h
   vtkSlicerPlaneWidget.cxx
   vtkSlicerPlaneWidget.h
+  vtkSlicerROIRepresentation2D.cxx
+  vtkSlicerROIRepresentation2D.h
+  vtkSlicerROIRepresentation3D.cxx
+  vtkSlicerROIRepresentation3D.h
+  vtkSlicerROIWidget.cxx
+  vtkSlicerROIWidget.h
+  vtkSlicerMarkupsInteractionWidget.cxx
+  vtkSlicerMarkupsInteractionWidget.h
+  vtkSlicerMarkupsInteractionWidgetRepresentation.cxx
+  vtkSlicerMarkupsInteractionWidgetRepresentation.h
   )
 
 set(${KIT}_TARGET_LIBRARIES

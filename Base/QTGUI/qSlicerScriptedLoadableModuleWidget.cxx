@@ -42,17 +42,18 @@ public:
   qSlicerScriptedLoadableModuleWidgetPrivate();
   virtual ~qSlicerScriptedLoadableModuleWidgetPrivate();
 
-  enum {
+  enum
+  {
     SetupMethod = 0,
     EnterMethod,
     ExitMethod,
     SetEditedNodeMethod,
     NodeEditableMethod
-    };
+  };
 
   mutable qSlicerPythonCppAPI PythonCppAPI;
 
-  QString    PythonSource;
+  QString PythonSourceFilePath;
 };
 
 //-----------------------------------------------------------------------------
@@ -76,7 +77,8 @@ qSlicerScriptedLoadableModuleWidgetPrivate::~qSlicerScriptedLoadableModuleWidget
 
 //-----------------------------------------------------------------------------
 qSlicerScriptedLoadableModuleWidget::qSlicerScriptedLoadableModuleWidget(QWidget* parentWidget)
-  :Superclass(parentWidget), d_ptr(new qSlicerScriptedLoadableModuleWidgetPrivate)
+  : Superclass(parentWidget)
+  , d_ptr(new qSlicerScriptedLoadableModuleWidgetPrivate)
 {
   new QVBoxLayout(this);
 }
@@ -85,95 +87,114 @@ qSlicerScriptedLoadableModuleWidget::qSlicerScriptedLoadableModuleWidget(QWidget
 qSlicerScriptedLoadableModuleWidget::~qSlicerScriptedLoadableModuleWidget() = default;
 
 //-----------------------------------------------------------------------------
-QString qSlicerScriptedLoadableModuleWidget::pythonSource()const
+QString qSlicerScriptedLoadableModuleWidget::pythonSource() const
 {
   Q_D(const qSlicerScriptedLoadableModuleWidget);
-  return d->PythonSource;
+  return d->PythonSourceFilePath;
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerScriptedLoadableModuleWidget::setPythonSource(const QString& newPythonSource, const QString& _className)
+bool qSlicerScriptedLoadableModuleWidget::setPythonSource(const QString& filePath, const QString& _className)
 {
   Q_D(qSlicerScriptedLoadableModuleWidget);
 
   if (!Py_IsInitialized())
-    {
+  {
     return false;
-    }
+  }
 
-  if (!newPythonSource.endsWith(".py") && !newPythonSource.endsWith(".pyc"))
-    {
+  if (!filePath.endsWith(".py") && !filePath.endsWith(".pyc"))
+  {
     return false;
-    }
+  }
 
   // Extract moduleName from the provided filename
-  QString moduleName = QFileInfo(newPythonSource).baseName();
+  QString moduleName = QFileInfo(filePath).baseName();
 
   QString className = _className;
   if (className.isEmpty())
-    {
+  {
     className = moduleName;
     if (!moduleName.endsWith("Widget"))
-      {
+    {
       className.append("Widget");
-      }
     }
+  }
 
   // Get a reference to the main module and global dictionary
-  PyObject * main_module = PyImport_AddModule("__main__");
-  PyObject * global_dict = PyModule_GetDict(main_module);
+  PyObject* main_module = PyImport_AddModule("__main__");
+  PyObject* global_dict = PyModule_GetDict(main_module);
 
-  // Get a reference (or create if needed) the <moduleName> python module
-  PyObject * module = PyImport_AddModule(moduleName.toUtf8());
+  // Get actual module from sys.modules
+  PyObject* sysModules = PyImport_GetModuleDict();
+  PyObject* module = PyDict_GetItemString(sysModules, moduleName.toUtf8());
 
   // Get a reference to the python module class to instantiate
   PythonQtObjectPtr classToInstantiate;
-  if (PyObject_HasAttrString(module, className.toUtf8()))
-    {
+  if (module && PyObject_HasAttrString(module, className.toUtf8()))
+  {
     classToInstantiate.setNewRef(PyObject_GetAttrString(module, className.toUtf8()));
-    }
+  }
   if (!classToInstantiate)
-    {
+  {
     PythonQtObjectPtr local_dict;
     local_dict.setNewRef(PyDict_New());
-    if (!qSlicerScriptedUtils::loadSourceAsModule(moduleName, newPythonSource, global_dict, local_dict))
-      {
+    if (!qSlicerScriptedUtils::loadSourceAsModule(moduleName, filePath, global_dict, local_dict))
+    {
       return false;
-      }
-    if (PyObject_HasAttrString(module, className.toUtf8()))
-      {
-      classToInstantiate.setNewRef(PyObject_GetAttrString(module, className.toUtf8()));
-      }
     }
 
-  if (!classToInstantiate)
+    // After loading, re-fetch actual module from sys.modules
+    module = PyDict_GetItemString(PyImport_GetModuleDict(), moduleName.toUtf8());
+
+    if (PyObject_HasAttrString(module, className.toUtf8()))
     {
+      classToInstantiate.setNewRef(PyObject_GetAttrString(module, className.toUtf8()));
+    }
+  }
+
+  if (!classToInstantiate)
+  {
     PythonQt::self()->handleError();
     PyErr_SetString(PyExc_RuntimeError,
                     QString("qSlicerScriptedLoadableModuleWidget::setPythonSource - "
                             "Failed to load scripted loadable module widget: "
-                            "class %1 was not found in %2").arg(className).arg(newPythonSource).toUtf8());
+                            "class %1 was not found in %2")
+                      .arg(className)
+                      .arg(filePath)
+                      .toUtf8());
     PythonQt::self()->handleError();
     return false;
-    }
+  }
 
   d->PythonCppAPI.setObjectName(className);
 
   PyObject* self = d->PythonCppAPI.instantiateClass(this, className, classToInstantiate);
   if (!self)
-    {
+  {
     return false;
-    }
+  }
 
-  d->PythonSource = newPythonSource;
+  d->PythonSourceFilePath = filePath;
 
-  if (!qSlicerScriptedUtils::setModuleAttribute(
-        "slicer.modules", className, self))
-    {
+  if (!qSlicerScriptedUtils::setModuleAttribute("slicer.modules", className, self))
+  {
     qCritical() << "Failed to set" << ("slicer.modules." + className);
-    }
+  }
 
   return true;
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerScriptedLoadableModuleWidget::reload()
+{
+  Q_D(qSlicerScriptedLoadableModuleWidget);
+  if (!QFileInfo::exists(d->PythonSourceFilePath))
+  {
+    return;
+  }
+  this->setPythonSource(this->pythonSource());
+  this->setup();
 }
 
 //-----------------------------------------------------------------------------
@@ -208,29 +229,27 @@ void qSlicerScriptedLoadableModuleWidget::exit()
 }
 
 //-----------------------------------------------------------
-bool qSlicerScriptedLoadableModuleWidget::setEditedNode(vtkMRMLNode* node,
-                                                        QString role /* = QString()*/,
-                                                        QString context /* = QString()*/)
+bool qSlicerScriptedLoadableModuleWidget::setEditedNode(vtkMRMLNode* node, QString role /* = QString()*/, QString context /* = QString()*/)
 {
   Q_D(qSlicerScriptedLoadableModuleWidget);
   PyObject* arguments = PyTuple_New(3);
   PyTuple_SET_ITEM(arguments, 0, vtkPythonUtil::GetObjectFromPointer(node));
-  PyTuple_SET_ITEM(arguments, 1, PyString_FromString(role.toUtf8()));
-  PyTuple_SET_ITEM(arguments, 2, PyString_FromString(context.toUtf8()));
+  PyTuple_SET_ITEM(arguments, 1, PyUnicode_FromString(role.toUtf8()));
+  PyTuple_SET_ITEM(arguments, 2, PyUnicode_FromString(context.toUtf8()));
   PyObject* result = d->PythonCppAPI.callMethod(d->SetEditedNodeMethod, arguments);
   Py_DECREF(arguments);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     return this->Superclass::setEditedNode(node);
-    }
+  }
 
   // Parse result
   if (!PyBool_Check(result))
-    {
-    qWarning() << d->PythonSource << ": qSlicerScriptedLoadableModuleWidget: Function 'setEditedNode' is expected to return a boolean";
+  {
+    qWarning() << d->PythonSourceFilePath << ": qSlicerScriptedLoadableModuleWidget: Function 'setEditedNode' is expected to return a boolean";
     return false;
-    }
+  }
 
   return (result == Py_True);
 }
@@ -244,17 +263,17 @@ double qSlicerScriptedLoadableModuleWidget::nodeEditable(vtkMRMLNode* node)
   PyObject* result = d->PythonCppAPI.callMethod(d->NodeEditableMethod, arguments);
   Py_DECREF(arguments);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     return this->Superclass::nodeEditable(node);
-    }
+  }
 
   // Parse result
   if (!PyFloat_Check(result))
-    {
-    qWarning() << d->PythonSource << ": qSlicerScriptedLoadableModuleWidget: Function 'nodeEditable' is expected to return a floating point number!";
+  {
+    qWarning() << d->PythonSourceFilePath << ": qSlicerScriptedLoadableModuleWidget: Function 'nodeEditable' is expected to return a floating point number!";
     return 0.0;
-    }
+  }
 
   return PyFloat_AsDouble(result);
 }

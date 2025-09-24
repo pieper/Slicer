@@ -39,8 +39,7 @@ class vtkMRMLTableViewNode;
 /// (vtkMRMLTableViewNode and vtkMRMLTableNode). This controller
 /// allows for the content (data) and style (properties) of a table to
 /// be defined.
-class QMRML_WIDGETS_EXPORT qMRMLTableViewControllerWidget
-  : public qMRMLViewControllerBar
+class QMRML_WIDGETS_EXPORT qMRMLTableViewControllerWidget : public qMRMLViewControllerBar
 {
   Q_OBJECT
   QVTK_OBJECT
@@ -53,12 +52,14 @@ public:
   explicit qMRMLTableViewControllerWidget(QWidget* parent = nullptr);
   ~qMRMLTableViewControllerWidget() override;
 
-  /// Set the label for the table view (abbreviation for the view
-  /// name)
+  /// Set the label for the table view (abbreviation for the view name)
   void setViewLabel(const QString& newViewLabel);
 
   /// Get the label for the view (abbreviation for the view name)
-  QString viewLabel()const;
+  QString viewLabel() const;
+
+  /// Get ChartViewNode associated with this ChartViewController.
+  Q_INVOKABLE vtkMRMLTableViewNode* mrmlTableViewNode() const;
 
 public slots:
   /// Set the scene
@@ -72,6 +73,7 @@ public slots:
   void setMRMLTableViewNode(vtkMRMLTableViewNode* tableViewNode);
 
 protected slots:
+  void updateWidgetFromMRMLView() override;
   void updateWidgetFromMRML();
 
 private:

@@ -26,7 +26,7 @@ if(NOT DEFINED CTKAppLauncherLib_DIR AND NOT Slicer_USE_SYSTEM_${proj})
 
   ExternalProject_SetIfNotDefined(
     Slicer_${proj}_GIT_TAG
-    "b1d6dad48b11c2770a72ad879812995213ccfc6e"
+    "556ec78e3e887a9bed8d9ba40efb6ddbbabe234d"
     QUIET
     )
 

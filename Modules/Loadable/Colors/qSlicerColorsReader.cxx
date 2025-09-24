@@ -19,6 +19,7 @@
 ==============================================================================*/
 
 // Qt includes
+#include <QTextStream>
 
 // Slicer includes
 #include "qSlicerColorsReader.h"
@@ -40,8 +41,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-qSlicerColorsReader::qSlicerColorsReader(
-  vtkSlicerColorLogic* _colorLogic, QObject* _parent)
+qSlicerColorsReader::qSlicerColorsReader(vtkSlicerColorLogic* _colorLogic, QObject* _parent)
   : Superclass(_parent)
   , d_ptr(new qSlicerColorsReaderPrivate)
 {
@@ -59,28 +59,56 @@ void qSlicerColorsReader::setColorLogic(vtkSlicerColorLogic* newColorLogic)
 }
 
 //-----------------------------------------------------------------------------
-vtkSlicerColorLogic* qSlicerColorsReader::colorLogic()const
+vtkSlicerColorLogic* qSlicerColorsReader::colorLogic() const
 {
   Q_D(const qSlicerColorsReader);
   return d->ColorLogic;
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerColorsReader::description()const
+QString qSlicerColorsReader::description() const
 {
   return "Color";
 }
 
 //-----------------------------------------------------------------------------
-qSlicerIO::IOFileType qSlicerColorsReader::fileType()const
+qSlicerIO::IOFileType qSlicerColorsReader::fileType() const
 {
   return QString("ColorTableFile");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerColorsReader::extensions()const
+QStringList qSlicerColorsReader::extensions() const
 {
-  return QStringList() << "Color (*.txt *.ctbl *.cxml)";
+  return QStringList() << "Color (*.csv *.tsv *.txt *.ctbl *.cxml)";
+}
+
+//----------------------------------------------------------------------------
+double qSlicerColorsReader::canLoadFileConfidence(const QString& fileName) const
+{
+  double confidence = Superclass::canLoadFileConfidence(fileName);
+
+  // Confidence for .txt file is 0.54 (4 characters in the file extension matched),
+  // for more specific file extensions (.ctbl, .cxml) it would be 0.55.
+  // Therefore, confidence below 0.55 means that we got a generic file extension
+  // that we need to inspect further.
+  if (confidence > 0 && confidence < 0.55)
+  {
+    // Generic file extension, inspect the content
+    QString upperCaseFileName = fileName.toUpper();
+    if (upperCaseFileName.endsWith("TXT"))
+    {
+      QFile file(fileName);
+      if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+      {
+        QTextStream in(&file);
+        // Color table text files start with "# Color table file"
+        QString line = in.read(100);
+        confidence = (line.contains("# Color table file") ? 0.6 : 0.4);
+      }
+    }
+  }
+  return confidence;
 }
 
 //-----------------------------------------------------------------------------
@@ -91,16 +119,17 @@ bool qSlicerColorsReader::load(const IOProperties& properties)
   QString fileName = properties["fileName"].toString();
 
   if (d->ColorLogic.GetPointer() == nullptr)
-    {
+  {
     return false;
-    }
+  }
 
-  vtkMRMLColorNode* node = d->ColorLogic->LoadColorFile(fileName.toUtf8());
+  const bool userType = true; // allow editing of color nodes loaded via GUI
+  vtkMRMLColorNode* node = d->ColorLogic->LoadColorFile(fileName.toUtf8(), nullptr, this->userMessages(), userType);
   QStringList loadedNodes;
   if (node)
-    {
+  {
     loadedNodes << QString(node->GetID());
-    }
+  }
   this->setLoadedNodes(loadedNodes);
   return node != nullptr;
 }

@@ -30,8 +30,7 @@
 class QSettings;
 class qSlicerSettingsViewsPanelPrivate;
 
-class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsViewsPanel
-  : public ctkSettingsPanel
+class Q_SLICER_BASE_QTGUI_EXPORT qSlicerSettingsViewsPanel : public ctkSettingsPanel
 {
   Q_OBJECT
   /// Holds the current MSAA's name for the settings.
@@ -72,6 +71,7 @@ public slots:
   void setThreeDOrientationMarkerType(const QString&);
   void setThreeDOrientationMarkerSize(const QString&);
   void setThreeDRulerType(const QString&);
+  void sliceViewOrientationChangedByUser();
 
 signals:
   /// Signal emitted when the current value is changed

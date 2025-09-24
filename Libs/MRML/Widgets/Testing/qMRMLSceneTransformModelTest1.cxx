@@ -38,7 +38,7 @@
 
 // STD includes
 
-int qMRMLSceneTransformModelTest1(int argc, char * argv [])
+int qMRMLSceneTransformModelTest1(int argc, char* argv[])
 {
   qMRMLWidget::preInitializeApplication();
   QApplication app(argc, argv);
@@ -48,7 +48,7 @@ int qMRMLSceneTransformModelTest1(int argc, char * argv [])
   qMRMLSceneFactoryWidget sceneFactory(nullptr);
 
   try
-    {
+  {
     ctkModelTester tester(&model);
     tester.setTestDataEnabled(false);
 
@@ -81,18 +81,18 @@ int qMRMLSceneTransformModelTest1(int argc, char * argv [])
     sceneFactory.deleteNode();
     sceneFactory.deleteNode();
 
-    for( int i = 0; i < 100; ++i)
-      {
+    for (int i = 0; i < 100; ++i)
+    {
       sceneFactory.deleteNode();
-      }
-    for( int i = 0; i < 100; ++i)
-      {
+    }
+    for (int i = 0; i < 100; ++i)
+    {
       sceneFactory.generateNode();
-      }
-    for( int i = 0; i < 99; ++i)
-      {
+    }
+    for (int i = 0; i < 99; ++i)
+    {
       sceneFactory.deleteNode();
-      }
+    }
     sceneFactory.generateNode();
     sceneFactory.generateNode();
     sceneFactory.generateNode();
@@ -112,12 +112,12 @@ int qMRMLSceneTransformModelTest1(int argc, char * argv [])
     std::cout << "start reparenting node" << std::endl;
     model.reparent(node1, node2);
     std::cout << "end reparenting node" << std::endl;
-    }
+  }
   catch (const char* error)
-    {
+  {
     std::cerr << error << std::endl;
     return EXIT_FAILURE;
-    }
+  }
   /*
   QStandardItemModel m;
   m.setColumnCount(2);
@@ -130,10 +130,10 @@ int qMRMLSceneTransformModelTest1(int argc, char * argv [])
   item->insertRow(0,items);
   */
   QTreeView* view = new QTreeView(nullptr);
-  //view->setSelectionBehavior(QAbstractItemView::SelectRows);
+  // view->setSelectionBehavior(QAbstractItemView::SelectRows);
   view->setDragDropMode(QAbstractItemView::InternalMove);
   view->setModel(&model);
-  //view->setModel(&m);
+  // view->setModel(&m);
   view->show();
   view->resize(500, 800);
 
@@ -152,10 +152,10 @@ int qMRMLSceneTransformModelTest1(int argc, char * argv [])
   view2.setModel(&sortModel);
   view2.show();
 
-  if (argc < 2 || QString(argv[1]) != "-I" )
-    {
+  if (argc < 2 || QString(argv[1]) != "-I")
+  {
     QTimer::singleShot(200, &app, SLOT(quit()));
-    }
+  }
 
   int result = app.exec();
 

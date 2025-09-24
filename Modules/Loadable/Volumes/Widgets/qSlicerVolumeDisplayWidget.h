@@ -1,8 +1,8 @@
 #ifndef __qSlicerVolumeDisplayWidget_h
 #define __qSlicerVolumeDisplayWidget_h
 
-// Qt includes
-#include <QStackedWidget>
+// Slicer  includes
+#include <qMRMLWidget.h>
 
 // CTK includes
 #include <ctkVTKObject.h>
@@ -13,16 +13,15 @@
 class vtkMRMLNode;
 class qSlicerVolumeDisplayWidgetPrivate;
 
-/// \ingroup Slicer_QtModules_Volumes
-class Q_SLICER_QTMODULES_VOLUMES_WIDGETS_EXPORT qSlicerVolumeDisplayWidget : public QStackedWidget
+class Q_SLICER_QTMODULES_VOLUMES_WIDGETS_EXPORT qSlicerVolumeDisplayWidget : public qMRMLWidget
 {
   Q_OBJECT
   QVTK_OBJECT
 
 public:
   /// Constructors
-  typedef QStackedWidget Superclass;
-  explicit qSlicerVolumeDisplayWidget(QWidget* parent=nullptr);
+  typedef qMRMLWidget Superclass;
+  explicit qSlicerVolumeDisplayWidget(QWidget* parent = nullptr);
   ~qSlicerVolumeDisplayWidget() override;
 
 public slots:
@@ -33,6 +32,7 @@ protected slots:
   /// Internally use in case the current display widget should change when the
   /// volume node changes
   void updateFromMRML(vtkObject* volume);
+
 protected:
   QScopedPointer<qSlicerVolumeDisplayWidgetPrivate> d_ptr;
 

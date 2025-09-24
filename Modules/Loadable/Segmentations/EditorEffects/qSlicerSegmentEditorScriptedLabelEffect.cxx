@@ -49,7 +49,8 @@ public:
   qSlicerSegmentEditorScriptedLabelEffectPrivate();
   virtual ~qSlicerSegmentEditorScriptedLabelEffectPrivate();
 
-  enum {
+  enum
+  {
     IconMethod = 0,
     HelpTextMethod,
     CloneMethod,
@@ -61,16 +62,17 @@ public:
     ProcessViewNodeEventsMethod,
     SetMRMLDefaultsMethod,
     ReferenceGeometryChangedMethod,
+    SourceVolumeNodeChangedMethod,
     MasterVolumeNodeChangedMethod,
     LayoutChangedMethod,
     InteractionNodeModifiedMethod,
     UpdateGUIFromMRMLMethod,
     UpdateMRMLFromGUIMethod,
-    };
+  };
 
   mutable qSlicerPythonCppAPI PythonCppAPI;
 
-  QString PythonSource;
+  QString PythonSourceFilePath;
 };
 
 //-----------------------------------------------------------------------------
@@ -90,6 +92,7 @@ qSlicerSegmentEditorScriptedLabelEffectPrivate::qSlicerSegmentEditorScriptedLabe
   this->PythonCppAPI.declareMethod(Self::ProcessViewNodeEventsMethod, "processViewNodeEvents");
   this->PythonCppAPI.declareMethod(Self::SetMRMLDefaultsMethod, "setMRMLDefaults");
   this->PythonCppAPI.declareMethod(Self::ReferenceGeometryChangedMethod, "referenceGeometryChanged");
+  this->PythonCppAPI.declareMethod(Self::SourceVolumeNodeChangedMethod, "sourceVolumeNodeChanged");
   this->PythonCppAPI.declareMethod(Self::MasterVolumeNodeChangedMethod, "masterVolumeNodeChanged");
   this->PythonCppAPI.declareMethod(Self::LayoutChangedMethod, "layoutChanged");
   this->PythonCppAPI.declareMethod(Self::InteractionNodeModifiedMethod, "interactionNodeModified");
@@ -104,7 +107,7 @@ qSlicerSegmentEditorScriptedLabelEffectPrivate::~qSlicerSegmentEditorScriptedLab
 // qSlicerSegmentEditorScriptedLabelEffect methods
 
 //-----------------------------------------------------------------------------
-qSlicerSegmentEditorScriptedLabelEffect::qSlicerSegmentEditorScriptedLabelEffect(QObject *parent)
+qSlicerSegmentEditorScriptedLabelEffect::qSlicerSegmentEditorScriptedLabelEffect(QObject* parent)
   : Superclass(parent)
   , d_ptr(new qSlicerSegmentEditorScriptedLabelEffectPrivate)
 {
@@ -115,90 +118,97 @@ qSlicerSegmentEditorScriptedLabelEffect::qSlicerSegmentEditorScriptedLabelEffect
 qSlicerSegmentEditorScriptedLabelEffect::~qSlicerSegmentEditorScriptedLabelEffect() = default;
 
 //-----------------------------------------------------------------------------
-QString qSlicerSegmentEditorScriptedLabelEffect::pythonSource()const
+QString qSlicerSegmentEditorScriptedLabelEffect::pythonSource() const
 {
   Q_D(const qSlicerSegmentEditorScriptedLabelEffect);
-  return d->PythonSource;
+  return d->PythonSourceFilePath;
 }
 
 //-----------------------------------------------------------------------------
-bool qSlicerSegmentEditorScriptedLabelEffect::setPythonSource(const QString newPythonSource)
+bool qSlicerSegmentEditorScriptedLabelEffect::setPythonSource(const QString filePath)
 {
   Q_D(qSlicerSegmentEditorScriptedLabelEffect);
 
   if (!Py_IsInitialized())
-    {
+  {
     return false;
-    }
+  }
 
-  if (!newPythonSource.endsWith(".py") && !newPythonSource.endsWith(".pyc"))
-    {
+  if (!filePath.endsWith(".py") && !filePath.endsWith(".pyc"))
+  {
     return false;
-    }
+  }
 
   // Extract moduleName from the provided filename
-  QString moduleName = QFileInfo(newPythonSource).baseName();
+  QString moduleName = QFileInfo(filePath).baseName();
 
   // In case the effect is within the main module file
   QString className = moduleName;
   if (!moduleName.endsWith("Effect"))
-    {
+  {
     className.append("Effect");
-    }
+  }
 
   // Get a reference to the main module and global dictionary
-  PyObject * main_module = PyImport_AddModule("__main__");
-  PyObject * global_dict = PyModule_GetDict(main_module);
+  PyObject* main_module = PyImport_AddModule("__main__");
+  PyObject* global_dict = PyModule_GetDict(main_module);
 
-  // Get a reference (or create if needed) the <moduleName> python module
-  PyObject * module = PyImport_AddModule(moduleName.toUtf8());
+  // Get actual module from sys.modules
+  PyObject* sysModules = PyImport_GetModuleDict();
+  PyObject* module = PyDict_GetItemString(sysModules, moduleName.toUtf8());
 
   // Get a reference to the python module class to instantiate
   PythonQtObjectPtr classToInstantiate;
-  if (PyObject_HasAttrString(module, className.toUtf8()))
-    {
+  if (module && PyObject_HasAttrString(module, className.toUtf8()))
+  {
     classToInstantiate.setNewRef(PyObject_GetAttrString(module, className.toUtf8()));
-    }
+  }
   if (!classToInstantiate)
-    {
+  {
     PythonQtObjectPtr local_dict;
     local_dict.setNewRef(PyDict_New());
-    if (!qSlicerScriptedUtils::loadSourceAsModule(moduleName, newPythonSource, global_dict, local_dict))
-      {
+    if (!qSlicerScriptedUtils::loadSourceAsModule(moduleName, filePath, global_dict, local_dict))
+    {
       return false;
-      }
-    if (PyObject_HasAttrString(module, className.toUtf8()))
-      {
-      classToInstantiate.setNewRef(PyObject_GetAttrString(module, className.toUtf8()));
-      }
     }
 
-  if (!classToInstantiate)
+    // After loading, re-fetch actual module from sys.modules
+    module = PyDict_GetItemString(PyImport_GetModuleDict(), moduleName.toUtf8());
+
+    if (PyObject_HasAttrString(module, className.toUtf8()))
     {
+      classToInstantiate.setNewRef(PyObject_GetAttrString(module, className.toUtf8()));
+    }
+  }
+
+  if (!classToInstantiate)
+  {
     PythonQt::self()->handleError();
     PyErr_SetString(PyExc_RuntimeError,
                     QString("qSlicerSegmentEditorScriptedLabelEffect::setPythonSource - "
                             "Failed to load segment editor scripted effect: "
-                            "class %1 was not found in %2").arg(className).arg(newPythonSource).toUtf8());
+                            "class %1 was not found in %2")
+                      .arg(className)
+                      .arg(filePath)
+                      .toUtf8());
     PythonQt::self()->handleError();
     return false;
-    }
+  }
 
   d->PythonCppAPI.setObjectName(className);
 
   PyObject* self = d->PythonCppAPI.instantiateClass(this, className, classToInstantiate);
   if (!self)
-    {
+  {
     return false;
-    }
+  }
 
-  d->PythonSource = newPythonSource;
+  d->PythonSourceFilePath = filePath;
 
-  if (!qSlicerScriptedUtils::setModuleAttribute(
-        "slicer", className, self))
-    {
+  if (!qSlicerScriptedUtils::setModuleAttribute("slicer", className, self))
+  {
     qCritical() << "Failed to set" << ("slicer." + className);
-    }
+  }
 
   return true;
 }
@@ -229,40 +239,40 @@ QIcon qSlicerSegmentEditorScriptedLabelEffect::icon()
   Q_D(const qSlicerSegmentEditorScriptedLabelEffect);
   PyObject* result = d->PythonCppAPI.callMethod(d->IconMethod);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     return this->Superclass::icon();
-    }
+  }
 
   // Parse result
   QVariant resultVariant = PythonQtConv::PyObjToQVariant(result, QVariant::Icon);
   if (resultVariant.isNull())
-    {
+  {
     return this->Superclass::icon();
-    }
+  }
   return resultVariant.value<QIcon>();
 }
 
 //-----------------------------------------------------------------------------
-const QString qSlicerSegmentEditorScriptedLabelEffect::helpText()const
+const QString qSlicerSegmentEditorScriptedLabelEffect::helpText() const
 {
   Q_D(const qSlicerSegmentEditorScriptedLabelEffect);
   PyObject* result = d->PythonCppAPI.callMethod(d->HelpTextMethod);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     return this->Superclass::helpText();
-    }
+  }
 
   // Parse result
-  if (!PyString_Check(result))
-    {
-    qWarning() << d->PythonSource << ": qSlicerSegmentEditorScriptedLabelEffect: Function 'helpText' is expected to return a string!";
+  if (!PyUnicode_Check(result))
+  {
+    qWarning() << d->PythonSourceFilePath << ": qSlicerSegmentEditorScriptedLabelEffect: Function 'helpText' is expected to return a string!";
     return this->Superclass::helpText();
-    }
+  }
 
-  const char* role = PyString_AsString(result);
-  return QString::fromLocal8Bit(role);
+  const char* role = PyUnicode_AsUTF8(result);
+  return QString::fromUtf8(role);
 }
 
 //-----------------------------------------------------------------------------
@@ -271,20 +281,19 @@ qSlicerSegmentEditorAbstractEffect* qSlicerSegmentEditorScriptedLabelEffect::clo
   Q_D(const qSlicerSegmentEditorScriptedLabelEffect);
   PyObject* result = d->PythonCppAPI.callMethod(d->CloneMethod);
   if (!result)
-    {
-    qCritical() << d->PythonSource << ": clone: Failed to call mandatory clone method! If it is implemented, please see python output for errors.";
+  {
+    qCritical() << d->PythonSourceFilePath << ": clone: Failed to call mandatory clone method! If it is implemented, please see python output for errors.";
     return nullptr;
-    }
+  }
 
   // Parse result
   QVariant resultVariant = PythonQtConv::PyObjToQVariant(result);
-  qSlicerSegmentEditorAbstractEffect* clonedEffect = qobject_cast<qSlicerSegmentEditorAbstractEffect*>(
-    resultVariant.value<QObject*>() );
+  qSlicerSegmentEditorAbstractEffect* clonedEffect = qobject_cast<qSlicerSegmentEditorAbstractEffect*>(resultVariant.value<QObject*>());
   if (!clonedEffect)
-    {
-    qCritical() << d->PythonSource << ": clone: Invalid cloned effect object returned from python!";
+  {
+    qCritical() << d->PythonSourceFilePath << ": clone: Invalid cloned effect object returned from python!";
     return nullptr;
-    }
+  }
   return clonedEffect;
 }
 
@@ -327,10 +336,10 @@ QCursor qSlicerSegmentEditorScriptedLabelEffect::createCursor(qMRMLWidget* viewW
   PyObject* result = d->PythonCppAPI.callMethod(d->CreateCursorMethod, arguments);
   Py_DECREF(arguments);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     return this->Superclass::createCursor(viewWidget);
-    }
+  }
 
   // Parse result
   QVariant resultVariant = PythonQtConv::PyObjToQVariant(result, QVariant::Cursor);
@@ -343,22 +352,21 @@ bool qSlicerSegmentEditorScriptedLabelEffect::processInteractionEvents(vtkRender
   Q_D(const qSlicerSegmentEditorScriptedLabelEffect);
   PyObject* arguments = PyTuple_New(3);
   PyTuple_SET_ITEM(arguments, 0, vtkPythonUtil::GetObjectFromPointer((vtkObject*)callerInteractor));
-  PyTuple_SET_ITEM(arguments, 1, PyInt_FromLong(eid));
+  PyTuple_SET_ITEM(arguments, 1, PyLong_FromLong(eid));
   PyTuple_SET_ITEM(arguments, 2, PythonQtConv::QVariantToPyObject(QVariant::fromValue<QObject*>((QObject*)viewWidget)));
   PyObject* result = d->PythonCppAPI.callMethod(d->ProcessInteractionEventsMethod, arguments);
   Py_DECREF(arguments);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     return this->Superclass::processInteractionEvents(callerInteractor, eid, viewWidget);
-    }
+  }
   if (!PyBool_Check(result))
-    {
-    qWarning() << d->PythonSource
-               << " - function 'processInteractionEvents' "
+  {
+    qWarning() << d->PythonSourceFilePath << " - function 'processInteractionEvents' "
                << "is expected to return a boolean";
     return false;
-    }
+  }
   return result == Py_True;
 }
 
@@ -368,15 +376,15 @@ void qSlicerSegmentEditorScriptedLabelEffect::processViewNodeEvents(vtkMRMLAbstr
   Q_D(const qSlicerSegmentEditorScriptedLabelEffect);
   PyObject* arguments = PyTuple_New(3);
   PyTuple_SET_ITEM(arguments, 0, vtkPythonUtil::GetObjectFromPointer((vtkObject*)callerViewNode));
-  PyTuple_SET_ITEM(arguments, 1, PyInt_FromLong(eid));
+  PyTuple_SET_ITEM(arguments, 1, PyLong_FromLong(eid));
   PyTuple_SET_ITEM(arguments, 2, PythonQtConv::QVariantToPyObject(QVariant::fromValue<QObject*>((QObject*)viewWidget)));
   PyObject* result = d->PythonCppAPI.callMethod(d->ProcessViewNodeEventsMethod, arguments);
   Py_DECREF(arguments);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     return this->Superclass::processViewNodeEvents(callerViewNode, eid, viewWidget);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -400,8 +408,19 @@ void qSlicerSegmentEditorScriptedLabelEffect::referenceGeometryChanged()
 }
 
 //-----------------------------------------------------------------------------
+void qSlicerSegmentEditorScriptedLabelEffect::sourceVolumeNodeChanged()
+{
+  // Base class implementation needs to be called before the effect-specific one
+  this->Superclass::sourceVolumeNodeChanged();
+
+  Q_D(const qSlicerSegmentEditorScriptedLabelEffect);
+  d->PythonCppAPI.callMethod(d->SourceVolumeNodeChangedMethod);
+}
+
+//-----------------------------------------------------------------------------
 void qSlicerSegmentEditorScriptedLabelEffect::masterVolumeNodeChanged()
 {
+  // Note: deprecated
   // Base class implementation needs to be called before the effect-specific one
   this->Superclass::masterVolumeNodeChanged();
 
@@ -432,10 +451,10 @@ void qSlicerSegmentEditorScriptedLabelEffect::interactionNodeModified(vtkMRMLInt
   PyObject* result = d->PythonCppAPI.callMethod(d->InteractionNodeModifiedMethod, arguments);
   Py_DECREF(arguments);
   if (!result)
-    {
+  {
     // Method call failed (probably an omitted function), call default implementation
     this->Superclass::interactionNodeModified(interactionNode);
-    }
+  }
 }
 
 //-----------------------------------------------------------------------------
