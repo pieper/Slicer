@@ -73,6 +73,19 @@ documentation, and the [Coordinate system convention in Slicer](../user_guide/co
 
 :::
 
+:::{note}
+
+### Caution on less common coordinate system formats
+
+Slicer developers take special care to ensure management of coordinate systms is carefully preserved when reading and writing
+files in various formats, however many formats are complex and can support multiple data layouts and different ways to encode
+geometric information.  The most commonly used formats, such as NRRD format with LPS or RAS coordinate systems, are well tested
+while other possible variants such as LAS (Left, Andrerior, Superior) are less well tested.  For any critical tasks always
+carefully check that your data is being correctly saved and restored in Slicer, and that any other software you are using
+respects the gemoetric integrity of your data.
+
+:::
+
 ### Images
 
 Readers may support 2D, 3D, and 4D images of various types, such as scalar, vector, DWI or DTI, containing images, dose maps, displacement fields, etc.
