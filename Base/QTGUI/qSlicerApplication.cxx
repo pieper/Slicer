@@ -121,6 +121,7 @@
 #include <vtkSystemInformation.h>
 
 // MRML includes
+#include <vtkCacheManager.h>
 #include <vtkMRMLMessageCollection.h>
 #include <vtkMRMLNode.h>
 #include <vtkMRMLScene.h>
@@ -331,6 +332,18 @@ void qSlicerApplicationPrivate::init()
   }
 #endif
 
+  //----------------------------------------------------------------------------
+  // Instantiate ErrorLogModel
+  //----------------------------------------------------------------------------
+  this->ErrorLogModel = QSharedPointer<ctkErrorLogModel>(new ctkErrorLogModel);
+  this->ErrorLogModel->setLogEntryGrouping(true);
+  this->ErrorLogModel->setTerminalOutputs(this->CoreCommandOptions->disableTerminalOutputs() ? ctkErrorLogTerminalOutput::None : ctkErrorLogTerminalOutput::All);
+  this->ErrorLogModel->registerMsgHandler(new ctkErrorLogQtMessageHandler);
+  this->ErrorLogModel->registerMsgHandler(new ctkErrorLogStreamMessageHandler);
+  this->ErrorLogModel->registerMsgHandler(new ctkITKErrorLogMessageHandler);
+  this->ErrorLogModel->registerMsgHandler(new ctkVTKErrorLogMessageHandler);
+  this->ErrorLogModel->setAllMsgHandlerEnabled(true);
+
   this->Superclass::init();
 
 #ifdef Slicer_USE_PYTHONQT
@@ -374,24 +387,16 @@ void qSlicerApplicationPrivate::init()
   this->ToolTipTrapper->setToolTipsTrapped(false);
   this->ToolTipTrapper->setToolTipsWordWrapped(true);
 
-  //----------------------------------------------------------------------------
-  // Instantiate ErrorLogModel
-  //----------------------------------------------------------------------------
-  this->ErrorLogModel = QSharedPointer<ctkErrorLogModel>(new ctkErrorLogModel);
-  this->ErrorLogModel->setLogEntryGrouping(true);
-  this->ErrorLogModel->setTerminalOutputs(this->CoreCommandOptions->disableTerminalOutputs() ? ctkErrorLogTerminalOutput::None : ctkErrorLogTerminalOutput::All);
+  // ctkErrorLogFDMessageHandler redirects stdout and stderr to the application log.
+  // It cannot be enabled earlier, because it would make Python manager initialization hang.
 #if defined(Q_OS_WIN32) && !defined(Slicer_BUILD_WIN32_CONSOLE)
   // Must not register ctkErrorLogFDMessageHandler when building a window-based
   // (non-console) application because this handler would not
   // let the application to quit when the last window is closed.
 #else
   this->ErrorLogModel->registerMsgHandler(new ctkErrorLogFDMessageHandler);
+  this->ErrorLogModel->setMsgHandlerEnabled(ctkErrorLogFDMessageHandler::HandlerName, true);
 #endif
-  this->ErrorLogModel->registerMsgHandler(new ctkErrorLogQtMessageHandler);
-  this->ErrorLogModel->registerMsgHandler(new ctkErrorLogStreamMessageHandler);
-  this->ErrorLogModel->registerMsgHandler(new ctkITKErrorLogMessageHandler);
-  this->ErrorLogModel->registerMsgHandler(new ctkVTKErrorLogMessageHandler);
-  this->ErrorLogModel->setAllMsgHandlerEnabled(true);
 
 #ifdef Slicer_USE_PYTHONQT
   // Make ITK, VTK, Qt error messages show up in the Python console
@@ -440,8 +445,19 @@ void qSlicerApplicationPrivate::init()
   this->SettingsDialog->addPanel(qSlicerApplication::tr("Extensions"), settingsExtensionsPanel);
 #endif
   qSlicerSettingsCachePanel* cachePanel = new qSlicerSettingsCachePanel;
-  cachePanel->setCacheManager(this->MRMLScene->GetCacheManager());
+  vtkCacheManager* cacheManager = this->MRMLScene->GetCacheManager();
+  cachePanel->setCacheManager(cacheManager);
   this->SettingsDialog->addPanel(qSlicerApplication::tr("Cache"), cachePanel);
+
+  // Now that cachePanel set the cache sizes from user settings, we prune the cache.
+  if (cacheManager && q->userSettings())
+  {
+    bool autoPruneEnabled = q->userSettings()->value("Cache/AutoPrune", true).toBool();
+    if (autoPruneEnabled)
+    {
+      cacheManager->PruneCache();
+    }
+  }
 
 #ifdef Slicer_BUILD_I18N_SUPPORT
   qSlicerSettingsInternationalizationPanel* qtInternationalizationPanel = new qSlicerSettingsInternationalizationPanel;
