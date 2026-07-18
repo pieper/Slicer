@@ -13,6 +13,11 @@ if(Slicer_USE_CTKAPPLAUNCHER)
   if(WIN32)
     set(${proj}_DEPENDENCIES CTKResEdit)
   endif()
+  if(APPLE AND "${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "arm64")
+    # The launcher built from source is used instead of the released amd64
+    # binary, see below.
+    list(APPEND ${proj}_DEPENDENCIES CTKAppLauncherLib)
+  endif()
 
   # Include dependent projects if any
   ExternalProject_Include_Dependencies(${proj} PROJECT_VAR proj DEPENDS_VAR ${proj}_DEPENDENCIES)
@@ -21,7 +26,21 @@ if(Slicer_USE_CTKAPPLAUNCHER)
     message(FATAL_ERROR "Enabling Slicer_USE_SYSTEM_${proj} is not supported !")
   endif()
 
-  if(NOT DEFINED CTKAppLauncher_DIR)
+  if(NOT DEFINED CTKAppLauncher_DIR AND APPLE AND "${CMAKE_HOST_SYSTEM_PROCESSOR}" STREQUAL "arm64")
+
+    # CTKAppLauncher is only released as an amd64 macOS binary. Running it
+    # through Rosetta makes processes spawned by the launched application
+    # prefer the x86_64 slice of universal binaries (e.g. subprocesses of the
+    # bundled Python report an x86_64 architecture), which breaks
+    # architecture-sensitive Python packages. Use the native launcher built
+    # from source by the CTKAppLauncherLib external project instead: its
+    # build directory provides the same layout and CMake configuration as
+    # the released archive.
+    # See https://github.com/Slicer/Slicer/issues/9121
+    ExternalProject_Add_Empty(${proj} DEPENDS ${${proj}_DEPENDENCIES})
+    set(CTKAppLauncher_DIR ${CMAKE_BINARY_DIR}/CTKAppLauncherLib-build)
+
+  elseif(NOT DEFINED CTKAppLauncher_DIR)
 
     SlicerMacroGetOperatingSystemArchitectureBitness(VAR_PREFIX CTKAPPLAUNCHER)
     set(launcher_version "0.1.34")
