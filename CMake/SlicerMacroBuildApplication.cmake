@@ -340,6 +340,14 @@ macro(slicerMacroBuildApplication)
   if(NOT DEFINED SLICERAPP_APPLICATION_NAME)
     string(REGEX REPLACE "(.+)App" "\\1" SLICERAPP_APPLICATION_NAME ${SLICERAPP_NAME})
   endif()
+  if(NOT DEFINED SLICERAPP_APPLICATION_DISPLAY_NAME OR SLICERAPP_APPLICATION_DISPLAY_NAME STREQUAL "")
+    if(SLICERAPP_NAME STREQUAL Slicer_MAIN_PROJECT AND DEFINED Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME
+       AND NOT Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME STREQUAL "")
+      set(SLICERAPP_APPLICATION_DISPLAY_NAME ${Slicer_MAIN_PROJECT_APPLICATION_DISPLAY_NAME})
+    else()
+      set(SLICERAPP_APPLICATION_DISPLAY_NAME ${SLICERAPP_APPLICATION_NAME})
+    endif()
+  endif()
 
   message(STATUS "--------------------------------------------------")
   message(STATUS "Configuring ${SLICERAPP_APPLICATION_NAME} application: ${SLICERAPP_NAME}")
@@ -466,13 +474,26 @@ macro(slicerMacroBuildApplication)
     get_filename_component(_slicerapp_icon_dir "${SLICERAPP_WIN_ICON_FILE}" DIRECTORY)
     set(_slicerapp_rc "${CMAKE_CURRENT_BINARY_DIR}/${SLICERAPP_NAME}.rc")
     file(WRITE "${_slicerapp_rc}" "IDI_ICON1 ICON \"${_slicerapp_icon_name}\"\n")
-    # Override AdditionalIncludeDirectories for this source file to contain only
-    # the icon's directory, preventing propagation of all target include directories
-    # to rc.exe which would cause MSB6002 command-line length failures.
-    set_source_files_properties("${_slicerapp_rc}" PROPERTIES
-      VS_SETTINGS "AdditionalIncludeDirectories=${_slicerapp_icon_dir}"
+    # Compile the resource in its own OBJECT library so it does not inherit the
+    # application's include directories. CMake expands <INCLUDES> into the RC
+    # compile from the target's include closure, which for SlicerApp is 764
+    # directories -- a 47 KB command line, past the 32767-character limit
+    # CreateProcess enforces, so a Ninja build aborts with
+    # "CreateProcess: The parameter is incorrect".
+    #
+    # VS_SETTINGS previously guarded this, but only for the Visual Studio
+    # generator (it writes AdditionalIncludeDirectories into the vcxproj), so
+    # single-config generators were left unprotected. A source-level
+    # INCLUDE_DIRECTORIES property does not work either: it ADDS directories for
+    # the source rather than replacing the target's. Setting the property on a
+    # dedicated target does replace it, and the icon directory is all the
+    # resource compile needs.
+    add_library(${slicerapp_target}Resources OBJECT "${_slicerapp_rc}")
+    set_target_properties(${slicerapp_target}Resources PROPERTIES
+      INCLUDE_DIRECTORIES "${_slicerapp_icon_dir}"
+      FOLDER "${SLICERAPP_FOLDER}"
       )
-    list(APPEND SLICERAPP_SRCS "${_slicerapp_rc}")
+    list(APPEND SLICERAPP_SRCS $<TARGET_OBJECTS:${slicerapp_target}Resources>)
   endif()
 
   ctk_add_executable_utf8(${slicerapp_target}
@@ -489,7 +510,7 @@ macro(slicerMacroBuildApplication)
     set(link_flags "-Wl,-rpath,@loader_path/../")
     set_target_properties(${slicerapp_target}
       PROPERTIES
-        MACOSX_BUNDLE_BUNDLE_NAME "${SLICERAPP_APPLICATION_NAME} ${Slicer_MAIN_PROJECT_VERSION_FULL}"
+        MACOSX_BUNDLE_BUNDLE_NAME "${SLICERAPP_APPLICATION_DISPLAY_NAME} ${Slicer_MAIN_PROJECT_VERSION_FULL}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${Slicer_MAIN_PROJECT_VERSION_FULL}"
         MACOSX_BUNDLE_GUI_IDENTIFIER "${Slicer_MACOSX_BUNDLE_GUI_IDENTIFIER}"
         MACOSX_BUNDLE_INFO_PLIST "${Slicer_CMAKE_DIR}/MacOSXBundleInfo.plist.in"
@@ -559,7 +580,7 @@ macro(slicerMacroBuildApplication)
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 ${PYTHON_LIBRARY_PATH}/${_python_library_name_we}.dll
-                ${_slicerapp_output_dir}/$<CONFIG>
+                $<TARGET_FILE_DIR:${slicerapp_target}>
         COMMENT "Copy '${_python_library_name_we}.dll' along side '${slicerapp_target}' executable. See Slicer issue #1180"
         )
     endif()

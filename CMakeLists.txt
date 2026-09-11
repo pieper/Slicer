@@ -95,6 +95,24 @@ endif()
 project(Slicer VERSION "${Slicer_VERSION_MAJOR}.${Slicer_VERSION_MINOR}.${Slicer_VERSION_PATCH}")
 
 #-----------------------------------------------------------------------------
+# Response files (Windows + Ninja)
+#-----------------------------------------------------------------------------
+# Slicer's include closure (VTK, CTK, ITK, GDCM, Qt, Python) grows the compile
+# command line past the 32767-character limit CreateProcess enforces, and ninja
+# then aborts the build with
+#
+#   ninja: fatal: CreateProcess: The parameter is incorrect.
+#    (is the command line too long?)
+#
+# Multi-config Visual Studio builds never hit this because MSBuild passes
+# compiler flags through response files already. Ask the Ninja generator to do
+# the same. Only set when the user has not chosen a value.
+if(WIN32 AND CMAKE_GENERATOR MATCHES "Ninja" AND NOT DEFINED CMAKE_NINJA_FORCE_RESPONSE_FILE)
+  set(CMAKE_NINJA_FORCE_RESPONSE_FILE ON CACHE BOOL
+    "Force ninja to pass compiler and linker flags via response files" FORCE)
+endif()
+
+#-----------------------------------------------------------------------------
 # Update CMake module path
 #------------------------------------------------------------------------------
 set(CMAKE_MODULE_PATH
@@ -1214,6 +1232,17 @@ add_subdirectory(
   ${Slicer_APPLICATIONS_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}/Applications
   )
+
+# ${PYTHON_EXECUTABLE} is a launcher that reads its PYTHONPATH and LibraryPaths
+# from ${Slicer_MAIN_PROJECT_APPLICATION_NAME}LauncherSettings.ini, which the
+# launcher configuration target writes only after the application links. State
+# the ordering so generators free to schedule it earlier do not run the vtk
+# module generator against an unwritten settings file.
+if(TARGET SlicerGenerateLazyVtkModule
+    AND TARGET ${Slicer_MAIN_PROJECT_APPLICATION_NAME}ConfigureLauncher)
+  add_dependencies(SlicerGenerateLazyVtkModule
+    ${Slicer_MAIN_PROJECT_APPLICATION_NAME}ConfigureLauncher)
+endif()
 
 #-----------------------------------------------------------------------------
 # Templates

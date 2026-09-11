@@ -607,11 +607,6 @@ void vtkSlicerVolumeRenderingLogic::SetWindowLevelToVolumeProp(double scalarRang
   }
 
   volumeProp->SetInterpolationTypeToLinear();
-  volumeProp->ShadeOn();
-  volumeProp->SetAmbient(0.30);
-  volumeProp->SetDiffuse(0.60);
-  volumeProp->SetSpecular(0.50);
-  volumeProp->SetSpecularPower(40);
 }
 
 //----------------------------------------------------------------------------
@@ -683,11 +678,6 @@ void vtkSlicerVolumeRenderingLogic::SetLabelMapToVolumeProp(vtkScalarsToColors* 
   }
 
   volumeProp->SetInterpolationTypeToNearest();
-  volumeProp->ShadeOn();
-  volumeProp->SetAmbient(0.30);
-  volumeProp->SetDiffuse(0.60);
-  volumeProp->SetSpecular(0.50);
-  volumeProp->SetSpecularPower(40);
 }
 
 //----------------------------------------------------------------------------
@@ -1075,7 +1065,7 @@ vtkMRMLVolumeRenderingDisplayNode* vtkSlicerVolumeRenderingLogic::GetVolumeRende
 }
 
 //----------------------------------------------------------------------------
-vtkMRMLVolumeRenderingDisplayNode* vtkSlicerVolumeRenderingLogic ::GetFirstVolumeRenderingDisplayNodeByROINode(vtkMRMLNode* roiNode)
+vtkMRMLVolumeRenderingDisplayNode* vtkSlicerVolumeRenderingLogic::GetFirstVolumeRenderingDisplayNodeByROINode(vtkMRMLNode* roiNode)
 {
   if (roiNode == nullptr || roiNode->GetScene() == nullptr)
   {
